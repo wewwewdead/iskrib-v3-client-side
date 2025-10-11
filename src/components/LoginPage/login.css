@@ -1,0 +1,92 @@
+
+.login-page-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 70%;
+    width: 25%;
+    border-radius: 4px;
+    border: 1px solid rgba(151, 151, 151, 0.525);
+    gap: 2rem;
+}
+.login-logo{
+    border-radius: 4px;
+    border: 1px solid rgba(151, 151, 151, 0.525);
+    font-family: "Shadows Into Light", cursive;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 3rem;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 25%;
+    height: 10%;
+    color: rgb(255, 255, 255);
+}
+.input-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 100%;
+    min-width: 100%;
+    gap: 1rem;
+
+}
+.input-container-child{
+    display: flex;
+    justify-content: flex-start;
+    width: 67%;
+}
+.login-input{
+    width: 100%;
+    border: none;
+    padding: 0.5rem 0.5rem;
+    border-radius: 4px;
+}
+.login-input:focus{
+    outline: none;
+}
+.show-bttn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0 0.4rem;
+    border: 1px solid rgba(151, 151, 151, 0.525);
+    border-radius: 4px;
+    user-select: none;
+}
+.log-in-bttn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 67%;
+    padding: 0.5rem 0;
+    border-radius: 4px;
+    background-color: rgb(72, 54, 177);
+    cursor: pointer;
+    user-select: none;
+    border: none;
+}
+.log-in-bttn:hover{
+    background-color: rgb(82, 63, 192);
+}
+.log-in-bttn-disabled{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 67%;
+    padding: 0.5rem 0;
+    border-radius: 4px;
+    background-color: rgb(72, 54, 177);
+    user-select: none;
+    border: none;
+}
+.sign-up-bttn{
+    color:  rgb(157, 139, 254);
+    cursor: pointer;
+}

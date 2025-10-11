@@ -1,0 +1,39 @@
+.side-bar-container{
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0 0.5rem 0;
+    width: 90%;
+    height: 100%;
+    gap: 0.5rem;
+}
+.sidebar-header{
+    font-family: "Shadows Into Light", cursive;
+    padding: 0 0 0 1rem;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+.sidebar-links-active{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0.5rem 0 0.5rem 1rem;
+    gap: 1rem;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: ease-in 0.1s;
+    font-weight: 650;
+    background-color:rgb(15, 41, 56);
+}
+.sidebar-links{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0.5rem 0 0.5rem 1rem;
+    gap: 1rem;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: ease-in 0.1s;
+}
+.sidebar-links:hover{
+    background-color:rgb(15, 41, 56) ;
+}
