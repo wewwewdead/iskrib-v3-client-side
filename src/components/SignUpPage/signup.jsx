@@ -49,9 +49,11 @@ const SignUp = () => {
             return emailRegex.test(email)
         }
         if(!validateEmail(email)){
+            setIsLoadingSignUp(false)
            return setErrorMessage('Email is not valid')
         }
         if (!captchaToken) {
+            setIsLoadingSignUp(false)
             return setErrorMessage("Please complete the CAPTCHA first.");
         }
 

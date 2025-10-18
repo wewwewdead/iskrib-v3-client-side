@@ -31,3 +31,18 @@ export const submitProfileData = async(body, token)=>{
     console.log(data)
     return data;
 }
+export const getUserData = async(token) =>{
+    const headers = {}
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/getUserData`, {
+        method: 'GET',
+        headers: headers
+    })
+    if(!response.ok){
+        const error = await response.json()
+        throw new Error(error || 'Failed to fetch user data');
+    }
+     const data = await response.json();
+     return data;
+}

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import supabase from '../utils/supabaseClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getUserData } from '../../API/Api';
 
 const AuthContext = createContext();
 
@@ -11,7 +12,7 @@ export const AuthProvider = ({children}) => {
 
     const queryClient = useQueryClient();
 
-    const {data: authData, isLoading} = useQuery({
+    const {data: authData} = useQuery({
         queryKey: ['authsession'],
         queryFn: async() =>{
             const {data, error} = await supabase.auth.getSession();
@@ -42,6 +43,14 @@ export const AuthProvider = ({children}) => {
         
     }, [])
 
+    const {data: userData, isLoading} = useQuery({
+            queryKey: ['userData', authData?.access_token],
+            queryFn: ({queryKey}) => getUserData(queryKey[1]),
+            enabled: !!authData?.access_token, //only runs if token exists
+            staleTime: 1000 * 60 * 60,
+            cacheTime: 1000 * 60 * 60,
+        })
+
     const signOut = async() =>{
         await supabase.auth.signOut();
         queryClient.setQueryData(['authsession'], null)
@@ -50,7 +59,7 @@ export const AuthProvider = ({children}) => {
 
     const value = {
         session: authData,
-        user: authData?.user,
+        user: userData,
         loading: loading,
         isLoading: isLoading,
         signOut
