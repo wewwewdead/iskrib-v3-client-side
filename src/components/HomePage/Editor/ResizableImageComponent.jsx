@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $getNodeByKey } from 'lexical';
+import { deleteJournalImage } from '../../../../API/Api';
+import { useAuth } from '../../../Context/Authcontext';
 
 const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
   const [editor] = useLexicalComposerContext();
@@ -11,17 +13,35 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
   const imageRef = useRef(null);
   const startPosRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
 
+  const{session} = useAuth();
+
   //handle delete image from the editor
-  const handleDelete = (e) =>{
+  const deleteImgSync = async(imgUrl) => {
+    try {
+      const message = await deleteJournalImage(session?.access_token, imgUrl);
+      if(message){
+        console.log(message.message)
+      }
+    } catch (error) {
+      console.error("Failed to delete image from storage:", error);
+    }
+  }
+  const handleDelete = async(e) =>{
     e.stopPropagation();
+    let img_url = ''
     editor.update(() =>{
         const node = editor.getEditorState()._nodeMap.get(nodeKey);
-        try {
-            node.remove();
-        } catch (error) {
-            console.error("Failed to remove image node:", error);
+        if(!node || !node.__src) {
+          throw new Error('Node not found or missing source')
         }
-    })
+        img_url = node.__src
+        node.remove();
+    });
+
+    //only proceed if node was removed and img_url is set
+    if(img_url){
+      await deleteImgSync(img_url);
+    }
   }
 
   // handle mouse down on resize handle
@@ -100,7 +120,7 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
         const finalWidth = startPosRef.current.width;
         const finalHeight = startPosRef.current.height;
 
-        console.log(`Saving: ${finalWidth}x${finalHeight}`);//for debugging
+        // console.log(`Saving: ${finalWidth}x${finalHeight}`);//for debugging
       
         // update the Lexical node with new dimensions
         editor.update(() => {
@@ -117,12 +137,15 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
                 }
             }
         );
+
+        //remove all listeners after mouse up
         document.removeEventListener('touchmove', handleMouseMove)
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
         document.removeEventListener('touchend', handleMouseUp)
     };
 
+    //add all event listerner after mouse down or mouse hold click 
     document.addEventListener('touchmove', handleMouseMove, {passive: false})
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);

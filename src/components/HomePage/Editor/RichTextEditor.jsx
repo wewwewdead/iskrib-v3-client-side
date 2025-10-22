@@ -13,6 +13,10 @@ import ImagePlugin from "./nodes/Plugins/ImagePlugin";
 
 import ImageNode from "./nodes/ImageNode";
 import ToolBar from "./Toolbar";
+import { $getRoot } from "lexical";
+
+import { saveJournal } from "../../../../API/Api";
+import { useAuth } from "../../../Context/Authcontext";
 
 // import {
 //   $getRoot,
@@ -48,19 +52,51 @@ const theme = {
 
 const EditorInner = ({title}) => {
     const [editor] = useLexicalComposerContext();
-    const [showEditorState, setShowEditorState] = useState(null);
+    const [editorState, setEditorState] = useState(null);
+    const [textContent, setTextContent] = useState('')
+    const [hasContent, setHasContent] = useState(false);
 
-    const handleClickSave = (e, title) =>{
+    const {session} = useAuth();
+
+    const handleClickSave = async(e, title) =>{
         e.stopPropagation();
-        const currentState = editor.getEditorState();
-        const jsonb = currentState.toJSON();
-        setShowEditorState(jsonb)
-        console.log(jsonb)
+        // console.log(editorState);
+        const formdata = new FormData();
+        if(title && editorState){
+            formdata.append('title', title)
+            formdata.append('content', editorState)
+        }
+        const saveData = await saveJournal(session?.access_token, formdata)
+
+        if(saveData){
+            console.log(saveData)
+        }
     }
 
     const onchange = useCallback((state) => {
-        const jsonb = state.toJSON();
-        // console.log(jsonb) //log the editor state for demo
+        const jsonb = JSON.stringify(state.toJSON());
+        setEditorState(jsonb)
+
+        state.read(() => {
+            const root = $getRoot();
+            // const image_node = root.getChildren().find(type => type.__type === 'image')
+            // console.log(image_node.__src)
+
+            const text = root.getTextContent().trim();
+            if(text){
+                setTextContent(text)
+            }
+
+            const children = root.getChildren();
+
+            const hasEnoughParagraphNodes = children.length > 1
+            const hasParargraphSize = children[0]?.__size > 0
+
+            const hasContent = hasParargraphSize || hasEnoughParagraphNodes
+            console.log(hasContent)
+
+            setHasContent(hasContent); //set the state boolean of hasContent depends on hasParargraphSize || hasEnoughParagraphNodes
+        })
     }, [])
 
     return(
@@ -85,9 +121,9 @@ const EditorInner = ({title}) => {
 
         <div className='editor-lower-part-container'>
             <ToolBar/>
-            <div onClick={(e) => handleClickSave(e, title)} className={title ? 'editor-save-bttn' : 'editor-save-bttn-disabled'}>
+            <button disabled={!title || !hasContent} onClick={(e) => handleClickSave(e, title)} className={title && hasContent ? 'editor-save-bttn' : 'editor-save-bttn-disabled'}>
                 Save
-            </div>
+            </button>
         </div>
         </>
     )

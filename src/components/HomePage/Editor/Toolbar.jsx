@@ -15,10 +15,13 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { $insertNodeToNearestRoot } from '@lexical/utils';
 
 import ImageNode, {$createImageNode, INSERT_IMAGE_COMMAND} from "./nodes/ImageNode";
+import { saveJournalImage } from "../../../../API/Api";
+import { useAuth } from "../../../Context/Authcontext";
 
 const ToolBar = () =>{
     //bold and italic style are textFormatTypeStrings
     const [editor] = useLexicalComposerContext();
+    const {session} = useAuth();
 
 
     const applyTextFormat = (format) => {
@@ -68,26 +71,27 @@ const ToolBar = () =>{
     }
 
     //insert image
-    const insertImageFromFile = () => {
-        const handleOnChange = (e) => {
+    const insertImageFromFile = async() => {
+        
+        const handleOnChange = async(e) => {
             const filedata = e.target.files?.[0];
             if(!filedata) return;
 
-            const url = URL.createObjectURL(filedata)
-            const reader = new FileReader()
-                reader.onloadend = () => {
-                    const imgUrl = reader.result
-                    const image = new Image();
+            const formdata = new FormData();
+            formdata.append('image', filedata);
 
-                    editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-                        src: imgUrl,
-                        width: 500,
-                        height: 500,
-                    })
-                }
+            const data_url = await saveJournalImage(session?.access_token, formdata);
+            if(!data_url){
+                return console.log('error: no image_url')
+            }
 
-            reader.readAsDataURL(filedata);
+            editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+                src: data_url.img_url,
+                width: 500,
+                height: 500,
+            })
         }
+
         const input = document.createElement('input'); //create an input element
         input.type = 'file'
         input.accept = 'image/*';

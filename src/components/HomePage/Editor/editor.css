@@ -114,6 +114,10 @@
     color: rgb(4, 20, 29);
     font-weight: 650;
     cursor: pointer;
+    border: hidden;
+}
+.editor-save-bttn:focus{
+    border: hidden;
 }
 .editor-save-bttn-disabled{
     display: flex;
@@ -126,6 +130,9 @@
     color: rgb(4, 20, 29);
     font-weight: 650;
     user-select: none;
+    border: hidden;
+}.editor-save-bttn-disabled:focus{
+    border: hidden;
 }
 .editor-shell{
     position: relative;

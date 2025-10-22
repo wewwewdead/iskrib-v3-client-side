@@ -13,14 +13,10 @@ export default function ImagePlugin() {
         const { src, width, height } = payload;
         
         const imageNode = $createImageNode(src, width, height);
-        const paragraphNode = $createParagraphNode();
         
         const root = $getRoot();
         root.append(imageNode);
-        root.append(paragraphNode);
-        
-        paragraphNode.select();
-        
+
         return true;
       },
       COMMAND_PRIORITY_EDITOR
