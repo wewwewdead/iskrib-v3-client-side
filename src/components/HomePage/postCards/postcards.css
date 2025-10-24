@@ -6,6 +6,16 @@
     width: 100%;
     height: 100vh;
 }
+.postcards-parent-loading-container{
+    position: relative;
+    top: 90px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+}
 .loading-newsfeed-bg{
     display: flex;
     justify-content: center;
@@ -23,4 +33,5 @@
     align-items: center;
     width: 100%;
     min-height: 20px;
+    padding: 0.5rem;
 }

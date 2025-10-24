@@ -7,16 +7,19 @@ import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import {HeadingNode} from "@lexical/rich-text";
-import CustomImagePlugin from "./nodes/Plugins/CustomImagePlugin";
 import ImagePlugin from "./nodes/Plugins/ImagePlugin";
 
 
 import ImageNode from "./nodes/ImageNode";
 import ToolBar from "./Toolbar";
-import { $getRoot } from "lexical";
+import { $createParagraphNode, $getRoot } from "lexical";
 
 import { saveJournal } from "../../../../API/Api";
 import { useAuth } from "../../../Context/Authcontext";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { BarLoader } from "react-spinners";
+import { color } from "framer-motion";
 
 // import {
 //   $getRoot,
@@ -50,27 +53,51 @@ const theme = {
     heading: 'editor-heading',
 }
 
-const EditorInner = ({title}) => {
+const EditorInner = ({title, onclose, onSave}) => {
     const [editor] = useLexicalComposerContext();
     const [editorState, setEditorState] = useState(null);
     const [textContent, setTextContent] = useState('')
     const [hasContent, setHasContent] = useState(false);
+    const [isSending, setIsSending] = useState(false);
 
     const {session} = useAuth();
 
+    const queryClient = useQueryClient();
+
+    const handleClearEditor = useCallback(() => {
+        editor.update(() => {
+            const root = $getRoot();
+            root.clear();
+            root.append($createParagraphNode());
+        })
+    }, [editor])
+
     const handleClickSave = async(e, title) =>{
         e.stopPropagation();
-        // console.log(editorState);
-        const formdata = new FormData();
-        if(title && editorState){
-            formdata.append('title', title)
-            formdata.append('content', editorState)
-        }
-        const saveData = await saveJournal(session?.access_token, formdata)
+        setIsSending(true)
+        try {
+             // console.log(editorState);
+            const formdata = new FormData();
+            if(title && editorState){
+                formdata.append('title', title)
+                formdata.append('content', editorState)
+            }
+            const saveData = await saveJournal(session?.access_token, formdata)
 
-        if(saveData){
-            console.log(saveData)
+            if(saveData){
+                console.log(saveData)
+                queryClient.invalidateQueries({queryKey: ['journals']});
+            }
+            setIsSending(false)
+        } catch (error) {
+            console.error("Error saving journal:", error);
+        }finally {
+            setIsSending(false)
+            setHasContent(false)
+            handleClearEditor();
+            onclose();
         }
+       
     }
 
     const onchange = useCallback((state) => {
@@ -94,7 +121,6 @@ const EditorInner = ({title}) => {
 
             const hasContent = hasParargraphSize || hasEnoughParagraphNodes
             console.log(hasContent)
-
             setHasContent(hasContent); //set the state boolean of hasContent depends on hasParargraphSize || hasEnoughParagraphNodes
         })
     }, [])
@@ -121,10 +147,13 @@ const EditorInner = ({title}) => {
 
         <div className='editor-lower-part-container'>
             <ToolBar/>
-            <button disabled={!title || !hasContent} onClick={(e) => handleClickSave(e, title)} className={title && hasContent ? 'editor-save-bttn' : 'editor-save-bttn-disabled'}>
+            <button disabled={!title || !hasContent} onClick={(e) =>handleClickSave(e, title)} className={title && hasContent ? 'editor-save-bttn' : 'editor-save-bttn-disabled'}>
                 Save
             </button>
         </div>
+        {isSending && (
+            <BarLoader loading={isSending} width={'100%'} color="rgb(40, 115, 255)" speedMultiplier={0.7}/>
+        )}
         </>
     )
 }
@@ -142,11 +171,10 @@ const RichTextEditor = ({title}) =>{
 
     return (
         <ErrorBoundary>
-        <LexicalComposer initialConfig={initaConfig}>
-            <EditorInner title={title}/>
-        </LexicalComposer>
+           <EditorInner title={title}/>
         </ErrorBoundary>
     )
 }
 
-export default RichTextEditor;
+// export default RichTextEditor;
+export default EditorInner;

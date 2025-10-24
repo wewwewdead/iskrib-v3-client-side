@@ -1,34 +1,47 @@
 import './editor.css';
 import { motion, AnimatePresence} from "framer-motion";
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import RichTextEditor from './RichTextEditor.jsx';
+import ImageNode from './nodes/ImageNode.jsx';
+import {HeadingNode} from "@lexical/rich-text";
+import { LexicalComposer } from '@lexical/react/LexicalComposer';
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import EditorInner from './RichTextEditor.jsx';
+
+
+class ErrorBoundary extends React.Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return <div>Error: {this.state.error.message}</div>;
+    }
+    return this.props.children;
+  }
+}
 
 const Editor=({onClose}) =>{
     const inputRef = useRef();
-
     const [title, setTitle] = useState('')
-    const [imgUrl, setImgUrl] = useState('');
+    const [editor] = useLexicalComposerContext();
 
-    const handleClickUploadPhoto = (e) => {
-        e.stopPropagation();
-        if(inputRef.current){
-            inputRef.current.click()
-            inputRef.current.value = ''
-        }
+    /* theme for mapping css classes to lexical rols */
+    const theme = {
+        paragraph: 'editor-paragraph',
+        heading: 'editor-heading',
     }
 
-    const handleOnChange = (e) =>{
-        e.stopPropagation();
-        const file = e.target.files[0];
-        if(file){
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImgUrl(reader.result)
-            }
-            reader.readAsDataURL(file);
-        }
+    const initaConfig = {
+        namespace: "MyLexicalEditor",
+        theme,
+        //register nodes
+        nodes: [ImageNode, HeadingNode ],
+        onError(error){
+            throw error;
+        },
     }
-
 
     return(
         <>
@@ -46,7 +59,12 @@ const Editor=({onClose}) =>{
 
                 <input value={title} onChange={(e) => setTitle(e.target.value)} className='content-title-input' type="text" placeholder='Title' />
 
-                <RichTextEditor title={title}/>
+                {/* <RichTextEditor title={title}/> */}
+                <ErrorBoundary>
+                    {/* <LexicalComposer initialConfig={initaConfig}> */}
+                    <EditorInner onclose={onClose} title={title}/>
+                    {/* </LexicalComposer> */}
+                </ErrorBoundary>
             </motion.div>
         </div>
         </>

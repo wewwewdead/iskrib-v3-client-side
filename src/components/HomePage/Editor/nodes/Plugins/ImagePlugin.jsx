@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { $createParagraphNode, $getRoot, COMMAND_PRIORITY_EDITOR } from 'lexical';
+import { $createParagraphNode, $getRoot, $getSelection, $isRangeSelection, COMMAND_PRIORITY_EDITOR } from 'lexical';
 import { $createImageNode, INSERT_IMAGE_COMMAND } from '../ImageNode';
+import { $createHeadingNode } from '@lexical/rich-text';
 
 export default function ImagePlugin() {
   const [editor] = useLexicalComposerContext();
@@ -13,9 +14,18 @@ export default function ImagePlugin() {
         const { src, width, height } = payload;
         
         const imageNode = $createImageNode(src, width, height);
+        const paragraphNode = $createParagraphNode();
+        const selection = $getSelection();
         
-        const root = $getRoot();
-        root.append(imageNode);
+        if($isRangeSelection(selection)){
+           selection.insertNodes([imageNode]);
+        }else {
+          const root = $getRoot();
+          root.append(imageNode)
+          root.append(paragraphNode)
+        }
+        
+       
 
         return true;
       },

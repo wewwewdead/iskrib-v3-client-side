@@ -11,7 +11,7 @@ export const checkUser = async(userId) => {
         throw new Error(error || 'failed to get user data')
     }
     const userData = await response.json()
-    console.log(userData)
+    // console.log(userData)
     return userData;
 }
 export const submitProfileData = async(body, token)=>{
