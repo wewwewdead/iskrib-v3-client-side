@@ -20,6 +20,9 @@
     border: none;
     padding: 0.5rem 0.5rem;
     border-radius: 4px;
+    background-color:transparent;
+    color: rgb(0, 0, 0);
+    border: 1px solid rgba(151, 151, 151, 0.525);
 }
 .signUp-input:focus{
     outline: none;
@@ -27,7 +30,7 @@
 .signUp-logo{
     border-radius: 4px;
     border: 1px solid rgba(151, 151, 151, 0.525);
-    font-family: "Shadows Into Light", cursive;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;;
     font-weight: 400;
     font-style: normal;
     font-size: 3rem;
@@ -37,7 +40,7 @@
     align-items: center;
     width: 25%;
     height: 10%;
-    color: rgb(255, 255, 255)
+    color: rgb(0, 0, 0)
 }
 .error-message{
     display: flex;

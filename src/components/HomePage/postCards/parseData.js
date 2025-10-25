@@ -33,6 +33,7 @@ const ParseContent = (contentString) => {
             slicedText: [],
             images: [],
             firstImage: null,
+            wholeText: null,
         };
         const extractFromNodes = (nodes) =>{
             nodes.forEach((node) => {
@@ -65,7 +66,8 @@ const ParseContent = (contentString) => {
         extractFromNodes(children);
 
         const combinedText = parsedData.text.join(' ').trim();
-        parsedData.slicedText = combinedText.length > 250 ? `${combinedText.substring(0, 250)}...` : combinedText;
+        parsedData.wholeText = combinedText;
+        parsedData.slicedText = combinedText.length > 175 ? `${combinedText.substring(0, 175)}...` : combinedText;
         
         return parsedData; //return the parsedData
         } catch (error) {
