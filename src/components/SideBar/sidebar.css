@@ -21,7 +21,8 @@
     border-radius: 15px;
     cursor: pointer;
     transition: ease-in 0.1s;
-    font-weight: 650;
+    font-weight: 750;
+    color: rgb(0, 0, 0);
 }
 .sidebar-links{
     display: flex;
@@ -32,6 +33,7 @@
     border-radius: 15px;
     cursor: pointer;
     transition: ease-in 0.1s;
+    color: rgb(60, 60, 60);
 }
 .sidebar-links:hover{
     background-color:rgb(245, 245, 245) ;

@@ -53,7 +53,7 @@ const theme = {
     heading: 'editor-heading',
 }
 
-const EditorInner = ({title, onclose, onSave}) => {
+const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
     const [editor] = useLexicalComposerContext();
     const [editorState, setEditorState] = useState(null);
     const [textContent, setTextContent] = useState('')
@@ -63,14 +63,6 @@ const EditorInner = ({title, onclose, onSave}) => {
     const {session} = useAuth();
 
     const queryClient = useQueryClient();
-
-    const handleClearEditor = useCallback(() => {
-        editor.update(() => {
-            const root = $getRoot();
-            root.clear();
-            root.append($createParagraphNode());
-        })
-    }, [editor])
 
     const handleClickSave = async(e, title) =>{
         e.stopPropagation();
@@ -94,8 +86,8 @@ const EditorInner = ({title, onclose, onSave}) => {
         }finally {
             setIsSending(false)
             setHasContent(false)
-            handleClearEditor();
-            onclose();
+            onCloseOnSave();
+            addUploadImagesPath([])
         }
        
     }
@@ -138,8 +130,8 @@ const EditorInner = ({title, onclose, onSave}) => {
             }
             ErrorBoundary={LexicalErrorBoundary}
             />
-            {/* <CustomImagePlugin/> */}
-            <ImagePlugin/>
+            
+            <ImagePlugin addUploadedImagePath={addUploadImagesPath}/>{/* imageplugin where the image will be inserted */}
             <HistoryPlugin/>
             <OnChangePlugin onChange={onchange}/>
 
@@ -155,24 +147,6 @@ const EditorInner = ({title, onclose, onSave}) => {
             <BarLoader loading={isSending} width={'100%'} color="rgb(40, 115, 255)" speedMultiplier={0.7}/>
         )}
         </>
-    )
-}
-
-const RichTextEditor = ({title}) =>{
-    const initaConfig = {
-        namespace: "MyLexicalEditor",
-        theme,
-        //register nodes
-        nodes: [ImageNode, HeadingNode ],
-        onError(error){
-            throw error;
-        },
-    };
-
-    return (
-        <ErrorBoundary>
-           <EditorInner title={title}/>
-        </ErrorBoundary>
     )
 }
 

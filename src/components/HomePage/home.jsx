@@ -11,7 +11,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Editor from "./Editor/Editor";
 import { useCallback } from "react";
 import PostCards from "./postCards/PostCards";
-import { saveJournal } from "../../../API/Api";
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import {HeadingNode} from "@lexical/rich-text";
 import ImageNode from "./Editor/nodes/ImageNode";
@@ -19,6 +18,9 @@ import ImageNode from "./Editor/nodes/ImageNode";
 const HomePage = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const [showHeaders, setShowHeaders] = useState(true);
+
+    const scrollRefTimeOut = useRef(null)
 
     /* theme for mapping css classes to lexical roles */
     const theme = {
@@ -88,7 +90,6 @@ const HomePage = () => {
         setShowEditor(false)
     }, [])
 
-
     const handleSubmit = async(e) =>{
         e.stopPropagation();
         e.preventDefault();
@@ -120,6 +121,25 @@ const HomePage = () => {
         }
         
     }
+
+    //handle show links header when stop scrolling and hides header when scrolling
+    useEffect(() =>{
+        const handleScroll = (e) => {
+            clearTimeout(scrollRefTimeOut.current)
+            setShowHeaders(false)
+
+            scrollRefTimeOut.current = setTimeout(() => {
+                setShowHeaders(true)
+            }, 500);
+        }
+        
+        document.addEventListener('scroll', handleScroll, true);
+
+        return() => {
+            document.removeEventListener('scroll', handleScroll, true);
+            clearTimeout(scrollRefTimeOut.current)
+        }
+    }, [])
 
     useEffect(() => {
         if(!session && !loading){
@@ -157,13 +177,12 @@ const HomePage = () => {
 
     return(
         <>
+        <AnimatePresence>
         <LexicalComposer initialConfig={initaConfig}>
         {showEditor && (
-            <AnimatePresence>
-                <Editor key={'main-editor'} onClose={handleCloseEditor}/>
-            </AnimatePresence>
-            
+            <Editor key={'main-editor'} onClose={handleCloseEditor}/>
         )}
+
         {uploadingUserData && (
             <>
             <div className="uploading-bg">
@@ -174,7 +193,7 @@ const HomePage = () => {
 
         {showProfileEditor && (
         <div className="profile-editor-bg">
-            <AnimatePresence>
+
             <motion.div 
             className="profile-editor"
             initial={{scale: 0, opacity: 0}}
@@ -233,7 +252,7 @@ const HomePage = () => {
                 </div>
 
             </motion.div>
-            </AnimatePresence>
+
         </div>
         )}
         
@@ -242,23 +261,34 @@ const HomePage = () => {
                 <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
             </div>
             <div className="center-bar-holder-container">
-                <div className="newsfeed-header">
-                    {header_links.map((header_link, index) => (
-                        <div key={index} className="header-links">
-                            {header_link.label}
-                        </div>
-                    ))}
-                    
-                </div>
-                <AnimatePresence>
-                    <PostCards/>
-                </AnimatePresence>
+
+                {showHeaders && (
+                    <motion.div 
+                    className="newsfeed-header"
+                    initial={{opacity: 0}}
+                    animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
+                    exit={{ opacity: 0, y: -20,
+                        transition: { 
+                            duration: 0.2,
+                            ease: "easeOut"
+                        }
+                    }}
+                    >
+                        {header_links.map((header_link, index) => (
+                            <div key={index} className="header-links">
+                                {header_link.label}
+                            </div>
+                        ))}
+                    </motion.div>
+                )}
+                <PostCards/>
             </div>
             <div className="sidebar-right-holder-container">
                 {/* Log out */}
             </div>
         </div>
         </LexicalComposer>
+        </AnimatePresence>
         </>
     )
 }

@@ -4,16 +4,24 @@ import { $createParagraphNode, $getRoot, $getSelection, $isRangeSelection, COMMA
 import { $createImageNode, INSERT_IMAGE_COMMAND } from '../ImageNode';
 import { $createHeadingNode } from '@lexical/rich-text';
 
-export default function ImagePlugin() {
+export default function ImagePlugin({addUploadedImagePath}) {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     return editor.registerCommand(
       INSERT_IMAGE_COMMAND,
       (payload) => {
-        const { src, width, height } = payload;
+        const { src, width, height} = payload;
+
+        const filePath = src.split('/journal-images/').pop(); // e.g., 'images/12345.jpg'
+
+        if(filePath){
+          addUploadedImagePath(filePath)
+        } else {
+          console.warn('Could not extract filePath from src:', src);
+        }
         
-        const imageNode = $createImageNode(src, width, height);
+        const imageNode = $createImageNode(src, width, height, filePath);
         const paragraphNode = $createParagraphNode();
         const selection = $getSelection();
         

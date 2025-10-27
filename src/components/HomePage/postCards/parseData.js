@@ -67,7 +67,7 @@ const ParseContent = (contentString) => {
 
         const combinedText = parsedData.text.join(' ').trim();
         parsedData.wholeText = combinedText;
-        parsedData.slicedText = combinedText.length > 175 ? `${combinedText.substring(0, 175)}...` : combinedText;
+        parsedData.slicedText = combinedText.length > 215 ? `${combinedText.substring(0, 215)}...` : combinedText;
         
         return parsedData; //return the parsedData
         } catch (error) {

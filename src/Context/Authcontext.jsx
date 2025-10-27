@@ -6,8 +6,6 @@ import { getUserData } from '../../API/Api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
-    const [user, setUser] = useState(null);
-    const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const queryClient = useQueryClient();

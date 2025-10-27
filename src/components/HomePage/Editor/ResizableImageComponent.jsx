@@ -29,6 +29,9 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
   const handleDelete = async(e) =>{
     e.stopPropagation();
     let img_url = ''
+    const data = {
+      filepath: []
+    }
     editor.update(() =>{
         const node = editor.getEditorState()._nodeMap.get(nodeKey);
         if(!node || !node.__src) {
@@ -40,7 +43,8 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
 
     //only proceed if node was removed and img_url is set
     if(img_url){
-      await deleteImgSync(img_url);
+      data.filepath.push(img_url)
+      await deleteImgSync(data.filepath);
     }
   }
 
@@ -132,7 +136,7 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
                 onUpdate: () => {
                 //forcing a statechange so if user resize the image it will update the editorstate
                 editor.update(() =>{
-                //empty because this i only used for triggering the OnChangePlugin
+                //empty because i only used this for triggering the OnChangePlugin
                     })
                 }
             }

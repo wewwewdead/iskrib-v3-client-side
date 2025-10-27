@@ -1,54 +1,3 @@
-// import { DecoratorNode } from "lexical";
-// import ImageComponent from "../ImageComponent";
-// import SimpleDecoratorComponent from "../simpleComponent";
-
-// export default class ImageNode extends DecoratorNode {
-//   static getType() {
-//     return "image";
-//   }
-
-//   static clone(node) {
-//     return new ImageNode(node.__src, node.__key);
-//   }
-
-//   constructor(src, key) {
-//     super(key);
-//     this.__src = src;
-//   }
-
-//   createDOM() {
-//     return document.createElement("div");
-//   }
-
-//   updateDOM() {
-//     return false;
-//   }
-
-//   exportJSON() {
-//     return {
-//       type: "image",
-//       version: 1,
-//       src: this.__src,
-//     };
-//   }
-
-//   static importJSON(serializedNode) {
-//     const { src } = serializedNode;
-//     return new ImageNode(src);
-//   }
-
-//   decorate() {
-//     // return <div>Test Content</div>;
-    
-//     console.log("ImageComponent is:", ImageComponent);
-//     const src = this.__src;
-//     const nodeKey = this.getKey();
-//     return <ImageComponent src={src} nodeKey={nodeKey} />;
-//   }
-// }
-// export function $createImageNode(src) {
-//   return new ImageNode(src);
-// }
 
 import { DecoratorNode, COMMAND_PRIORITY_EDITOR, createCommand } from "lexical";
 import ImageComponent from "../ImageComponent";
@@ -98,7 +47,7 @@ export default class ImageNode extends DecoratorNode {
   }
 
   static importJSON(serializedNode) {
-    const { src, width, height } = serializedNode;
+    const { src, width, height, filePath } = serializedNode;
     return $createImageNode(src, width, height); 
   }
 
@@ -127,6 +76,6 @@ export default class ImageNode extends DecoratorNode {
 }
 
 //helper function to create ImageNode
-export function $createImageNode(src, width = 400, height = 300) {
-  return new ImageNode(src, width, height);
+export function $createImageNode(src, width = 400, height = 300,) {
+  return new ImageNode(src, width, height,);
 }

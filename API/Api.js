@@ -82,18 +82,28 @@ export const saveJournal = async(token, body) => {
 }
 export const deleteJournalImage = async(token, url) => {
     let img_url = ''
-    let data = {};
-    if(url){
-        img_url = url.split('/journal-images/').pop()
-        if(img_url){
-            data = {
-                filepath: img_url
-            }
+    let data = {
+        filepath: []
+    };
+    
+    if(url.length){
+        console.log(url.length)
+        url.forEach(element => {
+            data.filepath.push(element.split('/journal-images/').pop());
+    });
+       
+        // img_url = url.split('/journal-images/').pop()
+        // if(img_url){
+        //     data = {
+        //         filepath: img_url
+        //     }
 
-        }
-        console.log(url.split('/journal-images/').pop(),'url') //pop() method will remove the last element in the array and returns it;
+        // }
+        // console.log(url.split('/journal-images/').pop(),'url') //pop() method will remove the last element in the array and returns it;
         //in that case i can get the fileName e.g https://hufaxmqdofaycnhdzrxf.supabase.co/storage/v1/object/public/journal-images/user_id_7ceaa0ad-0266-4966-bfe6-ec152b2d9f75/1760963803951_4720148b-c85b-4af3-99e0-dd2ce87c10b0.webp
     }
+
+    console.log(data.filepath)
     const headers = {'Content-Type': 'application/json',}
     if(token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${BASE_URL}/delete-journal-images`, {
@@ -126,7 +136,7 @@ export const getJournals = async(cursor = null, limit = 5) =>{
         }
 
         const data = await response.json();
-        console.log(data)
+        // console.log(data)
         return data;
     } catch (error) {
         console.error('Error fetching journals:', error);
