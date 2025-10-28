@@ -142,9 +142,191 @@
     margin: 0;
     padding: 0;
 }
+
+
+
+.edit-profile-hero-section{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    height: 450px;
+    padding: 1rem;
+    border-radius: 20px;
+    gap: 1rem;
+    /* background-image: linear-gradient(
+        to bottom,   
+        #4f80c0,
+        #79b7b7
+    ); */
+}
 .profile-editor-container{
+    display: flex;
+    flex-direction: column;
     width: 60%;
     height: 90%;
     border-radius: 15px;
     background-color: rgb(255, 255, 255);
+    padding: 1rem;
+    gap: 1rem;
+}
+.profile-editor-close-button-container{
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: fit-content;
+}
+.profile-editor-close-button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: ease-in-out 0.3;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 50%;
+}
+.profile-editor-close-button:hover{
+    background-color:rgb(245, 245, 245) ;
+}
+.profile-edit-image-container{
+    display: flex;
+    position: relative;
+    justify-content: flex-start;
+    align-items: center;
+    height: fit-content;
+    width: 100%;
+    border-radius: 20px;
+}
+.profile-edit-image-child-container{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    border-radius: 20px;
+}
+.profile-edit-image-bg{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background-color: rgba(120, 120, 120, 0.588);
+    z-index: 2;
+    border-radius: 20px;
+    cursor: pointer;
+}
+.my-profile-image-editable{
+    position: relative;
+    border-radius: 20px;
+    object-fit: cover;
+    width: 150px;
+    height: 150px;
+}
+.edit-profile-addImage-icon{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: ease-in-out 0.1s;
+}
+.edit-profile-addImage-icon:hover{
+    background-color: rgba(208, 208, 208, 0.588);
+}
+.edit-profile-input-name-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    width: fit-content;
+    height: fit-content;
+    border: 1px solid #00000081;
+    border-radius: 8px;
+}
+.input-identifier-container{
+    display: flex;
+    justify-content: space-between;
+    width: 95%;
+    height: fit-content;
+    padding: 0 0 0 0.5rem;
+    font-size: 0.8rem;
+}
+.input-identifier{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.input-identifier p{
+    margin: 0;
+    padding: 0;
+    font-size: 0.8rem;
+}
+.profile-edit-name-length{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 0.2rem;
+}
+.profile-edit-name-length p{
+    margin: 0;
+    padding: 0;
+    font-size: 0.8rem;
+}
+.edit-profile-input{
+    border: none;
+    background-color: transparent;
+    color: #000000;
+    padding: 0 0.5rem 0.5rem 0.5rem;
+    font-size: 1.5rem;
+    width: fit-content;
+}
+.edit-profile-input:focus{
+    outline: none;
+}
+.edit-profile-input-bio-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items:center;
+    width: 100%;
+    height: 200px;
+    border: 1px solid #00000081;
+    border-radius: 8px;
+}
+.input-bio-identifier-container{
+    display: flex;
+    justify-content: space-between;
+    width: 98%;
+    height: fit-content;
+}
+.bio-textarea{
+    width: 98%;
+    height: 100%;
+    resize: none;
+    background-color: transparent;
+    border: none;
+    color: #000000;
+    font-family: "Nunito", sans-serif;
+    font-size: 1rem;
+}
+.bio-textarea:focus{
+    outline: none;
+}
+.bio-identifier p{
+    padding: 0;
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 660;
+}
+.profile-edit-bio-length{
+    display: flex;
+    justify-content: center;
+    height: fit-content;
+    width: fit-content;
+    align-items: center;
+}
+.profile-edit-bio-length p {
+    padding: 0;
+    margin: 0;
+    font-size: 0.8rem;
 }

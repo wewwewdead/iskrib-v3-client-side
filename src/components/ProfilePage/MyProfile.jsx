@@ -19,6 +19,11 @@ const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
     const userData = user?.userData?.[0]
     const [showProfileEditor, setShowProfileEditor] = useState(false)
+    const [editImagePreview, setEditImagePreview] = useState('')
+    const [profileEditName, setProfileEditName] = useState('')
+    const [profileEditBio, setProfileEditBio] = useState('')
+
+    const inputRef = useRef();
 
     const navigate = useNavigate();
     const navigatePath = (path) => {
@@ -38,13 +43,40 @@ const MyProfile = () => {
     const handleClickEdit = (e) => {
         e.stopPropagation();
         console.log('clicked')
+        setEditImagePreview(userData?.imageUrl)
+        setProfileEditName(userData?.name)
+        setProfileEditBio(userData?.bio)
         setShowProfileEditor(true)
     }
 
     const closeEditor = (e) => {
         e.stopPropagation();
+        setEditImagePreview('')
         setShowProfileEditor(false)
     }
+
+    const handleImageOnChange = (e) => {
+        const file = e.target.files[0];
+        if(file){
+            const reader = new FileReader();
+            reader.onloadend = () =>{
+                setEditImagePreview(reader.result)
+            }
+
+            reader.readAsDataURL(file)
+        } else {
+            setEditImagePreview('')
+        }
+    }
+
+    const insertImageFromFile = (e) => {
+        e.stopPropagation();
+        if(inputRef.current){
+            inputRef.current.click();
+        }
+    }
+
+
     if(isLoading){
         return(
             <>
@@ -59,16 +91,64 @@ const MyProfile = () => {
         <>
             {showProfileEditor && (
                 <AnimatePresence>
-                <div className="profile-editor-bg">
+                <div key={'profile-editor'} className="profile-editor-bg">
                     <motion.div
                     className="profile-editor-container"
                     initial={{opacity:0, scale:0}}
                     animate={{opacity:1, scale:1, transition: {type: 'tween', duration: 0.3}}}
                     exit={{opacity:0, scale:0, transition: {type: 'tween', duration: 0.3}}}
                     >
-                        <div onClick={(e) => closeEditor(e)}>
-                            close
+                        <div className="profile-editor-close-button-container">
+                            <div onClick={(e) => closeEditor(e)} className="profile-editor-close-button">
+                                <svg  xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                            </div>
                         </div>
+
+                        <div className="edit-profile-hero-section">
+
+                            <div className="profile-edit-image-container">
+
+                                <div className="profile-edit-image-bg">
+                                    <div onClick={(e) => insertImageFromFile(e)} className="edit-profile-addImage-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="34px" viewBox="0 -960 960 960" width="34px" fill="#000000"><path d="M440-440ZM120-120q-33 0-56.5-23.5T40-200v-480q0-33 23.5-56.5T120-760h126l74-80h240v80H355l-73 80H120v480h640v-360h80v360q0 33-23.5 56.5T760-120H120Zm640-560v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80ZM440-260q75 0 127.5-52.5T620-440q0-75-52.5-127.5T440-620q-75 0-127.5 52.5T260-440q0 75 52.5 127.5T440-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29Z"/></svg>
+                                        <input onChange={(e) => handleImageOnChange(e)} ref={inputRef} type="file" accept='image/*' style={{display: 'none'}}/>
+                                    </div>
+                                </div>
+
+                                <div className="profile-edit-image-child-container">
+                                    <img className="my-profile-image-editable" src={editImagePreview || '../../src/assets/profile.jpg'} alt="" />
+                                </div> 
+                            </div>
+
+                            <div className="edit-profile-input-name-container">
+                                <div className="input-identifier-container">
+                                    <div className="input-identifier">
+                                        <p>Name</p>
+                                    </div>
+                                    <div className="profile-edit-name-length">
+                                        <p style={profileEditName.length > 19 ? {color: 'rgba(255, 29, 29, 0.81)', fontWeight: '850'} : {}}>{profileEditName.length}/20</p>
+                                    </div>
+                                </div>
+                                <input maxLength={20} value={profileEditName} onChange={(e) => setProfileEditName(e.target.value)} className="edit-profile-input" type="text" />
+                            </div>
+
+                            <div className="edit-profile-input-bio-container">
+                                <div className="input-bio-identifier-container">
+
+                                    <div className="bio-identifier">
+                                        <p>Bio</p>
+                                    </div>
+
+                                    <div className="profile-edit-bio-length">
+                                        <p style={profileEditBio.length > 149 ? {color: 'rgba(255, 29, 29, 0.81)', fontWeight: '850'} : {}}>{profileEditBio.length}/150</p>
+                                    </div>
+                                    
+                                </div>
+                                <textarea onChange={(e) => setProfileEditBio(e.target.value)} value={profileEditBio} maxLength={150} className="bio-textarea" name="bio" id=""></textarea>
+                            </div>
+
+                        </div>
+                        
                     </motion.div>
                 </div>
                 </AnimatePresence>
@@ -83,7 +163,7 @@ const MyProfile = () => {
                 <div className="profile-center-bar-container">
                     <div className="hero-section">
                          <div className="my-profile-image-container">
-                            <img className="my-profile-image" loading="lazy" src={user?.userData[0]?.imageUrl || '../../src/assets/profile.jpg'} alt="" />
+                            <img className="my-profile-image" loading="lazy" src={userData?.imageUrl || '../../src/assets/profile.jpg'} alt="" />
 
                             <div className="edit-profile-bttn-container">
                                 <div onClick={(e) => handleClickEdit(e)} className="edit-profile-bttn">
