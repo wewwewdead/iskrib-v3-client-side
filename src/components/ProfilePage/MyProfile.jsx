@@ -23,7 +23,12 @@ const MyProfile = () => {
     const [profileEditName, setProfileEditName] = useState('')
     const [profileEditBio, setProfileEditBio] = useState('')
 
+    const [showEditor, setShowEditor] = useState(false);
+    const [showBgPicker, setShowBgPicker] = useState(false);
+    const [gradientPicked, setGradientPicked] = useState({});
+
     const inputRef = useRef();
+    const bgInputRef = useRef();
 
     const navigate = useNavigate();
     const navigatePath = (path) => {
@@ -36,6 +41,15 @@ const MyProfile = () => {
         {path: '/boomark', label: 'Bookmarks', action: ()=> navigatePath('/bookmark'), icon: <svg xmlns="http://www.w3.org/2000/svg" height="34px" viewBox="0 -960 960 960" width="34px" fill="#000000ff"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>},
         {label: 'Write', action: () => setShowEditor(true), className: 'write-journal-bttn'}, // the action function will set the state  to (true)and pass to the HOME.jsx when user clicks the function
     ]
+
+    const gradients = [
+        {style: {background: '#2A7B9B', backgroundImage: 'linear-gradient(90deg,rgba(42, 123, 155, 1) 0%, rgba(87, 199, 133, 1) 50%, rgba(237, 221, 83, 1) 100%)'}},
+        {style: {background: '#FF7E5F', backgroundImage: 'linear-gradient(90deg, rgba(255,126,95,1) 0%, rgba(254,180,123,1) 50%, rgba(255,236,210,1) 100%)'}},
+        {style: {background: '#2193b0', backgroundImage: 'linear-gradient(90deg, rgba(33,147,176,1) 0%, rgba(109,213,237,1) 50%, rgba(255,255,255,1) 100%)'}},
+        {style: {background: '#8E2DE2', backgroundImage: 'linear-gradient(90deg, rgba(142,45,226,1) 0%, rgba(74,0,224,1) 50%, rgba(0,212,255,1) 100%)'}},
+        {style: {}}
+    ]
+
     useEffect(() => {
         console.log(user)
     }, [user])
@@ -52,8 +66,14 @@ const MyProfile = () => {
     const closeEditor = (e) => {
         e.stopPropagation();
         setEditImagePreview('')
+        handleHideGradientPicker(e)
         setShowProfileEditor(false)
+        
     }
+
+    const handleCloseRichTextEditor = useCallback(() =>{
+        setShowEditor(false);
+    }, [])
 
     const handleImageOnChange = (e) => {
         const file = e.target.files[0];
@@ -76,27 +96,84 @@ const MyProfile = () => {
         }
     }
 
+    const handleShowGradientPicker = (e) =>{
+        e.stopPropagation();
+        setGradientPicked({background: '#2A7B9B', backgroundImage: 'linear-gradient(90deg,rgba(42, 123, 155, 1) 0%, rgba(87, 199, 133, 1) 50%, rgba(237, 221, 83, 1) 100%)'})
+        setShowBgPicker(true)
+    }
 
+    const handleHideGradientPicker = (e) =>{
+        e.stopPropagation();
+        setShowBgPicker(false)
+        setGradientPicked({})
+    }
+
+    const handleSelectGradient = useCallback((gradient) => {
+        setGradientPicked(gradient);
+    }, [gradientPicked])
+
+    const handleInsertBgImage = (e) =>{
+        e.stopPropagation();
+        if(bgInputRef.current){
+            bgInputRef.current.click();
+        }
+
+    }
     if(isLoading){
         return(
             <>
             <div className="profile-page-loading-container">
                 <MoonLoader loading={isLoading} color="rgba(0, 0, 0, 1)" size={40} speedMultiplier={1}/>
             </div>
-            
             </>
         )
     }
     return(
         <>
+        {showBgPicker && (
+            <AnimatePresence>
+                <motion.div 
+                initial={{opacity:0}}
+                animate={{opacity:1}}
+                exit={{opacity: 0}}
+                transition={{type: 'spring', stiffness: 250, damping: 25 }}
+                className="profile-bg-picker-container"
+                >
+                    <div className="profile-bg-picker-header">
+                        Pick a gradient or add image
+                    </div>
+
+                    <input style={{display:'none'}} ref={bgInputRef} type="file"  accept="image/*"/>
+
+                    <div className="profile-bg-color-palette">
+                        {gradients.map((gradient, index) => (
+                            <div onClick={() => handleSelectGradient(gradient.style)} key={index} className="gradient-box" style={gradient.style}></div>
+                        ))}
+                        <div onClick={(e) => handleInsertBgImage(e)} className="add-bgImage-bttn">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="50px" viewBox="0 -960 960 960" width="50px" fill="#000000"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
+                        </div>
+                    </div>
+
+                    <div style={gradientPicked} className="profile-bg-preview">
+
+                    </div>
+
+                    <div className="canvel-save-container">
+                        <div onClick={(e) => handleHideGradientPicker(e)} className="cancel-button">cancel</div>
+                        <div className="save-button">save</div>
+                    </div>
+                </motion.div>
+            </AnimatePresence>
+            )}
+        <AnimatePresence>
             {showProfileEditor && (
-                <AnimatePresence>
                 <div key={'profile-editor'} className="profile-editor-bg">
                     <motion.div
                     className="profile-editor-container"
-                    initial={{opacity:0, scale:0}}
-                    animate={{opacity:1, scale:1, transition: {type: 'tween', duration: 0.3}}}
-                    exit={{opacity:0, scale:0, transition: {type: 'tween', duration: 0.3}}}
+                    initial={{scale: 0, opacity: 0.8}}
+                    animate={{scale: 1, opacity: 1}}
+                    exit={{scale: 0.8, opacity: 0,}}
+                    transition={{type: 'spring', stiffness: 250, damping: 25}}
                     >
                         <div className="profile-editor-close-button-container">
                             <div onClick={(e) => closeEditor(e)} className="profile-editor-close-button">
@@ -104,7 +181,7 @@ const MyProfile = () => {
                             </div>
                         </div>
 
-                        <div className="edit-profile-hero-section">
+                        <div style={gradientPicked} className="edit-profile-hero-section">
 
                             <div className="profile-edit-image-container">
 
@@ -118,6 +195,11 @@ const MyProfile = () => {
                                 <div className="profile-edit-image-child-container">
                                     <img className="my-profile-image-editable" src={editImagePreview || '../../src/assets/profile.jpg'} alt="" />
                                 </div> 
+
+                                <div onClick={(e) => handleShowGradientPicker(e)} className="add-profile-background">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M200-120q-33 0-56.5-23.5T120-200v-240h80v240h240v80H200Zm320 0v-80h240v-240h80v240q0 33-23.5 56.5T760-120H520ZM240-280l120-160 90 120 120-160 150 200H240ZM120-520v-240q0-33 23.5-56.5T200-840h240v80H200v240h-80Zm640 0v-240H520v-80h240q33 0 56.5 23.5T840-760v240h-80Zm-140-40q-26 0-43-17t-17-43q0-26 17-43t43-17q26 0 43 17t17 43q0 26-17 43t-43 17Z"/></svg>
+                                    Add background
+                                </div>
                             </div>
 
                             <div className="edit-profile-input-name-container">
@@ -151,7 +233,10 @@ const MyProfile = () => {
                         
                     </motion.div>
                 </div>
-                </AnimatePresence>
+            )}
+
+            {showEditor && (
+                <Editor key={'main-editor'} onClose={handleCloseRichTextEditor}/>
             )}
             
 
@@ -161,7 +246,7 @@ const MyProfile = () => {
                 </div>
 
                 <div className="profile-center-bar-container">
-                    <div className="hero-section">
+                    <div style={{}} className="hero-section">
                          <div className="my-profile-image-container">
                             <img className="my-profile-image" loading="lazy" src={userData?.imageUrl || '../../src/assets/profile.jpg'} alt="" />
 
@@ -204,6 +289,7 @@ const MyProfile = () => {
                     {/* Log out */}
                 </div>
             </div>
+        </AnimatePresence>
         </>
     )
 }

@@ -178,7 +178,6 @@ const HomePage = () => {
     return(
         <>
         <AnimatePresence>
-        <LexicalComposer initialConfig={initaConfig}>
         {showEditor && (
             <Editor key={'main-editor'} onClose={handleCloseEditor}/>
         )}
@@ -287,7 +286,6 @@ const HomePage = () => {
                 {/* Log out */}
             </div>
         </div>
-        </LexicalComposer>
         </AnimatePresence>
         </>
     )

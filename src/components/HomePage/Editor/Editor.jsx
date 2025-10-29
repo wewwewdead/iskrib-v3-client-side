@@ -71,9 +71,10 @@ const Editor=({onClose}) =>{
         <div className='editor-parent-container'>
 
             <motion.div 
-            initial={{scale: 0, opacity: 0}}
-            animate={{scale: 1, opacity: 1, transition: {type: 'tween', duration: 0.3}}}
-            exit={{scale: 0, opacity: 0, transition:{ type: 'tween', duration: 0.3}}}
+            initial={{scale: 0, opacity: 0.8}}
+            animate={{scale: 1, opacity: 1}}
+            exit={{scale: 0.8, opacity: 0,}}
+            transition={{type: 'spring', stiffness: 260, damping: 25}}
             className='editor-container'
             >
                 <div className='editor-close-bttn-container'>
