@@ -15,6 +15,9 @@ import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import {HeadingNode} from "@lexical/rich-text";
 import ImageNode from "../HomePage/Editor/nodes/ImageNode";
 
+import Cropper from "react-easy-crop";
+import getCroppedImage from "../../../utils/getCroppedImage";
+
 const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
     const userData = user?.userData?.[0]
@@ -25,7 +28,13 @@ const MyProfile = () => {
 
     const [showEditor, setShowEditor] = useState(false);
     const [showBgPicker, setShowBgPicker] = useState(false);
-    const [gradientPicked, setGradientPicked] = useState({});
+
+    const [imageSrc, setImageSrc] = useState(null);
+    const [crop, setCrop] = useState({x: 0, y: 0});
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCropAreaPixels] = useState(null)
+    const [gradientPicked, setGradientPicked] = useState(null);
+    const [croppedImage, setCroppedImage] = useState({});
 
     const inputRef = useRef();
     const bgInputRef = useRef();
@@ -67,6 +76,7 @@ const MyProfile = () => {
         e.stopPropagation();
         setEditImagePreview('')
         handleHideGradientPicker(e)
+        setImageSrc(null)
         setShowProfileEditor(false)
         
     }
@@ -98,7 +108,6 @@ const MyProfile = () => {
 
     const handleShowGradientPicker = (e) =>{
         e.stopPropagation();
-        setGradientPicked({background: '#2A7B9B', backgroundImage: 'linear-gradient(90deg,rgba(42, 123, 155, 1) 0%, rgba(87, 199, 133, 1) 50%, rgba(237, 221, 83, 1) 100%)'})
         setShowBgPicker(true)
     }
 
@@ -106,19 +115,62 @@ const MyProfile = () => {
         e.stopPropagation();
         setShowBgPicker(false)
         setGradientPicked({})
+        setImageSrc(null)
+    }
+    const handleSaveProfileEdit = () =>{
+        setShowBgPicker(false)
+        setShowProfileEditor(false)
     }
 
     const handleSelectGradient = useCallback((gradient) => {
+        setCroppedImage(null);
         setGradientPicked(gradient);
     }, [gradientPicked])
 
     const handleInsertBgImage = (e) =>{
         e.stopPropagation();
         if(bgInputRef.current){
+            bgInputRef.current.value = ''
             bgInputRef.current.click();
         }
 
     }
+    const handleBgOnchange = (e) => {
+        const file = e.target.files[0];
+        if(file){
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImageSrc(reader.result)
+            }
+
+            reader.readAsDataURL(file);
+        } else {
+            return setGradientPicked({});
+        }
+    }
+
+    const handleHideCropper = (e) =>{
+        setImageSrc(null);
+        setCroppedImage(null)
+        if(bgInputRef.current){
+            bgInputRef.current.value = '';
+        }
+    }
+
+    const handleSaveCropped = async() =>{
+        setGradientPicked(null);
+        const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels);
+        if(croppedImageUrl){
+            console.log(croppedImageUrl.file);
+        }
+        setCroppedImage({backgroundImage: `url(${croppedImageUrl.url})`, backgroundSize: 'cover', backgroundPosition : 'center', backgroundRepeat: 'no-repeat'});
+        setImageSrc(null);
+        
+        setTimeout(() =>{
+            setImageSrc(null)
+        }, 300)    
+    }
+    
     if(isLoading){
         return(
             <>
@@ -143,7 +195,7 @@ const MyProfile = () => {
                         Pick a gradient or add image
                     </div>
 
-                    <input style={{display:'none'}} ref={bgInputRef} type="file"  accept="image/*"/>
+                    <input onChange={(e) => handleBgOnchange(e)} style={{display:'none'}} ref={bgInputRef} type="file"  accept="image/*"/>
 
                     <div className="profile-bg-color-palette">
                         {gradients.map((gradient, index) => (
@@ -154,13 +206,45 @@ const MyProfile = () => {
                         </div>
                     </div>
 
-                    <div style={gradientPicked} className="profile-bg-preview">
-
+                    <div style={gradientPicked || croppedImage} className="profile-bg-preview">
+                        {imageSrc && (
+                            <>
+                            <Cropper
+                                image={imageSrc}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={3 / 1}
+                                onCropChange={setCrop}
+                                onZoomChange={setZoom}
+                                onCropComplete={(_, croppedPixels) => setCropAreaPixels(croppedPixels)}
+                            />
+                            <div className="controls">
+                                <input 
+                                type="range" 
+                                min={1}
+                                max={3}
+                                step={0.1}
+                                value={zoom}
+                                onChange={(e) => setZoom(e.target.value)}
+                                />
+                            </div>
+                            <div className="confirm-cropped-bg-container">
+                                <div onClick={(e) => handleHideCropper(e)} className="confirm-cropped-bg-container-cancel">
+                                    Cancel
+                                </div>
+                                <div onClick={() => handleSaveCropped()} className="confirm-cropped-bg-container-ok">
+                                    Ok
+                                </div>
+                            </div>
+                            </>  
+                        )}
+                        
+                        
                     </div>
 
                     <div className="canvel-save-container">
                         <div onClick={(e) => handleHideGradientPicker(e)} className="cancel-button">cancel</div>
-                        <div className="save-button">save</div>
+                        <div onClick={() => handleSaveProfileEdit()} className="save-button">save</div>
                     </div>
                 </motion.div>
             </AnimatePresence>
@@ -181,7 +265,7 @@ const MyProfile = () => {
                             </div>
                         </div>
 
-                        <div style={gradientPicked} className="edit-profile-hero-section">
+                        <div style={croppedImage || gradientPicked} className="edit-profile-hero-section">
 
                             <div className="profile-edit-image-container">
 
@@ -246,7 +330,7 @@ const MyProfile = () => {
                 </div>
 
                 <div className="profile-center-bar-container">
-                    <div style={{}} className="hero-section">
+                    <div style={croppedImage || gradientPicked} className="hero-section">
                          <div className="my-profile-image-container">
                             <img className="my-profile-image" loading="lazy" src={userData?.imageUrl || '../../src/assets/profile.jpg'} alt="" />
 
