@@ -403,7 +403,7 @@ const MyProfile = () => {
                 
                     
                 <div className="side-bar-holder-container">
-                    <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
+                    <Sidebar links={links}/> {/*ppassing the setShowEditor to this component to be used as a state setter inside this component*/}
                 </div>
 
                 <div style={{color: fontColor}} className="profile-center-bar-container">
