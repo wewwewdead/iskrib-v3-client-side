@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, use } from "react";
+import React, { useEffect, useState, useRef, use, createElement } from "react";
 import './myprofile.css'
 import { useAuth } from "../../Context/Authcontext";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ import ImageNode from "../HomePage/Editor/nodes/ImageNode";
 
 import Cropper from "react-easy-crop";
 import getCroppedImage from "../../../utils/getCroppedImage";
+import extractDominantColors from "../../../utils/extractDominantColors";
 
 const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
@@ -36,8 +37,16 @@ const MyProfile = () => {
     const [gradientPicked, setGradientPicked] = useState(null);
     const [croppedImage, setCroppedImage] = useState({});
 
+    const [showFontColorSelector, setShowFontColorSelector] = useState(false);
+    const [fontColor, setFontColor] = useState('#000000')
+
     const inputRef = useRef();
     const bgInputRef = useRef();
+    const fontColorInputRef = useRef();
+
+    //for gradient effect based on the bg background
+    const [dominantColors, setDominantColors] = useState('#ffffffff');
+    const [secondaryColors, setSecondaryColors] = useState('#ffffffff')
 
     const navigate = useNavigate();
     const navigatePath = (path) => {
@@ -63,9 +72,15 @@ const MyProfile = () => {
         console.log(user)
     }, [user])
 
+
+
+
+    //this fucntions are for the bg edit and profile edits
+
     const handleClickEdit = (e) => {
         e.stopPropagation();
         console.log('clicked')
+        setShowFontColorSelector(false)
         setEditImagePreview(userData?.imageUrl)
         setProfileEditName(userData?.name)
         setProfileEditBio(userData?.bio)
@@ -140,8 +155,22 @@ const MyProfile = () => {
         if(file){
             const reader = new FileReader();
             reader.onloadend = () => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+
+                img.src = reader.result;
+
+                img.onload = () => {
+                    const colors = extractDominantColors(img);
+                    console.log('colors', colors)
+
+                    setDominantColors(colors.primary);
+                    setSecondaryColors(colors.secondary);
+                }
+                
                 setImageSrc(reader.result)
             }
+
 
             reader.readAsDataURL(file);
         } else {
@@ -170,6 +199,24 @@ const MyProfile = () => {
             setImageSrc(null)
         }, 300)    
     }
+
+    const handleClickFontColorSelector = (e) =>{
+        e.stopPropagation()
+        setShowFontColorSelector(true)
+    }
+
+    const handleClickInputColor = () =>{
+        if(fontColorInputRef.current){
+            fontColorInputRef.current.click();
+        }
+    }
+
+    const handleClickSaveFontColor = () => {
+        setShowFontColorSelector(false)
+    }
+    const hancleClickCancelFontSelect = () => {
+        setShowFontColorSelector(false)
+    }
     
     if(isLoading){
         return(
@@ -182,6 +229,21 @@ const MyProfile = () => {
     }
     return(
         <>
+        {showFontColorSelector && (
+            <AnimatePresence>
+                <motion.div
+                className="font-selector-container"
+                >
+                    <div onClick={() => handleClickInputColor()} style={{background: `${fontColor}`}} className="input-color"></div>
+                    <input ref={fontColorInputRef} value={fontColor} onChange={(e) => setFontColor(e.target.value)} style={{display: 'none'}} type="color" />
+                    <div className="save-font-color-bttn-container">
+                        <div onClick={() => hancleClickCancelFontSelect()}>Cancel</div>
+                        <div onClick={() => handleClickSaveFontColor()}>Save</div>
+                    </div>
+                    
+                </motion.div>
+            </AnimatePresence>
+        )}
         {showBgPicker && (
             <AnimatePresence>
                 <motion.div 
@@ -324,20 +386,41 @@ const MyProfile = () => {
             )}
             
 
-            <div className="profile-parent-container">
+            <div 
+            className="profile-parent-container"
+            style={croppedImage ? {background:`linear-gradient(135deg, ${dominantColors}0%, ${secondaryColors} 100%)`} : gradientPicked}
+            >
+                {gradientPicked && (
+                    <div className="blurred-gradient-bg" style={gradientPicked}/>
+                )}
+
+                {croppedImage && (
+                    <div 
+                        style={croppedImage} 
+                        className="blurred-img-bg"
+                    />
+                )}
+                
+                    
                 <div className="side-bar-holder-container">
                     <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
                 </div>
 
-                <div className="profile-center-bar-container">
+                <div style={{color: fontColor}} className="profile-center-bar-container">
                     <div style={croppedImage || gradientPicked} className="hero-section">
                          <div className="my-profile-image-container">
                             <img className="my-profile-image" loading="lazy" src={userData?.imageUrl || '../../src/assets/profile.jpg'} alt="" />
 
                             <div className="edit-profile-bttn-container">
                                 <div onClick={(e) => handleClickEdit(e)} className="edit-profile-bttn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill={fontColor}><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"/></svg>
                                     Edit
+                                </div>
+                                <div onClick={(e) => handleClickFontColorSelector(e)} className="font-picker-container">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill={fontColor}><path d="M80 0v-160h800V0H80Zm140-280 210-560h100l210 560h-96l-50-144H368l-52 144h-96Zm176-224h168l-82-232h-4l-82 232Z"/></svg>
+                                    Change font color
+                                    {/* {secondaryColors}
+                                    {dominantColors} */}
                                 </div>
                             </div>
                         </div>
