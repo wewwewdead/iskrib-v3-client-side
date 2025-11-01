@@ -11,9 +11,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Editor from "./Editor/Editor";
 import { useCallback } from "react";
 import PostCards from "./postCards/PostCards";
-import { LexicalComposer } from '@lexical/react/LexicalComposer';
-import {HeadingNode} from "@lexical/rich-text";
-import ImageNode from "./Editor/nodes/ImageNode";
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -21,22 +18,6 @@ const HomePage = () => {
     const [showHeaders, setShowHeaders] = useState(true);
 
     const scrollRefTimeOut = useRef(null)
-
-    /* theme for mapping css classes to lexical roles */
-    const theme = {
-        paragraph: 'editor-paragraph',
-        heading: 'editor-heading',
-    }
-
-    const initaConfig = {
-        namespace: "MyLexicalEditor",
-        theme,
-        //register nodes
-        nodes: [ImageNode, HeadingNode ],
-         onError(error){
-            throw error;
-        },
-    }
 
     const navigatePath = (path) => {
         if(window.location.pathname === path){

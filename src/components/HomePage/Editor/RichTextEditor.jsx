@@ -95,6 +95,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
     const onchange = useCallback((state) => {
         const jsonb = JSON.stringify(state.toJSON());
         setEditorState(jsonb)
+        console.log(jsonb)
 
         state.read(() => {
             const root = $getRoot();

@@ -1,5 +1,8 @@
+// import sharp from 'sharp';
+import supabase from "./supabaseClient";
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
-const getCroppedImage = async (imageSrc, crop) => {
+const getCroppedImage = async (imageSrc, crop, userId) => {
     if(!imageSrc || !crop){
         console.warn('getCroppedImage called without valid image source or crop data')
         return null
@@ -35,18 +38,39 @@ const getCroppedImage = async (imageSrc, crop) => {
 
     // convert to dataURL and file
     return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
+    canvas.toBlob(async(blob) => {
         if (!blob) {
             console.error("Canvas toBlob failed");
             resolve(null);
             return;
         }
-        const url = URL.createObjectURL(blob);
-        const file = new File([blob], 'cropped-image.jpg', {type: 'image/jpeg'})
-        resolve({
-            url,
-            file,
-        });
+
+        const formdata = new FormData();
+        formdata.append('image', blob);
+        formdata.append('userId', userId)
+
+        try {
+            const response = await fetch(`${BASE_URL}/uploadBackground`, {
+                method: 'POST',
+                body: formdata,
+            })
+            if(!response.ok){
+                throw new Error('Upload failed');
+            }
+            const {data} = await response.json();
+
+            const url = data;
+            const file = new File([blob], 'cropped-image.jpg', {type: 'image/jpeg'});
+
+            resolve({
+                url: url,
+                file: file,
+            });
+
+        } catch (error) {
+            console.error('Error uploading to server:', error);
+            resolve(null);
+        }
         }, "image/jpeg", 0.9);
     });
 };

@@ -31,6 +31,26 @@ export const submitProfileData = async(body, token)=>{
     console.log(data)
     return data;
 }
+
+export const updateProfileData = async(body, token) => {
+    if(body){
+        console.log(body)
+    }
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/update-user-data`, {
+        method: 'POST',
+        headers: headers,
+        body: body
+    })
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error || 'failed to update profile data')
+    }
+    const data = await response.json();
+    console.log(data)
+}
 export const getUserData = async(token) =>{
     const headers = {}
     if(token) headers['Authorization'] = `Bearer ${token}`;

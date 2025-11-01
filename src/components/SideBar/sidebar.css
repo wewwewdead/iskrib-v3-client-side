@@ -48,8 +48,8 @@
     background-color:rgb(245, 245, 245) ;
 }
 .sidebar-avatar{
-    width: 50px;
-    height: 50px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
 }
 .sidebar-user-container{
@@ -61,6 +61,10 @@
     backdrop-filter: blur(25px);
     padding: 0.5rem 0;
     border-radius: 15px;
+    transition: ease-in-out 0.1s;
+}
+.sidebar-user-container:hover{
+    background-color:rgb(245, 245, 245) ;
 }
 .sidebar-avatar-container{
     display: flex;
@@ -69,6 +73,7 @@
     width: fit-content;
     height: fit-content;
     gap:  0.5rem;
+    margin-left: 0.5rem;
 }
 .sidebar-metadata-container{
     display: flex;
@@ -94,6 +99,7 @@
     font-size: 0.8rem;
     color: rgb(94, 66, 255);
     cursor: pointer;
+    margin-right: 0.5rem;
 }
 .write-journal-bttn{
     display: flex;

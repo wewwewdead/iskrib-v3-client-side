@@ -137,7 +137,7 @@ const PostCards = () => {
                             <div className="user-info">
                                 <div className="user-info-child-container">
                                     <div onClick={() => navigate('/profile')} className="user-avatar-container">
-                                        <img loading="lazy" className="user-info-avatar" src={journal.users.imageUrl || '../../../src/assets/profile.jpg'} alt="" />
+                                        <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '../../../src/assets/profile.jpg'} alt="" />
                                     </div>
                                     <div onClick={() => navigate('/profile')} className="user-name-container">
                                         <p className="user-newsfeed-name">{journal.users.name}</p>

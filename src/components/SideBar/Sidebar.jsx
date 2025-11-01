@@ -25,7 +25,7 @@ const Sidebar = ({links}) =>{
                 {userData && (
                     <>
                     <div className='sidebar-avatar-container'>
-                        <img loading='lazy' className='sidebar-avatar' src={userData.imageUrl || '../src/assets/profile.jpg'} alt="" />
+                        <img loading='lazy' className='sidebar-avatar' src={userData.image_url || '../src/assets/profile.jpg'} alt="" />
 
                         <div className='sidebar-metadata-container'>
                             <span className='sidebar-name'>{userData.name}</span>

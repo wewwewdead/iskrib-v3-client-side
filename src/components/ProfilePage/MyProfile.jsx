@@ -4,7 +4,7 @@ import { useAuth } from "../../Context/Authcontext";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
 import { MoonLoader, BeatLoader, BarLoader} from "react-spinners";
-import { checkUser, getUserData, submitProfileData } from "../../../API/Api";
+import { checkUser, getUserData, submitProfileData, updateProfileData } from "../../../API/Api";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,14 +16,15 @@ import {HeadingNode} from "@lexical/rich-text";
 import ImageNode from "../HomePage/Editor/nodes/ImageNode";
 
 import Cropper from "react-easy-crop";
-import getCroppedImage from "../../../utils/getCroppedImage";
-import extractDominantColors from "../../../utils/extractDominantColors";
+import getCroppedImage from "../../utils/getCroppedImage";
+import extractDominantColors from "../../utils/extractDominantColors";
 
 const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
     const userData = user?.userData?.[0]
     const [showProfileEditor, setShowProfileEditor] = useState(false)
     const [editImagePreview, setEditImagePreview] = useState('')
+    const [profileEditAvatar, setProfileEditAvatar] = useState(null)
     const [profileEditName, setProfileEditName] = useState('')
     const [profileEditBio, setProfileEditBio] = useState('')
 
@@ -53,6 +54,8 @@ const MyProfile = () => {
         return navigate(path);
     }
     
+    const queryClient = useQueryClient();
+    
     const links = [
         {path: '/home', label: 'Home', action: ()=> navigatePath('/home'), icon: <svg xmlns="http://www.w3.org/2000/svg" height="34px" viewBox="0 -960 960 960" width="34px" fill="#000000ff"><path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/></svg>},
         {path: '/profile', label: 'Profile', action: ()=> navigatePath('/profile'), icon: <svg xmlns="http://www.w3.org/2000/svg" height="34px" viewBox="0 -960 960 960" width="34px" fill="#000000ff"><path d="M234-276q51-39 114-61.5T480-360q69 0 132 22.5T726-276q35-41 54.5-93T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 59 19.5 111t54.5 93Zm246-164q-59 0-99.5-40.5T340-580q0-59 40.5-99.5T480-720q59 0 99.5 40.5T620-580q0 59-40.5 99.5T480-440Zm0 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q53 0 100-15.5t86-44.5q-39-29-86-44.5T480-280q-53 0-100 15.5T294-220q39 29 86 44.5T480-160Zm0-360q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm0-60Zm0 360Z"/></svg>},
@@ -70,7 +73,11 @@ const MyProfile = () => {
 
     useEffect(() => {
         console.log(user)
-    }, [user])
+        if(userData?.background){
+            const backgroundImage = userData?.background;
+            setCroppedImage(backgroundImage)
+        }
+    }, [user, userData])
 
 
 
@@ -92,6 +99,7 @@ const MyProfile = () => {
         setEditImagePreview('')
         handleHideGradientPicker(e)
         setImageSrc(null)
+        setProfileEditAvatar(null);
         setShowProfileEditor(false)
         
     }
@@ -103,6 +111,7 @@ const MyProfile = () => {
     const handleImageOnChange = (e) => {
         const file = e.target.files[0];
         if(file){
+            setProfileEditAvatar(file)
             const reader = new FileReader();
             reader.onloadend = () =>{
                 setEditImagePreview(reader.result)
@@ -132,9 +141,39 @@ const MyProfile = () => {
         setGradientPicked({})
         setImageSrc(null)
     }
-    const handleSaveProfileEdit = () =>{
-        setShowBgPicker(false)
+    const handleSaveProfileEdit = async() =>{
+        const data = {
+            name: profileEditName,
+            image: profileEditAvatar,
+            bio: profileEditBio,
+            profileBg: croppedImage || gradientPicked,
+            dominantColors: dominantColors,
+            secondaryColors: secondaryColors,
+            fontColor: fontColor
+        }
+
+
+        const formdata = new FormData();
+        Object.entries(data).forEach(([key, value]) => {
+            if(value === undefined || value === null){
+                return;
+            }
+            if(typeof value === "object" && value !== null && !(value instanceof File)) {
+                formdata.append(key, JSON.stringify(value));
+                return
+            }
+
+            formdata.append(key, value)
+        })
+
+        await updateProfileData(formdata, session?.access_token)
+        queryClient.invalidateQueries({queryKey: ['userData']});
         setShowProfileEditor(false)
+    }
+
+    const handleSaveProfileCOnfig = () =>{
+        setShowBgPicker(false)
+        
     }
 
     const handleSelectGradient = useCallback((gradient) => {
@@ -188,13 +227,12 @@ const MyProfile = () => {
 
     const handleSaveCropped = async() =>{
         setGradientPicked(null);
-        const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels);
+        const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels, userData.id);
         if(croppedImageUrl){
-            console.log(croppedImageUrl.file);
+            setCroppedImage({backgroundImage: `url(${croppedImageUrl?.url})`, backgroundSize: 'cover', backgroundPosition : 'center', backgroundRepeat: 'no-repeat'});
         }
-        setCroppedImage({backgroundImage: `url(${croppedImageUrl.url})`, backgroundSize: 'cover', backgroundPosition : 'center', backgroundRepeat: 'no-repeat'});
-        setImageSrc(null);
         
+        setImageSrc(null);
         setTimeout(() =>{
             setImageSrc(null)
         }, 300)    
@@ -213,6 +251,7 @@ const MyProfile = () => {
 
     const handleClickSaveFontColor = () => {
         setShowFontColorSelector(false)
+        console.log(fontColor)
     }
     const hancleClickCancelFontSelect = () => {
         setShowFontColorSelector(false)
@@ -237,8 +276,8 @@ const MyProfile = () => {
                     <div onClick={() => handleClickInputColor()} style={{background: `${fontColor}`}} className="input-color"></div>
                     <input ref={fontColorInputRef} value={fontColor} onChange={(e) => setFontColor(e.target.value)} style={{display: 'none'}} type="color" />
                     <div className="save-font-color-bttn-container">
-                        <div onClick={() => hancleClickCancelFontSelect()}>Cancel</div>
-                        <div onClick={() => handleClickSaveFontColor()}>Save</div>
+                        <div className="cancel-button" onClick={() => hancleClickCancelFontSelect()}>Cancel</div>
+                        <div className="save-button" onClick={() => handleClickSaveFontColor()}>Save</div>
                     </div>
                     
                 </motion.div>
@@ -306,7 +345,7 @@ const MyProfile = () => {
 
                     <div className="canvel-save-container">
                         <div onClick={(e) => handleHideGradientPicker(e)} className="cancel-button">cancel</div>
-                        <div onClick={() => handleSaveProfileEdit()} className="save-button">save</div>
+                        <div onClick={() => handleSaveProfileCOnfig()} className="save-button">save</div>
                     </div>
                 </motion.div>
             </AnimatePresence>
@@ -339,7 +378,7 @@ const MyProfile = () => {
                                 </div>
 
                                 <div className="profile-edit-image-child-container">
-                                    <img className="my-profile-image-editable" src={editImagePreview || '../../src/assets/profile.jpg'} alt="" />
+                                    <img className="my-profile-image-editable" src={editImagePreview || userData?.image_url || '../../src/assets/profile.jpg'} alt="" />
                                 </div> 
 
                                 <div onClick={(e) => handleShowGradientPicker(e)} className="add-profile-background">
@@ -373,8 +412,12 @@ const MyProfile = () => {
                                     
                                 </div>
                                 <textarea onChange={(e) => setProfileEditBio(e.target.value)} value={profileEditBio} maxLength={150} className="bio-textarea" name="bio" id=""></textarea>
-                            </div>
+                            </div>    
+                            
+                        </div>
 
+                        <div onClick={() => handleSaveProfileEdit()} className="profile-edit-save-bttn">
+                            Save
                         </div>
                         
                     </motion.div>
@@ -409,7 +452,7 @@ const MyProfile = () => {
                 <div style={{color: fontColor}} className="profile-center-bar-container">
                     <div style={croppedImage || gradientPicked} className="hero-section">
                          <div className="my-profile-image-container">
-                            <img className="my-profile-image" loading="lazy" src={userData?.imageUrl || '../../src/assets/profile.jpg'} alt="" />
+                            <img className="my-profile-image" loading="lazy" src={userData?.image_url || '../../src/assets/profile.jpg'} alt="" />
 
                             <div className="edit-profile-bttn-container">
                                 <div onClick={(e) => handleClickEdit(e)} className="edit-profile-bttn">
@@ -448,7 +491,7 @@ const MyProfile = () => {
                                 {userData?.bio}
                             </p>
                         </div>
-                       
+
                     </div>
                 </div>
 
