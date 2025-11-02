@@ -4,7 +4,7 @@ import { $getNodeByKey } from 'lexical';
 import { deleteJournalImage } from '../../../../API/Api';
 import { useAuth } from '../../../Context/Authcontext';
 
-const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
+const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = true }) => {
   const [editor] = useLexicalComposerContext();
   const [isResizing, setIsResizing] = useState(false);
   const [currentWidth, setCurrentWidth] = useState(width);
@@ -175,6 +175,7 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
   }, []);
 
   return (
+    <>
     <div
     className='image-wrapper'
       ref={imageRef}
@@ -197,11 +198,13 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
         draggable={false}
       />
 
+      {isEditable && (
       <div onClick={(e) => handleDelete(e)} className='image-delete'>
         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
       </div>
+      )}
 
-      {isSelected && (
+      {isSelected && isEditable &&(
         <>
           {/* southeast corner handle - proportional resize */}
           <div
@@ -261,6 +264,7 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, }) => {
         </>
       )}
     </div>
+    </>
   );
 }
 export default ResizableImageComponent;

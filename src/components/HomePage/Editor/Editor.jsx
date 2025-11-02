@@ -1,10 +1,10 @@
 import './editor.css';
 import { motion, AnimatePresence} from "framer-motion";
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import RichTextEditor from './RichTextEditor.jsx';
-import ImageNode from './nodes/ImageNode.jsx';
-import {HeadingNode} from "@lexical/rich-text";
-import { LexicalComposer } from '@lexical/react/LexicalComposer';
+// import RichTextEditor from './RichTextEditor.jsx';
+// import ImageNode from './nodes/ImageNode.jsx';
+// import {HeadingNode} from "@lexical/rich-text";
+// import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import EditorInner from './RichTextEditor.jsx';
 import { $getRoot } from 'lexical';
@@ -29,6 +29,8 @@ const Editor=({onClose}) =>{
 
     const [title, setTitle] = useState('')
     const [editor] = useLexicalComposerContext();
+
+
     const [uploadedImagePaths, setUploadedImagePaths] = useState([]);
 
     const addUploadedImagePath = useCallback((imagePath) =>{

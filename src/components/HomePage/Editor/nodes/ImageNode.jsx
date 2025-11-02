@@ -66,12 +66,13 @@ export default class ImageNode extends DecoratorNode {
     return this.__height;
   }
 
-  decorate() {
+  decorate(editor) {
     const src = this.__src;
     const nodeKey = this.getKey();
     const width = this.__width;
     const height = this.__height
-    return <ResizableImageComponent src={src} nodeKey={nodeKey} width={width} height={height}/>;
+    const isEditable = editor.isEditable();
+    return <ResizableImageComponent src={src} nodeKey={nodeKey} width={width} height={height} isEditable={isEditable}/>;
   }
 }
 

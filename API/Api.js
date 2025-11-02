@@ -66,6 +66,25 @@ export const getUserData = async(token) =>{
      const data = await response.json();
      return data;
 }
+export const updateFontColor = async(token, fontColor) => {
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/updateFontColor`, {
+        method: 'POST',
+        headers: headers,
+        body: fontColor
+    })
+
+    if(!response.ok){
+        const error = await response.json()
+        throw new Error(error)
+    }
+
+    const data = await response.json();
+    return data;
+}
+
 export const saveJournalImage = async(token, body) => {
     const headers = {};
     if(token) headers['Authorization'] = `Bearer ${token}`;

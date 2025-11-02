@@ -4,7 +4,7 @@ import { useAuth } from "../../Context/Authcontext";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
 import { MoonLoader, BeatLoader, BarLoader} from "react-spinners";
-import { checkUser, getUserData, submitProfileData, updateProfileData } from "../../../API/Api";
+import { checkUser, getUserData, submitProfileData, updateFontColor, updateProfileData } from "../../../API/Api";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -39,7 +39,7 @@ const MyProfile = () => {
     const [croppedImage, setCroppedImage] = useState({});
 
     const [showFontColorSelector, setShowFontColorSelector] = useState(false);
-    const [fontColor, setFontColor] = useState('#000000')
+    const [fontColor, setFontColor] = useState('')
 
     const inputRef = useRef();
     const bgInputRef = useRef();
@@ -48,6 +48,10 @@ const MyProfile = () => {
     //for gradient effect based on the bg background
     const [dominantColors, setDominantColors] = useState('#ffffffff');
     const [secondaryColors, setSecondaryColors] = useState('#ffffffff')
+
+    const [isUpdatingFont, setIsUpdatingFont] = useState(false);
+    const [isUpdatingProfileConfig, setIsUpdatingProfileConfig] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
 
     const navigate = useNavigate();
     const navigatePath = (path) => {
@@ -110,6 +114,7 @@ const MyProfile = () => {
 
     const handleImageOnChange = (e) => {
         const file = e.target.files[0];
+        setProfileEditAvatar(file)
         if(file){
             setProfileEditAvatar(file)
             const reader = new FileReader();
@@ -138,46 +143,79 @@ const MyProfile = () => {
     const handleHideGradientPicker = (e) =>{
         e.stopPropagation();
         setShowBgPicker(false)
-        setGradientPicked({})
+        setCroppedImage(userData?.background)
         setImageSrc(null)
+        setGradientPicked(null)
     }
     const handleSaveProfileEdit = async() =>{
+        setIsSavingProfile(true)
         const data = {
             name: profileEditName,
             image: profileEditAvatar,
             bio: profileEditBio,
-            profileBg: croppedImage || gradientPicked,
+            profileBg: croppedImage,
             dominantColors: dominantColors,
             secondaryColors: secondaryColors,
-            fontColor: fontColor
         }
 
+        try {
+            const formdata = new FormData();
+            Object.entries(data).forEach(([key, value]) => {
+                if(value === undefined || value === null){
+                    return;
+                }
+                if(typeof value === "object" && value !== null && !(value instanceof File)) {
+                    formdata.append(key, JSON.stringify(value));
+                    return
+                }
 
-        const formdata = new FormData();
-        Object.entries(data).forEach(([key, value]) => {
-            if(value === undefined || value === null){
-                return;
-            }
-            if(typeof value === "object" && value !== null && !(value instanceof File)) {
-                formdata.append(key, JSON.stringify(value));
-                return
-            }
+                formdata.append(key, value)
+            })
 
-            formdata.append(key, value)
-        })
-
-        await updateProfileData(formdata, session?.access_token)
-        queryClient.invalidateQueries({queryKey: ['userData']});
-        setShowProfileEditor(false)
+            await updateProfileData(formdata, session?.access_token)
+        } catch (error) {
+            throw new Error('error saving update')
+        } finally {
+            setIsSavingProfile(false)
+            setProfileEditAvatar(null)
+            queryClient.invalidateQueries({queryKey: ['userData']});
+            setShowProfileEditor(false)
+        } 
     }
 
-    const handleSaveProfileCOnfig = () =>{
-        setShowBgPicker(false)
+    const handleSaveProfileConfig = async() =>{
         
+        try {
+            setIsUpdatingProfileConfig(true)
+            if(imageSrc){
+                const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels, userData.id);
+                if(croppedImageUrl){
+                    setCroppedImage({backgroundImage: `url(${croppedImageUrl?.url})`, backgroundSize: 'cover', backgroundPosition : 'center', backgroundRepeat: 'no-repeat'});
+                }
+            } else if(gradientPicked){
+                setCroppedImage(gradientPicked)
+            }
+            
+        } catch (error) {
+            throw new Error('error updating profile')
+        } finally {
+            setIsUpdatingProfileConfig(false)
+            setGradientPicked(null);
+            setImageSrc(null);
+            setShowBgPicker(false)
+            queryClient.invalidateQueries({queryKey: ['userData']});
+        }   
+        
+    }
+
+    
+    const handleRemoveBgPreview = () =>{
+        setImageSrc(null);
     }
 
     const handleSelectGradient = useCallback((gradient) => {
         setCroppedImage(null);
+        setImageSrc(null)
         setGradientPicked(gradient);
     }, [gradientPicked])
 
@@ -217,27 +255,6 @@ const MyProfile = () => {
         }
     }
 
-    const handleHideCropper = (e) =>{
-        setImageSrc(null);
-        setCroppedImage(null)
-        if(bgInputRef.current){
-            bgInputRef.current.value = '';
-        }
-    }
-
-    const handleSaveCropped = async() =>{
-        setGradientPicked(null);
-        const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels, userData.id);
-        if(croppedImageUrl){
-            setCroppedImage({backgroundImage: `url(${croppedImageUrl?.url})`, backgroundSize: 'cover', backgroundPosition : 'center', backgroundRepeat: 'no-repeat'});
-        }
-        
-        setImageSrc(null);
-        setTimeout(() =>{
-            setImageSrc(null)
-        }, 300)    
-    }
-
     const handleClickFontColorSelector = (e) =>{
         e.stopPropagation()
         setShowFontColorSelector(true)
@@ -249,10 +266,21 @@ const MyProfile = () => {
         }
     }
 
-    const handleClickSaveFontColor = () => {
-        setShowFontColorSelector(false)
-        console.log(fontColor)
+    const handleClickSaveFontColor = async() => {
+        setIsUpdatingFont(true)
+        const formdata = new FormData();
+        formdata.append('fontColor', fontColor)
+        try {
+            const updateFont = await updateFontColor(session?.access_token, formdata);
+            queryClient.invalidateQueries({queryKey: ['userData']});
+        } catch (error) {
+            throw new Error('error updating font')
+        } finally {
+            setIsUpdatingFont(false)
+            setShowFontColorSelector(false)
+        }          
     }
+
     const hancleClickCancelFontSelect = () => {
         setShowFontColorSelector(false)
     }
@@ -272,6 +300,10 @@ const MyProfile = () => {
             <AnimatePresence>
                 <motion.div
                 className="font-selector-container"
+                initial={{scale: 0, opacity: 0.8}}
+                animate={{scale: 1, opacity: 1}}
+                exit={{scale: 0.8, opacity: 0,}}
+                transition={{type: 'spring', stiffness: 250, damping: 25}}
                 >
                     <div onClick={() => handleClickInputColor()} style={{background: `${fontColor}`}} className="input-color"></div>
                     <input ref={fontColorInputRef} value={fontColor} onChange={(e) => setFontColor(e.target.value)} style={{display: 'none'}} type="color" />
@@ -279,6 +311,11 @@ const MyProfile = () => {
                         <div className="cancel-button" onClick={() => hancleClickCancelFontSelect()}>Cancel</div>
                         <div className="save-button" onClick={() => handleClickSaveFontColor()}>Save</div>
                     </div>
+
+                    {isUpdatingFont && (
+                        <BarLoader loading={isUpdatingFont} width={'100%'} color="rgb(40, 115, 255)" speedMultiplier={0.7}/>
+                    )}
+                    
                     
                 </motion.div>
             </AnimatePresence>
@@ -302,19 +339,19 @@ const MyProfile = () => {
                         {gradients.map((gradient, index) => (
                             <div onClick={() => handleSelectGradient(gradient.style)} key={index} className="gradient-box" style={gradient.style}></div>
                         ))}
-                        <div onClick={(e) => handleInsertBgImage(e)} className="add-bgImage-bttn">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="50px" viewBox="0 -960 960 960" width="50px" fill="#000000"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
-                        </div>
                     </div>
 
-                    <div style={gradientPicked || croppedImage} className="profile-bg-preview">
+                    <div className="profile-bg-preview">
+                         <div onClick={(e) => handleInsertBgImage(e)} className="add-bgImage-bttn">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="50px" viewBox="0 -960 960 960" width="50px" fill="#000000"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
+                        </div>
                         {imageSrc && (
                             <>
                             <Cropper
                                 image={imageSrc}
                                 crop={crop}
                                 zoom={zoom}
-                                aspect={3 / 1}
+                                aspect={16 / 9}
                                 onCropChange={setCrop}
                                 onZoomChange={setZoom}
                                 onCropComplete={(_, croppedPixels) => setCropAreaPixels(croppedPixels)}
@@ -329,13 +366,8 @@ const MyProfile = () => {
                                 onChange={(e) => setZoom(e.target.value)}
                                 />
                             </div>
-                            <div className="confirm-cropped-bg-container">
-                                <div onClick={(e) => handleHideCropper(e)} className="confirm-cropped-bg-container-cancel">
-                                    Cancel
-                                </div>
-                                <div onClick={() => handleSaveCropped()} className="confirm-cropped-bg-container-ok">
-                                    Ok
-                                </div>
+                            <div onClick={() => handleRemoveBgPreview()} className="remove-bg-preview">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="m336-280-56-56 144-144-144-143 56-56 144 144 143-144 56 56-144 143 144 144-56 56-143-144-144 144Z"/></svg>
                             </div>
                             </>  
                         )}
@@ -345,8 +377,12 @@ const MyProfile = () => {
 
                     <div className="canvel-save-container">
                         <div onClick={(e) => handleHideGradientPicker(e)} className="cancel-button">cancel</div>
-                        <div onClick={() => handleSaveProfileCOnfig()} className="save-button">save</div>
+                        <div onClick={() => handleSaveProfileConfig()} className="save-button">save</div>
                     </div>
+
+                    {isUpdatingProfileConfig && (
+                        <BarLoader loading={isUpdatingProfileConfig} width={'100%'} color="rgb(40, 115, 255)" speedMultiplier={0.7}/>
+                    )}
                 </motion.div>
             </AnimatePresence>
             )}
@@ -420,6 +456,9 @@ const MyProfile = () => {
                             Save
                         </div>
                         
+                        {isSavingProfile && (
+                            <BarLoader width={'100%'} loading={isSavingProfile} color="rgb(40, 115, 255)" speedMultiplier={0.7}/>
+                        )}
                     </motion.div>
                 </div>
             )}
@@ -449,18 +488,18 @@ const MyProfile = () => {
                     <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
                 </div>
 
-                <div style={{color: fontColor}} className="profile-center-bar-container">
+                <div style={{color:fontColor || userData?.profile_font_color}} className="profile-center-bar-container">
                     <div style={croppedImage || gradientPicked} className="hero-section">
                          <div className="my-profile-image-container">
                             <img className="my-profile-image" loading="lazy" src={userData?.image_url || '../../src/assets/profile.jpg'} alt="" />
 
                             <div className="edit-profile-bttn-container">
                                 <div onClick={(e) => handleClickEdit(e)} className="edit-profile-bttn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill={fontColor}><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill={fontColor || userData?.profile_font_color}><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"/></svg>
                                     Edit
                                 </div>
                                 <div onClick={(e) => handleClickFontColorSelector(e)} className="font-picker-container">
-                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill={fontColor}><path d="M80 0v-160h800V0H80Zm140-280 210-560h100l210 560h-96l-50-144H368l-52 144h-96Zm176-224h168l-82-232h-4l-82 232Z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill={fontColor || userData?.profile_font_color}><path d="M80 0v-160h800V0H80Zm140-280 210-560h100l210 560h-96l-50-144H368l-52 144h-96Zm176-224h168l-82-232h-4l-82 232Z"/></svg>
                                     Change font color
                                     {/* {secondaryColors}
                                     {dominantColors} */}

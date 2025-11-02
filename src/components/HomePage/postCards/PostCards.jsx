@@ -9,13 +9,31 @@ import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
 import { useNavigate } from "react-router-dom";
 
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import ImageNode from "../Editor/nodes/ImageNode";
+import { HeadingNode } from "@lexical/rich-text";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+
 const PostCards = () => {
+
+    const theme = {
+      paragraph: 'editor-paragraph',
+      heading: 'editor-heading',
+    }
+      
+
     const navigate = useNavigate();
     const modalRef = useRef(null);
     const {ref, inView} = useInView({
         threshold: 0.2
     })
     const [postIdSettings, setPostIdSettings] = useState('');
+    const [showContent, setShowContent] = useState(false);
+    const [content, setContent] = useState(null);
+    const [contentTitle, setContentTitle] = useState('')
+
     const scrollRefTimeOut = useRef(null)
 
     const cardIcons = [
@@ -53,6 +71,13 @@ const PostCards = () => {
             return undefined;
         } 
     })
+
+    const handleCLickContent = (e, jsonbContent, title) => {
+        e.stopPropagation();
+        setContent(jsonbContent);
+        setContentTitle(title)
+        setShowContent(true)
+    }
 
     const handleClickSettings = (e, postId) =>{
         e.stopPropagation();
@@ -125,6 +150,37 @@ const PostCards = () => {
     }
     return(
         <>
+        {/* MAKE A SEPARATE COMPONENT FOR CONTENTVIEWER!!  */}
+        {showContent &&(
+            <LexicalComposer 
+            initialConfig={{
+                namespace: "ContentViewer",
+                theme,
+                editable: false,
+                editorState: content, 
+                //register nodes
+                nodes: [ImageNode, HeadingNode ],
+                onError(error){
+                    throw error;
+                    },
+            }}>
+
+            <div className="sample-content-show">
+                <div>
+                    {contentTitle}
+                </div>
+                <RichTextPlugin
+                    contentEditable={
+                    <ContentEditable 
+                        className="content-viewer" 
+                    />
+                    }
+                    ErrorBoundary={LexicalErrorBoundary}    
+                />
+            </div>
+            </LexicalComposer>
+        )}
+        
         <AnimatePresence>
         <div className="postcards-parent-container">
             {journals.map((journal, index) => {
@@ -180,7 +236,7 @@ const PostCards = () => {
                                 
                             </div>
 
-                            <div className="content-container">
+                            <div onClick={(e) => handleCLickContent(e, journal.content, journal.title)} className="content-container">
 
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">

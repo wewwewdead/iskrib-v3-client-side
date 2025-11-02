@@ -1,25 +1,21 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import {HeadingNode} from "@lexical/rich-text";
 import ImagePlugin from "./nodes/Plugins/ImagePlugin";
 
 
-import ImageNode from "./nodes/ImageNode";
 import ToolBar from "./Toolbar";
-import { $createParagraphNode, $getRoot } from "lexical";
 
 import { saveJournal } from "../../../../API/Api";
 import { useAuth } from "../../../Context/Authcontext";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { BarLoader } from "react-spinners";
-import { color } from "framer-motion";
+import { $getRoot } from "lexical";
 
 // import {
 //   $getRoot,
@@ -95,7 +91,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
     const onchange = useCallback((state) => {
         const jsonb = JSON.stringify(state.toJSON());
         setEditorState(jsonb)
-        console.log(jsonb)
+        // console.log(jsonb)
 
         state.read(() => {
             const root = $getRoot();
@@ -121,7 +117,6 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
     return(
         <>
         <div className="editor-shell">
-
             <RichTextPlugin
             contentEditable={
             <ContentEditable 
