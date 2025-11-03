@@ -3,6 +3,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getNodeByKey } from 'lexical';
 import { deleteJournalImage } from '../../../../API/Api';
 import { useAuth } from '../../../Context/Authcontext';
+import { AnimatePresence, motion, scale } from 'framer-motion';
 
 const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = true }) => {
   const [editor] = useLexicalComposerContext();
@@ -12,6 +13,8 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = tru
   const [isSelected, setIsSelected] = useState(false);
   const imageRef = useRef(null);
   const startPosRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
+
+  const [viewImage, setViewImage] = useState(false);
 
   const{session} = useAuth();
 
@@ -162,6 +165,17 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = tru
     setIsSelected(!isSelected);
   };
 
+  //handle image  click for view
+  const handleViewImage = () => {
+    console.log('view img')
+    if(!isEditable){
+      setViewImage(true)
+    } else {
+      return
+    }
+    
+  }
+
   // click outside to deselect
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -176,27 +190,45 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = tru
 
   return (
     <>
+    {viewImage && (
+      <img onClick={() => setViewImage(!viewImage)} className='image-view' src={src} alt="view-image" />
+    )}
+
     <div
     className='image-wrapper'
       ref={imageRef}
       style={{
         cursor: isResizing ? 'nwse-resize' : 'pointer',
       }}
-      onClick={handleImageClick}
+      onClick={isEditable ? handleImageClick : handleViewImage}
     >
-      <img
+   
+      <AnimatePresence>
+      <motion.img
+        initial={{opacity: 0}}
+        animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
+        exit={{ opacity: 0, y: -20,
+          transition: { 
+            duration: 0.2,
+            ease: "easeOut"
+          }
+        }}
+
         src={src}
         alt="content"
         style={{
+          borderRadius: '10px',
           width: `${currentWidth}px`,
           height: `${currentHeight}px`,
           display: 'block',
           border: isSelected ? '1px solid rgba(153, 200, 255, 0.99)' : '2px solid transparent',
-          borderRadius: '10px',
+          orderRadius: '10px',
           userSelect: 'none',
         }}
         draggable={false}
+        onClick={() => handleViewImage()}
       />
+      </AnimatePresence>
 
       {isEditable && (
       <div onClick={(e) => handleDelete(e)} className='image-delete'>

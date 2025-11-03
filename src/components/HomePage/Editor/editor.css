@@ -314,3 +314,16 @@
     cursor: nw-resize;
     z-index: 10;
 }
+.image-view{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    cursor: zoom-out;
+    box-sizing: border-box;
+    scale: 1.2;
+}

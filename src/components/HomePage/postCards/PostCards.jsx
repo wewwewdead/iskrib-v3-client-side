@@ -17,7 +17,6 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 
 const PostCards = () => {
-
     const theme = {
       paragraph: 'editor-paragraph',
       heading: 'editor-heading',
@@ -72,11 +71,19 @@ const PostCards = () => {
         } 
     })
 
-    const handleCLickContent = (e, jsonbContent, title) => {
+    const handleCLickContent = (e, jsonbContent, title, name, avatar) => {
         e.stopPropagation();
         setContent(jsonbContent);
         setContentTitle(title)
-        setShowContent(true)
+        navigate('/home/contentViewer', {
+            state: {
+                content: jsonbContent,
+                title: title,
+                name: name,
+                avatar: avatar,
+
+            }
+        })
     }
 
     const handleClickSettings = (e, postId) =>{
@@ -236,7 +243,7 @@ const PostCards = () => {
                                 
                             </div>
 
-                            <div onClick={(e) => handleCLickContent(e, journal.content, journal.title)} className="content-container">
+                            <div onClick={(e) => handleCLickContent(e, journal.content, journal.title, journal.users.name, journal.users.image_url)} className="content-container">
 
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">

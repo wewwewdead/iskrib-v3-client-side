@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, use } from "react";
 import './home.css'
 import { useAuth } from "../../Context/Authcontext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Outlet } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
 import { MoonLoader, BeatLoader, BarLoader } from "react-spinners";
 import { checkUser, getUserData, submitProfileData } from "../../../API/Api";
@@ -273,7 +273,7 @@ const HomePage = () => {
                 )}
                 </AnimatePresence>
 
-                <PostCards/>
+                <Outlet/>
             </div>
             <div className="sidebar-right-holder-container">
                 {/* Log out */}

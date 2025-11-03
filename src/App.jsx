@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import { Routes, Route, BrowserRouter} from 'react-router-dom'
+import { Routes, Route, BrowserRouter, HashRouter} from 'react-router-dom'
 import HomePage from './components/HomePage/home.jsx';
 import LoginPage from './components/LoginPage/login.jsx';
 import SignUp from './components/SignUpPage/signup.jsx';
@@ -8,6 +8,9 @@ import MyProfile from './components/ProfilePage/MyProfile.jsx';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import {HeadingNode} from "@lexical/rich-text";
 import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
+
+import PostCards from './components/HomePage/postCards/PostCards.jsx';
+import ContentView from './components/HomePage/ContentViewer/ContentView.jsx';
 
 const App = () => {
 
@@ -33,7 +36,10 @@ const initaConfig = {
         <Routes>
           <Route path='/' element={<HomePage/>}/>
           <Route path='/profile' element={<MyProfile/>}/>
-          <Route path='/home' element={<HomePage/>}/>
+          <Route path='/home' element={<HomePage/>}>
+            <Route index element={<PostCards/>}/>
+            <Route path='contentViewer' element={<ContentView/>}/>
+          </Route>
           <Route path='/login' element={<LoginPage/>}/>
           <Route path='/signUp' element={<SignUp/>}/>
         </Routes>
