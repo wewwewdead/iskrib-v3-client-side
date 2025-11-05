@@ -40,11 +40,14 @@
 
 .content-title{
     margin-top: 100px;
-    padding: 3rem;
     height: fit-content;
+    width: 90%;
     display: flex;
     align-items: center;
+    flex-direction: column;
     justify-content: flex-start;
+    align-items: flex-start;
+    gap: 1rem;
 }
 .content-title p{
     padding: 0;
@@ -56,8 +59,121 @@
     font-size: 4rem;
 }
 .content{
-    padding: 3rem;
-    font-size: 1.2rem;
-    font-weight: 550;
-    margin-bottom: -0.46em;
+    width: 90%;
+    font-size: 18px;
+    font-weight: 450;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+    letter-spacing: -0.003em;
+    line-height: 28px
+}
+.content-avatar-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: fit-content;
+    width: fit-content;
+}
+.content-metadata-container{
+    width: 100%;
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1rem 0;
+}
+.content-avatar{
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+}
+.content-owner-name{
+    font-weight: 660;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.content-owner-name:hover{
+    text-decoration: underline;
+}
+.follow-bttn{
+    font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 20px;
+    border: 0.7px solid rgb(151, 151, 151);
+    cursor: pointer;
+}
+.content-created{
+    font-size: 0.8rem;
+}
+.read-time{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.2rem 0.8rem 0.2rem 0.8rem;
+    background-color: rgb(237, 237, 237);
+    border-radius: 15px;
+    font-size: 0.6rem;
+}
+.icons-container{
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    height: 50px;
+    width: 100%;
+    border-top: 0.7px solid rgba(151, 151, 151, 0.168);
+    border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+
+}
+.like-button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: ease-in-out 0.3s;
+}
+.comment-button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: ease-in-out 0.3s;
+}
+.bookmark-button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: ease-in-out 0.3s;
+}
+
+.like-button:hover .svg-like path{
+    fill: rgb(255, 116, 116);
+}
+.like-button:hover{
+    background-color: rgba(255, 161, 161, 0.295);
+}
+.comment-button:hover{
+    background-color: rgba(149, 223, 255, 0.274);
+}
+.comment-button:hover .svg-comment path{
+    fill: rgb(47, 154, 255);
+}
+
+.bookmark-button:hover{
+    background-color: rgba(169, 255, 209, 0.358);
+}
+.bookmark-button:hover .svg-bookmark path{
+    fill: rgb(72, 208, 135);
 }

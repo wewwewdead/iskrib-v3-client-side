@@ -182,3 +182,41 @@ export const getJournals = async(cursor = null, limit = 5) =>{
         throw error;
     }
 }
+export const clickLike = async(token, postId) => {
+    const headers = {'Content-Type': 'application/json'};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/like`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(postId)
+    })
+    if(!response.ok){
+        throw new Error('error adding like')
+    }
+    const message = await response.json();
+    console.log(message)
+    return message;
+}
+
+
+// export const getLikedPosts = async(token) =>{
+//     const headers = {}
+//     if(token) headers['Authorization'] = `Bearer ${token}`
+//     try {
+//         const response = await fetch(`${BASE_URL}/getLikes`, {
+//             method: 'GET',
+//             headers: headers
+//         });
+        
+//         if(!response.ok){
+//             throw new Error('Error fetching likes data')
+//         }
+//         const data = await response.json()
+//         console.log(data)
+//         return data
+//     } catch (error) {
+//         console.error('Error fetching likes data:', error);
+//         throw error;
+//     }
+// }

@@ -50,6 +50,7 @@ const HomePage = () => {
     const [name, setName] = useState('')
     const [bio, setBio] = useState('')
     const [uploadingUserData, setUploadingUserData] = useState(false)
+
    
     const handleClickUploadPhoto = (e) =>{
         e.stopPropagation();
@@ -151,6 +152,12 @@ const HomePage = () => {
         }
 
     },[session, loading])
+
+    useEffect(() => {
+        if(user){
+            console.log(user?.userData?.[0].id)
+        }
+    }, [user])
 
     if(isLoading){
         return(
@@ -273,7 +280,7 @@ const HomePage = () => {
                 )}
                 </AnimatePresence>
 
-                <Outlet/>
+                <Outlet />
             </div>
             <div className="sidebar-right-holder-container">
                 {/* Log out */}

@@ -3,11 +3,11 @@ import { MoonLoader, BeatLoader } from "react-spinners";
 import { motion, AnimatePresence, pipe,} from "framer-motion";
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import './postcards.css';
-import { getJournals } from "../../../../API/Api";
+import { clickLike, getJournals,} from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -15,6 +15,8 @@ import ImageNode from "../Editor/nodes/ImageNode";
 import { HeadingNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { useAuth } from "../../../Context/Authcontext";
+import { useLikeMutation } from "../../../utils/useMutation";
 
 const PostCards = () => {
     const theme = {
@@ -22,6 +24,8 @@ const PostCards = () => {
       heading: 'editor-heading',
     }
       
+    const {session, user} = useAuth();
+    const queryClient = useQueryClient();
 
     const navigate = useNavigate();
     const modalRef = useRef(null);
@@ -37,12 +41,13 @@ const PostCards = () => {
 
     const cardIcons = [
         {
-            label: <svg className="svg-like" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>,
+            labelLike: (isLiked) => (<svg className="svg-like" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill={isLiked ? 'rgb(255, 116, 116)' : "#5e5e5eff"}><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>),
             className: 'like-button',
-            action: (e) => handleClickLike(e)
+            action: (e, journalId) => {handleClickLike(e, journalId)},
+            countLike: (count) => <p style={{padding:'0', margin: '0'}}>{count}</p>
         },
         {
-            label:<svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M440-400h80v-120h120v-80H520v-120h-80v120H320v80h120v120ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>,
+            label: <svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M440-400h80v-120h120v-80H520v-120h-80v120H320v80h120v120ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>,
             className: 'comment-button',
             action: (e) => console.log('clicked-comment')
         },
@@ -71,16 +76,18 @@ const PostCards = () => {
         } 
     })
 
-    const handleCLickContent = (e, jsonbContent, title, name, avatar) => {
+    const handleCLickContent = (e, jsonbContent,wholeText, title, name, avatar, created_at) => {
         e.stopPropagation();
         setContent(jsonbContent);
         setContentTitle(title)
         navigate('/home/contentViewer', {
             state: {
                 content: jsonbContent,
+                wholeText: wholeText,
                 title: title,
                 name: name,
                 avatar: avatar,
+                created_at: created_at
 
             }
         })
@@ -91,9 +98,12 @@ const PostCards = () => {
         setPostIdSettings(postId === postIdSettings ? null : postId)
     }
 
-    const handleClickLike = (e) => {
+    const mutation = useLikeMutation(session, user?.userData?.[0].id);
+    const handleClickLike = async(e, journalId) => {
+        
         e.stopPropagation();
-        console.log('liked')
+        console.log(journalId)
+        mutation.mutate({journalId})
     }
 
     useEffect(() =>{
@@ -132,7 +142,10 @@ const PostCards = () => {
         window.removeEventListener('click', handleClickOutside)
        }
     }, [])
-    
+
+    useEffect(() =>{
+        console.log(data)
+    }, [data])
 
     // if(isLoading) return <div className="loading-newsfeed-bg"><MoonLoader loading={isLoading} size={20} speedMultiplier={2}/></div>
 
@@ -192,7 +205,7 @@ const PostCards = () => {
         <div className="postcards-parent-container">
             {journals.map((journal, index) => {
                 const parsedContent = ParseContent(journal.content)
-
+                const isLiked = user && journal.likes.some(like => like.user_id === user?.userData[0]?.id)
                 return(
                     <div className="cards" key={journal.id}>
                         <div className="card-content">
@@ -243,7 +256,7 @@ const PostCards = () => {
                                 
                             </div>
 
-                            <div onClick={(e) => handleCLickContent(e, journal.content, journal.title, journal.users.name, journal.users.image_url)} className="content-container">
+                            <div onClick={(e) => handleCLickContent(e, journal.content,parsedContent.wholeText, journal.title, journal.users.name, journal.users.image_url, journal.created_at)} className="content-container">
 
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">
@@ -263,9 +276,13 @@ const PostCards = () => {
                         <div className="card-icons-container">
                             {cardIcons && (
                                 cardIcons.map((icon, index) =>(
-                                    <div onClick={icon.action} id="card-icons" key={index} className={icon.className}>
-                                        {icon.label}
-                                    </div>
+                                    <div key={index} className="icon-container">
+                                        <div onClick={(e) => icon.action(e, journal.id)} id="card-icons" key={index} className={icon.className}>
+                                            {icon.labelLike && icon.labelLike(isLiked)}
+                                            {icon.label} 
+                                        </div>
+                                        {icon.countLike && icon.countLike(journal.likes.length)} 
+                                    </div>  
                                 ))
                             )}
 
