@@ -22,6 +22,7 @@ import extractDominantColors from "../../utils/extractDominantColors";
 const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
     const userData = user?.userData?.[0]
+    
     const [showProfileEditor, setShowProfileEditor] = useState(false)
     const [editImagePreview, setEditImagePreview] = useState('')
     const [profileEditAvatar, setProfileEditAvatar] = useState(null)

@@ -199,6 +199,39 @@ export const clickLike = async(token, postId) => {
     return message;
 }
 
+export const addComment = async(token, body) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${BASE_URL}/addComment`, {
+        method: 'POST',
+        headers: headers,
+        body: body
+    })
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    return data;
+};
+export const getComments = async(cursor= null, limit= 10, postId) =>{
+    try {
+        const url = cursor ? `${BASE_URL}/getComments?postId=${postId}&limit=${limit}&&before${cursor}` : `${BASE_URL}/getComments?postId=${postId}&limit=${limit}`;
+        const response = await fetch(url, {
+            method: 'GET'
+        })
+
+        if(!response.ok){
+            throw new Error('failed to fetch comments');
+        }
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching comments:', error);
+        throw error;
+    }
+}
 
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}

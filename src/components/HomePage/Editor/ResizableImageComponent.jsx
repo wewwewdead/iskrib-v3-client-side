@@ -217,12 +217,11 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = tru
         src={src}
         alt="content"
         style={{
-          borderRadius: '10px',
+          borderRadius: '5px',
           width: `${currentWidth}px`,
           height: `${currentHeight}px`,
           display: 'block',
           border: isSelected ? '1px solid rgba(153, 200, 255, 0.99)' : '2px solid transparent',
-          orderRadius: '10px',
           userSelect: 'none',
         }}
         draggable={false}

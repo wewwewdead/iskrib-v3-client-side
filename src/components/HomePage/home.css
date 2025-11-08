@@ -73,6 +73,7 @@
 }
 .center-bar-holder-container{
     position: relative;
+    align-items: center;
     left: 250px;
     display: flex;
     flex-direction: column;

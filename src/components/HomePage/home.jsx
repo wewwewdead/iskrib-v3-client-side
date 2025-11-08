@@ -155,7 +155,7 @@ const HomePage = () => {
 
     useEffect(() => {
         if(user){
-            console.log(user?.userData?.[0].id)
+            console.log(user?.userData?.[0]?.id)
         }
     }, [user])
 
