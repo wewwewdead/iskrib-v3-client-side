@@ -81,6 +81,7 @@ const MyProfile = () => {
         if(userData?.background){
             const backgroundImage = userData?.background;
             setCroppedImage(backgroundImage)
+            setFontColor(userData?.profile_font_color)
         }
     }, [user, userData])
 

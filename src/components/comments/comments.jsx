@@ -1,21 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './comments.css'
 import { AnimatePresence, motion} from "framer-motion";
 import { addComment } from '../../../API/Api';
 import { useAuth } from '../../Context/Authcontext';
 import { getComments } from '../../../API/Api';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { BarLoader, MoonLoader } from 'react-spinners';
 
 const CommentSection = ({onclose, postId})=>{
+    const queryClient = useQueryClient();
+
     const {session, user} = useAuth();
     const userId = user?.userData?.[0].id;
 
-    const {data, fetchNextPage, hasNextPage, isLoading} = useInfiniteQuery({
+    const textAreaFocusRef = useRef();
+
+    const [comments, setComments] = useState('');
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+    const {data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage} = useInfiniteQuery({
         queryKey: ['postComments', postId],
         queryFn: ({queryKey, pageParam = null}) => getComments(pageParam, 10, queryKey[1]),
         getNextPageParam: (lastPage) => {
-            if(lastPage?.data?.length > 0) {
-                const lastComment = lastPage.data[lastPage?.data?.length - 1];
+            if(lastPage?.hasMore) {
+                const lastComment = lastPage.comments[lastPage?.comments?.length - 1];
                 return new Date(lastComment.created_at).toISOString();
             } else {
                 return undefined;
@@ -23,14 +31,38 @@ const CommentSection = ({onclose, postId})=>{
         },
     })
 
+    const handleSeeMoreComments = (e) =>{
+        e.stopPropagation();
+        if(hasNextPage && !isFetchingNextPage){
+            console.log('has next page')
+            try {
+                fetchNextPage()
+            } catch (error) {
+                throw new Error(error);
+            }
+        }
+    }
+
+    useEffect(() =>{
+        let timeout;
+        if(textAreaFocusRef.current){
+            timeout = setTimeout(() => {
+                textAreaFocusRef.current.focus();
+            }, 500);  
+        } 
+        return () => {
+             clearTimeout(timeout);
+        }   
+    }, [])
+
     useEffect(() =>{
         if(data){
             console.log(data)
+            console.log(hasNextPage)
         }
     }, [data])
 
-    const [comments, setComments] = useState('');
-    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+    
 
     const handeCloseCommentsSection = (e) =>{
         e.stopPropagation();
@@ -58,10 +90,12 @@ const CommentSection = ({onclose, postId})=>{
         } finally {
             setIsSubmittingComment(false)
             setComments('')
+            queryClient.invalidateQueries(['postComments', postId]);
         }
     }
 
     const commentsData = data?.pages?.flatMap((comment) => comment.comments || []);
+
     return(
         <>
         <motion.div
@@ -79,8 +113,17 @@ const CommentSection = ({onclose, postId})=>{
             </div>
             
             <div className='comments-section'>
-                {commentsData?.length > 0 ? (
-                    commentsData.map((comment, index) => (
+                {isLoading && (
+                   <div className='loading-comments-container'>
+                        <MoonLoader color='rgba(19, 77, 104, 1)' size={20} loading={isLoading}/>
+                   </div>
+                )}
+                {!commentsData?.length > 0 && !isLoading ? (
+                    <div>
+                        <p>no comments available</p>
+                    </div>
+                ) : (
+                    commentsData?.map((comment, index) => (
                         <div className='comment-cards' key={index}>
                             <div className='comment'>
                                 <p>{comment.comment}</p>
@@ -101,15 +144,17 @@ const CommentSection = ({onclose, postId})=>{
                             
                         </div>
                     ))
-                ) : (
-                    <div>
-                        <p>no comments available</p>
+                )}
+
+                {hasNextPage &&(
+                    <div onClick={(e) => handleSeeMoreComments(e)} className='see-more-comments-button'>
+                        See more comments {isFetchingNextPage && (<MoonLoader size={15} speedMultiplier={0.5} color='rgba(19, 77, 104, 1)'/>)} 
                     </div>
                 )}
             </div>
 
             <div className='comments-input-container'>
-                <textarea value={comments} onChange={(e) => setComments(e.target.value)} className='comments-input' type="text" maxLength={200} placeholder='Type your comments'/>
+                <textarea ref={textAreaFocusRef} value={comments} onChange={(e) => setComments(e.target.value)} className='comments-input' type="text" maxLength={200} placeholder='Type your comments'/>
                 
                 <div className='button-section'>
                     <div className='comments-counter-container'>
@@ -120,8 +165,11 @@ const CommentSection = ({onclose, postId})=>{
                         submit
                     </button>
                 </div>
-                
             </div>
+            {isSubmittingComment && (
+                <BarLoader loading={isSubmittingComment} width={'100%'} color="rgb(40, 115, 255)" speedMultiplier={0.9}/>
+            )}
+             
         </motion.div>
         </>
     )

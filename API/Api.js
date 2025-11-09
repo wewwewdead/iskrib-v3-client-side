@@ -163,7 +163,7 @@ export const deleteJournalImage = async(token, url) => {
 export const getJournals = async(cursor = null, limit = 5) =>{
     try {
         const url = cursor 
-        ? `${BASE_URL}/journals?limit=${limit}&&before=${cursor}`
+        ? `${BASE_URL}/journals?limit=${limit}&before=${cursor}`
         : `${BASE_URL}/journals?limit=${limit}`;
 
         const response = await fetch(url, {
@@ -216,7 +216,7 @@ export const addComment = async(token, body) =>{
 };
 export const getComments = async(cursor= null, limit= 10, postId) =>{
     try {
-        const url = cursor ? `${BASE_URL}/getComments?postId=${postId}&limit=${limit}&&before${cursor}` : `${BASE_URL}/getComments?postId=${postId}&limit=${limit}`;
+        const url = cursor ? `${BASE_URL}/getComments?postId=${postId}&limit=${limit}&before=${cursor}` : `${BASE_URL}/getComments?postId=${postId}&limit=${limit}`;
         const response = await fetch(url, {
             method: 'GET'
         })

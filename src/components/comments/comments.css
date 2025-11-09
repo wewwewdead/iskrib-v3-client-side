@@ -36,7 +36,7 @@
     height: 70%;
     overflow-y: auto;
     overflow-x: hidden;
-    gap: 2rem;
+    gap: 1rem;
 }
 .comment-cards{
     display: flex;
@@ -54,6 +54,7 @@
     height: fit-content;
     gap: 0.3rem;
     margin: 0 0.5rem;
+    padding: 0.5rem 0;
 }
 .comments-avatar{
     width: 25px;
@@ -75,6 +76,7 @@
     padding: 0;
     margin: 0;
     font-size: 0.6rem;
+    text-decoration: underline;
 }
 
 .comment{
@@ -145,4 +147,23 @@
     margin: 0;
     padding: 0;
     font-size: 0.8rem;
+}
+.see-more-comments-button{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    text-decoration: underline;
+    cursor: pointer;
+    color: rgb(7, 57, 33);
+    gap: 0.4rem;
+}
+.see-more-comments-button:hover{
+    color: rgb(30, 161, 96);
+}
+.loading-comments-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
 }
