@@ -3,7 +3,7 @@ import { MoonLoader, BeatLoader } from "react-spinners";
 import { motion, AnimatePresence, pipe,} from "framer-motion";
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import './postcards.css';
-import { clickLike, getJournals,} from "../../../../API/Api";
+import {getJournals,} from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
@@ -16,7 +16,7 @@ import { HeadingNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { useAuth } from "../../../Context/Authcontext";
-import { useLikeMutation } from "../../../utils/useMutation";
+import { useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
 import formatCounts from "../../../../helpers/fomatCounts";
 import debounce from "../../../../helpers/debounce";
 
@@ -53,12 +53,13 @@ const PostCards = () => {
             label: <svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M440-400h80v-120h120v-80H520v-120h-80v120H320v80h120v120ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>,
             className: 'comment-button',
             commentAction: (e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount) => handleCLickContent(e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount),
-            countComments: (count) => <p style={{padding: '0', margin: '0'}}>{formatCounts(count)}</p>
+            countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
-            label: <svg className="svg-bookmark" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>,
+            checkBookrmark: (isBookmarked) => <svg className="svg-bookmark" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill={isBookmarked ? 'rgb(72, 208, 135)' : "#5e5e5eff"}><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>,
             className: 'bookmark-button',
-            bookmarkAction: (e, journalId) => handleClickBookmark(e, journalId)
+            bookmarkAction: (e, journalId) => debounceClickBookmark(e, journalId),
+            countBookmarks: (count) => <p  style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         }
     ]
 
@@ -70,7 +71,7 @@ const PostCards = () => {
         isLoading,
     } = useInfiniteQuery({
         queryKey: ['journals'],
-        queryFn: ({pageParam = null}) => getJournals(pageParam, 5),
+        queryFn: ({pageParam = null}) => getJournals(pageParam, 5, user?.userData?.[0].id),
         getNextPageParam: (lastPage) => {
             if(lastPage?.hasMore) {
                 const lastJournal = lastPage.data[lastPage?.data?.length - 1]; //get the last array of object using index 
@@ -105,18 +106,25 @@ const PostCards = () => {
         setPostIdSettings(postId === postIdSettings ? null : postId)
     }
 
-    const mutation = useLikeMutation(session, user?.userData?.[0]?.id);
+    const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
+
     const handleClickLike = async(e, journalId) => {
         e.stopPropagation();
         console.log(journalId)
-        mutation.mutate({journalId})
+        mutationLike.mutate({journalId}) //passing this into mutationFn {journalId: the id}
     }
     const debounceClickLike = debounce(handleClickLike, 300)
 
-    const handleClickBookmark = (e, journalId) =>{
+
+    const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
+
+    const handleClickBookmark = async(e, journalId,) =>{
         e.stopPropagation();
-        console.log('bookmarked', {journalId: journalId, user_id: user?.userData?.[0].id})
+        console.log(journalId)
+        mutationBookmark.mutate({journalId});
     }
+
+    const debounceClickBookmark = debounce(handleClickBookmark, 100);
 
     useEffect(() =>{
         if(inView && !isFetchingNextPage && hasNextPage) {
@@ -201,6 +209,7 @@ const PostCards = () => {
             {journals.map((journal, index) => {
                 const parsedContent = ParseContent(journal.content)
                 const isLiked = user && journal.likes.some(like => like.user_id === user?.userData[0]?.id)
+                const isBookmarked = journal.bookmarks.some((bookmark) => bookmark.user_id === user?.userData[0]?.id);
                 return(
                     <div className="cards" key={journal.id}>
                         <div className="card-content">
@@ -286,8 +295,8 @@ const PostCards = () => {
                                         )}
 
                                         {icon.bookmarkAction && (
-                                            <div onClick={(e) => icon.bookmarkAction(e, journal.id)}>
-                                                {icon.label} 
+                                            <div onClick={(e) => icon.bookmarkAction(e, journal.id)} className={icon.className}>
+                                                {icon.checkBookrmark(isBookmarked)} 
                                             </div>
                                         )}
                                         
@@ -298,6 +307,7 @@ const PostCards = () => {
                                         </div> */}
                                         {icon.countLike && icon.countLike(journal.likes.length)} 
                                         {icon.countComments && icon.countComments(journal.comments?.[0]?.count)}
+                                        {icon.countBookmarks && icon.countBookmarks(journal.bookmarks.length)}
                                     </div>  
                                 ))
                             )}

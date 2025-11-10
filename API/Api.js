@@ -160,11 +160,12 @@ export const deleteJournalImage = async(token, url) => {
 
 }
 
-export const getJournals = async(cursor = null, limit = 5) =>{
+export const getJournals = async(cursor = null, limit = 5, userId) =>{
+    console.log(userId)
     try {
         const url = cursor 
-        ? `${BASE_URL}/journals?limit=${limit}&before=${cursor}`
-        : `${BASE_URL}/journals?limit=${limit}`;
+        ? `${BASE_URL}/journals?limit=${limit}&before=${cursor}&userId=${userId}`
+        : `${BASE_URL}/journals?limit=${limit}&userId=${userId}`;
 
         const response = await fetch(url, {
             method: 'GET'
@@ -183,13 +184,13 @@ export const getJournals = async(cursor = null, limit = 5) =>{
     }
 }
 export const clickLike = async(token, postId) => {
-    const headers = {'Content-Type': 'application/json'};
+    const headers = {'Content-Type': 'application/json'}; //use content type because it will receive a object type of data
     if(token) headers['Authorization'] = `Bearer ${token}`;
 
     const response = await fetch(`${BASE_URL}/like`, {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify(postId)
+        body: JSON.stringify(postId) //tringify the plain object
     })
     if(!response.ok){
         throw new Error('error adding like')
@@ -233,6 +234,25 @@ export const getComments = async(cursor= null, limit= 10, postId) =>{
     }
 }
 
+export const addBookmark = async(token, journalId) =>{
+    const headers = {'Content-Type': 'application/json'};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/addBoorkmark`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(journalId),
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error('error:', error);
+    }
+
+    const message = await response.json();
+    console.log(message);
+    return message;
+}
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`
