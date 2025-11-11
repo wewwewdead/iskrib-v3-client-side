@@ -27,7 +27,8 @@ const ParseContent = (contentString) => {
         const content = JSON.parse(contentString);
         const root = content.root;
         const children = root?.children || [];
-            
+        
+        // console.log(children)
         const parsedData = {
             text: [],
             slicedText: [],
@@ -49,7 +50,7 @@ const ParseContent = (contentString) => {
                     imageNodes.forEach((img) => {
                         const imageData = {src: img.src, width: img.width, height: img.height};
                         parsedData.images.push(imageData)
-                        if(!parsedData.firstImage) parsedData.firstImage = imageData;
+                        if(!parsedData.firstImage) parsedData.firstImage = imageData; //check if firstImage has no image
                     })
                 }
 

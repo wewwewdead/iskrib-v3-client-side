@@ -203,6 +203,9 @@
 .content-view-countComments{
     font-size: 0.8rem;
 }
+.content-view-countBookmarks{
+    font-size: 0.8rem;
+}
 .content-viewer-icons{
     display: flex;
     justify-content: center;

@@ -6,10 +6,10 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { useLocation } from "react-router-dom";
 import './contentviewer.css'
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, } from "framer-motion";
 import CalculateText from "../postCards/calculateReadingTime";
-import { useLikeMutation } from "../../../utils/useMutation";
+import { useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
 import { useAuth } from "../../../Context/Authcontext";
 import CommentSection from "../../comments/comments";
 import debounce from "../../../../helpers/debounce";
@@ -18,6 +18,7 @@ import formatCounts from "../../../../helpers/fomatCounts";
 const ContentView =() =>{
     const [showBackButton, setShowBackButton] = useState(true);
     const [likes ,setLikes] = useState([]);
+    const [bookmarks, setBookmarks] = useState([]);
     const {session, user} = useAuth();
 
     const [showCommentsContainer, setShowCommentsContainer] = useState(false);
@@ -34,16 +35,18 @@ const ContentView =() =>{
      useEffect(() =>{
         if(postData){
             setLikes(Array.isArray(postData?.likes) ? postData?.likes : Object.values(postData.likes));
+            // console.log(postData)
+            setBookmarks(Array.isArray(postData?.bookmarks) ? postData?.bookmarks : Object.values(postData.bookmarks));
         }
     },[postData])
 
     
     const isLiked = likes.some((like) => like.user_id === user?.userData?.[0].id);
-
-    // useEffect(() =>{
-    //     // console.log(isLiked)
-    //     console.log(likes)
-    // }, [isLiked, likes])
+    const isBookmarked = bookmarks.some((like) => like.user_id === user?.userData?.[0].id);
+    useEffect(() =>{
+        // console.log(isLiked)
+        console.log('isbookmarked:', isBookmarked)
+    }, [isLiked, likes])
 
     const handleLike = async(e, journalId) => {
         await handleClickLike(e, journalId)
@@ -53,32 +56,46 @@ const ContentView =() =>{
             : [...prev, {user_id: user?.userData?.[0].id}]
         )
     }
+    const handleBookmark = async(e, journalId) =>{
+        await handleClickBookmark(journalId);
+        e.stopPropagation();
+        setBookmarks((prev) =>
+        isBookmarked ? prev.filter((bookmark) => bookmark.user_id !== user?.userData?.[0].id)
+    : [...prev, {user_id: user?.userData?.[0]?.id}])
+    }
 
-    const mutation = useLikeMutation(session, user?.userData?.[0]?.id)
+    const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id)
     const handleClickLike = async(e, journalId) => {
         e.stopPropagation();
-        mutation.mutate({journalId});
+        mutationLike.mutate({journalId});
 
     }
-    const debounceClickLike = debounce(handleLike, 300);
+    const debounceClickLike = debounce(handleLike, 200);
+
+    const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
+    const handleClickBookmark = async(journalId) =>{
+        mutationBookmark.mutate({journalId})
+    }
+    const debounceClickBookmark = debounce(handleBookmark, 200);
 
     const cardIcons = [
         {
             labelLike: (isLiked) => (<svg className="svg-like" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill={isLiked ? "rgb(255, 116, 116)" : "#5e5e5eff"}><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>),
             className: 'like-button',
             action: (e, journalId) => debounceClickLike(e, journalId),
-            likeCount: (count) => <span className="content-view-countlike" style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</span>
+            likeCount: (count) => <span className="content-view-countlike" style={{padding: '0', margin: '0',}}>{formatCounts(count)}</span>
         },
         {
             label:<svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M440-400h80v-120h120v-80H520v-120h-80v120H320v80h120v120ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>,
             className: 'comment-button',
             action: (e) => hanldeClickComments(e),
-            commentsCount: (count) => <span className="content-view-countComments" style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</span>
+            commentsCount: (count) => <span className="content-view-countComments" style={{padding: '0', margin: '0',}}>{formatCounts(count)}</span>
         },
         {
-            label: <svg className="svg-bookmark" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>,
+            labelBookmark: (isBookmarked) => (<svg className="svg-bookmark" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill={isBookmarked ? "rgb(72, 208, 135)" : "#5e5e5eff"}><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>),
             className: 'bookmark-button',
-            action: (e) => console.log('clicked bookmark')
+            action: (e, journalId) => debounceClickBookmark(e, journalId),
+            bookmarksCount: (count) => <span className="content-view-countBookmarks" style={{padding: '0', margin: '0'}}>{formatCounts(count)}</span>
         }
     ]
 
@@ -194,9 +211,11 @@ const ContentView =() =>{
                         <div onClick={(e) => icon.action(e, postData?.journalId)} className={icon.className}>
                             {icon.labelLike && icon.labelLike(isLiked)}  
                             {icon.label}
+                            {icon.labelBookmark && icon.labelBookmark(isBookmarked)}
                         </div>
                         <div>{icon.likeCount && icon.likeCount(likes.length)}</div>
                         <div>{icon.commentsCount && icon.commentsCount(postData?.commentsCount)}</div>
+                        <div>{icon.bookmarksCount && icon.bookmarksCount(bookmarks.length)}</div>
                     </div>
                     
                 ))}

@@ -11,6 +11,7 @@ import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
 
 import PostCards from './components/HomePage/postCards/PostCards.jsx';
 import ContentView from './components/HomePage/ContentViewer/ContentView.jsx';
+import Bookmarks from './components/Bookmarks/Bookmarks.jsx';
 
 const App = () => {
 
@@ -34,12 +35,13 @@ const initaConfig = {
     <LexicalComposer initialConfig={initaConfig}>
       <BrowserRouter>
         <Routes>
-          <Route path='/' element={<HomePage/>}/>
+          <Route path='/' element={<LoginPage/>}/>
           <Route path='/profile' element={<MyProfile/>}/>
           <Route path='/home' element={<HomePage/>}>
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>
           </Route>
+          <Route path='/bookmark' element={<Bookmarks/>}/>
           <Route path='/login' element={<LoginPage/>}/>
           <Route path='/signUp' element={<SignUp/>}/>
         </Routes>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, use } from "react";
 import { MoonLoader, BeatLoader } from "react-spinners";
-import { motion, AnimatePresence, pipe,} from "framer-motion";
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence,} from "framer-motion";
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import './postcards.css';
 import {getJournals,} from "../../../../API/Api";
 import ParseContent from "./parseData";
@@ -52,7 +52,7 @@ const PostCards = () => {
         {
             label: <svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M440-400h80v-120h120v-80H520v-120h-80v120H320v80h120v120ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>,
             className: 'comment-button',
-            commentAction: (e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount) => handleCLickContent(e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount),
+            commentAction: (e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks) => handleCLickContent(e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks),
             countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -81,7 +81,7 @@ const PostCards = () => {
         } 
     })
 
-    const handleCLickContent = (e, jsonbContent,wholeText, title, name, avatar, created_at, journalId, likes, commentsCount) => {
+    const handleCLickContent = (e, jsonbContent,wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks) => {
         e.stopPropagation();
         setContent(jsonbContent);
         setContentTitle(title)
@@ -95,8 +95,8 @@ const PostCards = () => {
                 created_at: created_at,
                 journalId: journalId,
                 likes: likes,
-                commentsCount: commentsCount
-
+                commentsCount: commentsCount,
+                bookmarks: bookmarks
             }
         })
     }
@@ -260,7 +260,7 @@ const PostCards = () => {
                                 
                             </div>
 
-                            <div onClick={(e) => handleCLickContent(e, journal.content,parsedContent.wholeText, journal.title, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count)} className="content-container">
+                            <div onClick={(e) => handleCLickContent(e, journal.content,parsedContent.wholeText, journal.title, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count, journal.bookmarks)} className="content-container">
 
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">
@@ -289,7 +289,7 @@ const PostCards = () => {
                                         )}
 
                                         {icon.commentAction && (
-                                            <div onClick={(e) => icon.commentAction(e, journal.content, parsedContent.wholeText, journal.title, journal.users?.name, journal.users?.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count)} id="card-icons" className={icon.className}>
+                                            <div onClick={(e) => icon.commentAction(e, journal.content, parsedContent.wholeText, journal.title, journal.users?.name, journal.users?.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count, journal.bookmarks)} id="card-icons" className={icon.className}>
                                                 {icon.label} 
                                             </div>
                                         )}

@@ -253,6 +253,20 @@ export const addBookmark = async(token, journalId) =>{
     console.log(message);
     return message;
 }
+
+export const getBookmarks = async(cursor= null, limit= 5, userId) =>{
+    const url = cursor ? `${BASE_URL}/getBookmarks?limit=${limit}&before=${cursor}&userId=${userId}` : `${BASE_URL}/getBookmarks?limit=${limit}&userId=${userId}`;
+    const response = await fetch(url, {
+        method: 'GET',
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    return data;
+}
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`
