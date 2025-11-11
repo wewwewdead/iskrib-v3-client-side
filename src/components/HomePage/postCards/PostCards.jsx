@@ -300,11 +300,6 @@ const PostCards = () => {
                                             </div>
                                         )}
                                         
-                                        {/* <div onClick={(e) => icon.commentAction ? icon.commentAction(e, journal.content, parsedContent.wholeText, journal.title, journal.users?.name, journal.users?.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count) : icon.action(e, journal.id)} id="card-icons" key={index} className={icon.className}>
-                                            {icon.likeAction && icon.likeAction(isLiked)}
-                                            
-                                            {icon.label} 
-                                        </div> */}
                                         {icon.countLike && icon.countLike(journal.likes.length)} 
                                         {icon.countComments && icon.countComments(journal.comments?.[0]?.count)}
                                         {icon.countBookmarks && icon.countBookmarks(journal.bookmarks.length)}
