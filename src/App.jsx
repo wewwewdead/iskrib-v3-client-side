@@ -40,8 +40,8 @@ const initaConfig = {
           <Route path='/home' element={<HomePage/>}>
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>
-          </Route>
-          <Route path='/bookmark' element={<Bookmarks/>}/>
+            <Route path='bookmark' element={<Bookmarks/>}/>
+          </Route>   
           <Route path='/login' element={<LoginPage/>}/>
           <Route path='/signUp' element={<SignUp/>}/>
         </Routes>

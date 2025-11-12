@@ -27,6 +27,7 @@
     color: rgb(0, 0, 0);
     background-color: rgba(255, 255, 255, 0.23);
     backdrop-filter: blur(25px);
+    user-select: none;
 }
 .sidebar-links{
     display: flex;
@@ -40,6 +41,7 @@
     color: rgb(60, 60, 60);
     background-color: rgba(255, 255, 255, 0.23);
     backdrop-filter: blur(25px);
+    user-select: none;
 }
 .sidebar-links:hover{
     background-color:rgb(245, 245, 245) ;

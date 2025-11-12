@@ -7,14 +7,8 @@ import {getJournals,} from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, } from "react-router-dom";
 
-import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import ImageNode from "../Editor/nodes/ImageNode";
-import { HeadingNode } from "@lexical/rich-text";
-import { LexicalComposer } from "@lexical/react/LexicalComposer";
-import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { useAuth } from "../../../Context/Authcontext";
 import { useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
 import formatCounts from "../../../../helpers/fomatCounts";
@@ -22,11 +16,6 @@ import debounce from "../../../../helpers/debounce";
 
 
 const PostCards = () => {
-    const theme = {
-      paragraph: 'editor-paragraph',
-      heading: 'editor-heading',
-    }
-      
     const {session, user} = useAuth();
     const queryClient = useQueryClient();
 
@@ -36,11 +25,15 @@ const PostCards = () => {
         threshold: 0.2
     })
     const [postIdSettings, setPostIdSettings] = useState('');
-    const [showContent, setShowContent] = useState(false);
-    const [content, setContent] = useState(null);
-    const [contentTitle, setContentTitle] = useState('')
+    const [showHeaders, setShowHeaders] = useState(true);
 
-    const scrollRefTimeOut = useRef(null)
+
+
+    const header_links = [
+        {label: 'For You'},
+        {label: 'Following'},
+        {label: 'Trending'},
+    ]
 
     const cardIcons = [
         {
@@ -83,8 +76,6 @@ const PostCards = () => {
 
     const handleCLickContent = (e, jsonbContent,wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks) => {
         e.stopPropagation();
-        setContent(jsonbContent);
-        setContentTitle(title)
         navigate('/home/contentViewer', {
             state: {
                 content: jsonbContent,
@@ -147,10 +138,23 @@ const PostCards = () => {
     }, [])
 
     useEffect(() =>{
+        let timeOut;
+        const scroll = (e) =>{
+            timeOut = setTimeout(() => {
+                setShowHeaders(true)
+            }, 500);
+            setShowHeaders(false)
+        }
+        document.addEventListener('scroll', scroll, true);
+        return() =>{
+            clearTimeout(timeOut);
+            document.removeEventListener('scroll', scroll, true)
+        }
+    }, [])
+
+    useEffect(() =>{
         console.log(data)
     }, [data])
-
-    // if(isLoading) return <div className="loading-newsfeed-bg"><MoonLoader loading={isLoading} size={20} speedMultiplier={2}/></div>
 
     const journals = data?.pages?.flatMap((page) => page.data || []) || [];
 
@@ -173,36 +177,29 @@ const PostCards = () => {
     }
     return(
         <>
-        {/* MAKE A SEPARATE COMPONENT FOR CONTENTVIEWER!!  */}
-        {showContent &&(
-            <LexicalComposer 
-            initialConfig={{
-                namespace: "ContentViewer",
-                theme,
-                editable: false,
-                editorState: content, 
-                //register nodes
-                nodes: [ImageNode, HeadingNode ],
-                onError(error){
-                    throw error;
-                    },
-            }}>
+        <AnimatePresence>
+            {showHeaders && (
+                <motion.div 
+                className="newsfeed-header"
+                initial={{opacity: 0}}
+                animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
+                exit={{ opacity: 0, y: -20,
+                        transition: { 
+                        duration: 0.2,
+                        ease: "easeOut"
+                        }
+                }}
+                >
 
-            <div className="sample-content-show">
-                <div>
-                    {contentTitle}
-                </div>
-                <RichTextPlugin
-                    contentEditable={
-                    <ContentEditable 
-                        className="content-viewer" 
-                    />
-                    }
-                    ErrorBoundary={LexicalErrorBoundary}    
-                />
-            </div>
-            </LexicalComposer>
-        )}
+                    {header_links.map((header_link, index) => (
+                        <div key={index} className="header-links">
+                            {header_link.label}
+                        </div>
+                    ))}
+
+                </motion.div>
+            )}
+            </AnimatePresence>
         
         <AnimatePresence>
         <div className="postcards-parent-container">

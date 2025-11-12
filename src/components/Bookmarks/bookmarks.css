@@ -11,6 +11,27 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 50%;
+    width: 90%;
     height: fit-content;
+}
+.boomarks-header{
+    position: fixed;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    width: 718px;
+    height: 60px;
+    user-select: none;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+    z-index: 10;
+    border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+}
+.bookmarks-header-text{
+    padding: 0;
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
 }

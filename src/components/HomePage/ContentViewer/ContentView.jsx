@@ -4,7 +4,7 @@ import ImageNode from "../Editor/nodes/ImageNode";
 import { HeadingNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { useLocation } from "react-router-dom";
+import { data, useLocation } from "react-router-dom";
 import './contentviewer.css'
 import { use, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, } from "framer-motion";
@@ -44,9 +44,8 @@ const ContentView =() =>{
     const isLiked = likes.some((like) => like.user_id === user?.userData?.[0].id);
     const isBookmarked = bookmarks.some((like) => like.user_id === user?.userData?.[0].id);
     useEffect(() =>{
-        // console.log(isLiked)
-        console.log('isbookmarked:', isBookmarked)
-    }, [isLiked, likes])
+        console.log(postData)
+    }, [postData])
 
     const handleLike = async(e, journalId) => {
         await handleClickLike(e, journalId)
