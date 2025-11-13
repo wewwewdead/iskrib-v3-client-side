@@ -1,11 +1,18 @@
-.bookmark-parent-container{
+.bookmark-loading-container{
     display: flex;
-    width: 100%;
-    height: 100vh;
-    overflow-y: auto;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    height: 100vh;
+}
+.bookmark-parent-container{
+    position: relative;
+    top: 90px;
+    display: flex;
     flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    margin-bottom: 1rem;
 }
 .bookmarks{
     display: flex;
@@ -34,4 +41,10 @@
     margin: 0;
     font-size: 1.2rem;
     font-weight: 600;
+}
+.inview-container{
+    display: flex;
+    width: 100%;
+    height: 50px;
+    position: relative;
 }

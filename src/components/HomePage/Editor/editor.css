@@ -1,13 +1,13 @@
-.tiptap p.is-empty::before {
-  color: #96a0aa;
-  content: attr(data-placeholder);
-  float: left;
-  height: 0;
-  pointer-events: none;
+.editor-text-bold{
+    font-weight: bold;
 }
-.tiptap:focus{
-    outline: none;
+.editor-text-italic{
+    font-style: italic;
 }
+.editor-text-underline{
+    text-decoration: underline;
+}
+
 .editor-parent-container{
     display: flex;
     justify-content: center;

@@ -13,6 +13,7 @@ import { useAuth } from "../../../Context/Authcontext";
 import { useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
 import formatCounts from "../../../../helpers/fomatCounts";
 import debounce from "../../../../helpers/debounce";
+import { handleClickProfile, handleCLickContent } from "../../../../helpers/handleClicks";
 
 
 const PostCards = () => {
@@ -27,6 +28,8 @@ const PostCards = () => {
     const [postIdSettings, setPostIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);
 
+    const handleClickUserProfile = handleClickProfile(navigate);
+    const clickContent = handleCLickContent(navigate);
 
 
     const header_links = [
@@ -45,7 +48,7 @@ const PostCards = () => {
         {
             label: <svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M440-400h80v-120h120v-80H520v-120h-80v120H320v80h120v120ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>,
             className: 'comment-button',
-            commentAction: (e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks) => handleCLickContent(e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks),
+            commentAction: (e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks) => clickContent(e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks),
             countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -73,24 +76,6 @@ const PostCards = () => {
             return undefined;
         } 
     })
-
-    const handleCLickContent = (e, jsonbContent,wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks) => {
-        e.stopPropagation();
-        navigate('/home/contentViewer', {
-            state: {
-                content: jsonbContent,
-                wholeText: wholeText,
-                title: title,
-                name: name,
-                avatar: avatar,
-                created_at: created_at,
-                journalId: journalId,
-                likes: likes,
-                commentsCount: commentsCount,
-                bookmarks: bookmarks
-            }
-        })
-    }
 
     const handleClickSettings = (e, postId) =>{
         e.stopPropagation();
@@ -213,7 +198,7 @@ const PostCards = () => {
 
                             <div className="user-info">
                                 <div className="user-info-child-container">
-                                    <div onClick={() => navigate('/profile')} className="user-avatar-container">
+                                    <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-avatar-container">
                                         <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '../../../src/assets/profile.jpg'} alt="" />
                                     </div>
                                     <div onClick={() => navigate('/profile')} className="user-name-container">
@@ -257,7 +242,7 @@ const PostCards = () => {
                                 
                             </div>
 
-                            <div onClick={(e) => handleCLickContent(e, journal.content,parsedContent.wholeText, journal.title, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count, journal.bookmarks)} className="content-container">
+                            <div onClick={(e) => clickContent(e, journal.content,parsedContent.wholeText, journal.title, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count, journal.bookmarks)} className="content-container">
 
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">

@@ -51,13 +51,10 @@ export const updateProfileData = async(body, token) => {
     const data = await response.json();
     console.log(data)
 }
-export const getUserData = async(token) =>{
-    const headers = {}
-    if(token) headers['Authorization'] = `Bearer ${token}`;
+export const getUserData = async(userId) =>{
 
-    const response = await fetch(`${BASE_URL}/getUserData`, {
+    const response = await fetch(`${BASE_URL}/getUserData?userId=${userId}`, {
         method: 'GET',
-        headers: headers
     })
     if(!response.ok){
         const error = await response.json()

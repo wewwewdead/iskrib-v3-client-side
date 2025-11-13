@@ -1,0 +1,108 @@
+.visit-profile-hero-section{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 90%;
+    height: 450px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 20px;
+    gap: 0.2rem;
+    border: 0.7px solid rgba(151, 151, 151, 0.168);
+}
+.visited-profile-image-container{
+    display: flex;
+    height: fit-content;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+}
+.visited-profile-image{
+    position: relative;
+    border-radius: 20px;
+    object-fit: cover;
+    width: 150px;
+    height: 150px;
+}
+.visited-profile-follow-button-container{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: fit-content;
+    height: fit-content;
+    gap: 1rem;
+}
+.follow-visited-profile-bttn{
+    border: none;
+    padding:  0.5rem 1rem;
+    cursor: pointer;
+    color: rgb(255, 255, 255);
+    background-color: rgb(4, 20, 29);
+    border-radius: 15px;
+    outline: none;
+}
+.follow-visited-profile-bttn:hover{
+    background-color: rgb(11, 45, 65);
+}
+.visited-profile-name-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    width: fit-content;
+    height: fit-content;
+    padding: 0.5rem;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+}
+.visited-profile-name{
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    font-size: 1.5rem;
+    font-weight: 760;
+    line-height: 1;
+}
+.visited-profile-metadata-container{
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    width: fit-content;
+    padding: 0.5rem;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+}
+.visited-profile-date-joined{
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    font-size: 0.8rem;
+}
+.visited-profile-follows-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    gap: 2rem;
+}
+.visited-profile-follows-container p{
+    padding: 0;
+    margin: 0;
+    font-size: 0.8rem;
+}
+.visited-profile-bio-container{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 98%;
+    height: fit-content;
+    padding: 0.5rem;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+}

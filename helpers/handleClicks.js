@@ -20,3 +20,17 @@ export const handleCLickContent = (navigate) => {
     }
     
 }
+
+export const handleClickProfile = (navigate) => {
+    return(e, loggedInUserId, clickedUserId) =>{
+        if(loggedInUserId === clickedUserId){
+            navigate('/profile');
+        } else {
+            navigate('/visitProfile', {
+                state: {
+                    userId: clickedUserId
+                }
+            })
+        }
+    }
+}

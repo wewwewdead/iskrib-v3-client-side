@@ -12,12 +12,22 @@ import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
 import PostCards from './components/HomePage/postCards/PostCards.jsx';
 import ContentView from './components/HomePage/ContentViewer/ContentView.jsx';
 import Bookmarks from './components/Bookmarks/Bookmarks.jsx';
+import Visitprofile from './components/VisitProfile/VisitProfile.jsx';
 
 const App = () => {
 
 const theme = {
   paragraph: 'editor-paragraph',
-  heading: 'editor-heading',
+  heading: {
+    h1: 'editor-heading-h1',
+    h2: 'editor-heading-h2',
+    h3: 'editor-heading-h3',
+  },
+  text: {
+    bold: 'editor-text-bold',
+    italic: 'editor-text-italic',
+    underline: 'editor-text-underline',
+  }
 }
   
 const initaConfig = {
@@ -37,10 +47,11 @@ const initaConfig = {
         <Routes>
           <Route path='/' element={<LoginPage/>}/>
           <Route path='/profile' element={<MyProfile/>}/>
+           <Route path='/visitProfile' element={<Visitprofile/>}/>
           <Route path='/home' element={<HomePage/>}>
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>
-            <Route path='bookmark' element={<Bookmarks/>}/>
+            <Route path='bookmark' element={<Bookmarks/>}/>    
           </Route>   
           <Route path='/login' element={<LoginPage/>}/>
           <Route path='/signUp' element={<SignUp/>}/>

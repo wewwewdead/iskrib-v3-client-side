@@ -21,6 +21,8 @@ export const AuthProvider = ({children}) => {
         cacheTime: 1000 * 60 * 60,
     })
 
+    // console.log(authData)
+
     useEffect(() =>{
         let mounted = true;
         (async () =>{
@@ -42,7 +44,7 @@ export const AuthProvider = ({children}) => {
     }, [])
 
     const {data: userData, isLoading} = useQuery({
-            queryKey: ['userData', authData?.access_token],
+            queryKey: ['userData', authData?.user?.id],
             queryFn: ({queryKey}) => getUserData(queryKey[1]),
             enabled: !!authData?.access_token, //only runs if token exists
             staleTime: 1000 * 60 * 60,

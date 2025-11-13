@@ -18,6 +18,7 @@
     flex-direction: column;
     width: 100%;
     height: 100vh;
+    margin-bottom: 1rem;
 }
 .postcards-parent-loading-container{
     position: relative;
@@ -132,7 +133,7 @@
     width: 200px;
     height: 150px;
     border-radius: 15px;
-    z-index: inherit;
+    z-index: 11;
     background-color: rgb(255, 255, 255);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

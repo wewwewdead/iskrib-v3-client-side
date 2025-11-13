@@ -27,8 +27,18 @@ const ContentView =() =>{
    
     const theme = {
         paragraph: 'editor-paragraph',
-        heading: 'editor-heading',
+        heading: {
+            h1: 'editor-heading-h1',
+            h2: 'editor-heading-h2',
+            h3: 'editor-heading-h3',
+        },
+        text: {
+            bold: 'editor-text-bold',
+            italic: 'editor-text-italic',
+            underline: 'editor-text-underline',
+        }
     }
+    
     const location = useLocation();
     const postData = location.state;
 

@@ -8,11 +8,16 @@ import { MoonLoader } from 'react-spinners';
 import { motion, AnimatePresence } from 'framer-motion';
 import { handleCLickContent } from '../../../helpers/handleClicks';
 import { useNavigate } from 'react-router-dom';
+import { useInView } from 'react-intersection-observer';
 
 const Bookmarks = () =>{
     const {user, session} = useAuth();
     const userId = user?.userData?.[0].id
     const navigate = useNavigate();
+
+    const {ref: inviewRef, inView} = useInView({
+        threshold: 0.2
+    });
 
     const [bookmarkIdSettings, setBookmarkIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);
@@ -29,7 +34,10 @@ const Bookmarks = () =>{
     }
 
     const handleClick = handleCLickContent(navigate);
-
+    const handleClickSettings = (e) =>{
+        e.stopPropagation();
+        console.log(e.target)
+    }
     const queryClient = useQueryClient();
     const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['getBookmarks', userId],
@@ -46,12 +54,12 @@ const Bookmarks = () =>{
     })
 
     useEffect(() =>{
-        if(data){
-            console.log(data);
-            console.log(hasNextPage)
+        if(inView && hasNextPage && !isFetchingNextPage){
+            console.log('fetching')
+            fetchNextPage();
         }
 
-    }, [data])
+    }, [hasNextPage, fetchNextPage, isFetchingNextPage, inView])
 
     useEffect(() =>{
         let timeOut;
@@ -70,6 +78,11 @@ const Bookmarks = () =>{
     }, [])
 
     const journals = data?.pages?.flatMap((journal) => journal.bookmarks|| []);
+    const totalBookmarks = data?.pages?.flatMap((journal) => journal.totalBookmarks)
+
+    useEffect(() =>{
+        console.log(data)
+    }, [data])
 
     // useEffect(() =>{
     //     if(journals){
@@ -80,7 +93,9 @@ const Bookmarks = () =>{
     if(isLoading){
         return(
             <>
-            <MoonLoader loading={isLoading} size={25}/>
+            <div className='bookmark-loading-container'>
+                <MoonLoader loading={isLoading} size={25}/>
+            </div>
             </>
         )
     }
@@ -109,12 +124,12 @@ const Bookmarks = () =>{
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M360-240 120-480l240-240 56 56-144 144h568v80H272l144 144-56 56Z"/></svg>
                 </div>
             
-                <p className='bookmarks-header-text'>Bookmarks</p>
+                <p className='bookmarks-header-text'>Bookmarks <span style={{fontSize: '1.2rem', fontWeight: '700'}}>({totalBookmarks})</span></p>
             </motion.div>
         )}
         </AnimatePresence>
 
-        <div className='postcards-parent-container'>
+        <div className='bookmark-parent-container'>
             {journals?.map((journal, index) => {
                 const parsedContent = ParseContent(journal.journals.content);
                 return(
@@ -123,8 +138,8 @@ const Bookmarks = () =>{
                         journal.journals.content, 
                         parsedContent?.wholeText, 
                         journal.journals.title, 
-                        journal.users.name, 
-                        journal.users.image_url, 
+                        journal.journals.users.name, 
+                        journal.journals.users.image_url, 
                         journal.journals.created_at,
                         journal.journals.id,journal.journals.likes, journal.journals.comments[0].count, [{user_id: journal.user_id, journal_id: journal.journal_id}])} className='cards' key={index}>
                         <div className='card-content'>
@@ -133,10 +148,10 @@ const Bookmarks = () =>{
                                 <div className='user-info-child-container'>
 
                                     <div className="user-avatar-container">
-                                        <img loading='lazy' src={journal?.users?.image_url || '../../src/assets/profile.jpg'} className="user-info-avatar" alt="" />
+                                        <img loading='lazy' src={journal?.journals?.users?.image_url || '../../src/assets/profile.jpg'} className="user-info-avatar" alt="" />
                                     </div>
                                     <div className="user-name-container">
-                                        <p className="user-newsfeed-name">{journal.users.name}</p>
+                                        <p className="user-newsfeed-name">{journal?.journals?.users?.name}</p>
                                     </div>
 
                                     <div className="name-info-separator">
@@ -144,7 +159,7 @@ const Bookmarks = () =>{
                                     </div>
 
                                     <div className="user-info-email-container">
-                                        <p className="user-info-email">{journal.users.user_email}</p>
+                                        <p className="user-info-email">{journal?.journals?.users?.user_email}</p>
                                     </div>
 
                                     <div className="name-info-separator">
@@ -165,12 +180,13 @@ const Bookmarks = () =>{
                                     <svg onClick={(e) => handleClickBookmarkSettings(e, journal.journals.id)} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
                                     {bookmarkIdSettings === journal.journals.id && (
                                         <motion.div 
+                                        onClick={(e) => {handleClickSettings(e)}}
                                         initial={{opacity:0 ,scale:0}}
                                         animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.3}}}
                                         exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.3}}}
                                         className="setting-modal"
                                         >
-                                            <p onClick={() => console.log('clicked')}>{journal.journals.title}</p>
+                                            <p>{journal.journals.title}</p>
                                         </motion.div>
                                     )}
                                 </div>
@@ -186,7 +202,7 @@ const Bookmarks = () =>{
                                 </div>
 
                                 <div className="feed-image-content-container">
-                                    <img className="journal-image" src={parsedContent.firstImage.src || '../../src/assets/no-image.png'} alt="content thumbnail" />
+                                    <img className="journal-image" src={parsedContent?.firstImage?.src || '../../src/assets/no-image.png'} alt="content thumbnail" />
                                 </div>
                             </div>
 
@@ -194,6 +210,8 @@ const Bookmarks = () =>{
                     </div>
                 )
             })}
+            <div ref={inviewRef} className='inview-container'>
+            </div>
         </div>
         </>
     )
