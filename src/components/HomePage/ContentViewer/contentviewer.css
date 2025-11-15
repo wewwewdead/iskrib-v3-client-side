@@ -79,6 +79,7 @@
     align-items: center;
     height: fit-content;
     width: fit-content;
+    cursor: pointer;
 }
 .content-metadata-container{
     width: 100%;
@@ -107,7 +108,9 @@
     border-radius: 20px;
     border: 0.7px solid rgb(151, 151, 151);
     cursor: pointer;
+    user-select: none;
 }
+
 .content-created{
     display: flex;
     justify-content: center;

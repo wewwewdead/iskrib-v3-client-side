@@ -3,6 +3,7 @@ import supabase from '../utils/supabaseClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUserData } from '../../API/Api';
 
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
@@ -20,6 +21,8 @@ export const AuthProvider = ({children}) => {
         staleTime: 1000 * 60 * 60,
         cacheTime: 1000 * 60 * 60,
     })
+
+    
 
     // console.log(authData)
 

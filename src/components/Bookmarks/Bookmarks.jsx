@@ -6,7 +6,7 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import ParseContent from '../HomePage/postCards/parseData';
 import { MoonLoader } from 'react-spinners';
 import { motion, AnimatePresence } from 'framer-motion';
-import { handleCLickContent } from '../../../helpers/handleClicks';
+import { handleCLickContent, handleClickProfile } from '../../../helpers/handleClicks';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
 
@@ -21,6 +21,8 @@ const Bookmarks = () =>{
 
     const [bookmarkIdSettings, setBookmarkIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);
+
+    const handleclickUserProfile = handleClickProfile(navigate);
 
     const handleClickBookmarkSettings = (e, journalId) => {
         e.stopPropagation();
@@ -133,24 +135,16 @@ const Bookmarks = () =>{
             {journals?.map((journal, index) => {
                 const parsedContent = ParseContent(journal.journals.content);
                 return(
-                    <div onClick={(e) => handleClick(
-                        e,
-                        journal.journals.content, 
-                        parsedContent?.wholeText, 
-                        journal.journals.title, 
-                        journal.journals.users.name, 
-                        journal.journals.users.image_url, 
-                        journal.journals.created_at,
-                        journal.journals.id,journal.journals.likes, journal.journals.comments[0].count, [{user_id: journal.user_id, journal_id: journal.journal_id}])} className='cards' key={index}>
+                    <div className='cards' key={index}>
                         <div className='card-content'>
 
                             <div className="user-info">
                                 <div className='user-info-child-container'>
 
-                                    <div className="user-avatar-container">
+                                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-avatar-container">
                                         <img loading='lazy' src={journal?.journals?.users?.image_url || '../../src/assets/profile.jpg'} className="user-info-avatar" alt="" />
                                     </div>
-                                    <div className="user-name-container">
+                                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-name-container">
                                         <p className="user-newsfeed-name">{journal?.journals?.users?.name}</p>
                                     </div>
 
@@ -193,7 +187,23 @@ const Bookmarks = () =>{
 
                             </div>
 
-                            <div className="content-container">
+                            <div onClick={(e) => handleClick(
+                                e,
+                                journal.journals.content, 
+                                parsedContent?.wholeText, 
+                                journal.journals.title, 
+                                journal.journals.user_id,
+                                journal.journals.users.name, 
+                                journal.journals.users.image_url, 
+                                journal.journals.created_at,
+                                journal.journals.id,
+                                journal.journals.has_liked, 
+                                journal.journals.comment_count?.[0].count, 
+                                journal.journals.has_bookmarked,
+                                journal.journals.like_count?.[0].count,
+                                journal.journals.bookmark_count?.[0].count,)} 
+                                className="content-container">
+
                                 <div className='feed-text-content-container'>
                                     <div className='feed-title-content'>
                                         <h2 className="feed-title">{journal.journals.title.length > 40 ? `${journal.journals.title.substring(0, 40)}...` : journal.journals.title}</h2>

@@ -4,7 +4,7 @@ import ImageNode from "../Editor/nodes/ImageNode";
 import { HeadingNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { data, useLocation } from "react-router-dom";
+import { data, useLocation, useNavigate } from "react-router-dom";
 import './contentviewer.css'
 import { use, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, } from "framer-motion";
@@ -14,14 +14,18 @@ import { useAuth } from "../../../Context/Authcontext";
 import CommentSection from "../../comments/comments";
 import debounce from "../../../../helpers/debounce";
 import formatCounts from "../../../../helpers/fomatCounts";
+import { handleClickProfile } from "../../../../helpers/handleClicks";
 
 const ContentView =() =>{
+    const navigate = useNavigate();
     const [showBackButton, setShowBackButton] = useState(true);
-    const [likes ,setLikes] = useState([]);
-    const [bookmarks, setBookmarks] = useState([]);
     const {session, user} = useAuth();
 
     const [showCommentsContainer, setShowCommentsContainer] = useState(false);
+    const [isLiked, setIsliked] = useState('')
+    const [likesCount, setLikesCount] = useState(null);
+    const [isBookmarked, setIsBookmarked] = useState(null);
+    const [bookmarkCounts, setBookmarkCounts] = useState(null);
 
     const contentRef = useRef();
    
@@ -42,41 +46,23 @@ const ContentView =() =>{
     const location = useLocation();
     const postData = location.state;
 
-     useEffect(() =>{
-        if(postData){
-            setLikes(Array.isArray(postData?.likes) ? postData?.likes : Object.values(postData.likes));
-            // console.log(postData)
-            setBookmarks(Array.isArray(postData?.bookmarks) ? postData?.bookmarks : Object.values(postData.bookmarks));
-        }
-    },[postData])
-
-    
-    const isLiked = likes.some((like) => like.user_id === user?.userData?.[0].id);
-    const isBookmarked = bookmarks.some((like) => like.user_id === user?.userData?.[0].id);
-    useEffect(() =>{
-        console.log(postData)
-    }, [postData])
+    const handleclickUserProfile = handleClickProfile(navigate);
 
     const handleLike = async(e, journalId) => {
         await handleClickLike(e, journalId)
-
-        setLikes((prev) =>
-            isLiked ? prev.filter((like) => like.user_id !== user?.userData?.[0].id)
-            : [...prev, {user_id: user?.userData?.[0].id}]
-        )
+        e.stopPropagation();
     }
     const handleBookmark = async(e, journalId) =>{
         await handleClickBookmark(journalId);
         e.stopPropagation();
-        setBookmarks((prev) =>
-        isBookmarked ? prev.filter((bookmark) => bookmark.user_id !== user?.userData?.[0].id)
-    : [...prev, {user_id: user?.userData?.[0]?.id}])
     }
 
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id)
     const handleClickLike = async(e, journalId) => {
         e.stopPropagation();
         mutationLike.mutate({journalId});
+        setIsliked(!isLiked)
+        setLikesCount(isLiked ? likesCount - 1 : likesCount + 1)
 
     }
     const debounceClickLike = debounce(handleLike, 200);
@@ -84,8 +70,18 @@ const ContentView =() =>{
     const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
     const handleClickBookmark = async(journalId) =>{
         mutationBookmark.mutate({journalId})
+        setIsBookmarked(!isBookmarked)
+        setBookmarkCounts(isBookmarked ? bookmarkCounts - 1 : bookmarkCounts + 1)
     }
     const debounceClickBookmark = debounce(handleBookmark, 200);
+
+    const handleClickFollow = (e, followingId, followerId)=>{
+        e.stopPropagation();
+        console.log({
+            followerId: followerId,
+            followingId:followingId
+        })
+    }
 
     const cardIcons = [
         {
@@ -127,6 +123,10 @@ const ContentView =() =>{
         if(postData){
             console.log(postData)
         }
+        setLikesCount(postData?.likesCount)
+        setBookmarkCounts(postData?.bookmarksCount)
+        setIsliked(postData?.isLiked)
+        setIsBookmarked(postData?.isBookmarked)
     }, [postData])
 
     useEffect(() => {
@@ -181,15 +181,19 @@ const ContentView =() =>{
                 <p>{postData?.title}</p>
 
                 <div className="content-metadata-container">
-                    <div className="content-avatar-container">
+                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)} className="content-avatar-container">
                         <img src={postData?.avatar} className="content-avatar" alt="user avatar" />
                     </div>
-                    <div className="content-owner-name">
+                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)} className="content-owner-name">
                         {postData?.name}
                     </div>
-                    <div className="follow-bttn">
-                        Follow
-                    </div>
+
+                    {postData?.userId !== user?.userData?.[0].id && (
+                        <div onClick={(e) => handleClickFollow(e, postData?.userId, user?.userData?.[0].id)} className="follow-bttn">
+                            Follow
+                        </div>
+                    )}
+                    
                     <div className="content-created">
                         <p>
                             {new Date(postData?.created_at).toLocaleDateString('en-US', {
@@ -222,9 +226,9 @@ const ContentView =() =>{
                             {icon.label}
                             {icon.labelBookmark && icon.labelBookmark(isBookmarked)}
                         </div>
-                        <div>{icon.likeCount && icon.likeCount(likes.length)}</div>
+                        <div>{icon.likeCount && icon.likeCount(likesCount)}</div>
                         <div>{icon.commentsCount && icon.commentsCount(postData?.commentsCount)}</div>
-                        <div>{icon.bookmarksCount && icon.bookmarksCount(bookmarks.length)}</div>
+                        <div>{icon.bookmarksCount && icon.bookmarksCount(bookmarkCounts)}</div>
                     </div>
                     
                 ))}

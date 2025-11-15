@@ -48,7 +48,7 @@ const PostCards = () => {
         {
             label: <svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5e5e5eff"><path d="M440-400h80v-120h120v-80H520v-120h-80v120H320v80h120v120ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>,
             className: 'comment-button',
-            commentAction: (e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks) => clickContent(e, jsonbContent, wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks),
+            commentAction: (e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount) => clickContent(e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount ),
             countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -190,8 +190,8 @@ const PostCards = () => {
         <div className="postcards-parent-container">
             {journals.map((journal, index) => {
                 const parsedContent = ParseContent(journal.content)
-                const isLiked = user && journal.likes.some(like => like.user_id === user?.userData[0]?.id)
-                const isBookmarked = journal.bookmarks.some((bookmark) => bookmark.user_id === user?.userData[0]?.id);
+                const isLiked = journal?.has_liked;
+                const isBookmarked = journal?.has_bookmarked;
                 return(
                     <div className="cards" key={journal.id}>
                         <div className="card-content">
@@ -201,7 +201,7 @@ const PostCards = () => {
                                     <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-avatar-container">
                                         <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '../../../src/assets/profile.jpg'} alt="" />
                                     </div>
-                                    <div onClick={() => navigate('/profile')} className="user-name-container">
+                                    <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-name-container">
                                         <p className="user-newsfeed-name">{journal.users.name}</p>
                                     </div>
 
@@ -242,7 +242,7 @@ const PostCards = () => {
                                 
                             </div>
 
-                            <div onClick={(e) => clickContent(e, journal.content,parsedContent.wholeText, journal.title, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count, journal.bookmarks)} className="content-container">
+                            <div onClick={(e) => clickContent(e, journal.content,parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} className="content-container">
 
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">
@@ -271,7 +271,7 @@ const PostCards = () => {
                                         )}
 
                                         {icon.commentAction && (
-                                            <div onClick={(e) => icon.commentAction(e, journal.content, parsedContent.wholeText, journal.title, journal.users?.name, journal.users?.image_url, journal.created_at, journal.id, journal.likes, journal.comments?.[0]?.count, journal.bookmarks)} id="card-icons" className={icon.className}>
+                                            <div onClick={(e) => icon.commentAction(e, journal.content,parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} id="card-icons" className={icon.className}>
                                                 {icon.label} 
                                             </div>
                                         )}
@@ -282,9 +282,9 @@ const PostCards = () => {
                                             </div>
                                         )}
                                         
-                                        {icon.countLike && icon.countLike(journal.likes.length)} 
-                                        {icon.countComments && icon.countComments(journal.comments?.[0]?.count)}
-                                        {icon.countBookmarks && icon.countBookmarks(journal.bookmarks.length)}
+                                        {icon.countLike && icon.countLike(journal.like_count?.[0].count)} 
+                                        {icon.countComments && icon.countComments(journal.comment_count?.[0]?.count)}
+                                        {icon.countBookmarks && icon.countBookmarks(journal.bookmark_count?.[0].count)}
                                     </div>  
                                 ))
                             )}

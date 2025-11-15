@@ -70,13 +70,14 @@ const SignUp = () => {
                 return setErrorMessage("CAPTCHA verification failed. Try again.");
             }
 
-            const {error} = await supabase.auth.signUp({
+            const {error: error} = await supabase.auth.signUp({
                 email: email,
                 password: password
             })
-            if(error){
-                return setErrorMessage(error)
+            if(error.message){
+                return setErrorMessage(error.message)
             }
+            navigate('/home')
         } catch (error) {
             console.error('Error during sign-up:', error.message);
             setErrorMessage(error.message);
@@ -84,7 +85,6 @@ const SignUp = () => {
             setEmail(null);
             setPassword(null);
             setIsLoadingSignUp(false)
-            navigate('/home')
         }
         
     }

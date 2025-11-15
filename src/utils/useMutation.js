@@ -20,11 +20,13 @@ export const useBookMarkMutation = (session, userId) => {
                         data: page.data.map((journal) =>{
                             if(journal.id !== data.journalId) return journal;
 
-                            const hasBookmarked = journal.bookmarks.some((bookmark) => bookmark.user_id === userId);
+                            const isBookmarked = journal.has_bookmarked;
+                            const count = journal.bookmark_count?.[0]?.count ?? 0;
 
                             return{
                                 ...journal,
-                                bookmarks: hasBookmarked ? journal.bookmarks.filter((bookmark) => bookmark.user_id !== userId) : [...journal.bookmarks, {user_id: userId}]
+                                has_bookmarked: !isBookmarked,
+                                bookmark_count: [{count: isBookmarked ? count - 1 : count + 1}]
                             }
                         })
                     }))
@@ -64,13 +66,13 @@ export const useLikeMutation = (session, userId) =>{
                             //it is using data.journalId to destructure the data which is an plain object data = {journalId: the id}
                             if(journal.id !== data.journalId) return journal;//find the journal using jounalId, explicitlty mutate the journal
 
-                            const hasLiked = journal.likes.some((like) => like.user_id === userId);
+                            const isLiked = journal.has_liked;
+                            const count = journal.like_count?.[0]?.count ?? 0;
 
                             return{
                                 ...journal,
-                                likes: hasLiked
-                                ? journal.likes.filter((like) => like.user_id !== userId) //remove the likes.user_id if it's the same the userId
-                                : [...journal.likes, {user_id: userId}]
+                                has_liked: !isLiked,
+                                like_count: [{count: isLiked ? count - 1 : count + 1}]
                             }
                         })
                     }))

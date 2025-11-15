@@ -1,20 +1,23 @@
 
 
 export const handleCLickContent = (navigate) => {
-    return (e, jsonbContent,wholeText, title, name, avatar, created_at, journalId, likes, commentsCount, bookmarks) => {
+    return (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) => {
     e.stopPropagation();
     navigate('/home/contentViewer', {
         state: {
             content: jsonbContent,
             wholeText: wholeText,
             title: title,
+            userId: userId,
             name: name,
             avatar: avatar,
             created_at: created_at,
             journalId: journalId,
-            likes: likes,
+            isLiked: isLiked, 
             commentsCount: commentsCount,
-            bookmarks: bookmarks
+            isBookmarked: isBookmarked,
+            likesCount: likesCount,
+            bookmarksCount: bookmarksCount,
         }
     })
     }
