@@ -74,7 +74,8 @@ const PostCards = () => {
                 return new Date(lastJournal.created_at).toISOString();
             }
             return undefined;
-        } 
+        } ,
+        enabled: !!user?.userData?.[0].id
     })
 
     const handleClickSettings = (e, postId) =>{

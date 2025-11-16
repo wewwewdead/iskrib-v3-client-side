@@ -9,12 +9,15 @@ import './contentviewer.css'
 import { use, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, } from "framer-motion";
 import CalculateText from "../postCards/calculateReadingTime";
-import { useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
+import { useBookMarkMutation, useFollowMutation, useLikeMutation } from "../../../utils/useMutation";
 import { useAuth } from "../../../Context/Authcontext";
 import CommentSection from "../../comments/comments";
 import debounce from "../../../../helpers/debounce";
 import formatCounts from "../../../../helpers/fomatCounts";
 import { handleClickProfile } from "../../../../helpers/handleClicks";
+import { addFollows, getFollowsData } from "../../../../API/Api";
+import { useQuery } from "@tanstack/react-query";
+import { MoonLoader } from "react-spinners";
 
 const ContentView =() =>{
     const navigate = useNavigate();
@@ -46,6 +49,14 @@ const ContentView =() =>{
     const location = useLocation();
     const postData = location.state;
 
+    const {data: followsData, isLoading} = useQuery({
+        queryKey: ['followsData', user?.userData?.[0].id, postData?.userId],
+        queryFn: ({queryKey}) => getFollowsData(queryKey[1], queryKey[2]),
+        staleTime: 1000 * 60 * 60,
+        cacheTime: 1000 * 60 * 60,
+        enabled: !!user?.userData?.[0].id && !!postData?.userId,
+    })
+
     const handleclickUserProfile = handleClickProfile(navigate);
 
     const handleLike = async(e, journalId) => {
@@ -54,6 +65,11 @@ const ContentView =() =>{
     }
     const handleBookmark = async(e, journalId) =>{
         await handleClickBookmark(journalId);
+        e.stopPropagation();
+    }
+
+    const handleFollow = async(e, followerId, followingId) => {
+        await handleClickFollow(e, followingId, followerId)
         e.stopPropagation();
     }
 
@@ -75,13 +91,26 @@ const ContentView =() =>{
     }
     const debounceClickBookmark = debounce(handleBookmark, 200);
 
-    const handleClickFollow = (e, followingId, followerId)=>{
+    
+    const mutationFollow = useFollowMutation();
+    const handleClickFollow = async(e, followingId, followerId)=>{
         e.stopPropagation();
-        console.log({
-            followerId: followerId,
-            followingId:followingId
-        })
+        mutationFollow.mutate({followingId, followerId})
+        // const formdata = new FormData();
+        // if(!followerId && !followingId){
+        //     throw new Error('error: follows data is undefined');
+        // }
+
+        // formdata.append('followerId', followerId);
+        // formdata.append('followingId', followingId);
+
+        // const message = await addFollows(formdata);
+
+        // if(message){
+        //     console.log(message);
+        // }
     }
+    const debounceClickFollow = debounce(handleClickFollow, 100)
 
     const cardIcons = [
         {
@@ -119,6 +148,8 @@ const ContentView =() =>{
     const handleCLoseComments = () =>{
         setShowCommentsContainer(false);
     }
+
+
     useEffect(() =>{
         if(postData){
             console.log(postData)
@@ -147,6 +178,17 @@ const ContentView =() =>{
         }
     }, [])
 
+    useEffect(() =>{
+        console.log(followsData)
+    }, [followsData])
+
+    if(isLoading){
+        return(
+            <div className="contentView-loading-container">
+                <MoonLoader loading={isLoading} size={25}/>
+            </div>
+        )
+    }
 
     return(
         <>
@@ -189,8 +231,8 @@ const ContentView =() =>{
                     </div>
 
                     {postData?.userId !== user?.userData?.[0].id && (
-                        <div onClick={(e) => handleClickFollow(e, postData?.userId, user?.userData?.[0].id)} className="follow-bttn">
-                            Follow
+                        <div onClick={(e) => debounceClickFollow(e, postData?.userId, user?.userData?.[0].id)} className={followsData?.isFollowing ? 'unfollow-bttn' : 'follow-bttn'}>
+                           {followsData?.isFollowing ? 'Unfollow' : 'Follow'}
                         </div>
                     )}
                     

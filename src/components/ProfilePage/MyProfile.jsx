@@ -18,6 +18,7 @@ import ImageNode from "../HomePage/Editor/nodes/ImageNode";
 import Cropper from "react-easy-crop";
 import getCroppedImage from "../../utils/getCroppedImage";
 import extractDominantColors from "../../utils/extractDominantColors";
+import formatCounts from "../../../helpers/fomatCounts";
 
 const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
@@ -84,9 +85,6 @@ const MyProfile = () => {
             setFontColor(userData?.profile_font_color)
         }
     }, [user, userData])
-
-
-
 
     //this fucntions are for the bg edit and profile edits
 
@@ -522,8 +520,8 @@ const MyProfile = () => {
                             })}</p>
 
                             <div className="follows-container">
-                                <p>Following</p>
-                                <p>Followers</p>
+                                <p>Following {formatCounts(user?.followingCount)}</p>
+                                <p>Followers {formatCounts(user?.followerCount)}</p>
                             </div>
                         </div>
                         

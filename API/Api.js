@@ -264,6 +264,37 @@ export const getBookmarks = async(cursor= null, limit= 5, userId) =>{
     const data = await response.json();
     return data;
 }
+
+export const addFollows = async(followsData) => {
+    const headers ={'Content-Type': 'application/json'}
+    const response = await fetch(`${BASE_URL}/addFollows`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(followsData),
+    })
+
+    if(!response.ok){
+        const error = await response.json()
+        throw new Error(error);
+    }
+    const data = await response.json();
+    console.log(data);
+    return data;
+}
+
+export const getFollowsData = async(loggedInUserId, userIdToFollow) =>{
+    const response = await fetch(`${BASE_URL}/getFollowsData?userId=${userIdToFollow}&loggedInUserId=${loggedInUserId}`,{
+        method: 'GET'
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    console.log(data)
+    return data;
+}
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

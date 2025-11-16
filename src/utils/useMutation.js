@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, clickLike } from "../../API/Api";
+import {addBookmark, addFollows, clickLike } from "../../API/Api";
+import { data } from "react-router-dom";
 
-export const useBookMarkMutation = (session, userId) => {
+export const useBookMarkMutation = (session) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data) => addBookmark(session?.access_token, data),
@@ -47,7 +48,7 @@ export const useBookMarkMutation = (session, userId) => {
 
 
 
-export const useLikeMutation = (session, userId) =>{
+export const useLikeMutation = (session) =>{
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data) => clickLike(session?.access_token, data), //receiving the object data {journalId: the Id}
@@ -88,4 +89,35 @@ export const useLikeMutation = (session, userId) =>{
       queryClient.invalidateQueries(['journals']);
     },
 })
+}
+
+export const useFollowMutation = () =>{
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data) => addFollows(data),
+
+        onMutate: async(data) => {
+            await queryClient.cancelQueries(['followsData']);
+            const previousData = queryClient.getQueryData(['followsData']);
+
+            queryClient.setQueryData(['followsData'], (old) => {
+                if(!old) return old;
+                return{
+                    ...old,
+                    followersCount: old.isFollowing ? old.followersCount - 1 : old.followersCount + 1,
+                    isFollowing: !old.isFollowing
+                }
+            })
+
+            return {previousData};
+
+        },
+        onError: (err, data, context) => {
+            queryClient.setQueryData(['followsData'], context.previousData)
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries(['followsData']);
+        }
+    })
 }

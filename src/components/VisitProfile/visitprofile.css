@@ -34,18 +34,38 @@
     height: fit-content;
     gap: 1rem;
 }
+
 .follow-visited-profile-bttn{
     border: none;
     padding:  0.5rem 1rem;
     cursor: pointer;
-    color: rgb(255, 255, 255);
-    background-color: rgb(4, 20, 29);
+    color: rgb(4, 20, 29);
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
     border-radius: 15px;
     outline: none;
+    font-weight: 650;
 }
-.follow-visited-profile-bttn:hover{
-    background-color: rgb(11, 45, 65);
+
+.unfollow-visited-profile-bttn{
+    border: none;
+    padding:  0.5rem 1rem;
+    cursor: pointer;
+    color: rgb(4, 20, 29);
+    background-color: rgba(249, 188, 188, 0.23);
+    backdrop-filter: blur(25px);
+    border-radius: 15px;
+    outline: none;
+    transition: ease-in-out 0.2s;
+    font-weight: 650;
 }
+
+.unfollow-visited-profile-bttn:hover{
+    background-color: rgba(209, 114, 114, 0.521);
+    backdrop-filter: blur(25px);
+    color: rgb(193, 27, 27);
+}
+
 .visited-profile-name-container{
     display: flex;
     flex-direction: column;

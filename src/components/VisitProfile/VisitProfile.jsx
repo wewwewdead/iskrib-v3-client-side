@@ -1,19 +1,52 @@
 import { useQuery } from '@tanstack/react-query';
 import './visitprofile.css';
 import { useAuth } from '../../Context/Authcontext';
-import { getUserData } from '../../../API/Api';
-import { useEffect } from 'react';
+import { getFollowsData, getUserData } from '../../../API/Api';
+import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../SideBar/Sidebar';
+import { MoonLoader } from 'react-spinners';
+import { useFollowMutation } from '../../utils/useMutation';
+import debounce from '../../../helpers/debounce';
+import formatCounts from '../../../helpers/fomatCounts';
 
 const Visitprofile = () =>{
     const location = useLocation();
     const {userId} = location.state;
+    const {session, user} = useAuth();
+
+    const buttonRef = useRef();
 
     const navigate = useNavigate();
     const navigatePath = (path) => {
         return navigate(path)
     }
+
+    const handleMouseMove = (isFollowing) =>{
+        if(buttonRef.current){
+            if(isFollowing){
+                buttonRef.current.innerText = 'Unfollow'
+            } else {
+                return
+            }
+        }
+    }
+
+    const handleMouseLeave = (isFollowing) =>{
+        if(buttonRef.current){
+            if(isFollowing){
+                buttonRef.current.innerText = 'Following'
+            } else {
+                return
+            }
+        }
+    }
+
+    const mutationFollow = useFollowMutation();
+    const hadnleClickFollow = (e, followingId, followerId,) =>{
+        mutationFollow.mutate({followingId, followerId})
+    }
+    const debounceClickFollow = debounce(hadnleClickFollow, 0)
 
     const links = [
         {path: '/home', label: 'Home', action: ()=> navigatePath('/home'), icon: <svg xmlns="http://www.w3.org/2000/svg" height="34px" viewBox="0 -960 960 960" width="34px" fill="#000000ff"><path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/></svg>},
@@ -22,7 +55,7 @@ const Visitprofile = () =>{
         {label: 'Write', action: () => setShowEditor(true), className: 'write-journal-bttn'}, // the action function will set the state  to (true)and pass to the HOME.jsx when user clicks the function
     ]
 
-    const {session, user} = useAuth();
+    
     const {data, isLoading} = useQuery({
         queryKey: ['visitedProfile', userId],
         queryFn:({queryKey}) => getUserData(queryKey[1]),
@@ -35,6 +68,28 @@ const Visitprofile = () =>{
         console.log(userData)
     }
 
+    const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
+        queryKey: ['followsData',user?.userData?.[0].id, userId ],
+        queryFn: ({queryKey}) => getFollowsData(queryKey[1], queryKey[2]),
+        staleTime: 1000 * 60 * 60,
+        cacheTime: 1000 * 60 * 60,
+        enabled: !!user?.userData?.[0].id && !!userId
+    })
+
+
+    useEffect(() =>{
+        console.log(followsData)
+    }, [followsData])
+
+    
+    if(isLoading){
+        return(
+            
+            <div className='profile-loading-container'>
+                <MoonLoader loading={isLoading} size={25}/>
+            </div>
+        )
+    }
     return(
         <>
         <div className='profile-parent-container'>
@@ -53,9 +108,9 @@ const Visitprofile = () =>{
                         <div className='visited-profile-image-container'>
                             <img className='visited-profile-image' src={userData?.image_url || '../../src/assets/profile.jpg'} alt="" />
 
-                            <div className='visited-profile-follow-button-container'>
-                                <button className='follow-visited-profile-bttn'>
-                                    Follow
+                            <div onMouseMove={() => handleMouseMove(followsData?.isFollowing)} onMouseLeave={() => handleMouseLeave(followsData?.isFollowing)} className='visited-profile-follow-button-container'>
+                                <button onClick={(e) => debounceClickFollow(e, userId, user?.userData?.[0].id)} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>
+                                    {followsData?.isFollowing ? 'Following' : 'Follow'}
                                 </button>
                             </div>
                         </div>
@@ -70,8 +125,8 @@ const Visitprofile = () =>{
                                 year: 'numeric'
                             })}</p>
                             <div className='visited-profile-follows-container'>
-                                <p style={{padding: 0, margin: 0}}>Followers</p>
-                                <p style={{padding: 0, margin: 0}}>Following</p>
+                                <p style={{padding: 0, margin: 0}}>Followers {formatCounts(followsData?.followersCount)}</p>
+                                <p style={{padding: 0, margin: 0}}>Following {formatCounts(followsData?.followingsCount)}</p>
                             </div>
                         </div>
             
