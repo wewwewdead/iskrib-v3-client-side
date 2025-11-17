@@ -46,8 +46,11 @@ const initaConfig = {
       <BrowserRouter>
         <Routes>
           <Route path='/' element={<LoginPage/>}/>
-          <Route path='/profile' element={<MyProfile/>}/>
-           <Route path='/visitProfile' element={<Visitprofile/>}/>
+          <Route path='/profile' element={<MyProfile/>}>
+            <Route index />
+            <Route path='media'/>
+          </Route>
+          <Route path='/visitProfile' element={<Visitprofile/>}/>
           <Route path='/home' element={<HomePage/>}>
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>

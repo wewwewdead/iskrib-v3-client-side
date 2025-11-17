@@ -7,7 +7,14 @@ const Sidebar = ({links}) =>{
     const {user, session, signOut} = useAuth();
     const navigate = useNavigate(null)
     
+    // const extractPath = (path) =>{
+    //     let segments = path.split('/');
+    //     segments.shift();
 
+    //     const segment = segments[0];
+    //     return `/${segment}`;
+    // }
+    // const path = extractPath(location.pathname)
     const userData = user?.userData?.[0];
     return(
         <>
@@ -15,12 +22,14 @@ const Sidebar = ({links}) =>{
             <div className='sidebar-header'>
                 Iskrib
             </div>
-            {links.map((link, index) => (
+            {links.map((link, index) => {   
+                return(
                 <div className={link.className ? link.className : location.pathname === link.path ? 'sidebar-links-active' : 'sidebar-links'} onClick={link.action} key={index}>
                     {link.icon}
                     {link.label}
                 </div>
-            ))}
+                )
+            })}
             <div className='sidebar-user-container'>
                 {userData && (
                     <>

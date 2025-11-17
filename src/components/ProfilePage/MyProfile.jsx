@@ -19,6 +19,7 @@ import Cropper from "react-easy-crop";
 import getCroppedImage from "../../utils/getCroppedImage";
 import extractDominantColors from "../../utils/extractDominantColors";
 import formatCounts from "../../../helpers/fomatCounts";
+import { act } from "react";
 
 const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
@@ -75,6 +76,11 @@ const MyProfile = () => {
         {style: {background: '#2193b0', backgroundImage: 'linear-gradient(90deg, rgba(33,147,176,1) 0%, rgba(109,213,237,1) 50%, rgba(255,255,255,1) 100%)'}},
         {style: {background: '#8E2DE2', backgroundImage: 'linear-gradient(90deg, rgba(142,45,226,1) 0%, rgba(74,0,224,1) 50%, rgba(0,212,255,1) 100%)'}},
         {style: {}}
+    ]
+
+    const tablists =[
+        {label: 'Writings', path: '/profile', action: () => navigate('/profile')},
+        {label: 'Media', path: '/profile/media', action: () => navigate('/profile/media')},
     ]
 
     useEffect(() => {
@@ -531,6 +537,17 @@ const MyProfile = () => {
                             </p>
                         </div>
 
+                    </div>
+
+
+                    <div className="my-profile-tablist">
+                        {tablists.map((tab, index) => (
+                            <div onClick={() => tab.action()} className={"tab-container"} key={index}>
+                                {tab.label}
+                                
+                                <div className={location.pathname === tab.path ? "tab-indicator" : ''}></div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

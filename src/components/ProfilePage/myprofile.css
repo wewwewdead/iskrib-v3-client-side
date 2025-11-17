@@ -322,8 +322,8 @@
 }
 .metadata-container{
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: flex-start;
     flex-direction: column;
     height: fit-content;
     width: fit-content;
@@ -576,4 +576,41 @@
 }
 .profile-edit-save-bttn:hover{
     background-color: #3e3e3e;
+}
+
+.my-profile-tablist{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    width: 90%;
+    padding: 1rem;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+    margin-top: 1rem;
+    border-radius: 20px;
+}
+.tab-container{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 80px;
+    height: fit-content;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+}
+.tab-indicator{
+    top: 25px;
+    position: absolute;
+    display: flex;
+    width: 100%;
+    height: 6px;
+    border-radius: 5px;
+    background-color: rgba(16, 56, 79, 0.807);
+    transition: ease-in-out 0.3s;
 }
