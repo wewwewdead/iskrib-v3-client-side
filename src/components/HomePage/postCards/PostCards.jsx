@@ -22,6 +22,7 @@ const PostCards = () => {
 
     const navigate = useNavigate();
     const modalRef = useRef(null);
+    const timeOutRef = useRef();
     const {ref, inView} = useInView({
         threshold: 0.2
     })
@@ -124,16 +125,21 @@ const PostCards = () => {
     }, [])
 
     useEffect(() =>{
-        let timeOut;
         const scroll = (e) =>{
-            timeOut = setTimeout(() => {
-                setShowHeaders(true)
+            setShowHeaders(!showHeaders)
+
+            if(timeOutRef.current){
+                clearTimeout(timeOutRef.current);
+            }
+            timeOutRef.current = setTimeout(() => {
+                setShowHeaders(showHeaders)
             }, 500);
-            setShowHeaders(false)
         }
         document.addEventListener('scroll', scroll, true);
         return() =>{
-            clearTimeout(timeOut);
+            if(timeOutRef.current){
+                clearTimeout(timeOutRef.current);
+            }
             document.removeEventListener('scroll', scroll, true)
         }
     }, [])

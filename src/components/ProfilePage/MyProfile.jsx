@@ -1,25 +1,20 @@
 import React, { useEffect, useState, useRef, use, createElement } from "react";
 import './myprofile.css'
 import { useAuth } from "../../Context/Authcontext";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
 import { MoonLoader, BeatLoader, BarLoader} from "react-spinners";
-import { checkUser, getUserData, submitProfileData, updateFontColor, updateProfileData } from "../../../API/Api";
+import { checkUser, getUserData, getUserJournals, submitProfileData, updateFontColor, updateProfileData } from "../../../API/Api";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import Editor from "../HomePage/Editor/Editor";
 import { useCallback } from "react";
-import PostCards from "../HomePage/postCards/PostCards";
-import { LexicalComposer } from '@lexical/react/LexicalComposer';
-import {HeadingNode} from "@lexical/rich-text";
-import ImageNode from "../HomePage/Editor/nodes/ImageNode";
 
 import Cropper from "react-easy-crop";
 import getCroppedImage from "../../utils/getCroppedImage";
 import extractDominantColors from "../../utils/extractDominantColors";
 import formatCounts from "../../../helpers/fomatCounts";
-import { act } from "react";
 
 const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
@@ -91,6 +86,7 @@ const MyProfile = () => {
             setFontColor(userData?.profile_font_color)
         }
     }, [user, userData])
+
 
     //this fucntions are for the bg edit and profile edits
 
@@ -300,6 +296,7 @@ const MyProfile = () => {
             </>
         )
     }
+
     return(
         <>
         {showFontColorSelector && (
@@ -549,6 +546,8 @@ const MyProfile = () => {
                             </div>
                         ))}
                     </div>
+
+                    <Outlet/>
                 </div>
 
                 <div className="profile-sidebar-right-holder-container">

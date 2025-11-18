@@ -13,6 +13,7 @@ import PostCards from './components/HomePage/postCards/PostCards.jsx';
 import ContentView from './components/HomePage/ContentViewer/ContentView.jsx';
 import Bookmarks from './components/Bookmarks/Bookmarks.jsx';
 import Visitprofile from './components/VisitProfile/VisitProfile.jsx';
+import ProfilePostCards from './components/HomePage/postCards/ProfilePostCards/ProfilePostCards.jsx';
 
 const App = () => {
 
@@ -47,7 +48,7 @@ const initaConfig = {
         <Routes>
           <Route path='/' element={<LoginPage/>}/>
           <Route path='/profile' element={<MyProfile/>}>
-            <Route index />
+            <Route index element={<ProfilePostCards/>} />
             <Route path='media'/>
           </Route>
           <Route path='/visitProfile' element={<Visitprofile/>}/>

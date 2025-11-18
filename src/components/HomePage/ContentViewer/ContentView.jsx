@@ -24,6 +24,8 @@ const ContentView =() =>{
     const [showBackButton, setShowBackButton] = useState(true);
     const {session, user} = useAuth();
 
+    const timeOutRef = useRef();
+
     const [showCommentsContainer, setShowCommentsContainer] = useState(false);
     const [isLiked, setIsliked] = useState('')
     const [likesCount, setLikesCount] = useState(null);
@@ -161,20 +163,24 @@ const ContentView =() =>{
     }, [postData])
 
     useEffect(() => {
-        let timeOut;
         const hideBackBttn = () =>{
             setShowBackButton(false);
-            clearTimeout(timeOut);
+            if(timeOutRef.current){
+                clearTimeout(timeOutRef.current)
+            }
             
-            timeOut = setTimeout(() =>{
+            timeOutRef.current = setTimeout(() =>{
                 setShowBackButton(true)
             }, 300)
         }
 
         document.addEventListener('scroll', hideBackBttn, true);
         return () =>{
+            if(timeOutRef.current){
+                clearTimeout(timeOutRef.current)
+            }
             document.removeEventListener('scroll', hideBackBttn, true)
-            clearTimeout(timeOut);
+            
         }
     }, [])
 

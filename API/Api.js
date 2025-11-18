@@ -180,6 +180,26 @@ export const getJournals = async(cursor = null, limit = 5, userId) =>{
         throw error;
     }
 }
+export const getUserJournals = async(cursor = null, limit = 5, userId) =>{
+    try {
+        const url = cursor ? `${BASE_URL}/userJournals?limit=${limit}&before=${cursor}&userId=${userId}` : `${BASE_URL}/userJournals?limit=${limit}&userId=${userId}`;
+
+        const response = await fetch(url, {
+            method: 'GET'
+        })
+        
+        if(!response.ok){
+            throw new Error('failed to get response');
+        }
+        const data = await response.json();
+        console.log(data);
+        return data
+    } catch (error) {
+        onsole.error('Error fetching user journals:', error);
+        throw error;
+    }
+}
+
 export const clickLike = async(token, postId) => {
     const headers = {'Content-Type': 'application/json'}; //use content type because it will receive a object type of data
     if(token) headers['Authorization'] = `Bearer ${token}`;

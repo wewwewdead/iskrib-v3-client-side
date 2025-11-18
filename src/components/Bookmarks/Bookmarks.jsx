@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { handleCLickContent, handleClickProfile } from '../../../helpers/handleClicks';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
+import { useRef } from 'react';
 
 const Bookmarks = () =>{
     const {user, session} = useAuth();
@@ -18,6 +19,7 @@ const Bookmarks = () =>{
     const {ref: inviewRef, inView} = useInView({
         threshold: 0.2
     });
+    const timeOutRef = useRef();
 
     const [bookmarkIdSettings, setBookmarkIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);
@@ -64,18 +66,22 @@ const Bookmarks = () =>{
     }, [hasNextPage, fetchNextPage, isFetchingNextPage, inView])
 
     useEffect(() =>{
-        let timeOut;
         const scroll = () =>{
             setShowHeaders(false)
-            timeOut = setTimeout(() =>{
+            if(timeOutRef.current){
+                clearTimeout(timeOutRef.current)      
+            }
+            timeOutRef.current = setTimeout(() =>{
                 setShowHeaders(true)
             }, 500)
         }
 
         document.addEventListener('scroll', scroll, true)
         return () =>{
-            document.removeEventListener('scroll', scroll)
-            clearTimeout(timeOut);
+             if(timeOutRef.current){
+                clearTimeout(timeOutRef.current);
+            }  
+            document.removeEventListener('scroll', scroll, true)
         }
     }, [])
 
