@@ -4,7 +4,7 @@ import ImageNode from "../Editor/nodes/ImageNode";
 import { HeadingNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { data, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import './contentviewer.css'
 import { use, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, } from "framer-motion";

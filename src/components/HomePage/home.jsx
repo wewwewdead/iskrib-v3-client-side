@@ -18,9 +18,6 @@ const HomePage = () => {
     const queryClient = useQueryClient();
     const [editor] = useLexicalComposerContext();
 
-    const [showHeaders, setShowHeaders] = useState(true);
-    const scrollRefTimeOut = useRef(null)
-
     const navigatePath = (path) => {
         if(window.location.pathname === path){
            return window.location.reload()

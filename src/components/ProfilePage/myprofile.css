@@ -201,7 +201,7 @@
     align-items: flex-start;
     justify-content: flex-start;
     width: 90%;
-    height: 450px;
+    max-height: 450px;
     padding: 1rem;
     margin-top: 1rem;
     border-radius: 20px;
@@ -589,7 +589,7 @@
     gap: 1rem;
     width: 90%;
     padding: 1rem;
-    height: 40px;
+    min-height: 40px;
     background-color: rgba(255, 255, 255, 0.23);
     backdrop-filter: blur(25px);
     margin-top: 1rem;

@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import './visitprofile.css';
 import { useAuth } from '../../Context/Authcontext';
-import { getFollowsData, getUserData } from '../../../API/Api';
+import { getFollowsData, getUserData, getUserJournals } from '../../../API/Api';
 import { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../SideBar/Sidebar';
 import { MoonLoader } from 'react-spinners';
 import { useFollowMutation } from '../../utils/useMutation';
@@ -12,13 +12,18 @@ import formatCounts from '../../../helpers/fomatCounts';
 
 const Visitprofile = () =>{
     const location = useLocation();
-    const {userId} = location.state;
+    const stateData = location.state;
     const {session, user} = useAuth();
 
     const buttonRef = useRef();
 
     const navigate = useNavigate();
-    const navigatePath = (path) => {
+    const tablists =[
+        {label: 'Writings', path: '/visitProfile', action: () => navigate('/visitProfile', {state: {userId:stateData?.userId}})},
+        {label: 'Media', path: '/visitProfile/media', action: () => navigate('/visitProfile/media', {state: {userId:stateData?.userId}})},
+    ]
+
+     const navigatePath = (path) => {
         return navigate(path)
     }
 
@@ -57,29 +62,30 @@ const Visitprofile = () =>{
 
     
     const {data, isLoading} = useQuery({
-        queryKey: ['visitedProfile', userId],
+        queryKey: ['visitedProfile', stateData?.userId],
         queryFn:({queryKey}) => getUserData(queryKey[1]),
-        enabled: !!session
+        enabled: !!stateData?.userId
     })
+
 
     const userData = data?.userData?.[0]
 
-    if(userData){
-        console.log(userData)
-    }
+    // if(userData){
+    //     console.log(userData)
+    // }
 
     const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
-        queryKey: ['followsData',user?.userData?.[0].id, userId ],
+        queryKey: ['followsData',user?.userData?.[0].id, stateData?.userId ],
         queryFn: ({queryKey}) => getFollowsData(queryKey[1], queryKey[2]),
         staleTime: 1000 * 60 * 60,
         cacheTime: 1000 * 60 * 60,
-        enabled: !!user?.userData?.[0].id && !!userId
+        enabled: !!user?.userData?.[0].id && !!stateData?.userId
     })
 
 
-    useEffect(() =>{
-        console.log(followsData)
-    }, [followsData])
+    // useEffect(() =>{
+    //     console.log(followsData)
+    // }, [followsData])
 
     
     if(isLoading){
@@ -134,8 +140,21 @@ const Visitprofile = () =>{
                             <p style={{margin: 0, padding: 0}}>{userData?.bio}</p>
                         </div>
                     </div>
+                    
                     )      
                 }
+
+                <div className='my-profile-tablist'>
+                    {tablists.map((tab, index) => (
+                         <div key={index} onClick={() => tab.action()} className='tab-container'>
+                            {tab.label}
+                            <div className={location.pathname === tab.path ? 'tab-indicator' : ''}/>
+                        </div>
+                    ))}
+                   
+                </div>
+
+                <Outlet/>
 
             </div>
         </div>

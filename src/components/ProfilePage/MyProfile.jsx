@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, use, createElement } from "react";
 import './myprofile.css'
 import { useAuth } from "../../Context/Authcontext";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
 import { MoonLoader, BeatLoader, BarLoader} from "react-spinners";
 import { checkUser, getUserData, getUserJournals, submitProfileData, updateFontColor, updateProfileData } from "../../../API/Api";
@@ -18,6 +18,7 @@ import formatCounts from "../../../helpers/fomatCounts";
 
 const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
+
     const userData = user?.userData?.[0]
     
     const [showProfileEditor, setShowProfileEditor] = useState(false)
