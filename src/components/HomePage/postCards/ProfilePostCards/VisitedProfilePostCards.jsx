@@ -5,12 +5,17 @@ import { getUserJournals } from '../../../../../API/Api';
 import { useEffect } from 'react';
 import { MoonLoader } from 'react-spinners';
 import ParseContent from '../parseData';
+import { useInView } from 'react-intersection-observer';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
     const userData = location.state;
 
-    const {data: journalData, isLoading: isLoadingJournals, isFetchingNextPage, fetchNextPage, hasNexTPage} = useInfiniteQuery({
+    const {ref, inView} = useInView({
+        threshold: 0.2
+    })
+
+    const {data: journalData, isLoading: isLoadingJournals, isFetchingNextPage, fetchNextPage, hasNextPage,} = useInfiniteQuery({
         queryKey: ['visitedProfileJournals', userData?.userId],
         queryFn: ({pageParam = null, queryKey}) => getUserJournals(pageParam, 5, queryKey[1]),
         getNextPageParam: (lastPage) => {
@@ -27,6 +32,12 @@ const VisitedProfilePostCards = () =>{
     useEffect(() =>{
         console.log(journalData)
     },[journalData])
+
+    useEffect(() =>{
+        if(!isFetchingNextPage && hasNextPage && inView){
+            fetchNextPage();
+        }
+    }, [inView, fetchNextPage, isFetchingNextPage, hasNextPage,])
 
     const journals = journalData?.pages.flatMap((page) => page.data) || [];
 
@@ -106,7 +117,7 @@ const VisitedProfilePostCards = () =>{
                                 </div>  
 
                                 <div className="feed-image-content-container">
-                                    <img loading='lazy' className="journal-image" src={parsedContent?.firstImage?.src} alt="preview image" />
+                                    <img loading='lazy' className="journal-image" src={parsedContent?.firstImage?.src || '../../src/assets/no-image.png'} alt="preview image" />
                                 </div>
 
                             </div>
@@ -114,6 +125,12 @@ const VisitedProfilePostCards = () =>{
                     </div>
                 )
             })}
+
+            <div ref={ref} className='in-view-container'>
+                {isFetchingNextPage && (
+                    <MoonLoader size={20} loading={isFetchingNextPage}/>
+                )}
+            </div>
         </div>
         </>
     )

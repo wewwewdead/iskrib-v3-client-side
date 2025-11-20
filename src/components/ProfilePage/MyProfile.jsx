@@ -4,7 +4,7 @@ import { useAuth } from "../../Context/Authcontext";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
 import { MoonLoader, BeatLoader, BarLoader} from "react-spinners";
-import { checkUser, getUserData, getUserJournals, submitProfileData, updateFontColor, updateProfileData } from "../../../API/Api";
+import { updateFontColor, updateProfileData } from "../../../API/Api";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,8 @@ const MyProfile = () => {
     const {user, session, isLoading} = useAuth();
 
     const userData = user?.userData?.[0]
+
+    const [showConfirmationBttn, setShowConfirmationBttn] = useState(false);
     
     const [showProfileEditor, setShowProfileEditor] = useState(false)
     const [editImagePreview, setEditImagePreview] = useState('')

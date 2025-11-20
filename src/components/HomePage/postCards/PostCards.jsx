@@ -104,11 +104,13 @@ const PostCards = () => {
 
     const debounceClickBookmark = debounce(handleClickBookmark, 100);
 
+
+    const isLoadingMore = isFetchingNextPage || !hasNextPage;
     useEffect(() =>{
-        if(inView && !isFetchingNextPage && hasNextPage) {
+        if(inView && !isLoadingMore) {
             fetchNextPage();
         }
-    }, [inView, fetchNextPage, isFetchingNextPage, hasNextPage])
+    }, [inView, fetchNextPage, isLoadingMore])
 
 
     useEffect(() => {

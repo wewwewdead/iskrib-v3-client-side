@@ -1,5 +1,4 @@
 
-
 export const handleCLickContent = (navigate) => {
     return (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) => {
     e.stopPropagation();
@@ -37,4 +36,3 @@ export const handleClickProfile = (navigate) => {
         }
     }
 }
-

@@ -117,6 +117,7 @@ export const saveJournal = async(token, body) => {
     return data;
 }
 export const deleteJournalImage = async(token, url) => {
+    console.log(url)
     let img_url = ''
     let data = {
         filepath: []
@@ -198,6 +199,24 @@ export const getUserJournals = async(cursor = null, limit = 5, userId) =>{
         onsole.error('Error fetching user journals:', error);
         throw error;
     }
+}
+
+export const deleteJournal = async(journalId, token) =>{
+    const headers = {};
+
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/deleteJournal/${journalId}`, {
+        method: 'delete',
+        headers: headers
+    })
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    console.log(data)
+    return data;
 }
 
 export const clickLike = async(token, postId) => {

@@ -44,7 +44,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
     const [hasContent, setHasContent] = useState(false);
     const [isSending, setIsSending] = useState(false);
 
-    const {session} = useAuth();
+    const {session, user} = useAuth();
 
     const queryClient = useQueryClient();
 
@@ -63,7 +63,9 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
             if(saveData){
                 console.log(saveData)
                 queryClient.invalidateQueries({queryKey: ['journals']});
+                queryClient.invalidateQueries({queryKey: ['userJournals', user?.userData?.[0].id]})
             }
+            
             setIsSending(false)
         } catch (error) {
             console.error("Error saving journal:", error);
