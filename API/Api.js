@@ -116,6 +116,27 @@ export const saveJournal = async(token, body) => {
     console.log(data)
     return data;
 }
+
+export const updateJournal = async(token, body) => {
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response =  await fetch(`${BASE_URL}/update-journal`, {
+        method: 'POST',
+        headers: headers,
+        body: body
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const message = await response.json();
+    console.log(message)
+    return message;
+}
+
 export const deleteJournalImage = async(token, url) => {
     console.log(url)
     let img_url = ''

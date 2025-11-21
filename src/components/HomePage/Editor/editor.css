@@ -141,6 +141,17 @@
     overflow-y: auto;
     overflow-x: hidden;
 }
+.editor-shell::-webkit-scrollbar{
+    width: 6px;
+}
+.editor-shell::-webkit-scrollbar-thumb{
+    background: rgb(27, 87, 121);
+    border-radius: 4px;
+}
+.editor-shell::-webkit-scrollbar-track{
+    background-color: rgba(15, 59, 85, 0.501);
+}
+
 .editor-input:focus{
     outline: none;
 }

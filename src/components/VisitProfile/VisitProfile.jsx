@@ -67,12 +67,7 @@ const Visitprofile = () =>{
         enabled: !!stateData?.userId
     })
 
-
     const userData = data?.userData?.[0]
-
-    // if(userData){
-    //     console.log(userData)
-    // }
 
     const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
         queryKey: ['followsData',user?.userData?.[0].id, stateData?.userId ],
@@ -115,7 +110,7 @@ const Visitprofile = () =>{
                             <img className='visited-profile-image' src={userData?.image_url || '../../src/assets/profile.jpg'} alt="" />
 
                             <div onMouseMove={() => handleMouseMove(followsData?.isFollowing)} onMouseLeave={() => handleMouseLeave(followsData?.isFollowing)} className='visited-profile-follow-button-container'>
-                                <button onClick={(e) => debounceClickFollow(e, userId, user?.userData?.[0].id)} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>
+                                <button onClick={(e) => debounceClickFollow(e, stateData?.userId, user?.userData?.[0].id)} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>
                                     {followsData?.isFollowing ? 'Following' : 'Follow'}
                                 </button>
                             </div>

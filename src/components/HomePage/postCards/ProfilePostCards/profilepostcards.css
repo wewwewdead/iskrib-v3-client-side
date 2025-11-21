@@ -1,3 +1,4 @@
+
 .profile-postcards-parent-container{
     position: relative;
     display: flex;
@@ -13,6 +14,10 @@
     background-color: rgba(255, 255, 255, 0.23);
     backdrop-filter: blur(25px);
     border: 0.7px solid rgba(151, 151, 151, 0.168);
+}
+.profile-postcards-child-container{
+    display: flex;
+    width: 100%;
 }
 .profile-postcards-loading-container{
     display: flex;
@@ -63,41 +68,53 @@
     justify-content: flex-start;
     align-items: flex-start;
     width: 250px;
-    height: 200px;
-    padding: 1rem;
+    height: fit-content;
     background-color: rgb(255, 255, 255);
     border-radius: 10px;
     z-index: 10;
 }
-.delete-button-container{
+.setting-buttons{
     display: flex;
     justify-content: flex-start;
     align-items: center;
     width: 100%;
-    height: 40px;
+    height: fit-content;
+    gap: 0.8rem;
+    font-weight: 660;
+}
+.delete-button{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
     gap: 0.8rem;
     font-weight: 660;
     color: rgb(255, 48, 48);
+    padding: 0.5rem 1rem;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
     transition: ease-in-out 0.1s;
-
 }
-.delete-button-container:hover{
+.delete-button:hover{
     background-color:rgb(245, 245, 245) ;
 }
-.edit-button-container{
+.edit-button{
     display: flex;
     justify-content: flex-start;
     align-items: center;
     width: 100%;
-    height: 40px;
     gap: 0.8rem;
     font-weight: 660;
     color: rgb(0, 0, 0);
+    padding: 0.5rem 1rem;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
     transition: ease-in-out 0.1s;
 }
-.edit-button-container:hover{
+.edit-button:hover{
     background-color:rgb(245, 245, 245) ;
 }
+
 .confirm-delete-container{
     width: 100%;
     height: 100vh;
@@ -124,7 +141,6 @@
     width: 400px;
     height: 100px;
     background-color: #ffffff;
-    background-color: rgb(255, 255, 255);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 .confirmation-delete-heading{
@@ -176,4 +192,194 @@
 }
 .confirm-buttons-cancel:hover{
     background-color: rgb(61, 61, 61);
+}
+.journal-is-deleted-message-container{
+    position: absolute;
+    background-color: rgb(255, 255, 255);
+    z-index: 11;
+    width: 450px;
+    height: 150px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: 760;
+    font-size: 1.5rem;
+}
+.delete-journal-loader-container{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 400px;
+    height: 100px;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+    z-index: 10;
+    padding: 1rem;
+    border-radius: 10px;
+}
+
+
+/* edit journal css */
+.title-container{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.edit-journal-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: fit-content;
+    position: absolute;
+    background-color: rgb(4, 20, 29);
+    color: #ffffff;
+    z-index: 11;
+    border-radius: 20px;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    gap: 0.5rem;
+}
+
+.edit-journal-header-container{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    height: fit-content;
+}
+.edit-journal-header{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    font-weight: 660;
+    font-size: 1.2rem;
+}
+.first-child-header-container{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    gap: 1rem;
+}
+.second-child-header-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: fit-content;
+    width: fit-content;
+}
+.save-edit-button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 15px;
+    color: #000000;
+    background-color: #ffffff;
+    font-weight: 660;
+    transition: ease-in-out 0.1s;
+}
+.save-edit-button:hover{
+    background-color: #dedede;
+}
+.edit-journal-close-bttn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: ease-in-out 0.2s;
+}
+.edit-journal-close-bttn:hover{
+    background-color: rgba(212, 212, 212, 0.521);
+}
+.edit-joutnal-title-input{
+    margin: 1rem 0rem;
+    border: none;
+    background-color: transparent;
+    font-size: 1.5rem;
+    font-weight: 650;
+    padding: 0.5rem;
+    border: 1px solid rgba(151, 151, 151, 0.168);
+    color: #ffffff;
+    width: 97%;
+}
+.edit-joutnal-title-input:focus{
+    outline: none;
+}
+.edit-content{
+    width: 100%;
+    height: 400px;
+    cursor: text;
+    margin-bottom: 2rem;
+    overflow-y: auto;
+}
+.edit-content::-webkit-scrollbar{
+    width: 6px;
+}
+.edit-content::-webkit-scrollbar-track{
+    background-color: rgba(15, 59, 85, 0.501);
+}
+.edit-content::-webkit-scrollbar-thumb{
+    background: rgb(27, 87, 121);
+    border-radius: 4px;
+}
+.edit-content:focus{
+    outline: none;
+}
+.important-notes-container{
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    flex-direction: column;
+    z-index: 15;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+    top: 10%;
+    width: fit-content;
+    height: 100px;
+    border-radius: 20px;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.notes-close-button-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: fit-content;
+}
+.notes-close-button{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    padding: 0.4rem;
+    border-radius: 50%;
+    background-color: #ffc6c63d;
+}
+.notes-close-button:hover{
+    background-color: rgba(255, 227, 227, 0.521);
+}
+
+.important-notes-container p{
+    padding: 0;
+    margin: 0;
+    font-weight: 750;
+    font-size: 0.9rem;
+    color: rgb(255, 0, 0);
+    text-align: center;
 }
