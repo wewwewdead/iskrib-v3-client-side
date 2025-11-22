@@ -52,15 +52,25 @@
 }
 
 .content-title{
+    position: relative;
     margin-top: 100px;
     height: fit-content;
     width: 90%;
     display: flex;
-    align-items: center;
     flex-direction: column;
     justify-content: flex-start;
     align-items: flex-start;
     gap: 1rem;
+}
+.bookmark-message-container{
+    position: absolute;
+    z-index: 11;
+    background-color: rgb(72, 208, 135);
+    color: rgb(255, 255, 255);
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    align-self: center;
+    top: 180px;
 }
 .content-title p{
     padding: 0;

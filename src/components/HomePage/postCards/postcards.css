@@ -49,6 +49,7 @@
     min-height: 35px;
 }
 .cards{
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -57,6 +58,16 @@
     min-height: fit-content;
     border-bottom: 0.7px solid  rgba(151, 151, 151, 0.363);
     cursor: pointer;
+}
+.bookmarked-content-message-container{
+    position: absolute;
+    top: 180px;
+    background-color: rgb(72, 208, 135);
+    color: rgb(255, 255, 255);
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    z-index: 11;
 }
 .cards:hover{
     background-color:rgb(245, 245, 245) ;

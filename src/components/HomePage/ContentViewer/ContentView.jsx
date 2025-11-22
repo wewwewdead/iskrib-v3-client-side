@@ -32,6 +32,9 @@ const ContentView =() =>{
     const [isBookmarked, setIsBookmarked] = useState(null);
     const [bookmarkCounts, setBookmarkCounts] = useState(null);
 
+    const [bookmarkedMessage, setBookmarkedMessage] = useState('');
+    const [showBookmarkedMessage, setShowBookmarkedMessage] = useState(false);
+
     const contentRef = useRef();
    
     const theme = {
@@ -61,19 +64,14 @@ const ContentView =() =>{
 
     const handleclickUserProfile = handleClickProfile(navigate);
 
-    const handleLike = async(e, journalId) => {
-        await handleClickLike(e, journalId)
-        e.stopPropagation();
-    }
-    const handleBookmark = async(e, journalId) =>{
-        await handleClickBookmark(journalId);
-        e.stopPropagation();
-    }
-
-    const handleFollow = async(e, followerId, followingId) => {
-        await handleClickFollow(e, followingId, followerId)
-        e.stopPropagation();
-    }
+    // const handleLike = async(e, journalId) => {
+    //     await handleClickLike(e, journalId)
+    //     e.stopPropagation();
+    // }
+    // const handleBookmark = async(e, journalId) =>{
+    //     await handleClickBookmark(journalId);
+    //     e.stopPropagation();
+    // }
 
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id)
     const handleClickLike = async(e, journalId) => {
@@ -83,15 +81,31 @@ const ContentView =() =>{
         setLikesCount(isLiked ? likesCount - 1 : likesCount + 1)
 
     }
-    const debounceClickLike = debounce(handleLike, 200);
+    const debounceClickLike = debounce(handleClickLike, 200);
 
     const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
-    const handleClickBookmark = async(journalId) =>{
-        mutationBookmark.mutate({journalId})
+    const handleClickBookmark = async(e, journalId) =>{
+        e.stopPropagation();
+        const response = await mutationBookmark.mutateAsync({journalId});
+        if(response.message === 'success'){
+            setBookmarkedMessage('Post was added to your Bookmarks')
+            setShowBookmarkedMessage(true);
+            setTimeout(() => {
+                setShowBookmarkedMessage(false)
+                setBookmarkedMessage('')
+            }, 1500)
+        }else{
+            setBookmarkedMessage('Post was removed to your Bookmarks')
+            setShowBookmarkedMessage(true);
+            setTimeout(() => {
+                setShowBookmarkedMessage(false)
+                setBookmarkedMessage('')
+            }, 1500)
+        }
         setIsBookmarked(!isBookmarked)
         setBookmarkCounts(isBookmarked ? bookmarkCounts - 1 : bookmarkCounts + 1)
     }
-    const debounceClickBookmark = debounce(handleBookmark, 200);
+    const debounceClickBookmark = debounce(handleClickBookmark, 200);
 
     
     const mutationFollow = useFollowMutation();
@@ -226,6 +240,18 @@ const ContentView =() =>{
             )}
 
             <div className="content-title">
+                {showBookmarkedMessage &&(
+                    <AnimatePresence>
+                    <motion.div 
+                    className="bookmark-message-container"
+                    initial={{opacity: 0, scale: 0}}
+                    animate={{opacity: 1, scale: 1}}
+                    transition={{type: 'tween', damping: 25, stiffness: 200, ease: 'easeInOut', duration: 0.1}}
+                    >
+                        {bookmarkedMessage}
+                    </motion.div>
+                    </AnimatePresence>
+                )}
                 <p>{postData?.title}</p>
 
                 <div className="content-metadata-container">

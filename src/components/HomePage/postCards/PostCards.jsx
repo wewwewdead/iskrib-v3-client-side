@@ -29,6 +29,9 @@ const PostCards = () => {
     const [postIdSettings, setPostIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);
 
+    const [bookmarkedMessage, setBookmarkedMessage] = useState('');
+    const [showBookmarkedMessage, setShowBookmarkedMessage] = useState(null);
+
     const handleClickUserProfile = handleClickProfile(navigate);
     const clickContent = handleCLickContent(navigate);
 
@@ -99,7 +102,24 @@ const PostCards = () => {
     const handleClickBookmark = async(e, journalId,) =>{
         e.stopPropagation();
         console.log(journalId)
-        mutationBookmark.mutate({journalId});
+        // mutationBookmark.mutate({journalId});
+        const response = await mutationBookmark.mutateAsync({journalId})
+        if(response.message === 'success'){
+            setBookmarkedMessage('Post was added to your Bookmarks')
+            setShowBookmarkedMessage(journalId);
+            setTimeout(() =>{
+                setShowBookmarkedMessage(null)
+                setBookmarkedMessage('')
+            }, 2500)
+        } else {
+            setBookmarkedMessage('Post was removed from your Bookmarks')
+            setShowBookmarkedMessage(journalId);
+            setTimeout(() =>{
+                setShowBookmarkedMessage(null)
+                setBookmarkedMessage('')
+            }, 2500)
+        }
+        console.log(response.message);
     }
 
     const debounceClickBookmark = debounce(handleClickBookmark, 100);
@@ -203,6 +223,18 @@ const PostCards = () => {
                 const isBookmarked = journal?.has_bookmarked;
                 return(
                     <div className="cards" key={journal.id}>
+
+                        {showBookmarkedMessage === journal.id && (
+                            <motion.div 
+                            className="bookmarked-content-message-container"
+                            initial={{opacity: 0, scale: 0}}
+                            animate={{opacity: 1, scale: 1}}
+                            transition={{type: 'tween', damping: 25, stiffness: 200, ease: 'easeInOut', duration: 0.1}}
+                            >
+                                {bookmarkedMessage}
+                            </motion.div>
+                        )}
+
                         <div className="card-content">
 
                             <div className="user-info">
