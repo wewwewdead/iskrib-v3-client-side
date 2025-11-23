@@ -240,14 +240,14 @@ export const deleteJournal = async(journalId, token) =>{
     return data;
 }
 
-export const clickLike = async(token, postId) => {
+export const clickLike = async(token, body) => {
     const headers = {'Content-Type': 'application/json'}; //use content type because it will receive a object type of data
     if(token) headers['Authorization'] = `Bearer ${token}`;
 
     const response = await fetch(`${BASE_URL}/like`, {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify(postId) //tringify the plain object
+        body: JSON.stringify(body) //tringify the plain object
     })
     if(!response.ok){
         throw new Error('error adding like')
@@ -258,12 +258,12 @@ export const clickLike = async(token, postId) => {
 }
 
 export const addComment = async(token, body) =>{
-    const headers = {};
+    const headers = {'Content-Type': 'application/json'};
     if(token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${BASE_URL}/addComment`, {
         method: 'POST',
         headers: headers,
-        body: body
+        body: JSON.stringify(body)
     })
     if(!response.ok){
         const error = await response.json();
@@ -355,6 +355,31 @@ export const getFollowsData = async(loggedInUserId, userIdToFollow) =>{
     console.log(data)
     return data;
 }
+
+export const getNotificationsCount = async(userId) => {
+    const response = await fetch(`${BASE_URL}/getCountNotifications?userId=${userId}`);
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    console.log(data)
+    return data;
+}
+
+export const getNotifications = async(userId, cursor = null, limit = 5) =>{
+    const url = cursor ? `${BASE_URL}/getNotifications?before=${cursor}&userId=${userId}&limit=${limit}` : `${BASE_URL}/getNotifications?userId=${userId}&limit=${limit}`;
+    const response = await fetch(url, {
+        method: 'GET'
+    })
+    if(!response){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    return data;
+}
+
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

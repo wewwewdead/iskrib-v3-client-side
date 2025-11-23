@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import supabase from '../utils/supabaseClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getUserData } from '../../API/Api';
+import { getNotificationsCount, getUserData } from '../../API/Api';
 
 
 const AuthContext = createContext();
@@ -22,24 +22,23 @@ export const AuthProvider = ({children}) => {
         cacheTime: 1000 * 60 * 60,
     })
 
-    
-
     // console.log(authData)
 
     useEffect(() =>{
         let mounted = true;
-        (async () =>{
-            const {data} = await supabase.auth.getSession();
-            if(mounted){
-                queryClient.setQueryData(['authsession'], data?.session)
-                setLoading(false)
-            }
-        })();
+        // (async () =>{
+        //     const {data} = await supabase.auth.getSession();
+        //     if(mounted){
+        //         queryClient.setQueryData(['authsession'], data?.session)
+        //         setLoading(false)
+        //     }
+        // })();
 
         //listen for login or logout events
         const {data: listener} = supabase.auth.onAuthStateChange((_event, session) => {
             if(mounted){
                 queryClient.setQueryData(['authsession'], session ?? null);
+                setLoading(false)
             } 
         })
         return() => listener.subscription.unsubscribe();
@@ -54,6 +53,19 @@ export const AuthProvider = ({children}) => {
             cacheTime: 1000 * 60 * 60,
         })
 
+    const {data: notifCount, isLoading: isLoadingNotifCount} = useQuery({
+        queryKey: ['notifcounts', authData?.user?.id],
+        queryFn: ({queryKey}) => getNotificationsCount(queryKey[1]),
+        enabled: !!authData?.access_token,
+        staleTime: 1000 * 60 * 60,
+        cacheTime: 1000 * 60 * 60,
+    })
+    
+
+    useEffect(() => {
+        console.log(notifCount)
+    }, [notifCount])
+
     const signOut = async() =>{
         await supabase.auth.signOut();
         queryClient.setQueryData(['authsession'], null)
@@ -65,6 +77,7 @@ export const AuthProvider = ({children}) => {
         user: userData,
         loading: loading,
         isLoading: isLoading,
+        notifCount: notifCount?.count,
         signOut
     }
     return <AuthContext.Provider value={value}>

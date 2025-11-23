@@ -46,7 +46,7 @@ const PostCards = () => {
         {
             likeAction: (isLiked) => (<svg className="svg-like" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill={isLiked ? 'rgb(255, 116, 116)' : "#5e5e5eff"}><path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/></svg>),
             className: 'like-button',
-            action: (e, journalId) => {debounceClickLike(e, journalId)},
+            action: (e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => debounceClickLike(e, journalId, receiverId, senderImageUrl, sendername, senderEmail),
             countLike: (count) => <p style={{padding:'0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -79,7 +79,7 @@ const PostCards = () => {
             }
             return undefined;
         } ,
-        enabled: !!user?.userData?.[0].id
+        enabled: !!user?.userData?.[0].id,
     })
 
     const handleClickSettings = (e, postId) =>{
@@ -89,10 +89,10 @@ const PostCards = () => {
 
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
 
-    const handleClickLike = async(e, journalId) => {
+    const handleClickLike = async(e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => {
         e.stopPropagation();
         console.log(journalId)
-        mutationLike.mutate({journalId}) //passing this into mutationFn {journalId: the id}
+        mutationLike.mutate({journalId, receiverId, senderImageUrl, sendername, senderEmail}) //passing this into mutationFn {journalId: the id}
     }
     const debounceClickLike = debounce(handleClickLike, 300)
 
@@ -306,7 +306,7 @@ const PostCards = () => {
                                     <div key={index} className="icon-container">
 
                                         {icon.likeAction && (
-                                            <div onClick={(e) => icon.action(e, journal.id)} id="card-icons" className={icon.className}>
+                                            <div onClick={(e) => icon.action(e, journal.id, journal.users.id, user?.userData?.[0].image_url, user?.userData?.[0].name, user?.userData?.[0].user_email)} id="card-icons" className={icon.className}>
                                                 {icon.likeAction && icon.likeAction(isLiked)}
                                             </div>
                                         )}

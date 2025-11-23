@@ -7,7 +7,7 @@ import { getComments } from '../../../API/Api';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { BarLoader, MoonLoader } from 'react-spinners';
 
-const CommentSection = ({onclose, postId})=>{
+const CommentSection = ({onclose, postId, receiverId})=>{
     const queryClient = useQueryClient();
 
     const {session, user} = useAuth();
@@ -69,19 +69,27 @@ const CommentSection = ({onclose, postId})=>{
         onclose()
     }
 
-    const handaleSubmitComment = async(e, postId) =>{
+    const handaleSubmitComment = async(e, postId, receiverId, senderImageUrl, senderName, senderEmail) =>{
         e.stopPropagation();
-        const formdata = new FormData();
-        if(postId){
-            formdata.append('postId', postId)
-        }
-        if(comments){
-            formdata.append('comments', comments)
+        // const formdata = new FormData();
+        // if(postId){
+        //     formdata.append('postId', postId)
+        // }
+        // if(comments){
+        //     formdata.append('comments', comments)
+        // }
+        const body = {
+            comments: comments,
+            postId: postId,
+            receiverId: receiverId,
+            senderImageUrl: senderImageUrl,
+            senderName: senderName,
+            senderEmail: senderEmail
         }
 
         try {
             setIsSubmittingComment(true)
-            const message = await addComment(session?.access_token, formdata);
+            const message = await addComment(session?.access_token, body);
         if(message){
             console.log(message)
         }
@@ -161,7 +169,7 @@ const CommentSection = ({onclose, postId})=>{
                         <p style={comments.length > 199 ? {color: 'rgba(255, 46, 46, 1)', fontWeight: '660'} : {}} className='comments-counter'>{comments.length}/200</p>
                     </div>
 
-                    <button disabled={isSubmittingComment} onClick={(e) => handaleSubmitComment(e, postId)} className='comment-submit-button'>
+                    <button disabled={isSubmittingComment} onClick={(e) => handaleSubmitComment(e, postId, receiverId, user?.userData?.[0].image_url, user?.userData?.[0].name, user?.userData?.[0].user_email)} className='comment-submit-button'>
                         submit
                     </button>
                 </div>

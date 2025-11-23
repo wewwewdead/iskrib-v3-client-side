@@ -25,7 +25,13 @@ const Sidebar = ({links}) =>{
             {links.map((link, index) => {   
                 return(
                 <div className={link.className ? link.className : location.pathname === link.path ? 'sidebar-links-active' : 'sidebar-links'} onClick={link.action} key={index}>
-                    {link.icon}
+                    <div className='notification-icon-container'>
+                        {link.icon}
+                        {link.notifCount && (
+                            <div className='notification-count'>{link.notifCount}</div>
+                        )}
+                    </div>   
+
                     {link.label}
                 </div>
                 )
