@@ -26,7 +26,8 @@ const VisitedProfilePostCards = () =>{
                 return undefined
             }
         },
-        enabled: !!userData?.userId
+        enabled: !!userData?.userId,
+        refetchOnWindowFocus: false
     })
 
     useEffect(() =>{

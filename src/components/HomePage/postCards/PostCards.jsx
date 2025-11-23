@@ -80,6 +80,7 @@ const PostCards = () => {
             return undefined;
         } ,
         enabled: !!user?.userData?.[0].id,
+        refetchOnWindowFocus: false
     })
 
     const handleClickSettings = (e, postId) =>{

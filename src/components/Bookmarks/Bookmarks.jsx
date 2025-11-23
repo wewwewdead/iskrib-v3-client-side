@@ -54,7 +54,8 @@ const Bookmarks = () =>{
                 return undefined;
             }
         },
-        enabled: !!userId
+        enabled: !!userId,
+        refetchOnWindowFocus: false,
     })
 
     useEffect(() =>{

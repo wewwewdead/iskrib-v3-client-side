@@ -61,7 +61,8 @@ const ProfilePostCards = () =>{
                 return undefined;
             }
         },
-        enabled: !!user?.userData?.[0].id
+        enabled: !!user?.userData?.[0].id,
+        refetchOnWindowFocus: false,
     })
     
     const clickContent = handleCLickContent(navigate);
