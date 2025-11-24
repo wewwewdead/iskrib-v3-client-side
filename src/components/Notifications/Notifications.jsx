@@ -20,6 +20,7 @@ const Notifications = () =>{
             }
             return undefined;
         },
+        enabled: !!user?.userData?.[0].id,
         refetchOnWindowFocus: false
     })
 
@@ -30,9 +31,6 @@ const Notifications = () =>{
 
 
     const notifications = data?.pages?.flatMap((page) => page?.data) || [];
-    // useEffect(() =>{
-    //     console.log(data)
-    // }, [data])
 
     if(notifications.length === 0 && !isLoading){
         return(
