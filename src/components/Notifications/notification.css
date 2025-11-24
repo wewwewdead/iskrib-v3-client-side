@@ -1,0 +1,37 @@
+.notifications-header{
+    position: fixed;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    width: 716px;
+    height: 60px;
+    user-select: none;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+    z-index: 10;
+    border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+}
+.notification-loading-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+}
+
+.notifications-header-text{
+    padding: 0;
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.notifications-container{
+    position: relative;
+    top: 95px;
+    display: flex;
+    width: 100%;
+    height: 100vh;
+}

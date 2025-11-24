@@ -118,7 +118,7 @@
 .write-journal-bttn:hover{
     background-color: rgb(16, 56, 79);
 }
-.notification-icon-container{
+.icon-container{
     display: flex;
     width: fit-content;
     height: fit-content;

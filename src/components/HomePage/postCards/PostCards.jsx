@@ -79,7 +79,7 @@ const PostCards = () => {
             }
             return undefined;
         } ,
-        enabled: !!user?.userData?.[0].id,
+        enabled: !!user?.userData?.[0]?.id,
         refetchOnWindowFocus: false
     })
 
@@ -183,7 +183,7 @@ const PostCards = () => {
         )
     }
 
-    if(journals?.length === 0) {
+    if(journals?.length === 0 && !isLoading) {
         return(
             <div className="postcards-parent-container">
                 <div>No post availabe...</div>

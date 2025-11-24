@@ -29,6 +29,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                 return undefined;
             }
         },
+        refetchOnWindowFocus: false
     })
 
     const handleSeeMoreComments = (e) =>{
@@ -141,6 +142,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                                 <p style={{padding: 0, margin: 0, fontSize: '0.8rem'}}>Commented By</p>
                                 <img className='comments-avatar' src={comment.users.image_url || '../../src/assets/profile.jpg'} alt="" />
                                 <p className='commenter-name'>{comment?.users?.name}</p>
+                                <p>on</p>
                                 <div className='comment-date'>
                                     {new Date(comment?.created_at).toLocaleDateString('en-US', {month: 'long', day: '2-digit', year: 'numeric'})} 
                                 </div>

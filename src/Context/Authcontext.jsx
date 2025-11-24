@@ -61,10 +61,31 @@ export const AuthProvider = ({children}) => {
         cacheTime: 1000 * 60 * 60,
     })
     
+    //hook for realtime notifications
+    useEffect(() =>{
+        if(!userData) return;
 
-    useEffect(() => {
-        console.log(notifCount)
-    }, [notifCount])
+        const channel = supabase
+        .channel('notifications')
+        .on('postgres_changes',
+        {event: 'INSERT', schema: 'public', table: 'notifications', filter: `receiver_id=eq.${userData?.userData?.[0]?.id}`},
+        (payload) => {
+            console.log('new notification:', payload)
+            queryClient.setQueryData(['notifcounts', authData?.user?.id], (old) => ({count: (old?.count ? old?.count : 0) + 1}));
+        }
+    )
+    .subscribe();
+
+    return () => {
+        supabase.removeChannel(channel);
+    }
+
+    },[userData])
+    
+
+    // useEffect(() => {
+    //     console.log(userData?.userData?.[0].id);
+    // }, [userData])
 
     const signOut = async() =>{
         await supabase.auth.signOut();

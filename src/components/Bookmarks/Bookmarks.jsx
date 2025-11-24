@@ -139,6 +139,7 @@ const Bookmarks = () =>{
         </AnimatePresence>
 
         <div className='bookmark-parent-container'>
+            {/* create a bookmarks cards component here! */}
             {journals?.map((journal, index) => {
                 const parsedContent = ParseContent(journal.journals.content);
                 return(

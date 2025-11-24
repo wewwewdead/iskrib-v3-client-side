@@ -15,6 +15,7 @@ import Bookmarks from './components/Bookmarks/Bookmarks.jsx';
 import Visitprofile from './components/VisitProfile/VisitProfile.jsx';
 import ProfilePostCards from './components/HomePage/postCards/ProfilePostCards/ProfilePostCards.jsx';
 import VisitedProfilePostCards from './components/HomePage/postCards/ProfilePostCards/VisitedProfilePostCards.jsx';
+import Notifications from './components/Notifications/Notifications.jsx';
 
 const App = () => {
 
@@ -61,7 +62,8 @@ const initaConfig = {
           <Route path='/home' element={<HomePage/>}>
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>
-            <Route path='bookmark' element={<Bookmarks/>}/>    
+            <Route path='bookmark' element={<Bookmarks/>}/> 
+            <Route path='notifications' element={<Notifications/>}/>   
           </Route>   
           <Route path='/login' element={<LoginPage/>}/>
           <Route path='/signUp' element={<SignUp/>}/>
