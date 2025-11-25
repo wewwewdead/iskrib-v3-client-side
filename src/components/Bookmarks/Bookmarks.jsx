@@ -20,6 +20,7 @@ const Bookmarks = () =>{
         threshold: 0.2
     });
     const timeOutRef = useRef();
+    const scrollToTop = useRef();
 
     const [bookmarkIdSettings, setBookmarkIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);
@@ -89,15 +90,21 @@ const Bookmarks = () =>{
     const journals = data?.pages?.flatMap((journal) => journal.bookmarks|| []);
     const totalBookmarks = data?.pages?.flatMap((journal) => journal.totalBookmarks)
 
-    useEffect(() =>{
-        console.log(data)
-    }, [data])
+    // useEffect(() =>{
+    //     console.log(data)
+    // }, [data])
 
     // useEffect(() =>{
     //     if(journals){
     //         console.log(journals)
     //     }
     // }, [journals])
+
+    useEffect(() => {
+        if(!isLoading && scrollToTop.current){
+            scrollToTop.current.scrollIntoView({behavior: 'smooth'});
+        }
+    }, [isLoading])
 
     if(isLoading){
         return(
@@ -121,6 +128,7 @@ const Bookmarks = () =>{
     
     return(
         <>
+        <div ref={scrollToTop}/>
         <AnimatePresence>
         {showHeaders && (
             <motion.div 

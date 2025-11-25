@@ -17,7 +17,7 @@
     background-color: rgb(255, 255, 255);
     border-left: 0.7px solid  rgba(151, 151, 151, 0.168);
     border-right: 0.7px solid rgba(151, 151, 151, 0.168);
-    overflow: auto;
+    overflow-y: auto;
 }
 .content-viewer-container::-webkit-scrollbar{
     display: none;

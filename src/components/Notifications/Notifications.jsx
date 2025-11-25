@@ -1,44 +1,18 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import './notification.css';
 import { useAuth } from '../../Context/Authcontext';
-import { getNotifications } from '../../../API/Api';
 import { MoonLoader } from 'react-spinners';
 import { useEffect } from 'react';
+import NotificationCards from './notificationsCards';
 
 const Notifications = () =>{
-    const queryClient = useQueryClient();
     const {user, session} = useAuth();
-
-    const {data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} = useInfiniteQuery({
-        queryKey: ['getNotifications', user?.userData?.[0].id],
-        queryFn: ({pageParam = null, queryKey}) => getNotifications(queryKey[1], pageParam, 5),
-        getNextPageParam: (lastpage) =>{
-            if(lastpage?.hasMore){
-                const lastNotification = lastpage?.data[lastpage?.data.length - 1];
-                return new Date(lastNotification.created_at).toISOString();
-
-            }
-            return undefined;
-        },
-        enabled: !!user?.userData?.[0].id,
-        refetchOnWindowFocus: false
-    })
 
     const handleClickBack = (e) =>{
         e.stopPropagation();
         window.history.back();
     }
 
-
-    const notifications = data?.pages?.flatMap((page) => page?.data) || [];
-
-    if(notifications.length === 0 && !isLoading){
-        return(
-            <div className='notification-loading-container'>
-                No notifications availabe
-            </div>
-        )
-    }
 
     return(
         <>
@@ -53,9 +27,7 @@ const Notifications = () =>{
 
         {/* create a notification cards component here! */}
 
-        <div className='notifications-container'>
-            hello
-        </div>
+        <NotificationCards/>
         </>
     )
 }
