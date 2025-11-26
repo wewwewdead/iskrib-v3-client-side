@@ -13,7 +13,7 @@ const formatPostDate = (dateString) =>{
 
         const hour = Math.floor(minutes / 60);
 
-        return `${hour} ago`;
+        return `${hour} hours ago`;
     }
 
     return date.toLocaleDateString('en-Us', {
