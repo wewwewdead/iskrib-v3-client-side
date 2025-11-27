@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, clickLike } from "../../API/Api";
+import {addBookmark, addFollows, clickLike, readNotification } from "../../API/Api";
 import { data } from "react-router-dom";
 
 export const useBookMarkMutation = (session) => {
@@ -119,5 +119,26 @@ export const useFollowMutation = () =>{
         onSettled: () => {
             queryClient.invalidateQueries(['followsData']);
         }
+    })
+}
+
+export const useReadNotificationMutation = (session) =>{
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => readNotification(session?.access_token, data), //receiving the object data {notifId: the Id}
+        onMutate: async(data) => {
+            await queryClient.cancelQueries(['notifcounts', session?.user?.id]);
+            const previousData = queryClient.getQueryData(['notifcount', session?.user?.id])
+
+            queryClient.setQueryData(['notifcount', session?.user?.id], (old) => ({count: (old?.count ? old?.count : 0) - 1}));
+
+            return{previousData};
+        },
+         onError: (err, data, context) => {
+            queryClient.setQueryData(['notifcount', session?.user?.id], context.previousData)
+         },
+         onSettled: () => {
+            queryClient.invalidateQueries(['notifcount', session?.user?.id]);
+         }
     })
 }

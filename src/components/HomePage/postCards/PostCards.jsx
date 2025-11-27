@@ -123,7 +123,7 @@ const PostCards = () => {
     const debounceClickLike = debounce(handleClickLike, 300)
 
 
-    const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
+    const mutationBookmark = useBookMarkMutation(session);
 
     const handleClickBookmark = async(e, journalId,) =>{
         e.stopPropagation();

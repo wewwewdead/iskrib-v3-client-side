@@ -380,6 +380,25 @@ export const getNotifications = async(userId, cursor = null, limit = 5) =>{
     return data;
 }
 
+export const readNotification = async(token, notifId) =>{
+    const headers = {'Content-Type': 'application/json'};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    
+    const response = await fetch(`${BASE_URL}/readNotification`, {
+        method: 'POST',
+        body: JSON.stringify(notifId),
+        headers: headers
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const message = await response.json();
+    console.log(message)
+    return message;
+}
+
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

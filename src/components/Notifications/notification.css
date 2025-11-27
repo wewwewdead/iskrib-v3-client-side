@@ -10,7 +10,7 @@
     user-select: none;
     background-color: rgba(255, 255, 255, 0.23);
     backdrop-filter: blur(25px);
-    z-index: 10;
+    z-index: 2;
     border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
 }
 .notification-loading-container{
@@ -135,6 +135,7 @@
     justify-content: space-between;
     align-items: flex-start;
     height: 100%;
+    cursor: pointer;
 }
 .notification-content-text{
     display: flex;

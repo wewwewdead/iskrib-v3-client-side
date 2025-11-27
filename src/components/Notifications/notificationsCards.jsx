@@ -3,16 +3,20 @@ import { useAuth } from "../../Context/Authcontext";
 import { useInView } from "react-intersection-observer";
 import { MoonLoader } from "react-spinners";
 import { getNotifications } from "../../../API/Api";
-import { useEffect, useRef } from "react";
+import { use, useEffect, useRef } from "react";
 import FormatNotificationType from "../../../helpers/formatNoficationType";
 import ParseContent from "../HomePage/postCards/parseData";
 import formatPostDate from "../../../helpers/formatDateString";
+import { handleCLickContent } from "../../../helpers/handleClicks";
+import { useNavigate } from "react-router-dom";
+import { useReadNotificationMutation } from "../../utils/useMutation";
 
 const NotificationCards = () =>{
     const {user, session} = useAuth();
     const {ref, inView} = useInView({
         threshold: 0.2
     })
+    const navigate = useNavigate();
 
     const scrollToTop = useRef();
 
@@ -42,6 +46,30 @@ const NotificationCards = () =>{
         }
     ]
 
+    const handleClickNotif = handleCLickContent(navigate);
+    const mutationReadNotif = useReadNotificationMutation(session);
+
+    const handleReadNotif = async(e, notifId, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) => {
+        e.stopPropagation();
+        mutationReadNotif.mutate({notifId})
+        handleClickNotif(
+            e, 
+            jsonbContent, 
+            wholeText, 
+            title, 
+            userId, 
+            name, 
+            avatar, 
+            created_at, 
+            journalId, 
+            isLiked, 
+            commentsCount, 
+            isBookmarked, 
+            likesCount,
+            bookmarksCount
+        )
+    }
+
     const {data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['getNotifications', user?.userData?.[0].id],
         queryFn: ({pageParam = null, queryKey}) => getNotifications(queryKey[1], pageParam, 5),
@@ -65,7 +93,7 @@ const NotificationCards = () =>{
 
     useEffect(() =>{
         if(hasNextPage && !isFetchingNextPage && inView){
-            console.log(hasNextPage)
+            // console.log(hasNextPage)
             fetchNextPage();
         }
     }, [hasNextPage, isFetchingNextPage, inView, fetchNextPage])
@@ -127,7 +155,25 @@ const NotificationCards = () =>{
                                 </div>
                                 
                             </div>
-                            <div className="notification-content">
+                            <div 
+                            className="notification-content"
+                            onClick={(e) => handleReadNotif(
+                                e, 
+                                notification?.id,
+                                notification?.journals?.content, 
+                                parsedContent?.wholeText, 
+                                notification?.journals?.title, 
+                                user?.userData?.[0].id, 
+                                user?.userData?.[0].name, 
+                                user?.userData?.[0].image_url, 
+                                notification?.journals?.created_at,
+                                notification?.journal_id, 
+                                notification?.hasLiked, 
+                                notification?.journals?.comments?.[0].count, 
+                                notification?.hasBookMarked, 
+                                notification?.journals?.likes?.[0].count, 
+                                notification?.journals?.bookmarks?.[0].count)} 
+                            >
                                 <div className="notification-content-text">
                                     <p className="notif-content-title">{notification?.journals.title}</p>
                                     <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
