@@ -62,6 +62,9 @@ const ContentView =() =>{
         enabled: !!user?.userData?.[0].id && !!postData?.userId,
     })
 
+    useEffect(() =>{
+        console.log(postData)
+    }, [postData])
     const handleclickUserProfile = handleClickProfile(navigate);
 
     // const handleLike = async(e, journalId) => {

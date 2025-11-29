@@ -3,13 +3,14 @@ import { useAuth } from "../../Context/Authcontext";
 import { useInView } from "react-intersection-observer";
 import { MoonLoader } from "react-spinners";
 import { getNotifications } from "../../../API/Api";
-import { use, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import FormatNotificationType from "../../../helpers/formatNoficationType";
 import ParseContent from "../HomePage/postCards/parseData";
 import formatPostDate from "../../../helpers/formatDateString";
 import { handleCLickContent } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
-import { useReadNotificationMutation } from "../../utils/useMutation";
+import { userDeleteNotificationMutation, useReadNotificationMutation } from "../../utils/useMutation";
+import { AnimatePresence, motion} from "framer-motion";
 
 const NotificationCards = () =>{
     const {user, session} = useAuth();
@@ -19,6 +20,8 @@ const NotificationCards = () =>{
     const navigate = useNavigate();
 
     const scrollToTop = useRef();
+    const modalRef = useRef();
+    const [settingsId, setSettingsId] = useState(null);
 
     const iconArray = [
         {
@@ -71,7 +74,7 @@ const NotificationCards = () =>{
     }
 
     const {data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} = useInfiniteQuery({
-        queryKey: ['getNotifications', user?.userData?.[0].id],
+        queryKey: ['getNotifications', session?.access_token],
         queryFn: ({pageParam = null, queryKey}) => getNotifications(queryKey[1], pageParam, 5),
         getNextPageParam: (lastpage) =>{
             if(lastpage?.hasMore){
@@ -81,7 +84,7 @@ const NotificationCards = () =>{
             }
             return undefined;
         },
-        enabled: !!user?.userData?.[0].id,
+        enabled: !!session?.access_token,
         refetchOnWindowFocus: false
     })
 
@@ -101,16 +104,51 @@ const NotificationCards = () =>{
     const notifications = data?.pages?.flatMap((page) => page?.data) || [];
 
     useEffect(() =>{
-        console.log(notifications)
-    }, [notifications])
+        const handleClickOutside = (e) =>{
+            if(modalRef.current && !modalRef.current.contains(e.target)){
+                setSettingsId(null);
+                console.log('close')
+            }
+        }
+
+        document.addEventListener('click', handleClickOutside);
+        return () =>{
+            document.removeEventListener('click', handleClickOutside)
+        }
+    }, [])
+
+     useEffect(() =>{
+         console.log(data)
+    }, [data])
+
+    const handleClickSettings = (e, notifId) =>{
+        e.stopPropagation();
+        console.log(notifId)
+        setSettingsId(settingsId === notifId ? null : notifId);
+    }
+
+    const mutationDeleteNotif  = userDeleteNotificationMutation(session);
+
+    const handleClickDeleteNotification = async(e, notifId) =>{
+        e.stopPropagation();
+        try {
+           const message = mutationDeleteNotif.mutateAsync({notifId});
+            if(message){
+                console.log(message)
+            }
+        } catch (error) {
+            console.error('error while deleting notification:', error)
+        }
+    }
 
     if(notifications.length === 0 && !isLoading){
         return(
             <div className='notification-loading-container'>
-                No notifications availabe
+                No unread notifications availabe
             </div>
         )
     }
+
     if(isLoading){
         return(
             <div className="notification-loading-container">
@@ -140,21 +178,65 @@ const NotificationCards = () =>{
                         </div>
 
                         <div className="notification-contents-container">
+                            
                             <div className="notification-sender-user-metadata">
-                                <div className="notif-sender-profilepic-container">
-                                    <img loading="lazy" className="notif-sender-profilepic" src={notification?.sender_image_url || '../../src/assets/profile.jpg'} alt="notificataion sender profile picture" />
-                                </div>
+                                <div className="notification-sender-user-metadata-child">
+                                    <div className="notif-sender-profilepic-container">
+                                        <img loading="lazy" className="notif-sender-profilepic" src={notification?.sender_image_url || '../../src/assets/profile.jpg'} alt="notificataion sender profile picture" />
+                                    </div>
 
-                                <div className="notif-sender-name-container">
-                                    <p className="notif-sender-name">{notification.sender_name}</p>
-                                    <p className="notif-type">{FormatNotificationType(notification?.type)}</p>
-                                </div>
+                                    <div className="notif-sender-name-container">
+                                        <p className="notif-sender-name">{notification.sender_name}</p>
+                                        <p className="notif-type">{FormatNotificationType(notification?.type)}</p>
+                                    </div>
 
-                                <div className="notification-date-container">
-                                    <p className="notification-date">{formatPostDate(notification?.created_at)}</p>
-                                </div>
-                                
+                                    <div className="notification-date-container">
+                                        <p className="notification-date">{formatPostDate(notification?.created_at)}</p>
+                                    </div>
+                                </div>   
+                                <div className="notification-settings">
+                                    {settingsId === notification.id && (
+                                        <AnimatePresence>
+                                        <motion.div
+                                        initial={{opacity: 0, scale: 0}}
+                                        animate={{opacity: 1, scale: 1, transition:{type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
+                                        exit={{ opacity: 0, scale: 0,
+                                            transition: { 
+                                            duration: 0.2,
+                                            ease: "easeOut"
+                                            }
+                                        }}
+                                        ref={modalRef} 
+                                        className="settings-container">
+                                            
+                                            <div onClick={(e) => handleClickDeleteNotification(e, notification?.id)} className="delete-notification">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M10 12V17" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    <path d="M14 12V17" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    <path d="M4 7H20" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    <path d="M6 10V18C6 19.6569 7.34315 21 9 21H15C16.6569 21 18 19.6569 18 18V10" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                                Delete this notification
+                                            </div>
+                                            
+                                        </motion.div>
+                                        </AnimatePresence>
+                                    )}
+                                    
+                                    <svg onClick={(e) => handleClickSettings(e, notification?.id)} xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
+                                        <g id="style=fill">
+                                            <g id="menu-meatballs">
+                                                <path id="vector (Stroke)" fillRule="evenodd" clipRule="evenodd" d="M2.75 12C2.75 10.7574 3.75736 9.75 5 9.75C6.24264 9.75 7.25 10.7574 7.25 12C7.25 13.2426 6.24264 14.25 5 14.25C3.75736 14.25 2.75 13.2426 2.75 12Z" fill="#000000"/>
+                                                <path id="vector (Stroke)_2" fillRule="evenodd" clipRule="evenodd" d="M9.75 12C9.75 10.7574 10.7574 9.75 12 9.75C13.2426 9.75 14.25 10.7574 14.25 12C14.25 13.2426 13.2426 14.25 12 14.25C10.7574 14.25 9.75 13.2426 9.75 12Z" fill="#000000"/>
+                                                <path id="vector (Stroke)_3" fillRule="evenodd" clipRule="evenodd" d="M16.75 12C16.75 10.7574 17.7574 9.75 19 9.75C20.2426 9.75 21.25 10.7574 21.25 12C21.25 13.2426 20.2426 14.25 19 14.25C17.7574 14.25 16.75 13.2426 16.75 12Z" fill="#000000"/>
+                                            </g>
+                                        </g>
+                                    </svg>
+                                </div>  
+
                             </div>
+
                             <div 
                             className="notification-content"
                             onClick={(e) => handleReadNotif(
@@ -165,7 +247,7 @@ const NotificationCards = () =>{
                                 notification?.journals?.title, 
                                 user?.userData?.[0].id, 
                                 user?.userData?.[0].name, 
-                                user?.userData?.[0].image_url, 
+                                user?.userData?.[0]?.image_url, 
                                 notification?.journals?.created_at,
                                 notification?.journal_id, 
                                 notification?.hasLiked, 
@@ -175,11 +257,11 @@ const NotificationCards = () =>{
                                 notification?.journals?.bookmarks?.[0].count)} 
                             >
                                 <div className="notification-content-text">
-                                    <p className="notif-content-title">{notification?.journals.title}</p>
+                                    <p className="notif-content-title">{notification?.journals?.title?.length > 40 ? notification?.journals?.title?.substring(0, 39) : notification?.journals.title}</p>
                                     <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
                                 </div>
                                 <div className="notif-content-image-container">
-                                        <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage.src || '../../src/assets/no-image.png'} alt="" />
+                                    <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage.src || '../../src/assets/no-image.png'} alt="" />
                                 </div>
                             </div>
                         </div>

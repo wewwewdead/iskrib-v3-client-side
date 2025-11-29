@@ -367,10 +367,13 @@ export const getNotificationsCount = async(userId) => {
     return data;
 }
 
-export const getNotifications = async(userId, cursor = null, limit = 5) =>{
-    const url = cursor ? `${BASE_URL}/getNotifications?before=${cursor}&userId=${userId}&limit=${limit}` : `${BASE_URL}/getNotifications?userId=${userId}&limit=${limit}`;
+export const getNotifications = async(token, cursor = null, limit = 5) =>{
+    const headers = {}
+    if(token) headers['Authorization'] = `Bearer ${token}`
+    const url = cursor ? `${BASE_URL}/getNotifications?before=${cursor}&limit=${limit}` : `${BASE_URL}/getNotifications?limit=${limit}`;
     const response = await fetch(url, {
-        method: 'GET'
+        method: 'GET',
+        headers: headers
     })
     if(!response){
         const error = await response.json();
@@ -397,6 +400,43 @@ export const readNotification = async(token, notifId) =>{
     const message = await response.json();
     console.log(message)
     return message;
+}
+
+export const deleteNotification = async(token, notifId) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/deleteNotification/${notifId}`, {
+        method: 'DELETE',
+        headers: headers
+    })
+    
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const message = await response.json();
+    console.log(message)
+    return message;
+}
+
+export const getUnreadNotification = async(token, cursor, limit=5)=>{
+    const headers = {};
+    if(token)headers['Authorization'] = `Bearer ${token}`;
+
+    const url = cursor ? `${BASE_URL}/getUnreadNotification?before=${cursor}&limit=${limit}` : `${BASE_URL}/getUnreadNotification?limit=${limit}`
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: headers
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    console.log(data);
+    return data;
 }
 
 // export const getLikedPosts = async(token) =>{

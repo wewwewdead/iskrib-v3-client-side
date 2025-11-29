@@ -38,6 +38,18 @@
     overflow-x: hidden;
     gap: 1rem;
 }
+
+.comments-section::-webkit-scrollbar{
+    width: 6px;
+}
+.comments-section::-webkit-scrollbar-thumb{
+    background: rgb(27, 87, 121);
+    border-radius: 4px;
+}
+.comments-section::-webkit-scrollbar-track{
+    background-color: rgba(15, 59, 85, 0.501);
+}
+
 .comment-cards{
     display: flex;
     flex-direction: column;

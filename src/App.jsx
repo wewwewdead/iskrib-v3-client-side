@@ -16,6 +16,8 @@ import Visitprofile from './components/VisitProfile/VisitProfile.jsx';
 import ProfilePostCards from './components/HomePage/postCards/ProfilePostCards/ProfilePostCards.jsx';
 import VisitedProfilePostCards from './components/HomePage/postCards/ProfilePostCards/VisitedProfilePostCards.jsx';
 import Notifications from './components/Notifications/Notifications.jsx';
+import NotificationCards from './components/Notifications/notificationsCards.jsx';
+import UnreadNotification from './components/Notifications/UnreadNotificationCard.jsx';
 
 const App = () => {
 
@@ -63,7 +65,13 @@ const initaConfig = {
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>
             <Route path='bookmark' element={<Bookmarks/>}/> 
-            <Route path='notifications' element={<Notifications/>}/>   
+            
+            {/* Route for nested notifications */}
+            <Route path='notifications' element={<Notifications/>}>
+              <Route index element={<NotificationCards/>}/>
+              <Route path='unreadNotification' element={<UnreadNotification/>}/>
+            </Route>  
+
           </Route>   
           <Route path='/login' element={<LoginPage/>}/>
           <Route path='/signUp' element={<SignUp/>}/>

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, clickLike, readNotification } from "../../API/Api";
+import {addBookmark, addFollows, clickLike, deleteNotification, readNotification } from "../../API/Api";
 import { data } from "react-router-dom";
 
 export const useBookMarkMutation = (session) => {
@@ -140,5 +140,37 @@ export const useReadNotificationMutation = (session) =>{
          onSettled: () => {
             queryClient.invalidateQueries(['notifcount', session?.user?.id]);
          }
+    })
+}
+
+export const userDeleteNotificationMutation = (session) =>{
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => deleteNotification(session?.access_token, data?.notifId),
+
+        onMutate: async(data) =>{
+            await queryClient.cancelQueries(['getNotifications', session?.user?.id]);
+            const previousData = queryClient.getQueryData(['getNotifications', session?.user?.id]);
+
+            queryClient.setQueryData(['getNotifications', session?.user?.id], (old) => {
+                if(!old) return old;
+
+                return{
+                    ...old,
+                    pages: old.pages.map((page) =>({
+                        ...page,
+                        data: page.data.filter((notification) => notification.id !== data?.notifId)
+                    }))
+                }
+            })
+
+            return {previousData};
+        },
+        onError: (err, data, context) =>{
+            queryClient.setQueryData(['getNotifications', session?.user?.id], context.previousData)
+        },
+        onSettled: () =>{
+            queryClient.invalidateQueries(['getNotifications', session?.user?.id])
+        }
     })
 }

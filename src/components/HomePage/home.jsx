@@ -26,6 +26,7 @@ const HomePage = () => {
         }
         return navigate(path);
     }
+    
     const links = [
         {
             path: '/home', 

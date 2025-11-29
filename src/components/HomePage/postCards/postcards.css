@@ -161,7 +161,7 @@
     cursor: pointer;
 }
 .user-newsfeed-name{
-    font-size: 1rem;
+    font-size: 0.8rem;
     font-weight: 660;
     letter-spacing: 0.02rem;
     margin: 0;
@@ -217,7 +217,6 @@
     height: 100%;
     justify-content: flex-start;
     align-items: flex-start;
-    gap: 0.5rem;
 }
 .feed-text-content{
     padding: 0;
