@@ -60,7 +60,7 @@ const ContentView =() =>{
         staleTime: 1000 * 60 * 60,
         cacheTime: 1000 * 60 * 60,
         enabled: !!user?.userData?.[0].id && !!postData?.userId,
-    })
+    });
 
     useEffect(() =>{
         console.log(postData)
