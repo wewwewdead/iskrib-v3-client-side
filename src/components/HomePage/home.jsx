@@ -284,7 +284,7 @@ const HomePage = () => {
                         </div>
                         <input onChange={(e) => handleImageChange(e)} ref={imgRef} type="file" accept="image/*" style={{display: "none"}} />
                     </div>
-                    <img className="profile-img-edit-preview" src={profilePreview || '../src/assets/profile.jpg'} alt="profile-photo" />
+                    <img className="profile-img-edit-preview" src={profilePreview || '/assets/profile.jpg'} alt="profile-photo" />
                 </div>
 
                 <div className="profile-edit-metadata-container">

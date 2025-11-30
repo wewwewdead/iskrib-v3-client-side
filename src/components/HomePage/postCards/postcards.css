@@ -401,3 +401,53 @@
         height: 100vh;
 }
 }
+
+@media(max-width: 375px){
+    .postcards-parent-container {
+        position: relative;
+        top: 60px;
+        display: flex;
+        flex-direction: column;
+        width: 365px;
+        height: 100vh;
+        margin-bottom: 1rem;
+    }
+    .feed-text-content {
+        padding: 0;
+        margin: 0;
+        font-weight: 550;
+        font-size: 0.8rem;
+        color: rgb(98, 98, 98);
+        line-height: 1.2rem;
+    }
+    .journal-image {
+        width: 120px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .user-info-email {
+        padding: 0;
+        margin: 0;
+        font-size: 0.5rem;
+        font-weight: 460;
+        color: rgb(117, 127, 132);
+    }
+    .user-post-date {
+        padding: 0;
+        margin: 0;
+        font-size: 0.6rem;
+        font-weight: 460;
+        color: rgb(117, 127, 132);
+    }
+    .postcards-parent-loading-container {
+        position: relative;
+        top: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        width: 375px;
+        height: 100vh;
+}
+}

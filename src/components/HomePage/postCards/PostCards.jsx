@@ -266,7 +266,7 @@ const PostCards = () => {
                             <div className="user-info">
                                 <div className="user-info-child-container">
                                     <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-avatar-container">
-                                        <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '../../../src/assets/profile.jpg'} alt="" />
+                                        <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '/assets/profile.jpg'} alt="" />
                                     </div>
                                     <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-name-container">
                                         <p className="user-newsfeed-name">{journal.users.name}</p>
@@ -317,7 +317,7 @@ const PostCards = () => {
                                 </div>
 
                                 <div className="feed-image-content-container">
-                                    <img className="journal-image" src={parsedContent.firstImage?.src || '../../../src/assets/no-image.png'} alt="journal image" />
+                                    <img className="journal-image" src={parsedContent.firstImage?.src || '/assets/no-image.png'} alt="journal image" />
                                 </div>
 
                             </div>

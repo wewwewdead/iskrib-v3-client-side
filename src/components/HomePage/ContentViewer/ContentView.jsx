@@ -282,7 +282,7 @@ const ContentView =() =>{
 
                 <div className="content-metadata-container">
                     <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)} className="content-avatar-container">
-                        <img src={postData?.avatar} className="content-avatar" alt="user avatar" />
+                        <img src={postData?.avatar || '/assets/profile.jpg'} className="content-avatar" alt="user avatar" />
                     </div>
                     <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)} className="content-owner-name">
                         {postData?.name}

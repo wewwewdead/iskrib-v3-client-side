@@ -225,3 +225,42 @@
         gap: 0.2rem;
     }
 }
+
+@media(max-width: 375px){
+    .comment-parent-container {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 1rem;
+        top: 200px;
+        width: 338px;
+        height: 60%;
+        background-color: rgb(255, 255, 255);
+        z-index: 4;
+        border-radius: 15px;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+        gap: 0.2rem;
+    }
+    .comments-input {
+        font-family: "Nunito", sans-serif;
+        background-color: transparent;
+        border: none;
+        color: rgb(0, 0, 0);
+        width: 60%;
+        padding: 0.2rem;
+        resize: none;
+        overflow-y: auto;
+        border: 0.7px solid rgba(151, 151, 151, 0.168);
+        border-radius: 10px;
+    }
+    .comments-input-container {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-start;
+        width: 100%;
+        height: fit-content;
+        margin-top: 1rem;
+}
+}

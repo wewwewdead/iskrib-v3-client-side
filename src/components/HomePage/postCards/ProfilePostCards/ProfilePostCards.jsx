@@ -249,7 +249,7 @@ const ProfilePostCards = () =>{
                                 <div className='user-info-child-container'>
 
                                     <div className="user-avatar-container">
-                                        <img src={user?.userData?.[0].image_url || '../../../src/assets/profile.jpg'} alt="user-profile" loading='lazy' className="user-info-avatar" />
+                                        <img src={user?.userData?.[0].image_url || '/assets/profile.jpg'} alt="user-profile" loading='lazy' className="user-info-avatar" />
                                     </div>
 
                                     <div className="user-name-container">
@@ -340,7 +340,7 @@ const ProfilePostCards = () =>{
                                 </div>
 
                                 <div className="feed-image-content-container">
-                                    <img loading='lazy' className="journal-image" src={parsedContent?.firstImage?.src || '../../../src/assets/no-image.png'} alt="preview image" />
+                                    <img loading='lazy' className="journal-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="preview image" />
                                 </div>
 
                             </div>

@@ -126,3 +126,13 @@
     background-color: rgba(255, 255, 255, 0.23);
     backdrop-filter: blur(25px);
 }
+
+@media(max-width: 377px){
+    .visited-profile-image {
+        position: relative;
+        border-radius: 20px;
+        object-fit: cover;
+        width: 100px;
+        height: 100px;
+    }
+}

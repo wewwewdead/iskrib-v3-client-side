@@ -23,7 +23,7 @@ const MobileNavlink =({clickOpenSibar}) =>{
         {
             profileIcon:
             <div onClick={() => clickOpenSibar()} className='mobile-navlink-profile-container'>
-                <img loading='lazy' className='navlink-profile' src={user?.userData?.[0].image_url ||  '../../src/assets/profile.jpg'} alt="navlink profile" />
+                <img loading='lazy' className='navlink-profile' src={user?.userData?.[0]?.image_url || '/assets/profile.jpg'} alt="navlink profile" />
             </div>,
             label: 'profile-link',
         },

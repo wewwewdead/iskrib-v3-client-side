@@ -168,7 +168,7 @@ const UnreadNotification = () =>{
                                 <div className="notification-sender-user-metadata">
                                     <div className="notification-sender-user-metadata-child">
                                         <div className="notif-sender-profilepic-container">
-                                            <img className="notif-sender-profilepic" loading="lazy" src={unreadNotification?.sender_image_url || '../../src/assets/profile.jpg'} alt="notificataion sender profile picture" />
+                                            <img className="notif-sender-profilepic" loading="lazy" src={unreadNotification?.sender_image_url || '/assets/profile.jpg'} alt="notificataion sender profile picture" />
                                         </div>
 
                                         <div className="notif-sender-name-container">
@@ -245,7 +245,7 @@ const UnreadNotification = () =>{
                                     </div>
 
                                     <div className="notif-content-image-container">
-                                        <img className="notif-content-image" loading="lazy" src={parsedContent?.firstImage?.src || '../../src/assets/no-image.png'} alt="" />
+                                        <img className="notif-content-image" loading="lazy" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="" />
                                     </div>
                                 </div>
                             </div>

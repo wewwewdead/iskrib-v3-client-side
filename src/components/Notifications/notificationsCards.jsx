@@ -182,7 +182,7 @@ const NotificationCards = () =>{
                             <div className="notification-sender-user-metadata">
                                 <div className="notification-sender-user-metadata-child">
                                     <div className="notif-sender-profilepic-container">
-                                        <img loading="lazy" className="notif-sender-profilepic" src={notification?.sender_image_url || '../../src/assets/profile.jpg'} alt="notificataion sender profile picture" />
+                                        <img loading="lazy" className="notif-sender-profilepic" src={notification?.sender_image_url || '/assets/profile.jpg'} alt="notificataion sender profile picture" />
                                     </div>
 
                                     <div className="notif-sender-name-container">
@@ -261,7 +261,7 @@ const NotificationCards = () =>{
                                     <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
                                 </div>
                                 <div className="notif-content-image-container">
-                                    <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage.src || '../../src/assets/no-image.png'} alt="" />
+                                    <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage.src || '/assets/no-image.png'} alt="" />
                                 </div>
                             </div>
                         </div>

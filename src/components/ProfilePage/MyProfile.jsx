@@ -499,7 +499,7 @@ const MyProfile = () => {
                                 </div>
 
                                 <div className="profile-edit-image-child-container">
-                                    <img className="my-profile-image-editable" src={editImagePreview || userData?.image_url || '../../src/assets/profile.jpg'} alt="" />
+                                    <img className="my-profile-image-editable" src={editImagePreview || userData?.image_url || '/assets/profile.jpg'} alt="" />
                                 </div> 
 
                                 <div onClick={(e) => handleShowGradientPicker(e)} className="add-profile-background">
@@ -576,7 +576,7 @@ const MyProfile = () => {
                 <div style={{color:fontColor || userData?.profile_font_color}} className="profile-center-bar-container">
                     <div style={croppedImage || gradientPicked} className="hero-section">
                          <div className="my-profile-image-container">
-                            <img className="my-profile-image" loading="lazy" src={userData?.image_url || '../../src/assets/profile.jpg'} alt="" />
+                            <img className="my-profile-image" loading="lazy" src={userData?.image_url || '/assets/profile.jpg'} alt="" />
 
                             <div className="edit-profile-bttn-container">
                                 <div onClick={(e) => handleClickEdit(e)} className="edit-profile-bttn">
