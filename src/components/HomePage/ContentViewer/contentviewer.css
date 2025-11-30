@@ -459,7 +459,7 @@
 }
 }
 
-@media(max-width: 375px){
+@media only screen and (width: 393px) and (height: 852px) and (-webkit-device-pixel-ratio: 3){
     .contentView-loading-container{
         display: flex;
         justify-content: center;
