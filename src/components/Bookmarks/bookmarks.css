@@ -48,3 +48,90 @@
     height: 50px;
     position: relative;
 }
+
+/* mobile responsive */
+@media(max-width: 768px){
+    .boomarks-header {
+        position: fixed;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        width: 512px;
+        height: 60px;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.23);
+        backdrop-filter: blur(25px);
+        z-index: 2;
+        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+    }
+}
+
+@media(max-width: 432px){
+    .boomarks-header {
+        position: fixed;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        width: 400px;
+        height: 60px;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.23);
+        backdrop-filter: blur(25px);
+        z-index: 2;
+        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+    }
+    .bookmark-parent-container {
+        position: relative;
+        top: 90px;
+        display: flex;
+        flex-direction: column;
+        width: 430px;
+        height: 100vh;
+        margin-bottom: 1rem;
+    }
+    .bookmark-loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 432px;
+        height: 100vh;
+    }
+}
+
+@media(max-width: 392px){
+    .boomarks-header {
+        position: fixed;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        width: 359px;
+        height: 60px;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.23);
+        backdrop-filter: blur(25px);
+        z-index: 2;
+        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+    }
+    .bookmark-parent-container {
+        position: relative;
+        top: 90px;
+        display: flex;
+        flex-direction: column;
+        width: 392px;
+        height: 100vh;
+        margin-bottom: 1rem;
+    }
+    .bookmark-loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 392px;
+        height: 100vh;
+    }
+}

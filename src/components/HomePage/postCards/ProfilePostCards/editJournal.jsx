@@ -79,7 +79,7 @@ const EditJournal = ({onClose, journalData}) => {
             setTitle(null)
             setEditorState(null)
             setIsUpdatingJournal(false)
-            onclose()
+            onClose()
         }
     }
 

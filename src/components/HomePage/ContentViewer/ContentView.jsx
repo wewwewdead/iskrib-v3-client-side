@@ -62,9 +62,10 @@ const ContentView =() =>{
         enabled: !!user?.userData?.[0].id && !!postData?.userId,
     });
 
-    useEffect(() =>{
-        console.log(postData)
-    }, [postData])
+    // useEffect(() =>{
+    //     console.log(postData)
+    // }, [postData])
+
     const handleclickUserProfile = handleClickProfile(navigate);
 
     // const handleLike = async(e, journalId) => {
@@ -195,9 +196,6 @@ const ContentView =() =>{
 
 
     useEffect(() =>{
-        if(postData){
-            console.log(postData)
-        }
         setLikesCount(postData?.likesCount)
         setBookmarkCounts(postData?.bookmarksCount)
         setIsliked(postData?.isLiked)
@@ -226,9 +224,9 @@ const ContentView =() =>{
         }
     }, [])
 
-    useEffect(() =>{
-        console.log(followsData)
-    }, [followsData])
+    // useEffect(() =>{
+    //     console.log(followsData)
+    // }, [followsData])
 
     if(isLoading){
         return(
@@ -267,7 +265,7 @@ const ContentView =() =>{
                 </AnimatePresence>
             )}
 
-            <div className="content-title">
+            <div className="content-title-container">
                 {showBookmarkedMessage &&(
                     <AnimatePresence>
                     <motion.div 
@@ -280,7 +278,7 @@ const ContentView =() =>{
                     </motion.div>
                     </AnimatePresence>
                 )}
-                <p>{postData?.title}</p>
+                <p className="content-title">{postData?.title}</p>
 
                 <div className="content-metadata-container">
                     <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)} className="content-avatar-container">

@@ -274,3 +274,211 @@
     align-items: center;
     overflow-y: auto;
 }
+
+/* mobile responsive */
+@media(max-width: 768px){
+    .notifications-header {
+        position: fixed;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        width: 514px;
+        height: 60px;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.23);
+        backdrop-filter: blur(25px);
+        z-index: 2;
+        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+}
+}
+
+@media(max-width: 432px){
+    .notifications-header {
+        position: fixed;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        width: 400px;
+        height: 60px;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.23);
+        backdrop-filter: blur(25px);
+        z-index: 2;
+        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+    }
+
+    .notification-loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 430px;
+        height: 100vh;
+    }
+
+    .notifications-container {
+        position: absolute;
+        top: 95px;
+        width: 430px;
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: auto;
+    }
+
+    .notif-sender-name {
+        padding: 0;
+        margin: 0;
+        font-weight: 660;
+        font-size: 0.8rem;
+    }
+
+    .notif-type {
+        padding: 0;
+        margin: 0;
+        font-size: 0.8rem;
+    }
+
+    .notif-content-title {
+        padding: 0;
+        margin: 0rem;
+        font-size: 1rem;
+        font-weight: 760;
+    }
+
+    .notif-content-sliced-text {
+        padding: 0;
+        margin: 0;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        font-weight: 550;
+        color: rgb(98, 98, 98);
+    }
+
+    .svg-like{
+        width: 25px;
+        height: 25px;
+        padding: 0 0.2rem 0 0; 
+    }
+
+    .notif-content-image {
+        width: 120px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 5px;
+    }
+
+
+    .unread-notification-component-container {
+        position: absolute;
+        top: 95px;
+        width: 430px;
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: auto;
+    }
+}
+
+@media(max-width: 392px){
+    .notifications-header {
+        position: fixed;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        width: 362px;
+        height: 60px;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.23);
+        backdrop-filter: blur(25px);
+        z-index: 2;
+        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+    }
+
+    .notification-loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 392px;
+        height: 100vh;
+    }
+
+    .notifications-container {
+        position: absolute;
+        top: 95px;
+        width: 392px;
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: auto;
+    }
+
+    .notif-sender-name {
+        padding: 0;
+        margin: 0;
+        font-weight: 660;
+        font-size: 0.8rem;
+    }
+
+    .notif-type {
+        padding: 0;
+        margin: 0;
+        font-size: 0.8rem;
+    }
+
+    .notif-content-title {
+        padding: 0;
+        margin: 0rem;
+        font-size: 1rem;
+        font-weight: 760;
+    }
+
+    .notif-content-sliced-text {
+        padding: 0;
+        margin: 0;
+        font-size: 0.71rem;
+        line-height: 1.4;
+        font-weight: 550;
+        color: rgb(98, 98, 98);
+    }
+
+    .svg-like{
+        width: 25px;
+        height: 25px;
+        padding: 0 0.2rem 0 0; 
+    }
+
+    .notif-content-image {
+        width: 120px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 5px;
+    }
+
+
+    .unread-notification-component-container {
+        position: absolute;
+        top: 95px;
+        width: 392px;
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: auto;
+    }
+}

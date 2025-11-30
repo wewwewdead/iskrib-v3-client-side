@@ -1,4 +1,4 @@
-.newsfeed-header{
+/* .newsfeed-header{
     position: fixed;
     display: flex;
     background-color: rgba(255, 255, 255, 0.23);
@@ -10,7 +10,7 @@
     height: 90px;
     border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
     z-index: 1;
-}
+} */
 .postcards-parent-container{
     position: relative;
     top: 90px;
@@ -299,4 +299,105 @@
     height: 100%;
     background-color: rgb(255, 255, 255);
     z-index: 10;
+}
+
+/* mobile responsive */
+@media(max-width: 432px){
+    .postcards-parent-container {
+        position: relative;
+        top: 60px;
+        display: flex;
+        flex-direction: column;
+        width: 420px;
+        height: 100vh;
+        margin-bottom: 1rem;
+    }
+    .feed-text-content {
+        padding: 0;
+        margin: 0;
+        font-weight: 550;
+        font-size: 0.8rem;
+        color: rgb(98, 98, 98);
+        line-height: 1.2rem;
+    }
+    .journal-image {
+        width: 120px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .user-info-email {
+        padding: 0;
+        margin: 0;
+        font-size: 0.7rem;
+        font-weight: 460;
+        color: rgb(117, 127, 132);
+    }
+    .user-post-date {
+        padding: 0;
+        margin: 0;
+        font-size: 0.7rem;
+        font-weight: 460;
+        color: rgb(117, 127, 132);
+    }
+    .postcards-parent-loading-container {
+        position: relative;
+        top: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        width: 420px;
+        height: 100vh;
+}
+}
+
+@media(max-width: 392px){
+    .postcards-parent-container {
+        position: relative;
+        top: 60px;
+        display: flex;
+        flex-direction: column;
+        width: 390px;
+        height: 100vh;
+        margin-bottom: 1rem;
+    }
+    .feed-text-content {
+        padding: 0;
+        margin: 0;
+        font-weight: 550;
+        font-size: 0.8rem;
+        color: rgb(98, 98, 98);
+        line-height: 1.2rem;
+    }
+    .journal-image {
+        width: 120px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .user-info-email {
+        padding: 0;
+        margin: 0;
+        font-size: 0.5rem;
+        font-weight: 460;
+        color: rgb(117, 127, 132);
+    }
+    .user-post-date {
+        padding: 0;
+        margin: 0;
+        font-size: 0.6rem;
+        font-weight: 460;
+        color: rgb(117, 127, 132);
+    }
+    .postcards-parent-loading-container {
+        position: relative;
+        top: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        width: 420px;
+        height: 100vh;
+}
 }

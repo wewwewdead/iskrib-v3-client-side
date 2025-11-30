@@ -107,7 +107,7 @@ const NotificationCards = () =>{
         const handleClickOutside = (e) =>{
             if(modalRef.current && !modalRef.current.contains(e.target)){
                 setSettingsId(null);
-                console.log('close')
+                // console.log('close')
             }
         }
 
@@ -117,13 +117,13 @@ const NotificationCards = () =>{
         }
     }, [])
 
-     useEffect(() =>{
-         console.log(data)
-    }, [data])
+    //  useEffect(() =>{
+    //      console.log(data)
+    // }, [data])
 
     const handleClickSettings = (e, notifId) =>{
         e.stopPropagation();
-        console.log(notifId)
+        // console.log(notifId)
         setSettingsId(settingsId === notifId ? null : notifId);
     }
 
@@ -134,7 +134,7 @@ const NotificationCards = () =>{
         try {
            const message = mutationDeleteNotif.mutateAsync({notifId});
             if(message){
-                console.log(message)
+                // console.log(message)
             }
         } catch (error) {
             console.error('error while deleting notification:', error)

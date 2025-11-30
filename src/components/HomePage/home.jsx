@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, use } from "react";
+import React, { useEffect, useState, useRef} from "react";
 import './home.css'
 import { useAuth } from "../../Context/Authcontext";
 import { useNavigate, Outlet } from "react-router-dom";
@@ -12,6 +12,9 @@ import Editor from "./Editor/Editor";
 import { useCallback } from "react";
 import PostCards from "./postCards/PostCards";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import MobileNavlink from "../mobileNavLink/MobileNavLink";
+import WriteJournalButton from "../WriteJournalButton/WriteJournalButton";
+import MobileSidebarLink from "../MobileSidebarLink/MobileSidebarLink";
 
 const HomePage = () => {
     const {session, signOut, user, loading, isLoading, notifCount} = useAuth();
@@ -19,6 +22,8 @@ const HomePage = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [editor] = useLexicalComposerContext();
+
+    const [showMobileSideBar, setShowMobileSideBar] = useState(false);
 
     const navigatePath = (path) => {
         if(window.location.pathname === path){
@@ -103,7 +108,7 @@ const HomePage = () => {
     const [bio, setBio] = useState('')
     const [uploadingUserData, setUploadingUserData] = useState(false)
 
-   
+
     const handleClickUploadPhoto = (e) =>{
         e.stopPropagation();
         if(imgRef.current){
@@ -162,6 +167,15 @@ const HomePage = () => {
         
     }
 
+    const handleClickMobileProfileLink = () =>{
+        console.log('click')
+        setShowMobileSideBar(true)
+    }
+    const handleClickCloseSidebar = () =>{
+        setShowMobileSideBar(false)
+    }
+
+
     //handle show links header when stop scrolling and hides header when scrolling
     // useEffect(() =>{
     //     const handleScroll = (e) => {
@@ -205,11 +219,11 @@ const HomePage = () => {
 
     },[session, loading])
 
-    useEffect(() => {
-        if(user){
-            console.log(user?.userData?.[0]?.id)
-        }
-    }, [user])
+    // useEffect(() => {
+    //     if(user){
+    //         console.log(user?.userData?.[0]?.id)
+    //     }
+    // }, [user])
     
 
     if(isLoading){
@@ -338,8 +352,14 @@ const HomePage = () => {
             <div className="sidebar-right-holder-container">
                 {/* Log out */}
             </div>
+            
+            <WriteJournalButton onOpen={handleOpenTextEditor}/>
+            <MobileNavlink clickOpenSibar={handleClickMobileProfileLink}/>
         </div>
         
+        {showMobileSideBar && (
+            <MobileSidebarLink onclose={handleClickCloseSidebar}/>
+        )}
         </>
     )
 }

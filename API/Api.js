@@ -180,7 +180,7 @@ export const deleteJournalImage = async(token, url) => {
 }
 
 export const getJournals = async(cursor = null, limit = 5, userId) =>{
-    console.log(userId)
+    // console.log(userId)
     try {
         const url = cursor 
         ? `${BASE_URL}/journals?limit=${limit}&before=${cursor}&userId=${userId}`
@@ -214,7 +214,7 @@ export const getUserJournals = async(cursor = null, limit = 5, userId) =>{
             throw new Error('failed to get response');
         }
         const data = await response.json();
-        console.log(data);
+        // console.log(data);
         return data
     } catch (error) {
         onsole.error('Error fetching user journals:', error);
@@ -283,7 +283,7 @@ export const getComments = async(cursor= null, limit= 10, postId) =>{
             throw new Error('failed to fetch comments');
         }
         const data = await response.json();
-        console.log(data);
+        // console.log(data);
         return data;
     } catch (error) {
         console.error('Error fetching comments:', error);
@@ -352,7 +352,7 @@ export const getFollowsData = async(loggedInUserId, userIdToFollow) =>{
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 
@@ -363,7 +363,7 @@ export const getNotificationsCount = async(userId) => {
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 
@@ -435,7 +435,7 @@ export const getUnreadNotification = async(token, cursor, limit=5)=>{
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data);
+    // console.log(data);
     return data;
 }
 

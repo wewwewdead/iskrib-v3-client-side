@@ -112,9 +112,9 @@ const UnreadNotification = () =>{
 
     const unreadNotifications = data?.pages?.flatMap((page) => page.data) || [];
     
-    useEffect(() =>{
-        console.log(unreadNotifications)
-    }, [data])
+    // useEffect(() =>{
+    //     console.log(unreadNotifications)
+    // }, [data])
 
     useEffect(() => {
         const handleClickOutside = (e) =>{

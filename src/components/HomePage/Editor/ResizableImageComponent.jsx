@@ -167,7 +167,7 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = tru
 
   //handle image  click for view
   const handleViewImage = () => {
-    console.log('view img')
+    // console.log('view img')
     if(!isEditable){
       setViewImage(true)
     } else {
@@ -226,6 +226,7 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = tru
         }}
         draggable={false}
         onClick={() => handleViewImage()}
+        className='image-content'
       />
       </AnimatePresence>
 

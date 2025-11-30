@@ -1,15 +1,18 @@
-import {useLocation } from 'react-router-dom';
+import {useLocation, useNavigate } from 'react-router-dom';
 import './profilepostcards.css';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getUserJournals } from '../../../../../API/Api';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MoonLoader } from 'react-spinners';
 import ParseContent from '../parseData';
 import { useInView } from 'react-intersection-observer';
+import { handleCLickContent } from '../../../../../helpers/handleClicks';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
     const userData = location.state;
+
+    const navigate = useNavigate();
 
     const {ref, inView} = useInView({
         threshold: 0.2
@@ -30,9 +33,11 @@ const VisitedProfilePostCards = () =>{
         refetchOnWindowFocus: false
     })
 
-    useEffect(() =>{
-        console.log(journalData)
-    },[journalData])
+    const clickContent = handleCLickContent(navigate);
+
+    // useEffect(() =>{
+    //     console.log(journalData)
+    // },[journalData])
 
     useEffect(() =>{
         if(!isFetchingNextPage && hasNextPage && inView){
@@ -41,6 +46,7 @@ const VisitedProfilePostCards = () =>{
     }, [inView, fetchNextPage, isFetchingNextPage, hasNextPage,])
 
     const journals = journalData?.pages.flatMap((page) => page.data) || [];
+
 
    if(isLoadingJournals){
         return(
@@ -108,7 +114,21 @@ const VisitedProfilePostCards = () =>{
                                 </div>
                             </div>
 
-                            <div className="content-container">
+                            <div onClick={(e) => clickContent(
+                                e, 
+                                journal?.content,
+                                 parsedContent?.wholeText, 
+                                 journal?.title, 
+                                 userData?.userId,
+                                 journal?.users?.name, 
+                                 journal?.users?.image_url, 
+                                 journal?.created_at, 
+                                 journal?.id, 
+                                 journal?.has_liked, 
+                                 journal?.comment_count?.[0].count, 
+                                 journal?.has_bookmarked, 
+                                 journal?.like_count?.[0].count, 
+                                 journal?.bookmark_count?.[0].count )} className="content-container">
 
                                 <div className='feed-text-content-container'>
                                     <div className='feed-title-content'>
@@ -132,6 +152,7 @@ const VisitedProfilePostCards = () =>{
                     <MoonLoader size={20} loading={isFetchingNextPage}/>
                 )}
             </div>
+
         </div>
         </>
     )

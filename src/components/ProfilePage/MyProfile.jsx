@@ -15,13 +15,17 @@ import Cropper from "react-easy-crop";
 import getCroppedImage from "../../utils/getCroppedImage";
 import extractDominantColors from "../../utils/extractDominantColors";
 import formatCounts from "../../../helpers/fomatCounts";
+import MobileNavlink from "../mobileNavLink/MobileNavLink";
+import MobileSidebarLink from "../MobileSidebarLink/MobileSidebarLink";
+import WriteJournalButton from "../WriteJournalButton/WriteJournalButton";
 
 const MyProfile = () => {
     const {user, session, isLoading, notifCount} = useAuth();
+    const [showRichTextEditor, setShowRichTextEditor] = useState(false);
 
     const userData = user?.userData?.[0]
 
-    const [showConfirmationBttn, setShowConfirmationBttn] = useState(false);
+    const [showMobileSideBar, setShowMobileSideBar] = useState(false);
     
     const [showProfileEditor, setShowProfileEditor] = useState(false)
     const [editImagePreview, setEditImagePreview] = useState('')
@@ -134,7 +138,7 @@ const MyProfile = () => {
     ]
 
     useEffect(() => {
-        console.log(user)
+        // console.log(user)
         if(userData?.background){
             const backgroundImage = userData?.background;
             setCroppedImage(backgroundImage)
@@ -142,6 +146,25 @@ const MyProfile = () => {
         }
     }, [user, userData])
 
+    // open the richtext editor
+    const opendRichTextEditor = () =>{
+        setShowRichTextEditor(true)
+    }
+
+    // close the richtext editor
+    const closeRichTectEditor = () =>{
+        setShowRichTextEditor(false)
+    }
+
+    // open the sidebar through boolean function
+    const handleClickOpenSidebar = () =>{
+        setShowMobileSideBar(true)
+    }
+
+    // close the sidebar through boolean function
+    const handleCloseSidebar = () =>{
+        setShowMobileSideBar(false)
+    }
 
     //this fucntions are for the bg edit and profile edits
 
@@ -354,6 +377,10 @@ const MyProfile = () => {
 
     return(
         <>
+        {showRichTextEditor && (
+            <Editor onClose={closeRichTectEditor}/>
+        )}
+        
         {showFontColorSelector && (
             <AnimatePresence>
                 <motion.div
@@ -608,6 +635,14 @@ const MyProfile = () => {
                 <div className="profile-sidebar-right-holder-container">
                     {/* Log out */}
                 </div>
+
+                {/* hide and show sidebar through boolean */}
+                {showMobileSideBar && ( 
+                    <MobileSidebarLink onclose={handleCloseSidebar}/>
+                )}
+
+                <MobileNavlink clickOpenSibar={handleClickOpenSidebar}/>
+                <WriteJournalButton onOpen={opendRichTextEditor}/>
             </div>
         </AnimatePresence>
         </>

@@ -9,11 +9,16 @@ import { MoonLoader } from 'react-spinners';
 import { useFollowMutation } from '../../utils/useMutation';
 import debounce from '../../../helpers/debounce';
 import formatCounts from '../../../helpers/fomatCounts';
+import MobileNavlink from '../mobileNavLink/MobileNavLink';
+import MobileSidebarLink from '../MobileSidebarLink/MobileSidebarLink';
+import { useState } from 'react';
 
 const Visitprofile = () =>{
     const location = useLocation();
     const stateData = location.state;
     const {session, user, notifCount} = useAuth();
+
+    const [showSidebar, setShowSidebar]= useState(false)
 
     const buttonRef = useRef();
 
@@ -35,6 +40,16 @@ const Visitprofile = () =>{
                 return
             }
         }
+    }
+
+    // open sidebar through boolean function
+    const openSidebar = () =>{
+        setShowSidebar(true)
+    }
+
+    // close sidebar through boolean function
+    const closeSidebar = () =>{
+        setShowSidebar(false)
     }
 
     const handleMouseLeave = (isFollowing) =>{
@@ -175,6 +190,12 @@ const Visitprofile = () =>{
                 <Outlet/>
 
             </div>
+
+            {showSidebar && (
+                <MobileSidebarLink onclose={closeSidebar}/>
+            )}
+            
+            {<MobileNavlink clickOpenSibar={openSidebar}/>}
         </div>
         </>
         

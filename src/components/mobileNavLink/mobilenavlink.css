@@ -1,0 +1,106 @@
+/* .mobile-navlink-container{
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100px;
+    background-color: red;
+    z-index: 11;
+    top: 495px;
+} */
+.mobile-navlink-profile-container{
+     display: none;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+}
+.mobile-navlink-icon-container{
+    width: 95%;
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    height: 80%;
+}
+
+@media(max-width: 432px){
+    .mobile-navlink-container{
+        position: fixed;
+        display: flex;
+        background-color: rgba(255, 255, 255, 0.592);
+        backdrop-filter: blur(25px);
+        justify-content: space-evenly;
+        box-shadow: 2px 3px 10px 5px rgba(0, 0, 0, 0.355);
+        align-items: center;
+        width: 430px;
+        height: 60px;
+        z-index: 1;
+    }
+    
+    .mobile-navlink-profile-container{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: fit-content;
+        height: fit-content;
+    }
+    .navlink-profile{
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+    }
+    .mobile-navlink-icon-container{
+        width: 95%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 80%;
+    }
+    .mobile-navlink-icons{
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+@media(max-width: 392px){
+    .mobile-navlink-container{
+        position: fixed;
+        display: flex;
+        background-color: rgb(255, 255, 255);
+        justify-content: space-evenly;
+        box-shadow: 2px 3px 10px 5px rgba(0, 0, 0, 0.355);
+        align-items: center;
+        width: 390px;
+        height: 60px;
+        z-index: 1;
+    }
+    
+    .mobile-navlink-profile-container{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: fit-content;
+        height: fit-content;
+    }
+    .navlink-profile{
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+    }
+    .mobile-navlink-icon-container{
+        width: 95%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 80%;
+    }
+    .mobile-navlink-icons{
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}

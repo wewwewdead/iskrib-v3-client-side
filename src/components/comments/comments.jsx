@@ -56,12 +56,12 @@ const CommentSection = ({onclose, postId, receiverId})=>{
         }   
     }, [])
 
-    useEffect(() =>{
-        if(data){
-            console.log(data)
-            console.log(hasNextPage)
-        }
-    }, [data])
+    // useEffect(() =>{
+    //     if(data){
+    //         console.log(data)
+    //         console.log(hasNextPage)
+    //     }
+    // }, [data])
 
     
 

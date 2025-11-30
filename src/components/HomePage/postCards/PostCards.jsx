@@ -192,9 +192,9 @@ const PostCards = () => {
         }
     }, [])
 
-    useEffect(() =>{
-        console.log(data)
-    }, [data])
+    // useEffect(() =>{
+    //     console.log(data)
+    // }, [data])
 
     const journals = data?.pages?.flatMap((page) => page.data || []) || [];
 
