@@ -53,6 +53,7 @@
     width: 30px;
     height: 30px;
     border-radius: 50%;
+    object-fit: cover;
 }
 .sidebar-user-container{
     display: flex;
@@ -141,4 +142,11 @@
     height: 10px;
     padding: 0.3rem;
     border-radius: 50%;
+}
+
+/* 
+mobile responsive */
+
+@media (max-width: 768px){
+    
 }
