@@ -169,7 +169,7 @@ const HomePage = () => {
 
     const handleClickMobileProfileLink = () =>{
         console.log('click')
-        setShowMobileSideBar(true)
+        setShowMobileSideBar(!showMobileSideBar)
     }
     const handleClickCloseSidebar = () =>{
         setShowMobileSideBar(false)
@@ -354,7 +354,7 @@ const HomePage = () => {
             </div>
             
             <WriteJournalButton onOpen={handleOpenTextEditor}/>
-            <MobileNavlink clickOpenSibar={handleClickMobileProfileLink}/>
+            <MobileNavlink clickOpenSidebar={handleClickMobileProfileLink}/>
         </div>
         
         {showMobileSideBar && (

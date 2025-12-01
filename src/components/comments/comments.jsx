@@ -139,7 +139,6 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                             </div>
 
                             <div className='comment-user-metadata-container'>
-                                <p style={{padding: 0, margin: 0, fontSize: '0.8rem', color: 'rgba(85, 85, 85, 1)'}}>Commented By</p>
                                 <img className='comments-avatar' src={comment.users.image_url || '/assets/profile.jpg'} alt="" />
                                 <p className='commenter-name'>{comment?.users?.name}</p>
                                 <p>on</p>

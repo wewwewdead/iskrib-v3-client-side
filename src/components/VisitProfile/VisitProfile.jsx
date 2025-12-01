@@ -12,6 +12,8 @@ import formatCounts from '../../../helpers/fomatCounts';
 import MobileNavlink from '../mobileNavLink/MobileNavLink';
 import MobileSidebarLink from '../MobileSidebarLink/MobileSidebarLink';
 import { useState } from 'react';
+import WriteJournalButton from '../WriteJournalButton/WriteJournalButton';
+import Editor from '../HomePage/Editor/Editor';
 
 const Visitprofile = () =>{
     const location = useLocation();
@@ -19,6 +21,7 @@ const Visitprofile = () =>{
     const {session, user, notifCount} = useAuth();
 
     const [showSidebar, setShowSidebar]= useState(false)
+    const [opendRichTextEditor, setOpenRichTextEditor] = useState(false);
 
     const buttonRef = useRef();
 
@@ -42,9 +45,18 @@ const Visitprofile = () =>{
         }
     }
 
+    //open rich text editor
+    const handleClickRichtextEditor = () =>{
+        setOpenRichTextEditor(true);
+    }
+    //close rich text editor
+    const handleCloseRichtextEditor = () =>{
+        setOpenRichTextEditor(false);
+    }
+
     // open sidebar through boolean function
     const openSidebar = () =>{
-        setShowSidebar(true)
+        setShowSidebar(!showSidebar)
     }
 
     // close sidebar through boolean function
@@ -130,7 +142,10 @@ const Visitprofile = () =>{
         )
     }
     return(
-        <>
+        <>{opendRichTextEditor &&(
+            <Editor onClose={handleCloseRichtextEditor}/>
+        )}
+        
         <div className='profile-parent-container'>
             {userData?.background && (
                 <div className="blurred-img-bg" style={userData?.background}/>
@@ -195,7 +210,8 @@ const Visitprofile = () =>{
                 <MobileSidebarLink onclose={closeSidebar}/>
             )}
             
-            {<MobileNavlink clickOpenSibar={openSidebar}/>}
+            {<MobileNavlink clickOpenSidebar={openSidebar}/>}
+            <WriteJournalButton onOpen={handleClickRichtextEditor}/>
         </div>
         </>
         

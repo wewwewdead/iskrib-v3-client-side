@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../Context/Authcontext';
 import { useNavigate } from 'react-router-dom';
 
-const MobileNavlink =({clickOpenSibar}) =>{
+const MobileNavlink =({clickOpenSidebar}) =>{
     const [showNavlinks, setShowNavlinks] = useState(true);
     const timeOutRef = useRef();
     const navigate = useNavigate()
@@ -22,7 +22,7 @@ const MobileNavlink =({clickOpenSibar}) =>{
     const navLinks = [
         {
             profileIcon:
-            <div onClick={() => clickOpenSibar()} className='mobile-navlink-profile-container'>
+            <div onClick={() => clickOpenSidebar()} className='mobile-navlink-profile-container'>
                 <img loading='lazy' className='navlink-profile' src={user?.userData?.[0]?.image_url || '/assets/profile.jpg'} alt="navlink profile" />
             </div>,
             label: 'profile-link',

@@ -361,13 +361,6 @@
         font-weight: 550;
         color: rgb(98, 98, 98);
     }
-
-    .svg-like{
-        width: 25px;
-        height: 25px;
-        padding: 0 0.2rem 0 0; 
-    }
-
     .notif-content-image {
         width: 120px;
         height: 80px;

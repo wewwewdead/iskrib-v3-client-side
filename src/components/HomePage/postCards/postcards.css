@@ -312,6 +312,29 @@
         height: 100vh;
         margin-bottom: 1rem;
     }
+    .svg-like{
+        width: 18px;
+        height: 18px;
+        padding: 0 0.2rem 0 0; 
+        
+    }
+    .svg-comment{
+        width: 18px;
+        height: 18px;
+        padding: 0 0.2rem 0 0; 
+    }
+    .svg-bookmark{
+        width: 18px;
+        height: 18px;
+        padding: 0 0.2rem 0 0; 
+    }
+    .content-container {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        user-select: none;
+        gap: 0.4rem;
+    }
     .feed-text-content {
         padding: 0;
         margin: 0;
@@ -349,5 +372,5 @@
         flex-direction: column;
         width: 420px;
         height: 100vh;
-}
+    }
 }

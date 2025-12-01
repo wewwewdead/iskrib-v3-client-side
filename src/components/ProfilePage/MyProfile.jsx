@@ -158,7 +158,7 @@ const MyProfile = () => {
 
     // open the sidebar through boolean function
     const handleClickOpenSidebar = () =>{
-        setShowMobileSideBar(true)
+        setShowMobileSideBar(!showMobileSideBar)
     }
 
     // close the sidebar through boolean function
@@ -641,7 +641,7 @@ const MyProfile = () => {
                     <MobileSidebarLink onclose={handleCloseSidebar}/>
                 )}
 
-                <MobileNavlink clickOpenSibar={handleClickOpenSidebar}/>
+                <MobileNavlink clickOpenSidebar={handleClickOpenSidebar}/>
                 <WriteJournalButton onOpen={opendRichTextEditor}/>
             </div>
         </AnimatePresence>
