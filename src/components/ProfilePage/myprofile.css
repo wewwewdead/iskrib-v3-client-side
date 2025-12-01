@@ -714,4 +714,19 @@
         width: 120px;
         height: 120px;
     }
+    .profile-bg-picker-container {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        width: 380px;
+        height: 400px;
+        background-color: rgb(255, 255, 255);
+        z-index: 14;
+        padding: 1rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        gap: 1rem;
+    }
 }
