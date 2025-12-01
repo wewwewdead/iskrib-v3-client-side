@@ -50,6 +50,7 @@
         width: 30px;
         height: 30px;
         border-radius: 50%;
+        object-fit: cover;
     }
     .mobile-navlink-icon-container{
         width: 95%;
