@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './sidebar.css'
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from '../../Context/Authcontext';
@@ -6,6 +6,7 @@ import { useAuth } from '../../Context/Authcontext';
 const Sidebar = ({links}) =>{
     const {user, session, signOut} = useAuth();
     const navigate = useNavigate(null)
+    const location = useLocation();
     
     // const extractPath = (path) =>{
     //     let segments = path.split('/');
