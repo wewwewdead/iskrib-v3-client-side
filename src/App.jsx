@@ -48,7 +48,7 @@ const initaConfig = {
   return (
     <>
     <LexicalComposer initialConfig={initaConfig}>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path='/' element={<LoginPage/>}/>
           <Route path='/profile' element={<MyProfile/>}>
@@ -76,7 +76,7 @@ const initaConfig = {
           <Route path='/login' element={<LoginPage/>}/>
           <Route path='/signUp' element={<SignUp/>}/>
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </LexicalComposer>
     </>
   )

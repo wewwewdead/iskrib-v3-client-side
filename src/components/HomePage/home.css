@@ -292,19 +292,6 @@ mobile responsive */
 }
 
 @media (max-width: 428px){
-    .mobile-sidebar-bg{
-        position: absolute;
-        display: flex;
-        align-items: flex-end;
-        width: 100%;
-        height: 100vh;
-        background-color: rgba(255, 255, 255, 0.099);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(5px);
-        z-index: 2;
-        overflow: hidden;
-    }
-    
     .home-parent-container{
         position: relative;
         flex-direction: column;
@@ -316,6 +303,7 @@ mobile responsive */
         overflow-y: auto;
         overflow-x: hidden;  
     }
+    
     .center-bar-holder-container {
         position: absolute;
         left: 1px;

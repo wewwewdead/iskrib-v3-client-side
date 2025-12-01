@@ -79,6 +79,7 @@
     width: 67%;
     padding: 0.5rem 0;
     border-radius: 4px;
+    color: rgb(255, 255, 255);
     background-color: rgb(72, 54, 177);
     cursor: pointer;
     user-select: none;
@@ -95,6 +96,7 @@
     padding: 0.5rem 0;
     border-radius: 4px;
     background-color: rgb(72, 54, 177);
+    color: rgb(255, 255, 255);
     user-select: none;
     border: none;
 }
