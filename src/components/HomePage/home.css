@@ -303,6 +303,35 @@ mobile responsive */
         overflow-y: auto;
         overflow-x: hidden;  
     }
+
+    .profile-editor {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        border-radius: 15px;
+        width: 90%;
+        height: 90%;
+        background-color: rgb(4, 20, 29);
+    }
+    .edit-profile-name-input {
+        background-color: transparent;
+        border: none;
+        padding: 0.5rem 0;
+        outline: none;
+        width: 90%;
+        color: rgb(255, 255, 255) !important;
+    }
+
+    .edit-profile-bio-input {
+        background-color: transparent;
+        border: none;
+        padding: 0.5rem 0;
+        outline: none;
+        width: 90%;
+        resize: none;
+        height: 100px;
+        color: rgb(255, 255, 255) !important;
+    }
     
     .center-bar-holder-container {
         position: absolute;
