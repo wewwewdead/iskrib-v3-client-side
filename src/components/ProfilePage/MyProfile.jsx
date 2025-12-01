@@ -20,7 +20,7 @@ import MobileSidebarLink from "../MobileSidebarLink/MobileSidebarLink";
 import WriteJournalButton from "../WriteJournalButton/WriteJournalButton";
 
 const MyProfile = () => {
-    const {user, session, isLoading, notifCount} = useAuth();
+    const {user, session, isLoading, notifCount, loading} = useAuth();
     const [showRichTextEditor, setShowRichTextEditor] = useState(false);
 
     const userData = user?.userData?.[0]
@@ -365,6 +365,15 @@ const MyProfile = () => {
         setShowFontColorSelector(false)
     }
     
+
+    useEffect(() => {
+            if(!session && !loading){
+                return navigate('/login')
+                //check if the user has user metadata on the users table database if not then show a UI that let them input there data and save to database
+            }
+    
+    },[session, loading])
+        
     if(isLoading){
         return(
             <>

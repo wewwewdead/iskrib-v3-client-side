@@ -18,7 +18,7 @@ import Editor from '../HomePage/Editor/Editor';
 const Visitprofile = () =>{
     const location = useLocation();
     const stateData = location.state;
-    const {session, user, notifCount} = useAuth();
+    const {session, user, notifCount, loading} = useAuth();
 
     const [showSidebar, setShowSidebar]= useState(false)
     const [opendRichTextEditor, setOpenRichTextEditor] = useState(false);
@@ -131,6 +131,14 @@ const Visitprofile = () =>{
     // useEffect(() =>{
     //     console.log(followsData)
     // }, [followsData])
+
+    useEffect(() => {
+        if(!session && !loading){
+            return navigate('/login')
+            //check if the user has user metadata on the users table database if not then show a UI that let them input there data and save to database
+        }
+    
+    },[session, loading])
 
     
     if(isLoading){
