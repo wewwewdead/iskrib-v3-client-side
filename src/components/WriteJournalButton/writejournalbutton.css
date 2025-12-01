@@ -1,7 +1,7 @@
 .write-journal-bttn-mobile-ver{
     display: none;
 }
-@media(max-width: 432px){
+@media (max-width: 428px){
     .write-journal-bttn-mobile-ver{
         position: fixed;
         display: flex;
@@ -14,25 +14,7 @@
         left: 320px;
         z-index: 2;
         transition: ease-in-out 0.3s;
-        margin-bottom: 6rem;
-        box-shadow: 0px 1px 20px 1px rgba(118, 205, 255, 0.626);
-    }
-}
-
-@media only screen and (width: 393px) and (height: 852px) and (-webkit-device-pixel-ratio: 3){
-    .write-journal-bttn-mobile-ver{
-        position: fixed;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 50%;
-        background-color: rgb(16, 56, 79);
-        width: 60px;
-        height: 60px;
-        left: 280px;
-        z-index: 2;
-        transition: ease-in-out 0.3s;
-        margin-bottom: 6rem;
+        margin-bottom: 8rem;
         box-shadow: 0px 1px 20px 1px rgba(118, 205, 255, 0.626);
     }
 }

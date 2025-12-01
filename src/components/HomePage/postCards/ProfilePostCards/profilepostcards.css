@@ -384,31 +384,8 @@
 }
 
 /* MOBILE RESPONSIVE */
-@media(max-width: 432px){
-    .profile-postcards {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-        width: 100%;
-        padding: 1rem 0rem;
-        min-height: fit-content;
-        border-bottom: 0.7px solid rgba(151, 151, 151, 0.363);
-        cursor: pointer;
-    }
 
-    .important-notes-container p {
-        padding: 0;
-        margin: 0;
-        font-weight: 750;
-        font-size: 0.7rem;
-        color: rgb(255, 0, 0);
-        text-align: center;
-    }
-}
-
-@media only screen and (width: 393px) and (height: 852px) and (-webkit-device-pixel-ratio: 3){
+@media (max-width: 428px){
     .profile-postcards {
         position: relative;
         display: flex;

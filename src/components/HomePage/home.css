@@ -291,7 +291,7 @@ mobile responsive */
 }
 }
 
-@media(max-width: 432px){
+@media (max-width: 428px){
     .mobile-sidebar-bg{
         position: absolute;
         display: flex;
@@ -310,7 +310,7 @@ mobile responsive */
         flex-direction: column;
         display: flex;
         justify-content: flex-end;
-        align-items: flex-start;
+        align-items: center;
         width: 100%;
         height: 100vh;
         overflow-y: auto;
@@ -322,8 +322,8 @@ mobile responsive */
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
-        align-items: flex-start;
-        width: 550px;
+        align-items: center;
+        width: 428px;
         height: 100vh;
     }
     .side-bar-holder-container{
@@ -353,127 +353,7 @@ mobile responsive */
         -webkit-backdrop-filter: blur(5px);
         justify-content: space-evenly;
         align-items: center;
-        width: 430px;
-        height: 60px;
-        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
-        z-index: 1;
-}
-}
-
-@media(max-width: 392px){
-    .mobile-sidebar-bg{
-        position: absolute;
-        display: flex;
-        align-items: flex-end;
-        width: 100%;
-        height: 100vh;
-        background-color: rgba(255, 255, 255, 0.099);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(5px);
-        z-index: 2;
-        overflow: hidden;
-    }
-    
-    .home-parent-container{
-        position: relative;
-        flex-direction: column;
-        display: flex;
-        justify-content: flex-end;
-        align-items: flex-start;
-        width: 100%;
-        height: 100vh;
-        overflow-y: auto;
-        overflow-x: hidden;  
-    }
-    .center-bar-holder-container {
-        position: absolute;
-        left: 1px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: flex-start;
-        width: 390px;
-        height: 100vh;
-    }
-    .side-bar-holder-container{
-        position: fixed;
-        display: none;
-    }
-    .sidebar-right-holder-container {
-        position: fixed;
-        left: 1000px;
-        display: none;
-    }
-
-    .newsfeed-header{
-        position: fixed;
-        display: flex;
-        background-color: rgba(255, 255, 255, 0.23);
-        backdrop-filter: blur(25px);
-        -webkit-backdrop-filter: blur(5px);
-        justify-content: space-evenly;
-        align-items: center;
-        width: 390px;
-        height: 60px;
-        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
-        z-index: 1;
-}
-}
-
-@media only screen and (width: 393px) and (height: 852px) and (-webkit-device-pixel-ratio: 3){
-    .mobile-sidebar-bg{
-        position: absolute;
-        display: flex;
-        align-items: flex-end;
-        width: 100%;
-        height: 100vh;
-        background-color: rgba(255, 255, 255, 0.099);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(5px);
-        z-index: 2;
-        overflow: hidden;
-    }
-    
-    .home-parent-container{
-        position: relative;
-        flex-direction: column;
-        display: flex;
-        justify-content: flex-end;
-        align-items: flex-start;
-        width: 100%;
-        height: 100vh;
-        overflow-y: auto;
-        overflow-x: hidden;  
-    }
-    .center-bar-holder-container {
-        position: absolute;
-        left: 1px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: flex-start;
-        width: 375px;
-        height: 100vh;
-    }
-    .side-bar-holder-container{
-        position: fixed;
-        display: none;
-    }
-    .sidebar-right-holder-container {
-        position: fixed;
-        left: 1000px;
-        display: none;
-    }
-
-    .newsfeed-header{
-        position: fixed;
-        display: flex;
-        background-color: rgba(255, 255, 255, 0.23);
-        backdrop-filter: blur(25px);
-        -webkit-backdrop-filter: blur(5px);
-        justify-content: space-evenly;
-        align-items: center;
-        width: 375px;
+        width: 420px;
         height: 60px;
         border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
         z-index: 1;
