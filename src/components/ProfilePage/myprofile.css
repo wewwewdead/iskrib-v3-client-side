@@ -730,3 +730,95 @@
         gap: 1rem;
     }
 }
+
+@media (max-width: 480px){
+    .profile-parent-container {
+        position: relative;
+        flex-direction: column;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        width: 480px;
+        height: 100vh;
+        overflow-y: hidden;
+        overflow-x: hidden; 
+    }
+    .profile-sidebar-right-holder-container {
+        display: none;
+    }
+
+    .profile-center-bar-container {
+        position: absolute;
+        left: 1px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        width: 480px;
+        height: 100vh;
+        
+    }
+    .profile-editor-bg {
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(141, 141, 141, 0.2);
+        backdrop-filter: blur(5px);
+        width: 100%;
+        height: 100vh;
+        z-index: 12;
+    }
+
+    .profile-editor-container {
+        display: flex;
+        flex-direction: column;
+        width: 90%;
+        height: fit-content;
+        border-radius: 15px;
+        background-color: rgb(255, 255, 255);
+        padding: 1rem;
+        gap: 1rem;
+    }
+    .profile-edit-image-bg {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        background-color: rgba(120, 120, 120, 0.588);
+        z-index: 2;
+        border-radius: 20px;
+        cursor: pointer;
+    }
+    .my-profile-image-editable {
+        position: relative;
+        border-radius: 20px;
+        object-fit: cover;
+        width: 120px;
+        height: 120px;
+    }
+    .my-profile-image {
+        position: relative;
+        border-radius: 20px;
+        object-fit: cover;
+        width: 120px;
+        height: 120px;
+    }
+    .profile-bg-picker-container {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        width: 380px;
+        height: 400px;
+        background-color: rgb(255, 255, 255);
+        z-index: 14;
+        padding: 1rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        gap: 1rem;
+    }
+}

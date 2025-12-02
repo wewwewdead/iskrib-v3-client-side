@@ -101,3 +101,37 @@
         height: 100vh;
     }
 }
+
+@media (max-width: 480px){
+    .boomarks-header {
+        position: fixed;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        width: 450px;
+        height: 60px;
+        user-select: none;
+        background-color: rgba(255, 255, 255, 0.23);
+        backdrop-filter: blur(25px);
+        z-index: 2;
+        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+    }
+    .bookmark-parent-container {
+        position: relative;
+        top: 90px;
+        display: flex;
+        flex-direction: column;
+        width: 480px;
+        height: 100vh;
+        margin-bottom: 1rem;
+    }
+    .bookmark-loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 480px;
+        height: 100vh;
+    }
+}

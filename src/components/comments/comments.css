@@ -278,3 +278,87 @@
         border: none;
     }
 }
+
+@media (max-width: 480px){
+    .comment-parent-container {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 1rem;
+        top: 200px;
+        width: 420px;
+        height: 60%;
+        background-color: rgb(255, 255, 255);
+        z-index: 15;
+        border-radius: 15px;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+        gap: 0.2rem;
+    }
+    .comment-cards {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        border-radius: 10px;
+        border: 0.7px solid rgba(151, 151, 151, 0.168);
+    }
+
+    .comment-user-metadata-container {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        width: 100%;
+        height: fit-content;
+        /* gap: 0.3rem; */
+        /* margin: 0 0.5rem; */
+        padding: 0.5rem 0;
+    }
+    .comments-input-container {
+        display: flex;
+        justify-content: space-between;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        height: fit-content;
+        margin-top: 1rem;
+    }
+    .commented-by {
+        padding: 0px;
+        margin: 0px;
+        font-size: 0.7rem;
+        color: rgb(85, 85, 85);
+    }
+    .comments-input {
+        font-family: "Nunito", sans-serif;
+        background-color: transparent;
+        border: none;
+        color: rgb(0, 0, 0);
+        width: 90%;
+        padding: 0.5rem;
+        resize: none;
+        overflow-y: auto;
+        border: 0.7px solid rgba(151, 151, 151, 0.168);
+        border-radius: 10px;
+    }
+    .button-section {
+        display: flex;
+        justify-content: space-between;
+        align-content: flex-end;
+        width: 100%;
+        margin-top: 0.4rem;
+    }
+    .comment-submit-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0.5rem;
+        width: 80px;
+        border-radius: 15px;
+        background-color: rgb(4, 20, 29);
+        color: rgb(255, 255, 255);
+        cursor: pointer;
+        border: none;
+    }
+}

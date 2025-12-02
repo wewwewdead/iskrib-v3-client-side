@@ -12,11 +12,7 @@ const MobileNavlink =({clickOpenSidebar}) =>{
     const {user, notifCount} = useAuth();
 
     const handleNavigatePath = (path) =>{
-        if(path === location.pathname){
-            window.location.reload()
-        } else {
-            return navigate(path);
-        }
+        return navigate(path);
     }
 
     const navLinks = [

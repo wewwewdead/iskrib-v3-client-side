@@ -36,7 +36,48 @@
         width: 428px;
         height: 60px;
         z-index: 11;
-        bottom: 0.5rem;
+    }
+    
+    .mobile-navlink-profile-container{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: fit-content;
+        height: fit-content;
+    }
+    .navlink-profile{
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .mobile-navlink-icon-container{
+        width: 95%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 80%;
+    }
+    .mobile-navlink-icons{
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px){
+    .mobile-navlink-container{
+        position: fixed;
+        display: flex;
+        background-color: rgba(255, 255, 255, 0.575);
+        backdrop-filter: blur(25px);
+        justify-content: space-evenly;
+        box-shadow: 2px 3px 10px 5px rgba(0, 0, 0, 0.355);
+        align-items: center;
+        width: 480px;
+        height: 60px;
+        z-index: 11;
     }
     
     .mobile-navlink-profile-container{

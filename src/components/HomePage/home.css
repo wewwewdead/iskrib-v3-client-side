@@ -376,3 +376,89 @@ mobile responsive */
         z-index: 1;
 }
 }
+
+@media (max-width: 480px){
+    .home-parent-container{
+        position: relative;
+        flex-direction: column;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        width: 100%;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;  
+    }
+
+    .profile-editor {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        border-radius: 15px;
+        width: 90%;
+        height: 90%;
+        background-color: rgb(4, 20, 29);
+    }
+    .edit-profile-name-input {
+        background-color: transparent;
+        border: none;
+        padding: 0.5rem 0;
+        outline: none;
+        width: 90%;
+        color: rgb(255, 255, 255) !important;
+    }
+
+    .edit-profile-bio-input {
+        background-color: transparent;
+        border: none;
+        padding: 0.5rem 0;
+        outline: none;
+        width: 90%;
+        resize: none;
+        height: 100px;
+        color: rgb(255, 255, 255) !important;
+    }
+    
+    .center-bar-holder-container {
+        position: absolute;
+        left: 1px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        width: 480px;
+        height: 100vh;
+    }
+    .side-bar-holder-container{
+        position: fixed;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        width: 200px;
+        height: 100%;
+        border-right: 0.7px solid rgba(151, 151, 151, 0.168);
+        z-index: 2;
+    }
+    .sidebar-right-holder-container {
+        position: fixed;
+        left: 1000px;
+        display: none;
+        width: 25%;
+        height: 100%;
+        border-left: 0.7px solid rgba(151, 151, 151, 0.168);
+    }
+
+    .newsfeed-header{
+        position: fixed;
+        display: flex;
+        background-color: rgba(255, 255, 255, 0.23);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(5px);
+        justify-content: space-evenly;
+        align-items: center;
+        width: 480px;
+        height: 60px;
+        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+        z-index: 1;
+    }
+}
