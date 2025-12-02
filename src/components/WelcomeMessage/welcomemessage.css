@@ -75,3 +75,26 @@
         font-weight: 780;
     }
 }
+
+@media(max-width: 428px){
+    .welcome-message-child-container{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 60%;
+        height: 45%;
+        padding: 1rem;
+        background-color: rgb(255, 255, 255);
+        box-shadow: 1px 1px 20px 1px rgba(0, 0, 0, 0.347);
+        border-radius: 10px;
+    }
+    .welcome-message{
+        margin: 1rem 0rem;
+        text-align: center;
+        font-size: 1.2rem;
+    }
+    .iskrib-word{
+        font-weight: 780;
+    }
+}

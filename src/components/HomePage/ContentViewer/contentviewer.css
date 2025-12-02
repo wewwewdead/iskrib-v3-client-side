@@ -384,7 +384,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 480px;
+        width: 100%;
         height: 100vh;
     }
     .back-button-container {
@@ -394,7 +394,7 @@
         align-items: center;
         gap: 1rem;
         padding: 1rem;
-        width: 450px;
+        width: 100%;
         height: 50px;
         user-select: none;
         z-index: inherit;
@@ -407,7 +407,7 @@
         flex-direction: column;
         justify-content: flex-start;
         align-items: center;
-        width: 460px;
+        width: 98%;
         height: fit-content;
         z-index: 12;
         background-color: rgb(255, 255, 255);

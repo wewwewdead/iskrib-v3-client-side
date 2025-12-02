@@ -110,7 +110,7 @@
         align-items: center;
         gap: 1rem;
         padding: 1rem;
-        width: 450px;
+        width: 100%;
         height: 60px;
         user-select: none;
         background-color: rgba(255, 255, 255, 0.23);
@@ -123,8 +123,8 @@
         top: 90px;
         display: flex;
         flex-direction: column;
-        width: 480px;
-        height: 100vh;
+        width: 100% ;
+        height: 480px100vh;
         margin-bottom: 1rem;
     }
     .bookmark-loading-container {
