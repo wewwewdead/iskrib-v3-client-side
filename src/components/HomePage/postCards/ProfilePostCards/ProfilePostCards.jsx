@@ -1,5 +1,5 @@
 import './profilepostcards.css';
-import { useAuth } from '../../../../Context/Authcontext';
+import { useAuth } from '../../../../Context/useAuth';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteJournal, deleteJournalImage, getUserJournals } from '../../../../../API/Api';
 import { useEffect, useRef } from 'react';

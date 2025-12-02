@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './comments.css'
 import { AnimatePresence, motion} from "framer-motion";
 import { addComment } from '../../../API/Api';
-import { useAuth } from '../../Context/Authcontext';
+import { useAuth } from '../../Context/useAuth';
 import { getComments } from '../../../API/Api';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { BarLoader, MoonLoader } from 'react-spinners';

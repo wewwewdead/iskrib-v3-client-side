@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $getNodeByKey } from 'lexical';
 import { deleteJournalImage } from '../../../../API/Api';
-import { useAuth } from '../../../Context/Authcontext';
+import { useAuth } from '../../../Context/useAuth';
 import { AnimatePresence, motion, scale } from 'framer-motion';
 
 const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = true }) => {

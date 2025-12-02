@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getBookmarks } from '../../../API/Api';
-import { useAuth } from '../../Context/Authcontext';
+import { useAuth } from '../../Context/useAuth';
 import './bookmarks.css';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import ParseContent from '../HomePage/postCards/parseData';

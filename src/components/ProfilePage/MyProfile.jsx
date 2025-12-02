@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, use, createElement } from "react";
 import './myprofile.css'
-import { useAuth } from "../../Context/Authcontext";
+import { useAuth } from "../../Context/useAuth";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
 import { MoonLoader, BeatLoader, BarLoader} from "react-spinners";

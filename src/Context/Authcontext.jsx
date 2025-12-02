@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getNotificationsCount, getUserData } from '../../API/Api';
 
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
     const [loading, setLoading] = useState(true);
@@ -105,4 +105,3 @@ export const AuthProvider = ({children}) => {
         {children}
     </AuthContext.Provider>
 }
-export const useAuth = () => useContext(AuthContext);

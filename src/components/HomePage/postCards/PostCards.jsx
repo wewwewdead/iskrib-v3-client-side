@@ -9,7 +9,7 @@ import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
 import { useNavigate, } from "react-router-dom";
 
-import { useAuth } from "../../../Context/Authcontext";
+import { useAuth } from "../../../Context/useAuth";
 import { useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
 import formatCounts from "../../../../helpers/fomatCounts";
 import debounce from "../../../../helpers/debounce";

@@ -11,7 +11,7 @@ import ToolBarForEdit from '../../Editor/ToolbarForEdit';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { updateJournal } from '../../../../../API/Api';
-import { useAuth } from '../../../../Context/Authcontext';
+import { useAuth } from '../../../../Context/useAuth';
 import { BarLoader } from 'react-spinners';
 import { useQueryClient } from '@tanstack/react-query';
 

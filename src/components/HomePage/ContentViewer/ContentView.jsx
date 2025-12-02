@@ -10,7 +10,7 @@ import { use, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, } from "framer-motion";
 import CalculateText from "../postCards/calculateReadingTime";
 import { useBookMarkMutation, useFollowMutation, useLikeMutation } from "../../../utils/useMutation";
-import { useAuth } from "../../../Context/Authcontext";
+import { useAuth } from "../../../Context/useAuth";
 import CommentSection from "../../comments/comments";
 import debounce from "../../../../helpers/debounce";
 import formatCounts from "../../../../helpers/fomatCounts";

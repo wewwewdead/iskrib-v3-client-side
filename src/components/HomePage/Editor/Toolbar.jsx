@@ -16,7 +16,7 @@ import { $insertNodeToNearestRoot } from '@lexical/utils';
 
 import ImageNode, {$createImageNode, INSERT_IMAGE_COMMAND} from "./nodes/ImageNode";
 import { saveJournalImage } from "../../../../API/Api";
-import { useAuth } from "../../../Context/Authcontext";
+import { useAuth } from "../../../Context/useAuth";
 
 const ToolBar = () =>{
     //bold and italic style are textFormatTypeStrings

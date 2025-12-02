@@ -6,7 +6,7 @@ import { MoonLoader } from 'react-spinners';
 import ParseContent from '../parseData';
 import { useInView } from 'react-intersection-observer';
 import { handleCLickContent } from '../../../../../helpers/handleClicks';
-import { useAuth } from '../../../../Context/Authcontext';
+import { useAuth } from '../../../../Context/useAuth';
 import { getVisitedUserJournals } from '../../../../../API/Api';
 
 const VisitedProfilePostCards = () =>{

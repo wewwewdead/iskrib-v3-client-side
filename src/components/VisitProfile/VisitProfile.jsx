@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import './visitprofile.css';
-import { useAuth } from '../../Context/Authcontext';
+import { useAuth } from '../../Context/useAuth';
 import { getFollowsData, getUserData, getUserJournals } from '../../../API/Api';
 import { useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';

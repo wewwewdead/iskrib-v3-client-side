@@ -9,7 +9,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import EditorInner from './RichTextEditor.jsx';
 import { $getRoot } from 'lexical';
 import { deleteJournalImage } from '../../../../API/Api.js';
-import { useAuth } from '../../../Context/Authcontext.jsx';
+import { useAuth } from '../../../Context/useAuth.js';
 
 class ErrorBoundary extends React.Component {
   state = { error: null };

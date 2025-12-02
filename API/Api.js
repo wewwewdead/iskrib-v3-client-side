@@ -217,14 +217,15 @@ export const getUserJournals = async(cursor = null, limit = 5, userId) =>{
         // console.log(data);
         return data
     } catch (error) {
-        onsole.error('Error fetching user journals:', error);
+        console.error('Error fetching user journals:', error);
         throw error;
     }
 }
 
 export const getVisitedUserJournals = async(cursor = null, limit = 5, userId, loggedInUserId) =>{
+    console.log('getVisit');
     try {
-        const url = cursor ? `${BASE_URL}/visitedUserJournals?limit=${limit}&before=${cursor}&userId=${userId}&loggedInUserId=${loggedInUserId}` : `${BASE_URL}/userJournals?limit=${limit}&userId=${userId}&loggedInUserId=${loggedInUserId}`;
+        const url = cursor ? `${BASE_URL}/visitedUserJournals?limit=${limit}&before=${cursor}&userId=${userId}&loggedInUserId=${loggedInUserId}` : `${BASE_URL}/visitedUserJournals?limit=${limit}&userId=${userId}&loggedInUserId=${loggedInUserId}`;
 
         const response = await fetch(url, {
             method: 'GET'
@@ -237,7 +238,7 @@ export const getVisitedUserJournals = async(cursor = null, limit = 5, userId, lo
         // console.log(data);
         return data
     } catch (error) {
-        onsole.error('Error fetching user journals:', error);
+        console.error('Error fetching user journals:', error);
         throw error;
     }
 }

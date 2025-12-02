@@ -4,7 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import supabase from '../../utils/supabaseClient';
 import Turnstile from 'react-turnstile'
 import { MoonLoader } from "react-spinners";
-import { useAuth } from '../../Context/Authcontext';
+import { useAuth } from '../../Context/useAuth';
 
 const SITE_KEY = import.meta.env.VITE_SITE_KEY;
 

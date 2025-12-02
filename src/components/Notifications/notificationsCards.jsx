@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useAuth } from "../../Context/Authcontext";
+import { useAuth } from "../../Context/useAuth";
 import { useInView } from "react-intersection-observer";
 import { MoonLoader } from "react-spinners";
 import { getNotifications } from "../../../API/Api";

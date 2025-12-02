@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import './mobilesidebarlink.css';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useAuth } from '../../Context/Authcontext';
+import { useAuth } from '../../Context/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 const MobileSidebarLink = ({onclose}) => {

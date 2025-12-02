@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useAuth } from "../../Context/Authcontext";
+import { useAuth } from "../../Context/useAuth";
 import { getUnreadNotification } from "../../../API/Api";
 import { useEffect, useRef, useState } from "react";
 import ParseContent from "../HomePage/postCards/parseData";

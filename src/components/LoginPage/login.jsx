@@ -1,7 +1,7 @@
 import './login.css';
 import React, {useEffect, useState} from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from '../../Context/Authcontext.jsx';
+import { useAuth } from '../../Context/useAuth.js';
 import supabase from '../../utils/supabaseClient.js';
 const LoginPage = () =>{
     const [showPass, setShowPass] = useState(false)

@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import './notification.css';
-import { useAuth } from '../../Context/Authcontext';
+import { useAuth } from '../../Context/useAuth';
 import { MoonLoader } from 'react-spinners';
 import { useEffect, useRef, useState } from 'react';
 import NotificationCards from './notificationsCards';

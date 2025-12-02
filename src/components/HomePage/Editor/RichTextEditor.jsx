@@ -11,7 +11,7 @@ import ImagePlugin from "./nodes/Plugins/ImagePlugin";
 import ToolBar from "./Toolbar";
 
 import { saveJournal } from "../../../../API/Api";
-import { useAuth } from "../../../Context/Authcontext";
+import { useAuth } from "../../../Context/useAuth";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { BarLoader } from "react-spinners";
