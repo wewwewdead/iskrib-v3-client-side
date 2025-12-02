@@ -199,7 +199,7 @@ const Visitprofile = () =>{
             
                     <div style={userData?.background} className='visit-profile-hero-section'>
                         <div className='visited-profile-image-container'>
-                            <img className='visited-profile-image' src={userData?.image_url || '../../src/assets/profile.jpg'} alt="" />
+                            <img className='visited-profile-image' src={userData?.image_url || '/assets/profile.jpg'} alt="" />
 
                             <div onMouseMove={() => handleMouseMove(followsData?.isFollowing)} onMouseLeave={() => handleMouseLeave(followsData?.isFollowing)} className='visited-profile-follow-button-container'>
                                 <button onClick={(e) => debounceClickFollow(e, stateData?.userId, user?.userData?.[0].id)} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>

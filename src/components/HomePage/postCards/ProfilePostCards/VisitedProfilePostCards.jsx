@@ -1,16 +1,18 @@
 import {useLocation, useNavigate } from 'react-router-dom';
 import './profilepostcards.css';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { getUserJournals } from '../../../../../API/Api';
 import { useEffect, useState } from 'react';
 import { MoonLoader } from 'react-spinners';
 import ParseContent from '../parseData';
 import { useInView } from 'react-intersection-observer';
 import { handleCLickContent } from '../../../../../helpers/handleClicks';
+import { useAuth } from '../../../../Context/Authcontext';
+import { getVisitedUserJournals } from '../../../../../API/Api';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
     const userData = location.state;
+    const {user} = useAuth();
 
     const navigate = useNavigate();
 
@@ -19,8 +21,8 @@ const VisitedProfilePostCards = () =>{
     })
 
     const {data: journalData, isLoading: isLoadingJournals, isFetchingNextPage, fetchNextPage, hasNextPage,} = useInfiniteQuery({
-        queryKey: ['visitedProfileJournals', userData?.userId],
-        queryFn: ({pageParam = null, queryKey}) => getUserJournals(pageParam, 5, queryKey[1]),
+        queryKey: ['visitedProfileJournals', userData?.userId, user?.userData?.[0]?.id],
+        queryFn: ({pageParam = null, queryKey}) => getVisitedUserJournals(pageParam, 5, queryKey[1], queryKey[2]),
         getNextPageParam: (lastPage) => {
             if(lastPage.hasMore){
                 const lastJournal = lastPage?.data[lastPage?.data.length - 1]
@@ -35,9 +37,9 @@ const VisitedProfilePostCards = () =>{
 
     const clickContent = handleCLickContent(navigate);
 
-    // useEffect(() =>{
-    //     console.log(journalData)
-    // },[journalData])
+    useEffect(() =>{
+        console.log(journalData)
+    },[journalData])
 
     useEffect(() =>{
         if(!isFetchingNextPage && hasNextPage && inView){

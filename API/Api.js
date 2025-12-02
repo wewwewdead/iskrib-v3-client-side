@@ -222,6 +222,26 @@ export const getUserJournals = async(cursor = null, limit = 5, userId) =>{
     }
 }
 
+export const getVisitedUserJournals = async(cursor = null, limit = 5, userId, loggedInUserId) =>{
+    try {
+        const url = cursor ? `${BASE_URL}/visitedUserJournals?limit=${limit}&before=${cursor}&userId=${userId}&loggedInUserId=${loggedInUserId}` : `${BASE_URL}/userJournals?limit=${limit}&userId=${userId}&loggedInUserId=${loggedInUserId}`;
+
+        const response = await fetch(url, {
+            method: 'GET'
+        })
+        
+        if(!response.ok){
+            throw new Error('failed to get response');
+        }
+        const data = await response.json();
+        // console.log(data);
+        return data
+    } catch (error) {
+        onsole.error('Error fetching user journals:', error);
+        throw error;
+    }
+}
+
 export const deleteJournal = async(journalId, token) =>{
     const headers = {};
 

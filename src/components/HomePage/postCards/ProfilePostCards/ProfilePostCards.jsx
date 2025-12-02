@@ -75,6 +75,7 @@ const ProfilePostCards = () =>{
         enabled: !!user?.userData?.[0].id,
         refetchOnWindowFocus: false,
     })
+
     
     const clickContent = handleCLickContent(navigate);
 
