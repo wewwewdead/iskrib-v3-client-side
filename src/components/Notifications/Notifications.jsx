@@ -5,11 +5,12 @@ import { MoonLoader } from 'react-spinners';
 import { useEffect, useRef, useState } from 'react';
 import NotificationCards from './notificationsCards';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const Notifications = () =>{
     const scrollRef = useRef();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const {user, session} = useAuth();
     const [showHeader, setShowHeader] = useState(true);

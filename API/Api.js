@@ -460,6 +460,26 @@ export const getUnreadNotification = async(token, cursor, limit=5)=>{
     return data;
 }
 
+export const addJournalViews = async(token, body) =>{
+    const headers ={};
+    if(token)headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/addViews`, {
+        method: 'POST',
+        headers: headers,
+        body: body
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const message = await response.json();
+    console.log(message);
+    return message;
+}
+
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

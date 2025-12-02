@@ -8,11 +8,12 @@ import { useInView } from 'react-intersection-observer';
 import { handleCLickContent } from '../../../../../helpers/handleClicks';
 import { useAuth } from '../../../../Context/useAuth';
 import { getVisitedUserJournals } from '../../../../../API/Api';
+import { useAddViewsMutation } from '../../../../utils/useMutation';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
     const userData = location.state;
-    const {user} = useAuth();
+    const {user, session} = useAuth();
 
     const navigate = useNavigate();
 
@@ -36,6 +37,14 @@ const VisitedProfilePostCards = () =>{
     })
 
     const clickContent = handleCLickContent(navigate);
+    const mutateViews = useAddViewsMutation(session);
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) =>{
+        const formadata = new FormData();
+        formadata.append('journalId', journalId)
+        mutateViews.mutate(formadata);
+
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount);
+    }
 
     useEffect(() =>{
         console.log(journalData)
@@ -116,8 +125,8 @@ const VisitedProfilePostCards = () =>{
                                 </div>
                             </div>
 
-                            <div onClick={(e) => clickContent(
-                                e, 
+                            <div onClick={(e) => viewContent(
+                                e,
                                 journal?.content,
                                  parsedContent?.wholeText, 
                                  journal?.title, 

@@ -144,7 +144,7 @@ const NotificationCards = () =>{
     if(notifications.length === 0 && !isLoading){
         return(
             <div className='notification-loading-container'>
-                No unread notifications availabe
+                No notifications availabe
             </div>
         )
     }

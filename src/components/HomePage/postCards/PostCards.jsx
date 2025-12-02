@@ -10,7 +10,7 @@ import CalculateText from "./calculateReadingTime";
 import { useNavigate, } from "react-router-dom";
 
 import { useAuth } from "../../../Context/useAuth";
-import { useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
+import { useAddViewsMutation, useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
 import formatCounts from "../../../../helpers/fomatCounts";
 import debounce from "../../../../helpers/debounce";
 import { handleClickProfile, handleCLickContent } from "../../../../helpers/handleClicks";
@@ -36,6 +36,16 @@ const PostCards = () => {
     const handleClickUserProfile = handleClickProfile(navigate);
     const clickContent = handleCLickContent(navigate);
 
+    const mutateViews = useAddViewsMutation(session)
+
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) =>{
+        const formadata = new FormData();
+
+        formadata.append('journalId', journalId);
+        mutateViews.mutate(formadata);
+
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount )
+    }
 
     const header_links = [
         {label: 'For You'},
@@ -85,6 +95,15 @@ const PostCards = () => {
             className: 'bookmark-button',
             bookmarkAction: (e, journalId) => debounceClickBookmark(e, journalId),
             countBookmarks: (count) => <p  style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
+        },
+        {
+            iconCount: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.6rem', color: "#00000099"}}>{formatCounts(count)}</p>,
+            iconView: 
+            <svg xmlns="http://www.w3.org/2000/svg" fill="#00000044" width="28px" height="28px" viewBox="-3.5 0 32 32" version="1.1">
+                <title>view</title>
+                <path d="M12.406 13.844c1.188 0 2.156 0.969 2.156 2.156s-0.969 2.125-2.156 2.125-2.125-0.938-2.125-2.125 0.938-2.156 2.125-2.156zM12.406 8.531c7.063 0 12.156 6.625 12.156 6.625 0.344 0.438 0.344 1.219 0 1.656 0 0-5.094 6.625-12.156 6.625s-12.156-6.625-12.156-6.625c-0.344-0.438-0.344-1.219 0-1.656 0 0 5.094-6.625 12.156-6.625zM12.406 21.344c2.938 0 5.344-2.406 5.344-5.344s-2.406-5.344-5.344-5.344-5.344 2.406-5.344 5.344 2.406 5.344 5.344 5.344z"/>
+            </svg>,
+
         }
     ]
 
@@ -192,9 +211,9 @@ const PostCards = () => {
         }
     }, [])
 
-    // useEffect(() =>{
-    //     console.log(data)
-    // }, [data])
+    useEffect(() =>{
+        console.log(data)
+    }, [data])
 
     const journals = data?.pages?.flatMap((page) => page.data || []) || [];
 
@@ -307,7 +326,7 @@ const PostCards = () => {
                                 
                             </div>
 
-                            <div onClick={(e) => clickContent(e, journal.content,parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} className="content-container">
+                            <div onClick={(e) => viewContent(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} className="content-container">
 
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">
@@ -346,10 +365,17 @@ const PostCards = () => {
                                                 {icon.checkBookrmark(isBookmarked)} 
                                             </div>
                                         )}
+
+                                        {icon.iconView && (
+                                            <div id="card-icons-view">
+                                                {icon.iconView}
+                                            </div>
+                                        )}
                                         
                                         {icon.countLike && icon.countLike(journal.like_count?.[0].count)} 
                                         {icon.countComments && icon.countComments(journal.comment_count?.[0]?.count)}
                                         {icon.countBookmarks && icon.countBookmarks(journal.bookmark_count?.[0].count)}
+                                        {icon.iconCount && icon.iconCount(journal?.views)}
                                     </div>  
                                 ))
                             )}

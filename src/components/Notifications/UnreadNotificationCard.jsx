@@ -132,7 +132,7 @@ const UnreadNotification = () =>{
     if(unreadNotifications.length === 0 && !isLoading){
         return(
             <div className='notification-loading-container'>
-                No notifications availabe
+                No unread notifications availabe
             </div>
         )
     }

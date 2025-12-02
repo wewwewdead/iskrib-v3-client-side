@@ -11,6 +11,7 @@ import { AnimatePresence, motion, scale } from 'framer-motion';
 import { handleCLickContent } from '../../../../../helpers/handleClicks';
 import { useNavigate } from 'react-router-dom';
 import EditJournal from './editJournal';
+import { useAddViewsMutation } from '../../../../utils/useMutation';
 
 const ProfilePostCards = () =>{
     const queryClient = useQueryClient();
@@ -78,6 +79,14 @@ const ProfilePostCards = () =>{
 
     
     const clickContent = handleCLickContent(navigate);
+    const mutateViews = useAddViewsMutation(session);
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) => {
+        const formadata = new FormData();
+
+        formadata.append('journalId', journalId);
+        mutateViews.mutate(formadata);
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount)
+    }
 
     const handleClickSettings = (e, journalId) =>{
         e.stopPropagation();
@@ -316,8 +325,8 @@ const ProfilePostCards = () =>{
 
                             </div>
 
-                            <div onClick={(e) => clickContent(
-                                e, 
+                            <div onClick={(e) => viewContent(
+                                e,
                                 journal.content, 
                                 parsedContent.wholeText, 
                                 journal.title, 

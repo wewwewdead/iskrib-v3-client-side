@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, clickLike, deleteNotification, readNotification } from "../../API/Api";
+import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification } from "../../API/Api";
 import { data } from "react-router-dom";
 
 export const useBookMarkMutation = (session) => {
@@ -172,5 +172,14 @@ export const userDeleteNotificationMutation = (session) =>{
         onSettled: () =>{
             queryClient.invalidateQueries(['getNotifications', session?.user?.id])
         }
+    })
+}
+
+export const useAddViewsMutation = (session) =>{
+    return useMutation({
+        mutationFn: (data) => addJournalViews(session?.access_token, data),
+        onerror: (err) => console.error(err),
+        onSuccess: (data) => console.log(data),
+        retry: 2,
     })
 }
