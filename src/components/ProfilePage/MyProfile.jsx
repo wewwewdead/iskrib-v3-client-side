@@ -18,6 +18,7 @@ import formatCounts from "../../../helpers/fomatCounts";
 import MobileNavlink from "../mobileNavLink/MobileNavLink";
 import MobileSidebarLink from "../MobileSidebarLink/MobileSidebarLink";
 import WriteJournalButton from "../WriteJournalButton/WriteJournalButton";
+import Loader from "../loadingComponent/BgLoader";
 
 const MyProfile = () => {
     const {user, session, isLoading, notifCount, loading} = useAuth();
@@ -377,11 +378,7 @@ const MyProfile = () => {
         
     if(isLoading){
         return(
-            <>
-            <div className="profile-page-loading-container">
-                <MoonLoader loading={isLoading} color="rgba(0, 0, 0, 1)" size={40} speedMultiplier={1}/>
-            </div>
-            </>
+           <Loader/>
         )
     }
 

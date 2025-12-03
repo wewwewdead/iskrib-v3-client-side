@@ -16,6 +16,7 @@ import MobileNavlink from "../mobileNavLink/MobileNavLink";
 import WriteJournalButton from "../WriteJournalButton/WriteJournalButton";
 import MobileSidebarLink from "../MobileSidebarLink/MobileSidebarLink";
 import WelcomeMessage from "../WelcomeMessage/WelcomeMessage";
+import Loader from "../loadingComponent/BgLoader";
 
 const HomePage = () => {
     const {session, signOut, user, loading, isLoading, notifCount} = useAuth();
@@ -240,33 +241,7 @@ const HomePage = () => {
 
     if(isLoading){
         return(
-            <>
-            <div className="homepage-loading-container">
-                <svg
-                    width="200px"
-                    height="200px"
-                    viewBox="0 0 360 100"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                <style>
-                    {`
-                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-                    text {
-                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-                        font-weight: 700;        /* ultra bold like the X logo */
-                        letter-spacing: -0.02em;
-                        fill: rgba(255, 255, 255, 1);      /* inherits text color → black in light mode, white in dark */
-                    }
-                    `}
-                </style>
-
-                {/* Exact X-style "iSkrib" wordmark */}
-                <text x="60" y="60" fontSize="88">
-                    iSkrib
-                </text>
-                </svg>
-            </div>
-            </>
+            <Loader/>
         )
     }
 

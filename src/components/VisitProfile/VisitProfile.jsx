@@ -14,6 +14,7 @@ import MobileSidebarLink from '../MobileSidebarLink/MobileSidebarLink';
 import { useState } from 'react';
 import WriteJournalButton from '../WriteJournalButton/WriteJournalButton';
 import Editor from '../HomePage/Editor/Editor';
+import Loader from '../loadingComponent/BgLoader';
 
 const Visitprofile = () =>{
     const location = useLocation();
@@ -174,10 +175,7 @@ const Visitprofile = () =>{
     
     if(isLoading){
         return(
-            
-            <div className='profile-loading-container'>
-                <MoonLoader loading={isLoading} size={25}/>
-            </div>
+            <Loader/>
         )
     }
     return(

@@ -39,17 +39,6 @@
     align-items: center;
     cursor: pointer;
 }
-.homepage-loading-container{
-    position: absolute;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgb(4, 20, 29);
-    backdrop-filter: blur(25px);
-    width: 100%;
-    height:100vh;
-    z-index: 3;
-}
 
 /* .home-loading-container{
     display: flex;
