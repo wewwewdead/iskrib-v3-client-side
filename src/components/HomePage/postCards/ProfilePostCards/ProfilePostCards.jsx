@@ -11,7 +11,7 @@ import { AnimatePresence, motion, scale } from 'framer-motion';
 import { handleCLickContent } from '../../../../../helpers/handleClicks';
 import { useNavigate } from 'react-router-dom';
 import EditJournal from './editJournal';
-import { useAddViewsMutation } from '../../../../utils/useMutation';
+import { useAddViewsMutation, useUpdateJournalPrivacyMutation } from '../../../../utils/useMutation';
 
 const ProfilePostCards = () =>{
     const queryClient = useQueryClient();
@@ -47,6 +47,26 @@ const ProfilePostCards = () =>{
                 <path d="M18.3785 8.44975L11.4637 15.3647C11.1845 15.6439 10.8289 15.8342 10.4417 15.9117L7.49994 16.5L8.08829 13.5582C8.16572 13.1711 8.35603 12.8155 8.63522 12.5363L15.5501 5.62132M18.3785 8.44975L19.7927 7.03553C20.1832 6.64501 20.1832 6.01184 19.7927 5.62132L18.3785 4.20711C17.988 3.81658 17.3548 3.81658 16.9643 4.20711L15.5501 5.62132M18.3785 8.44975L15.5501 5.62132" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M5 20H19" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
+        },
+        {
+            label: 'Only me',
+            className: 'only-me-bttn',
+            actionOnlyMe: (e, privacy, journalId) => {handleEditJournalPrivacy(e, privacy, journalId)},
+            icon: 
+            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 16 16" fill="none">
+                <g fill="#000000">
+                    <path fillRule="evenodd" d="M5.58 7C5.835 5.124 6.667 3.335 8 1.836a10.074 10.074 0 011.806 2.878.75.75 0 101.388-.568 11.412 11.412 0 00-1.322-2.372A6.503 6.503 0 0114.5 8 .75.75 0 0016 8a8 8 0 10-11.31 7.285.75.75 0 10.622-1.365A6.504 6.504 0 011.519 8.5h2.503c.04.563.122 1.12.248 1.668a.75.75 0 101.462-.336c-.1-.438-.17-.883-.205-1.332H7A.75.75 0 007 7H5.58zM4.07 7H1.576a6.508 6.508 0 014.552-5.226A11.095 11.095 0 004.068 7z" clipRule="evenodd"/>
+                    <path d="M11.75 12.25a.75.75 0 00-1.5 0v.5a.75.75 0 001.5 0v-.5z"/>
+                    <path fillRule="evenodd" d="M8.518 9.012c.035-.627.13-1.235.366-1.738.174-.37.435-.704.816-.94C10.08 6.101 10.52 6 11 6c.48 0 .921.1 1.3.334.381.236.642.57.816.94.236.503.331 1.111.366 1.738A2.25 2.25 0 0115.5 11.25v2.5A2.25 2.25 0 0113.25 16h-4.5a2.25 2.25 0 01-2.25-2.25v-2.5a2.25 2.25 0 012.018-2.238zM10.022 9c.032-.481.102-.838.22-1.087a.662.662 0 01.245-.302c.09-.055.243-.111.513-.111s.423.056.513.111c.087.054.17.141.246.302.117.249.187.606.219 1.087h-1.956zm3.228 1.5a.75.75 0 01.75.75v2.5a.75.75 0 01-.75.75h-4.5a.75.75 0 01-.75-.75v-2.5a.75.75 0 01.75-.75h4.5z" clipRule="evenodd"/>
+                </g>
+            </svg>
+        },
+        {
+            label: 'public',
+            className: 'public-post-bttn',
+            actionPublic: (e, privacy, journalId) => {handleEditJournalPrivacy(e, privacy, journalId)},
+            icon:
+            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 16 16" fill="none"><path fill="#000000" fillRule="evenodd" d="M8 0a8 8 0 100 16A8 8 0 008 0zM6.128 1.774A6.508 6.508 0 001.576 7H4.07a11.095 11.095 0 012.06-5.226zm3.744 0A11.096 11.096 0 0111.932 7h2.492a6.508 6.508 0 00-4.552-5.226zM10.42 7C10.165 5.124 9.333 3.335 8 1.836 6.667 3.335 5.835 5.124 5.58 7h4.84zM5.527 8.5h4.946C10.31 10.557 9.451 12.533 8 14.164 6.55 12.533 5.691 10.557 5.527 8.5zm-1.505 0H1.52a6.505 6.505 0 004.61 5.726C4.896 12.525 4.163 10.555 4.021 8.5zm5.85 5.726c1.231-1.701 1.964-3.671 2.106-5.726h2.503a6.505 6.505 0 01-4.61 5.726z" clipRule="evenodd"/></svg>
         }
     ]
 
@@ -86,6 +106,17 @@ const ProfilePostCards = () =>{
         formadata.append('journalId', journalId);
         mutateViews.mutate(formadata);
         clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount)
+    }
+
+    const mutatePrivacy = useUpdateJournalPrivacyMutation(session);
+    const handleEditJournalPrivacy = (e, privacy, journalId) =>{
+        e.stopPropagation();
+        const onlyme = privacy === 'public' ? 'private' : 'public'
+        const formdata = new FormData();
+
+        formdata.append('journalId', journalId);
+        formdata.append('privacy', onlyme);
+        mutatePrivacy.mutate(formdata);    
     }
 
     const handleClickSettings = (e, journalId) =>{
@@ -153,9 +184,9 @@ const ProfilePostCards = () =>{
         setShowEditor(null)
     }
 
-    // useEffect(() =>{
-    //     console.log(data)
-    // }, [data])
+    useEffect(() =>{
+        console.log(data)
+    }, [data])
 
     useEffect(() =>{
         const handleClickOutsideSettings = (e) => {
@@ -285,6 +316,19 @@ const ProfilePostCards = () =>{
                                             year: 'numeric'
                                         })}</p>
                                     </div>
+                                    <div className="name-info-separator">
+                                        •
+                                    </div>
+                                    <div className="user-post-privacy">
+                                        {journal.privacy === 'public' &&(
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 16 16" fill="none"><path fill="rgba(62, 62, 62, 1)" fillRule="evenodd" d="M8 0a8 8 0 100 16A8 8 0 008 0zM6.128 1.774A6.508 6.508 0 001.576 7H4.07a11.095 11.095 0 012.06-5.226zm3.744 0A11.096 11.096 0 0111.932 7h2.492a6.508 6.508 0 00-4.552-5.226zM10.42 7C10.165 5.124 9.333 3.335 8 1.836 6.667 3.335 5.835 5.124 5.58 7h4.84zM5.527 8.5h4.946C10.31 10.557 9.451 12.533 8 14.164 6.55 12.533 5.691 10.557 5.527 8.5zm-1.505 0H1.52a6.505 6.505 0 004.61 5.726C4.896 12.525 4.163 10.555 4.021 8.5zm5.85 5.726c1.231-1.701 1.964-3.671 2.106-5.726h2.503a6.505 6.505 0 01-4.61 5.726z" clipRule="evenodd"/></svg>
+                                        )}
+                                        {journal.privacy === 'private' &&(
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24" fill="none">
+                                                <path d="M7 10.0288C7.47142 10 8.05259 10 8.8 10H15.2C15.9474 10 16.5286 10 17 10.0288M7 10.0288C6.41168 10.0647 5.99429 10.1455 5.63803 10.327C5.07354 10.6146 4.6146 11.0735 4.32698 11.638C4 12.2798 4 13.1198 4 14.8V16.2C4 17.8802 4 18.7202 4.32698 19.362C4.6146 19.9265 5.07354 20.3854 5.63803 20.673C6.27976 21 7.11984 21 8.8 21H15.2C16.8802 21 17.7202 21 18.362 20.673C18.9265 20.3854 19.3854 19.9265 19.673 19.362C20 18.7202 20 17.8802 20 16.2V14.8C20 13.1198 20 12.2798 19.673 11.638C19.3854 11.0735 18.9265 10.6146 18.362 10.327C18.0057 10.1455 17.5883 10.0647 17 10.0288M7 10.0288V8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8V10.0288" stroke='rgba(62, 62, 62, 1)' strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        )} 
+                                    </div>
 
                                 </div>
 
@@ -308,12 +352,27 @@ const ProfilePostCards = () =>{
                                                             {setting.label}
                                                         </div>
                                                     )}
-                                                    {setting.actionEdit && (
+                                                    
+                                                    {setting.actionEdit &&(
                                                         <div className={setting.className} onClick={(e) => setting.actionEdit(e, journal.content, journal.id, journal.title)}>
                                                             {setting.icon}
                                                             {setting.label}
                                                         </div>
+                                                        
                                                     )}   
+                                                    {journal.privacy === 'public' && setting.actionOnlyMe &&(
+                                                        <div onClick={(e) => setting.actionOnlyMe(e, journal.privacy, journal.id)} className={setting.className}>
+                                                            {setting.icon}
+                                                            {setting.label}
+                                                        </div>
+                                                    )}
+
+                                                    {journal.privacy === 'private' && setting.actionPublic &&(
+                                                        <div onClick={(e) => {setting.actionPublic(e, journal.privacy, journal.id)}} className={setting.className}>
+                                                            {setting.icon}
+                                                            {setting.label}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 
                                             ))}

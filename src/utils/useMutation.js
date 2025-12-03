@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification } from "../../API/Api";
+import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, updatePrivacy } from "../../API/Api";
 import { data } from "react-router-dom";
 
 export const useBookMarkMutation = (session) => {
@@ -181,5 +181,48 @@ export const useAddViewsMutation = (session) =>{
         onerror: (err) => console.error(err),
         onSuccess: (data) => console.log(data),
         retry: 2,
+    })
+}
+
+export const useUpdateJournalPrivacyMutation = (session) =>{
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => updatePrivacy(session?.access_token, data),
+        onMutate: async(data) => {
+            await queryClient.cancelQueries(['userJournals', session?.user?.id])
+            const previousData = queryClient.getQueryData(['userJournals', session?.user?.id])
+
+            const journalId = data.get('journalId')
+            const privacy = data.get('privacy');
+
+            console.log(privacy)
+
+            queryClient.setQueryData(['userJournals', session?.user?.id], (old) => {
+                if(!old) return old;
+
+                return{
+                    ...old,
+                    pages: old.pages.map((page) => ({
+                        ...page,
+                        data: page.data.map((journal) => {
+                            if(journal.id !== journalId) return journal;
+
+                            return{
+                                ...journal,
+                                privacy: privacy
+                            }
+                        })
+                    }))
+                }
+            })
+            console.log(previousData)
+            return {previousData};
+            
+        },
+        onError: (err, data, context) =>{
+            queryClient.setQueryData(['userJournals', session?.user?.id], context.previousData)
+        },
+        onSuccess: (data) => console.log(data),
+        retry: 1,
     })
 }

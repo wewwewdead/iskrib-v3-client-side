@@ -213,6 +213,15 @@
     cursor: default;
     user-select: none;
 }
+.user-post-privacy{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    cursor: default;
+    user-select: none;
+}
 .user-post-date{
     padding: 0;
     margin: 0;

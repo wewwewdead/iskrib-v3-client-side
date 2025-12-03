@@ -115,6 +115,40 @@
     background-color:rgb(245, 245, 245) ;
 }
 
+.only-me-bttn{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    gap: 0.8rem;
+    font-weight: 660;
+    color: rgb(0, 0, 0);
+    padding: 0.5rem 1rem;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    transition: ease-in-out 0.1s;
+}
+.only-me-bttn:hover{
+    background-color:rgb(245, 245, 245) ;
+}
+
+.public-post-bttn{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    gap: 0.8rem;
+    font-weight: 660;
+    color: rgb(0, 0, 0);
+    padding: 0.5rem 1rem;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    transition: ease-in-out 0.1s;
+}
+.public-post-bttn:hover{
+    background-color:rgb(245, 245, 245) ;
+}
+
 .confirm-delete-container{
     width: 100%;
     height: 100vh;

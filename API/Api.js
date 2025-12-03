@@ -480,6 +480,26 @@ export const addJournalViews = async(token, body) =>{
     return message;
 }
 
+export const updatePrivacy = async(token, body) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/updatePrivacy`, {
+        method: 'POST',
+        body: body,
+        headers: headers
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const message = await response.json();
+    console.log(message);
+    return message;
+}
+
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`
