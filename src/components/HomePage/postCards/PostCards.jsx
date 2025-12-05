@@ -67,7 +67,7 @@ const PostCards = () => {
             ),
             
             className: 'like-button',
-            action: (e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => debounceClickLike(e, journalId, receiverId, senderImageUrl, sendername, senderEmail),
+            action: (e, journalId, receiverId) => debounceClickLike(e, journalId, receiverId),
             countLike: (count) => <p style={{padding:'0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -134,10 +134,10 @@ const PostCards = () => {
 
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
 
-    const handleClickLike = async(e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => {
+    const handleClickLike = async(e, journalId, receiverId) => {
         e.stopPropagation();
         console.log(journalId)
-        mutationLike.mutate({journalId, receiverId, senderImageUrl, sendername, senderEmail}) //passing this into mutationFn {journalId: the id}
+        mutationLike.mutate({journalId, receiverId}) //passing this into mutationFn {journalId: the id}
     }
     const debounceClickLike = debounce(handleClickLike, 300)
 

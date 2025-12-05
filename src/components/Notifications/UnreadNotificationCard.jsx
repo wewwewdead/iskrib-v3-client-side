@@ -168,11 +168,11 @@ const UnreadNotification = () =>{
                                 <div className="notification-sender-user-metadata">
                                     <div className="notification-sender-user-metadata-child">
                                         <div className="notif-sender-profilepic-container">
-                                            <img className="notif-sender-profilepic" loading="lazy" src={unreadNotification?.sender_image_url || '/assets/profile.jpg'} alt="notificataion sender profile picture" />
+                                            <img className="notif-sender-profilepic" loading="lazy" src={unreadNotification?.users?.image_url || '/assets/profile.jpg'} alt="notificataion sender profile picture" />
                                         </div>
 
                                         <div className="notif-sender-name-container">
-                                            <p className="notif-sender-name">{unreadNotification?.sender_name}</p>
+                                            <p className="notif-sender-name">{unreadNotification?.users?.name}</p>
                                             <p className="notif-type">{FormatNotificationType(unreadNotification?.type)}</p>
                                         </div>
 

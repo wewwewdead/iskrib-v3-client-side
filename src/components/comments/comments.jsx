@@ -70,7 +70,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
         onclose()
     }
 
-    const handaleSubmitComment = async(e, postId, receiverId, senderImageUrl, senderName, senderEmail) =>{
+    const handaleSubmitComment = async(e, postId, receiverId) =>{
         e.stopPropagation();
         // const formdata = new FormData();
         // if(postId){
@@ -83,9 +83,6 @@ const CommentSection = ({onclose, postId, receiverId})=>{
             comments: comments,
             postId: postId,
             receiverId: receiverId,
-            senderImageUrl: senderImageUrl,
-            senderName: senderName,
-            senderEmail: senderEmail
         }
 
         try {
@@ -170,7 +167,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                         <p style={comments.length > 199 ? {color: 'rgba(255, 46, 46, 1)', fontWeight: '660'} : {}} className='comments-counter'>{comments.length}/200</p>
                     </div>
 
-                    <button disabled={isSubmittingComment} onClick={(e) => handaleSubmitComment(e, postId, receiverId, user?.userData?.[0].image_url, user?.userData?.[0].name, user?.userData?.[0].user_email)} className='comment-submit-button'>
+                    <button disabled={isSubmittingComment} onClick={(e) => handaleSubmitComment(e, postId, receiverId )} className='comment-submit-button'>
                         submit
                     </button>
                 </div>

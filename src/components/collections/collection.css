@@ -1,0 +1,92 @@
+
+.collection-header{
+    position: fixed;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    width: 716px;
+    height: 60px;
+    user-select: none;
+    background-color: rgba(255, 255, 255, 0.23);
+    backdrop-filter: blur(25px);
+    z-index: 2;
+    border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+}
+.collections-header-text {
+    padding: 0;
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+.collection-intro-container{
+    position: relative;
+    top: 95px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: column;
+    width: 95%;
+    height: fit-content;
+    padding: 1rem;
+    background-color: rgb(255, 255, 255);
+    z-index: 114;
+}
+.collections-intro{
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 95%;
+    padding: 1rem;
+    height: 120px;
+    background-color: rgb(4, 20, 29);
+    color: rgb(255, 255, 255);
+    border-radius: 15px;
+}
+.collections-intro-h3{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    font-family: Verdana, Geneva, Tahoma, sans-serif !important;
+    font-weight: 850;
+    padding: 0;
+    margin: 0;
+}
+.create-collection-container{
+    position: relative;
+    top: 97px;
+    display: flex;
+    width: 95%;
+    padding: 1rem;
+    justify-content: flex-end;
+    align-items: center;
+    color: rgb(0, 0, 0);
+}
+.create-collection-bttn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    width: fit-content;
+    height: fit-content;
+    border-radius: 10px;
+    background-color: rgb(233, 233, 233);
+    cursor: pointer;
+    user-select: none;
+}
+
+
+.collection-editor{
+    position: absolute;
+    top: 100px;
+    background-color: rgb(255, 255, 255);
+    box-shadow: 1px 1px 10px 2px rgba(0, 0, 0, 0.459);
+    width: 90%;
+    height: 80%;
+    z-index: 114;
+    border-radius: 15px;
+}
