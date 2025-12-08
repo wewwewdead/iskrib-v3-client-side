@@ -2,9 +2,57 @@ import { useState } from 'react';
 import './collection.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect } from 'react';
+import OlderPost from './collectionOlderPost';
+import ParseContent from '../HomePage/postCards/parseData';
+import { addCollections, getCollections } from '../../../API/Api';
+import { useAuth } from '../../Context/useAuth';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import CollectionCards from './CollectionCards';
 
 const Collections = () =>{
+    const {user, session} = useAuth();
+
     const [showCollectionEditor, setShowCollectionEditor] = useState(false);
+    const [showOlderPost, setShowOlderPost] = useState(false)
+    const [olderPost, setOlderPost] = useState([]);
+
+    const [collectionTitle, setCollectionTitle] = useState('');
+    const [collectionDescription, setCollectionDescription] = useState('');
+
+    const isDisabled = !collectionDescription || !collectionTitle
+
+    const handleClickBack = (e) =>{
+        e.stopPropagation();
+        window.history.back();
+    }
+
+    const handleClickSaveCollection = async(e) =>{
+        e.stopPropagation();
+        console.log(collectionDescription, collectionTitle)
+        console.log('jornalids', [journalIds])
+        const formdata = new FormData();
+
+        // journalIds, title, description
+        formdata.append('journalIds', journalIds)
+        formdata.append('title', collectionTitle)
+        formdata.append('description', collectionDescription)
+
+        try {
+            const message = await addCollections(session?.access_token, formdata)
+            if(message){
+                console.log(message)
+                setCollectionDescription('')
+                setCollectionTitle('')
+                setOlderPost([])
+            }
+        } catch (error) {
+            setCollectionDescription('')
+                setCollectionTitle('')
+                setOlderPost([])
+            throw new Error('error adding collections',error)
+
+        }
+    }
 
     const handleClickShowCollectionEditor = (e) =>{
         e.stopPropagation();
@@ -12,10 +60,32 @@ const Collections = () =>{
         setShowCollectionEditor(true);
     }
 
+    const handleClickShowOlderPost = (e) =>{
+        e.stopPropagation();
+        setShowOlderPost(true)
+    }
+    const handleCloseShowOlderPost = () =>{
+        setShowOlderPost(false)
+    }
+
+    const handleClickSaveSelectedContent = (data) =>{
+        console.log(data)
+        const postArray = Array.from(data.values());
+        setOlderPost(postArray);
+        setShowOlderPost(false)
+    }
+
+    useEffect(() =>{
+        console.log(olderPost)
+    }, [olderPost])
+
     useEffect(() =>{
         const handleClickOutside = (e) =>{
             if(showCollectionEditor && !e.target.closest('.collection-editor')){
                 setShowCollectionEditor(false)
+                setCollectionDescription('')
+                setCollectionTitle('')
+                setOlderPost([])
             }
         }
 
@@ -26,10 +96,13 @@ const Collections = () =>{
         }
     }, [showCollectionEditor])
 
+    const journals = olderPost?.flatMap((journal) => journal) || [];
+    const journalIds = olderPost?.flatMap((journal) => journal.id) || [];
+
     return(
         <>
         <div className='collection-header'>
-            <div className='back-button'>
+            <div onClick={(e) => handleClickBack(e)} className='back-button'>
                 <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M360-240 120-480l240-240 56 56-144 144h568v80H272l144 144-56 56Z"/></svg>
             </div>
             <p className='collections-header-text'>Browse your collections</p>
@@ -67,8 +140,15 @@ const Collections = () =>{
                 </svg>
                 Create a collection
             </div>
-            
         </div>
+
+        <CollectionCards/>
+
+
+
+        {showOlderPost && (
+            <OlderPost onClose={handleCloseShowOlderPost} onSave={handleClickSaveSelectedContent}/>
+        )}
 
         {showCollectionEditor && (
             <AnimatePresence>
@@ -78,6 +158,55 @@ const Collections = () =>{
             exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.1}}}
             className='collection-editor'
             >
+                <div className='collection-input-name'>
+                    <div className='field-name'>
+                        Collection name:
+                    </div>
+                    <div className='input-name-container'>
+                        <input value={collectionTitle} onChange={(e) => setCollectionTitle(e.target.value)} className='input-name-collection' type="text" placeholder='Collection name'/>
+                    </div>
+                </div>
+                <div className='collection-input-description'>
+                    <div className='field-name'>
+                        Add description:
+                    </div>
+                    <div className='input-description-container'>
+                        <textarea value={collectionDescription} onChange={(e) => setCollectionDescription(e.target.value)} placeholder='collection description' maxLength={250} name="description" id="collection-description" className='collection-description'></textarea>
+                    </div>
+
+                    <div className='create-or-add-container'>
+                        <div onClick={(e) => handleClickShowOlderPost(e)} className='add-older-post-container'>
+                            Add older Post
+                        </div>
+                    </div>
+                </div>
+                
+                {journals.length > 0 && (
+                <div className='journal-list'>
+                    {journals?.map((journal) => {
+                        const parsedContent = ParseContent(journal?.content);
+
+                        return(
+                            <div className='collection-cards-selected-old-post' key={journal.title}>
+                                <div className='journal-title'>
+                                    {journal.title.length > 10 ? `${journal.title.substring(0, 9)}...` : journal.title}
+                                </div>
+                                <div className='journal-text'>
+                                    {parsedContent?.slicedText}
+                                </div>
+                            </div>
+                        )
+                        
+                    })}
+                </div>
+                )}
+                 
+
+                <button disabled={isDisabled} onClick={(e) => handleClickSaveCollection(e, journalIds)} className={isDisabled ? 'save-collection-container-disabled' : 'save-collection-container'}>
+                    <div className='save-collection-bttn'>
+                        Save Collection
+                    </div>
+                </button>
 
             </motion.div>
             </AnimatePresence>

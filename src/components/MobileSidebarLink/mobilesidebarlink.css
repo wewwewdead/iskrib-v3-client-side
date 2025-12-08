@@ -12,7 +12,7 @@
         background-color: rgba(255, 255, 255, 0.099);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(5px);
-        z-index: 15;
+        z-index: 127;
         overflow: hidden;
     }
     .mobile-sidebar-link-container{
@@ -82,7 +82,7 @@
         background-color: rgba(255, 255, 255, 0.099);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(5px);
-        z-index: 15;
+        z-index: 127;
         overflow: hidden;
     }
     .mobile-sidebar-link-container{
@@ -91,7 +91,7 @@
         flex-direction: column;
         padding: 1rem 0 0.5rem 0;
         width: fit-content;
-        height: 20%;
+        height: 30%;
         background-color: rgb(255, 255, 255);
         box-shadow: 2px 2px 10px 5px rgba(0, 0, 0, 0.182);
         z-index: 10;
@@ -139,5 +139,29 @@
     .sidebar-profile-metadata p{
         padding: 0;
         margin: 0;
+    }
+    .sidebar-mycollection-container{
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 0.5rem;
+        font-weight: 660;
+    }
+    .sidebar-my-collection-bttn{
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 0.2rem 0.1rem;
+        color: rgb(103, 103, 103);
+    }
+    .sidebar-my-collection-bttn-active{
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 0.2rem 0.2rem;
+        color: rgb(0, 0, 0);
+        background-color: rgba(203, 203, 203, 0.496);
+        border-radius: 5px;
     }
 }

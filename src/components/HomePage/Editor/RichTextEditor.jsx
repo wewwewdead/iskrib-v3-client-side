@@ -40,7 +40,7 @@ const theme = {
 const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
     const [editor] = useLexicalComposerContext();
     const [editorState, setEditorState] = useState(null);
-    const [textContent, setTextContent] = useState('')
+    // const [textContent, setTextContent] = useState('')
     const [hasContent, setHasContent] = useState(false);
     const [isSending, setIsSending] = useState(false);
 
@@ -88,10 +88,10 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
             // const image_node = root.getChildren().find(type => type.__type === 'image')
             // console.log(image_node.__src)
 
-            const text = root.getTextContent().trim();
-            if(text){
-                setTextContent(text)
-            }
+            // const text = root.getTextContent().trim();
+            // if(text){
+            //     setTextContent(text)
+            // }
 
             const children = root.getChildren();
 

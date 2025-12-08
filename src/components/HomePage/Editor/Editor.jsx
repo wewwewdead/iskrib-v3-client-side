@@ -40,7 +40,7 @@ const Editor=({onClose}) =>{
     
     const handleCloseEditor = useCallback(async() => { 
       if(uploadedImagePaths.length > 0){
-        console.log(uploadedImagePaths);
+        // console.log(uploadedImagePaths);
         const message = await deleteJournalImage(session?.access_token, uploadedImagePaths)
         if(message){
           console.log(message.message)

@@ -17,7 +17,7 @@
     height: 100%;
     background-color: rgba(255, 255, 255, 0.089);
     backdrop-filter: blur(25px);
-    z-index: 4;
+    z-index: 116;
 }
 .editor-text-container{
     white-space: pre-wrap;
@@ -351,7 +351,7 @@
         height: 100%;
         background-color: rgba(255, 255, 255, 0.089);
         backdrop-filter: blur(25px);
-        z-index: 12;
+        z-index: 116;
     }
     .editor-container{
         display: flex;
@@ -434,7 +434,7 @@
         height: 100%;
         background-color: rgba(255, 255, 255, 0.089);
         backdrop-filter: blur(25px);
-        z-index: 12;
+        z-index: 116;
     }
     .editor-container{
         display: flex;

@@ -500,6 +500,43 @@ export const updatePrivacy = async(token, body) =>{
     return message;
 }
 
+export const addCollections = async(token, body) => {
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    
+    const response = await fetch(`${BASE_URL}/addCollections`, {
+        method: 'POST',
+        headers: headers,
+        body: body
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const message = await response.json();
+    console.log(message)
+    return message;
+}
+
+export const getCollections = async(userId, cursor, limit) =>{
+    const url = cursor ? `${BASE_URL}/getCollections?userId=${userId}&before=${cursor}&limit=${limit}` : `${BASE_URL}/getCollections?userId=${userId}&limit=${limit}`
+
+    const response = await fetch(url, {
+        method: 'GET',  
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const data = await response.json();
+    console.log(data)
+    return data
+}
+
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`
