@@ -18,7 +18,8 @@ const MobileSidebarLink = ({onclose}) => {
         onclose();
     }
     const navigatePath = (path) =>{
-        return navigate(path);
+        navigate(path);
+        return onclose()
     }
 
     return(
