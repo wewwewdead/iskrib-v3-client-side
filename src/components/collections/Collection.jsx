@@ -6,20 +6,23 @@ import OlderPost from './collectionOlderPost';
 import ParseContent from '../HomePage/postCards/parseData';
 import { addCollections, getCollections } from '../../../API/Api';
 import { useAuth } from '../../Context/useAuth';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import CollectionCards from './CollectionCards';
+import { BarLoader } from 'react-spinners';
 
 const Collections = () =>{
     const {user, session} = useAuth();
+    const queryClient = useQueryClient();
 
     const [showCollectionEditor, setShowCollectionEditor] = useState(false);
     const [showOlderPost, setShowOlderPost] = useState(false)
     const [olderPost, setOlderPost] = useState([]);
+    const [savingCollection, setSavingCollection] = useState(false);
 
     const [collectionTitle, setCollectionTitle] = useState('');
     const [collectionDescription, setCollectionDescription] = useState('');
 
-    const isDisabled = !collectionDescription || !collectionTitle
+    const isDisabled = !collectionDescription || !collectionTitle || savingCollection;
 
     const handleClickBack = (e) =>{
         e.stopPropagation();
@@ -28,8 +31,9 @@ const Collections = () =>{
 
     const handleClickSaveCollection = async(e) =>{
         e.stopPropagation();
-        console.log(collectionDescription, collectionTitle)
-        console.log('jornalids', [journalIds])
+        // console.log(collectionDescription, collectionTitle)
+        // console.log('jornalids', [journalIds])
+        setSavingCollection(true);
         const formdata = new FormData();
 
         // journalIds, title, description
@@ -44,13 +48,19 @@ const Collections = () =>{
                 setCollectionDescription('')
                 setCollectionTitle('')
                 setOlderPost([])
+                setSavingCollection(false)           
+                setShowCollectionEditor(false)
             }
         } catch (error) {
-            setCollectionDescription('')
+                setCollectionDescription('')
                 setCollectionTitle('')
                 setOlderPost([])
-            throw new Error('error adding collections',error)
+                setSavingCollection(false)
+                setShowCollectionEditor(false)
+                throw new Error('error adding collections',error)
 
+        } finally {
+            queryClient.invalidateQueries(['getCollections', user?.userData?.[0].id]);
         }
     }
 
@@ -158,6 +168,13 @@ const Collections = () =>{
             exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.1}}}
             className='collection-editor'
             >
+                {savingCollection && (
+                    <div className='is-saving-collections'>
+                        <BarLoader loading={savingCollection} width={'100%'}/>
+                    </div>
+                    
+                )}
+
                 <div className='collection-input-name'>
                     <div className='field-name'>
                         Collection name:
@@ -187,7 +204,7 @@ const Collections = () =>{
                         const parsedContent = ParseContent(journal?.content);
 
                         return(
-                            <div className='collection-cards-selected-old-post' key={journal.title}>
+                            <div className='collection-cards-selected-old-post' key={journal.id}>
                                 <div className='journal-title'>
                                     {journal.title.length > 10 ? `${journal.title.substring(0, 9)}...` : journal.title}
                                 </div>

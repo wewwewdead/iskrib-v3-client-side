@@ -158,7 +158,7 @@ const Bookmarks = () =>{
                                 <div className='user-info-child-container'>
 
                                     <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-avatar-container">
-                                        <img loading='lazy' src={journal?.journals?.users?.image_url || '../../src/assets/profile.jpg'} className="user-info-avatar" alt="" />
+                                        <img loading='lazy' src={journal?.journals?.users?.image_url || '../../public/assets/profile.jpg'} className="user-info-avatar" alt="" />
                                     </div>
                                     <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-name-container">
                                         <p className="user-newsfeed-name">{journal?.journals?.users?.name}</p>
@@ -228,7 +228,7 @@ const Bookmarks = () =>{
                                 </div>
 
                                 <div className="feed-image-content-container">
-                                    <img className="journal-image" src={parsedContent?.firstImage?.src || '../../src/assets/no-image.png'} alt="content thumbnail" />
+                                    <img className="journal-image" src={parsedContent?.firstImage?.src || '../../public/assets/no-image.png'} alt="content thumbnail" />
                                 </div>
                             </div>
 

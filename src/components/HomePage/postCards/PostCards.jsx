@@ -118,7 +118,7 @@ const PostCards = () => {
         queryFn: ({pageParam = null}) => getJournals(pageParam, 5, user?.userData?.[0].id),
         getNextPageParam: (lastPage) => {
             if(lastPage?.hasMore) {
-                const lastJournal = lastPage.data[lastPage?.data?.length - 1]; //get the last array of object using index 
+                const lastJournal = lastPage?.data[lastPage?.data?.length - 1]; //get the last array of object using index 
                 return new Date(lastJournal.created_at).toISOString();
             }
             return undefined;

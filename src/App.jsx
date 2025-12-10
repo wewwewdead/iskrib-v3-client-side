@@ -19,6 +19,7 @@ import Notifications from './components/Notifications/Notifications.jsx';
 import NotificationCards from './components/Notifications/notificationsCards.jsx';
 import UnreadNotification from './components/Notifications/UnreadNotificationCard.jsx';
 import Collections from './components/collections/Collection.jsx';
+import CollectionJournals from './components/collections/CollectionJournalCards.jsx';
 
 const App = () => {
 
@@ -65,7 +66,9 @@ const initaConfig = {
           <Route path='/home' element={<HomePage/>}>
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>
-            <Route path='bookmark' element={<Bookmarks/>}/> 
+            <Route path='bookmark' element={<Bookmarks/>}/>
+            <Route path='collectionViewer'/>
+            <Route path='collectionCards' element={<CollectionJournals/>}/>
             
             {/* route for nested notifications */}
             <Route path='notifications' element={<Notifications/>}>
