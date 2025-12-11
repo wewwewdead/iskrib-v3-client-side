@@ -228,7 +228,7 @@ const Bookmarks = () =>{
                                 </div>
 
                                 <div className="feed-image-content-container">
-                                    <img className="journal-image" src={parsedContent?.firstImage?.src || '../../public/assets/no-image.png'} alt="content thumbnail" />
+                                    <img className="journal-image" src={parsedContent?.firstImage?.src || '../../assets/no-image.png'} alt="content thumbnail" />
                                 </div>
                             </div>
 

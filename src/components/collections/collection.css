@@ -369,7 +369,8 @@ p{
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
-    height: fit-content;
+    max-height: fit-content;
+    min-height: 100%;
     width: 95%;
     background-color: rgb(255, 255, 255);
     z-index: 128;
@@ -461,8 +462,15 @@ p{
     line-height: 1.2;
 }
 
-.collection-journal-cards {
+.collection-journal-cards-container{
+    display: flex;
     position: relative;
+    top: 95px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+.collection-journal-cards {
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
@@ -472,7 +480,6 @@ p{
     z-index: 3;
     gap: 0.8rem;
     background-color: rgb(255, 255, 255);
-    top: 100px;
     flex-wrap: wrap;
 }
 .collections{
@@ -525,6 +532,15 @@ p{
 .svg-close:hover{
     scale: 1.2;
 }
+.no-collections-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+    z-index: 129;
+    background-color: #ffffff;
+}
 @media (max-width: 480px){
     .collection-header {
         position: fixed;
@@ -533,12 +549,12 @@ p{
         align-items: center;
         gap: 1rem;
         padding: 1rem;
-        width: 410px;
+        width: 415px;
         height: 60px;
         user-select: none;
         background-color: rgba(255, 255, 255, 0.23);
         backdrop-filter: blur(25px);
-        z-index: 125;
+        z-index: 129;
         border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
     }
     .collections-intro-h3 {
@@ -561,10 +577,9 @@ p{
         justify-content: flex-start;
         align-items: flex-start;
         flex-direction: column;
-        width: 39%;
+        width: 48%;
         height: 250px;
-        padding: 1rem;
-        gap: 0.5rem;
+        gap: 0.25rem;
         background-color: #faf7edb3;
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
@@ -602,16 +617,31 @@ p{
     ease-in-out 0.3s;
     }
 
-    .collection-journal-cards {
+    .collection-journal-cards-container {
+        display: flex;
         position: absolute;
-        width: 89%;
-        min-height: 150px;
+        top: 95px;
+        width: 100%;
         max-height: fit-content;
-        padding: 1rem;
-        z-index: 121;
-        border-radius: 10px;
-        bottom: 50%;
+        min-height: 100vh;
+        align-items: flex-start;
+        justify-content: center;
+        z-index: 128;
+        background-color: rgb(255, 255, 255);
     }
+    .collection-journal-cards {
+        display: flex;
+        justify-content: flex-start;
+        align-items: flex-start;
+        width: 95%;
+        height: 95%;
+        padding: 1rem;
+        z-index: 3;
+        gap: 0.8rem;
+        background-color: rgb(255, 255, 255);
+        flex-wrap: wrap;
+    }
+
     .collections {
         display: flex;
         flex-direction: column;
@@ -621,5 +651,14 @@ p{
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+    }
+    .collections-title {
+        display: flex;
+        justify-content: flex-start;
+        font-weight: 860;
+        font-size: 0.8rem;
+        align-items: center;
+        width: 93%;
+        padding: 0 0.5rem;
     }
 }
