@@ -3,10 +3,13 @@ import { useEffect, useRef } from "react";
 import { getCollectionJournals } from "../../../API/Api";
 import { useLocation } from "react-router-dom";
 import ParseContent from "../HomePage/postCards/parseData";
+import { useAuth } from "../../Context/useAuth";
+import { MoonLoader } from "react-spinners";
 
 const CollectionJournals = () =>{
     const location = useLocation();
     const collectionData = location.state;
+    const {session} = useAuth();
 
     const scrollToTop = useRef();
 
@@ -20,8 +23,8 @@ const CollectionJournals = () =>{
         isFetchingNextPage,
         fetchNextPage
     } = useInfiniteQuery({
-        queryKey: ['getCollectionJournals', collectionData?.collectionId],
-        queryFn: ({queryKey, pageParam}) => getCollectionJournals(queryKey[1], pageParam, 5),
+        queryKey: ['getCollectionJournals', collectionData?.collectionId, session?.access_token],
+        queryFn: ({queryKey, pageParam}) => getCollectionJournals(queryKey[1], pageParam, 5, queryKey[2]),
         getNextPageParam: (lastPage) => {
             if(lastPage?.hasMore){
                 const lastCollected = lastPage?.data[lastPage?.data?.length - 1];
@@ -54,6 +57,25 @@ const CollectionJournals = () =>{
         };
 
     }, [data, isLoading])
+
+    if(isLoading){
+        return(
+            <>
+            <div className='collection-header'>
+                <div onClick={(e) => handleClickBack(e)} className='back-button'>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M360-240 120-480l240-240 56 56-144 144h568v80H272l144 144-56 56Z"/></svg>
+                </div>
+                <p className='collections-header-text'>Browse your collections</p>
+            </div>
+
+            <div className="collection-journal-cards-container">
+                <div className="no-collections-container">
+                    <MoonLoader loading={isLoading} size={25}/>
+                </div>
+            </div>
+            </>
+        )
+    }
 
     const journals = data?.pages?.flatMap((page) => page.data) || [];
     if(journals.length === 0){

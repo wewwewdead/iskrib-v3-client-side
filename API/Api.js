@@ -537,10 +537,14 @@ export const getCollections = async(userId, cursor, limit) =>{
     return data
 }
 
-export const getCollectionJournals = async(collectionId, cursor, limit) =>{
+export const getCollectionJournals = async(collectionId, cursor, limit, token) =>{
+    const headers = {};
+
+    if(token) headers['Authorization'] = `Bearer ${token}`;
     const url = cursor ? `${BASE_URL}/getCollectionJournals?collectionId=${collectionId}&before${cursor}&limit=${limit}` : `${BASE_URL}/getCollectionJournals?collectionId=${collectionId}&limit=${limit}`;
     const response = await fetch(url, {
         method: 'GET',
+        headers: headers
     })
 
     if(!response.ok){
