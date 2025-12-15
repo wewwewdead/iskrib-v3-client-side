@@ -1,14 +1,18 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { getCollectionJournals } from "../../../API/Api";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import ParseContent from "../HomePage/postCards/parseData";
 import { useAuth } from "../../Context/useAuth";
 import { MoonLoader } from "react-spinners";
+import { handleCLickContent } from "../../../helpers/handleClicks";
+
 
 const CollectionJournals = () =>{
     const location = useLocation();
     const collectionData = location.state;
+    const navigate = useNavigate();
+
     const {session} = useAuth();
 
     const scrollToTop = useRef();
@@ -42,11 +46,8 @@ const CollectionJournals = () =>{
         window.history.back();
     }
 
-    const handleClickCollection = (e, journalId) =>{
-        e.stopPropagation();
-        console.log(journalId)
-    }
-
+    const handleClickCollection = handleCLickContent(navigate);
+    
     useEffect(() =>{
         console.log(data);
     }, [data])
@@ -113,7 +114,7 @@ const CollectionJournals = () =>{
                 const parseContent = ParseContent(journal.journals.content)
 
                 return(
-                    <div onClick={(e) => handleClickCollection(e, journal.journals.id)} key={journal.journals?.id} className="collections">
+                    <div onClick={(e) => handleClickCollection(e, journal?.journals.content, parseContent?.wholeText, journal?.journals.title, journal?.journals?.users?.id, journal?.journals?.users?.name, journal?.journals?.users?.image_url, journal?.journals.created_at, journal?.journals.id, journal.hasLiked, journal?.journals?.comments[0]?.count, journal?.hasBookMarked, journal?.journals.likes[0]?.count, journal?.journals?.bookmarks[0]?.count)} key={journal.journals?.id} className="collections">
                         <div className="journal-collection-image-container">
                             <img className="journal-collection-image" src={parseContent?.firstImage?.src || "../../assets/no-image.png"} alt="" />
                         </div>
