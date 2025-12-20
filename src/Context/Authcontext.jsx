@@ -11,7 +11,7 @@ export const AuthProvider = ({children}) => {
 
     const queryClient = useQueryClient();
 
-    const {data: authData} = useQuery({
+    const {data: authData, isLoading: isAuthLoading} = useQuery({
         queryKey: ['authsession'],
         queryFn: async() =>{
             const {data, error} = await supabase.auth.getSession();
@@ -35,6 +35,9 @@ export const AuthProvider = ({children}) => {
         // })();
 
         //listen for login or logout events
+        if(!isAuthLoading && mounted){
+            setLoading(false)
+        }
         const {data: listener} = supabase.auth.onAuthStateChange((_event, session) => {
             if(mounted){
                 queryClient.setQueryData(['authsession'], session ?? null);
@@ -43,7 +46,7 @@ export const AuthProvider = ({children}) => {
         })
         return() => listener.subscription.unsubscribe();
         
-    }, [])
+    }, [isAuthLoading])
 
     const {data: userData, isLoading} = useQuery({
             queryKey: ['userData', authData?.user?.id],
@@ -88,8 +91,9 @@ export const AuthProvider = ({children}) => {
     // }, [userData])
 
     const signOut = async() =>{
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({scope: 'global'});
         queryClient.setQueryData(['authsession'], null)
+        queryClient.clear();
 
     }
 
