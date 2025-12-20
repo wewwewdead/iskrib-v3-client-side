@@ -32,7 +32,7 @@ const Collections = () =>{
     const handleClickSaveCollection = async(e) =>{
         e.stopPropagation();
         // console.log(collectionDescription, collectionTitle)
-        // console.log('jornalids', [journalIds])
+        console.log('jornalids', journalIds)
         setSavingCollection(true);
         const formdata = new FormData();
 
@@ -79,7 +79,7 @@ const Collections = () =>{
     }
 
     const handleClickSaveSelectedContent = (data) =>{
-        console.log(data)
+        // console.log(data)
         const postArray = Array.from(data.values());
         setOlderPost(postArray);
         setShowOlderPost(false)
@@ -180,7 +180,8 @@ const Collections = () =>{
                         Collection name:
                     </div>
                     <div className='input-name-container'>
-                        <input value={collectionTitle} onChange={(e) => setCollectionTitle(e.target.value)} className='input-name-collection' type="text" placeholder='Collection name'/>
+                        <input maxLength={50} value={collectionTitle} onChange={(e) => setCollectionTitle(e.target.value)} className='input-name-collection' type="text" placeholder='Collection name'/>
+                        <p style={collectionTitle?.length > 49 ? {color: 'red'} : {}} className='collection-title-text-limit'>{collectionTitle.length} / 50</p>
                     </div>
                 </div>
                 <div className='collection-input-description'>
@@ -188,7 +189,8 @@ const Collections = () =>{
                         Add description:
                     </div>
                     <div className='input-description-container'>
-                        <textarea value={collectionDescription} onChange={(e) => setCollectionDescription(e.target.value)} placeholder='collection description' maxLength={250} name="description" id="collection-description" className='collection-description'></textarea>
+                        <textarea value={collectionDescription} onChange={(e) => setCollectionDescription(e.target.value)} placeholder='collection description' maxLength={550} name="description" id="collection-description" className='collection-description'></textarea>
+                        <p style={collectionDescription.length > 549 ? {color: 'red'} : {}} className='collection-description-limit'>{collectionDescription.length} / 550</p>
                     </div>
 
                     <div className='create-or-add-container'>
@@ -197,16 +199,16 @@ const Collections = () =>{
                         </div>
                     </div>
                 </div>
-                
-                {journals.length > 0 && (
+            
+
                 <div className='journal-list'>
                     {journals?.map((journal) => {
                         const parsedContent = ParseContent(journal?.content);
 
                         return(
-                            <div className='collection-cards-selected-old-post' key={journal.id}>
+                            <div className='collection-cards-selected-old-post' key={journal?.id}>
                                 <div className='journal-title'>
-                                    {journal.title.length > 10 ? `${journal.title.substring(0, 9)}...` : journal.title}
+                                    {journal?.title?.length > 10 ? `${journal?.title?.substring(0, 9)}...` : journal?.title}
                                 </div>
                                 <div className='journal-text'>
                                     {parsedContent?.slicedText}
@@ -216,9 +218,7 @@ const Collections = () =>{
                         
                     })}
                 </div>
-                )}
                  
-
                 <button disabled={isDisabled} onClick={(e) => handleClickSaveCollection(e, journalIds)} className={isDisabled ? 'save-collection-container-disabled' : 'save-collection-container'}>
                     <div className='save-collection-bttn'>
                         Save Collection

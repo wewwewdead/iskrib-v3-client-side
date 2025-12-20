@@ -381,6 +381,7 @@ const MyProfile = () => {
 
     const hancleClickCancelFontSelect = () => {
         setShowFontColorSelector(false)
+        setFontColor('')
     }
     
 

@@ -1,3 +1,4 @@
+import { m } from "framer-motion";
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -541,7 +542,7 @@ export const getCollectionJournals = async(collectionId, cursor, limit, token) =
     const headers = {};
 
     if(token) headers['Authorization'] = `Bearer ${token}`;
-    const url = cursor ? `${BASE_URL}/getCollectionJournals?collectionId=${collectionId}&before${cursor}&limit=${limit}` : `${BASE_URL}/getCollectionJournals?collectionId=${collectionId}&limit=${limit}`;
+    const url = cursor ? `${BASE_URL}/getCollectionJournals?collectionId=${collectionId}&before=${cursor}&limit=${limit}` : `${BASE_URL}/getCollectionJournals?collectionId=${collectionId}&limit=${limit}`;
     const response = await fetch(url, {
         method: 'GET',
         headers: headers
@@ -556,6 +557,40 @@ export const getCollectionJournals = async(collectionId, cursor, limit, token) =
     return data
 }
 
+export const getNotCollectedJournals = async(cursor, limit, userId, collectionId) =>{
+    const url = cursor ? `${BASE_URL}/getNotCollectedPost?before=${cursor}&limit=${limit}&userId=${userId}&collectionId=${collectionId}` :  `${BASE_URL}/getNotCollectedPost?limit=${limit}&userId=${userId}&collectionId=${collectionId}`;
+
+    const response = await fetch(url, {
+        method: 'GET'
+    })
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const data = await response.json();
+    console.log(data)
+    return data;
+}
+export const addJournalCollection = async(token, body) => {
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    
+    const response = await fetch(`${BASE_URL}/updateCollection`, {
+        method: 'post',
+        headers: headers,
+        body: body
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const message = response.json();
+    console.log(message);
+    return message;
+}
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

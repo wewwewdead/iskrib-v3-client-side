@@ -28,6 +28,7 @@ const OlderPost = ({onSave, onClose}) =>{
 
     const handleSave = (e) =>{
         e.stopPropagation()
+        console.log(selectedPostMap)
         onSave(selectedPostMap)
     }
 
@@ -110,7 +111,7 @@ const OlderPost = ({onSave, onClose}) =>{
                         save
                     </div>
                     <div>
-                        <p className="selected-post">selected post {selectedPostMap.size}</p>
+                        <p className="selected-post">selected post: <span style={{color: 'rgba(66, 148, 255, 1)'}}>{selectedPostMap.size}</span></p>
                     </div>
                 </div>
                 
