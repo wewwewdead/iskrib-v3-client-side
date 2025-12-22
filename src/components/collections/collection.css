@@ -447,7 +447,12 @@ p{
     height: fit-content;
     top: 15px;
     border-radius: 10px;
-    box-shadow: 2px 4px 4px rgba(0, 0, 0, 0.097)
+    box-shadow: 2px 4px 4px rgba(0, 0, 0, 0.097);
+    font-weight: 680;
+    transition: ease-in-out 0.1s;
+}
+.collection-card-container:hover{
+    background-color: rgb(241, 241, 241);
 }
 .collection-illustration{
     position: relative;
@@ -479,12 +484,13 @@ p{
 }
 .collection-date-created{
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     font-size: 0.8rem;
     font-weight: 560;
     color: rgb(136, 136, 136);
     padding: 0rem 0.5rem;
+    width: 93%;
 }
 .collection-card-description{
     padding: 0rem 0.5rem;
@@ -764,8 +770,66 @@ p{
 .save-collected-post-bttn:hover{
     background-color: #000000c5;
 }
-
+.saving-loding-container{
+    display: flex;
+    position: absolute;
+    width: 95%;
+    height: 95%;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff25;
+    backdrop-filter: blur(5px);
+    border-radius: 15px;
+    gap: 1rem;
+    font-weight: 880;
+    font-size: 1.2rem;
+}
+.deleting-collection-loading-container{
+    position: absolute;
+    display: flex;
+    z-index: 132;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff11;
+    backdrop-filter: blur(5px);
+    border-radius: 15px;
+}
+.deleted-message-container{
+    position: fixed;
+    z-index: 132;
+    background-color: rgb(255, 118, 118);
+    padding: 0.5rem 0.8rem;
+    border-radius: 5px;
+    color: #ffffff;
+    font-weight: 550;
+    left: 500px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.267);
+}
 @media (max-width: 480px){
+    .deleted-message-container{
+        position: fixed;
+        z-index: 132;
+        background-color: rgb(255, 118, 118);
+        padding: 0.5rem 0.8rem;
+        border-radius: 10px;
+        color: #ffffff;
+        font-weight: 650;
+        left: 100px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.267);
+    }
+    .saving-loding-container{
+        display: flex;
+        position: absolute;
+        width: 93%;
+        height: 95%;
+        justify-content: center;
+        align-items: center;
+        background-color: #ffffff25;
+        backdrop-filter: blur(5px);
+        border-radius: 15px;
+    }
     .collection-header {
         position: fixed;
         display: flex;

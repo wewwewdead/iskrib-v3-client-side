@@ -1,18 +1,22 @@
 import ParseContent from '../HomePage/postCards/parseData';
-import { getCollections } from '../../../API/Api';
+import { deleteCollection, getCollections } from '../../../API/Api';
 import { useAuth } from '../../Context/useAuth';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { MoonLoader } from 'react-spinners';
+import { FadeLoader, MoonLoader } from 'react-spinners';
 import formatPostDate from '../../../helpers/formatDateString';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const CollectionCards = () =>{
     const {user, session} = useAuth();
     const {ref, inView} = useInView({threshold: 0.2})
+    const queryClient = useQueryClient();
     
     const [settingId, setSettingId] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isDeleted, setIsDeleted] = useState(false);
 
     const navigate = useNavigate();
 
@@ -58,9 +62,31 @@ const CollectionCards = () =>{
         console.log(collectionId)
         setSettingId(settingId === collectionId ? '' : collectionId);
     }
-    const handleDeleteCollection = (e, collectionId) =>{
+
+    const handleDeleteCollection = async(e, collectionId) =>{
         e.stopPropagation();
-        console.log(collectionId);
+        try {
+            let timer;
+            setIsDeleting(true);
+            const message = await deleteCollection(session?.access_token, collectionId);
+            if(message){
+                console.log(message)
+            }
+            queryClient.invalidateQueries(['getCollectionJournals', collectionId, session?.access_token])
+            clearTimeout(timer);
+            setIsDeleted(true)
+            setIsDeleting(false)
+
+            timer = setTimeout(() => {
+                setIsDeleted(false)
+            }, 2500);
+            
+        } catch (error) {
+            queryClient.invalidateQueries(['getCollectionJournals', collectionId, session?.access_token])
+            setIsDeleting(false)
+            throw new Error(error)
+            
+        }
     }
 
     useEffect(() =>{
@@ -101,6 +127,24 @@ const CollectionCards = () =>{
     return(
         <>
         <div className="collection-cards-container">
+            {isDeleting && (
+                <div className='deleting-collection-loading-container'>
+                    <FadeLoader radius={0} loading={isDeleting}/>
+                </div>
+            )}
+
+            {isDeleted && (
+                <AnimatePresence>
+                <motion.div 
+                className='deleted-message-container'
+                initial={{opacity: 0, scale: 0}}
+                animate={{opacity: 1, scale: 1}}
+                transition={{type: 'tween', damping: 25, stiffness: 200, ease: 'easeInOut', duration: 0.1}}
+                >
+                    The collection was deleted
+                </motion.div>
+                </AnimatePresence>
+            )}
 
             {collections?.map((collection) => {
                 return(

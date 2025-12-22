@@ -139,7 +139,7 @@ const MyProfile = () => {
         {
             label: 'Write', action: () => setShowEditor(true), 
             className: 'write-journal-bttn'
-        }, // the action function will set the state  to (true)and pass to the HOME.jsx when user clicks the function
+        }, // the action function will set the state  to (true)and pass to the HOME.jsx when user clicks this function
     ]
 
     const gradients = [

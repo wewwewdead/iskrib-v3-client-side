@@ -591,6 +591,24 @@ export const addJournalCollection = async(token, body) => {
     console.log(message);
     return message;
 }
+
+export const deleteCollection = async(token, collectionId) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/deleteCollection/${collectionId}`, {
+        method: 'delete',
+        headers: headers
+    })
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error)
+    }
+
+    const message = await response.json();
+    console.log(message)
+    return message;
+}
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

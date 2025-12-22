@@ -8,7 +8,7 @@ import { MoonLoader } from "react-spinners";
 import { handleCLickContent } from "../../../helpers/handleClicks";
 import { useState } from "react";
 import NotCollectedJournalList from "./NotCollectedJournals";
-import { InView, useInView } from "react-intersection-observer";
+import { useInView } from "react-intersection-observer";
 
 
 const CollectionJournals = () =>{

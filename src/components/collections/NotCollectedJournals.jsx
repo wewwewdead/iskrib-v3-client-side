@@ -1,18 +1,20 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { addJournalCollection, getNotCollectedJournals } from "../../../API/Api";
 import { useAuth } from "../../Context/useAuth";
 import { useEffect, useState } from "react";
 import ParseContent from "../HomePage/postCards/parseData";
-import { MoonLoader } from "react-spinners";
+import { HashLoader, MoonLoader } from "react-spinners";
 import { useInView } from 'react-intersection-observer';
 
 const NotCollectedJournalList = ({collectionId, onClose}) =>{
+    const queryClient = useQueryClient();
 
     const [selectedPost, setSelectedPost] = useState(new Map());
 
     const {ref, inView} = useInView({threshold: 0.2})
 
     const {user, session} = useAuth();
+    const [isSaving, setIsSaving] = useState(false);
 
     const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['getNotCollected', user?.userData[0].id, collectionId],
@@ -68,18 +70,29 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
 
         const formdata = new FormData();
         formdata.append('journalIds', journalIdsArray);
-        formdata.append('collectionId', collectionId)
+        formdata.append('collectionId', collectionId);
+        try {
+            setIsSaving(true);
+            const message = await addJournalCollection(session?.access_token, formdata);
 
-        const message = await addJournalCollection(session?.access_token, formdata);
-
-        if(message){
-            console.log(message);
+            if(message){
+                console.log(message);
+            }
+            setIsSaving(false);
+            queryClient.invalidateQueries(['getCollectionJournals', collectionId, session?.access_token])
+            onClose();
+        } catch (error) {
+            setIsSaving(false);
+            onClose();
+            throw new Error('error saving journals in to collections');
         }
+
+        
     }
 
     useEffect(() =>{
         if(inView && !isFetchingNextPage && hasNextPage){
-            console.log('inview')
+            console.log('inview');
             fetchNextPage();
         }
     }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
@@ -99,6 +112,12 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
     return(
         <>
         <div className="notCollectedJournalList">
+            {isSaving && (
+                <div className="saving-loding-container">
+                    Saving...
+                    <HashLoader loading={isSaving}/>
+                </div>
+            )}
             <div className="close-bttn-container">
                 <div onClick={() => unMount()} className="close-bttn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill="none">
