@@ -179,7 +179,6 @@ export const useAddViewsMutation = (session) =>{
     return useMutation({
         mutationFn: (data) => addJournalViews(session?.access_token, data),
         onerror: (err) => console.error(err),
-        onSuccess: (data) => console.log(data),
         retry: 2,
     })
 }

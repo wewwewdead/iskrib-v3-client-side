@@ -9,6 +9,7 @@ import { handleCLickContent } from "../../../helpers/handleClicks";
 import { useState } from "react";
 import NotCollectedJournalList from "./NotCollectedJournals";
 import { useInView } from "react-intersection-observer";
+import { useAddViewsMutation } from "../../utils/useMutation";
 
 
 const CollectionJournals = () =>{
@@ -54,6 +55,16 @@ const CollectionJournals = () =>{
     }
 
     const handleClickCollection = handleCLickContent(navigate);
+
+    const mutaViews = useAddViewsMutation(session);
+    const viewContent = (e, content, wholeText, title, userId, name, image_url, created_at, journalId, hasLiked, commentsCount, hasBookMarked, likesCount, bookmarkCount) =>{
+        e.stopPropagation();
+        const formdata = new FormData();
+        formdata.append('journalId', journalId);
+
+        mutaViews.mutate(formdata);
+        handleClickCollection(e, content, wholeText, title, userId, name, image_url, created_at, journalId, hasLiked, commentsCount, hasBookMarked, likesCount, bookmarkCount);
+    }
 
     const clickAddJournalCollection = (e, userId, collectionId) =>{
         e.stopPropagation();
@@ -219,7 +230,7 @@ const CollectionJournals = () =>{
                 const parseContent = ParseContent(journal.journals.content)
 
                 return(
-                    <div onClick={(e) => handleClickCollection(e, journal?.journals.content, parseContent?.wholeText, journal?.journals.title, journal?.journals?.users?.id, journal?.journals?.users?.name, journal?.journals?.users?.image_url, journal?.journals.created_at, journal?.journals.id, journal.hasLiked, journal?.journals?.comments[0]?.count, journal?.hasBookMarked, journal?.journals.likes[0]?.count, journal?.journals?.bookmarks[0]?.count)} key={journal.journals?.id} className="collections">
+                    <div onClick={(e) => viewContent(e, journal?.journals.content, parseContent?.wholeText, journal?.journals.title, journal?.journals?.users?.id, journal?.journals?.users?.name, journal?.journals?.users?.image_url, journal?.journals.created_at, journal?.journals.id, journal.hasLiked, journal?.journals?.comments[0]?.count, journal?.hasBookMarked, journal?.journals.likes[0]?.count, journal?.journals?.bookmarks[0]?.count)} key={journal.journals?.id} className="collections">
                         <div className="journal-collection-image-container">
                             <img className="journal-collection-image" src={parseContent?.firstImage?.src || "../../assets/no-image.png"} alt="" />
                         </div>
