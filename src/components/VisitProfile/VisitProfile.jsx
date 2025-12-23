@@ -29,7 +29,7 @@ const Visitprofile = () =>{
     const navigate = useNavigate();
     const tablists =[
         {label: 'Writings', path: '/visitProfile', action: () => navigate('/visitProfile', {state: {userId:stateData?.userId}})},
-        {label: 'Media', path: '/visitProfile/media', action: () => navigate('/visitProfile/media', {state: {userId:stateData?.userId}})},
+        {label: 'Collections', path: '/visitProfile/visitedCollections', action: () => navigate('/visitProfile/visitedCollections', {state: {userId:stateData?.userId}})},
     ]
 
      const navigatePath = (path) => {

@@ -84,9 +84,9 @@ const CollectionJournals = () =>{
         }
     }, [fetchNextPage, isFetchingNextPage, hasNextPage, inView])
 
-    // useEffect(() =>{
-    //     console.log(data)
-    // }, [data])
+    useEffect(() =>{
+        console.log(data)
+    }, [data])
 
     if(isLoading){
         return(
@@ -165,7 +165,7 @@ const CollectionJournals = () =>{
                 </div>
 
                 <div className="no-collections-container">
-                    No Journals collected
+                    This space is waiting
                 </div>
             </div>
             </>

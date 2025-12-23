@@ -451,6 +451,36 @@ p{
     font-weight: 680;
     transition: ease-in-out 0.1s;
 }
+.collection-settings-container{
+    position: absolute;
+    background-color: rgb(255, 255, 255);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    width: 150px;
+    height: fit-content;
+    top: 15px;
+    right: 10px;
+    border-radius: 10px;
+    box-shadow: 2px 4px 4px rgba(0, 0, 0, 0.097);
+    font-weight: 680;
+    transition: ease-in-out 0.1s;
+}
+.collection-settings-bttn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem;
+    transition: ease-in-out 0.1s;
+    border-radius: 5px;
+}
+.collection-settings-bttn:hover{
+    background-color: #e9e9e9;
+}
 .collection-card-container:hover{
     background-color: rgb(241, 241, 241);
 }
@@ -766,6 +796,7 @@ p{
     cursor: pointer;
     background-color: #000000;
     transition: ease-in-out 0.2s;
+    color: #ffffff;
 }
 .save-collected-post-bttn:hover{
     background-color: #000000c5;
@@ -806,6 +837,14 @@ p{
     font-weight: 550;
     left: 500px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.267);
+}
+.public-private-icon{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    right: 90%;
+    padding-top: 0.5rem;
 }
 @media (max-width: 480px){
     .deleted-message-container{

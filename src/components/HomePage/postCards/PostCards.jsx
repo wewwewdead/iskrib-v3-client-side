@@ -25,7 +25,8 @@ const PostCards = () => {
     const modalRef = useRef(null);
     const timeOutRef = useRef();
     const {ref, inView} = useInView({
-        threshold: 0.2
+        threshold: 0,
+        rootMargin: '1000px'
     })
     const [postIdSettings, setPostIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);

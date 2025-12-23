@@ -194,7 +194,7 @@ export const useUpdateJournalPrivacyMutation = (session) =>{
             const journalId = data.get('journalId')
             const privacy = data.get('privacy');
 
-            console.log(privacy)
+            // console.log(privacy)
 
             queryClient.setQueryData(['userJournals', session?.user?.id], (old) => {
                 if(!old) return old;

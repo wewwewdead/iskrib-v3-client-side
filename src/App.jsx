@@ -55,18 +55,21 @@ const initaConfig = {
           <Route path='/' element={<LoginPage/>}/>
           <Route path='/profile' element={<MyProfile/>}>
             <Route index element={<ProfilePostCards/>} />
-            <Route path='media'/>
+           
           </Route>
 
           <Route path='/visitProfile' element={<Visitprofile/>}> 
             <Route index element={<VisitedProfilePostCards/>}/>
             <Route path='media'/>
+            <Route path='visitedCollections'/>
           </Route>  
 
           <Route path='/home' element={<HomePage/>}>
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>
             <Route path='bookmark' element={<Bookmarks/>}/>
+
+            <Route path='collections' element={<Collections/>}/>
             <Route path='collectionViewer'/>
             <Route path='collectionCards' element={<CollectionJournals/>}/>
             
@@ -75,11 +78,8 @@ const initaConfig = {
               <Route index element={<NotificationCards/>}/>
               <Route path='unreadNotification' element={<UnreadNotification/>}/>
             </Route>  
-
-            <Route path='collections' element={<Collections/>}>
-            </Route>
-
           </Route>   
+
           <Route path='/login' element={<LoginPage/>}/>
           <Route path='/signUp' element={<SignUp/>}/>
         </Routes>

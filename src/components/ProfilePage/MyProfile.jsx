@@ -152,7 +152,7 @@ const MyProfile = () => {
 
     const tablists =[
         {label: 'Writings', path: '/profile', action: () => navigate('/profile')},
-        {label: 'Media', path: '/profile/media', action: () => navigate('/profile/media')},
+        {label: 'Collections', path: '/home/collections', action: () => navigate('/home/collections')},
     ]
 
     useEffect(() => {
