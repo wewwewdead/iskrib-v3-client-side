@@ -468,6 +468,7 @@ p{
     box-shadow: 2px 4px 4px rgba(0, 0, 0, 0.097);
     font-weight: 680;
     transition: ease-in-out 0.1s;
+    z-index: 135;
 }
 .collection-settings-bttn{
     display: flex;
@@ -845,6 +846,17 @@ p{
     position: absolute;
     right: 90%;
     padding-top: 0.5rem;
+}
+.update-privacy-message-container{
+    display: flex;
+    position: absolute;
+    background-color: rgb(232, 255, 177);
+    z-index: 132;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    color: #000000;
+    font-weight: 680;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.267);
 }
 @media (max-width: 480px){
     .deleted-message-container{

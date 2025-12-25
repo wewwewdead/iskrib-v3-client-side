@@ -609,6 +609,23 @@ export const deleteCollection = async(token, collectionId) =>{
     console.log(message)
     return message;
 }
+
+export const updateCollectionPrivacy = async(body) =>{
+    const response = await fetch(`${BASE_URL}/updatePrivacyCollection`, {
+        method: 'post',
+        body: body
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const message = await response.json();
+
+    console.log(message);
+    return message;
+}
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

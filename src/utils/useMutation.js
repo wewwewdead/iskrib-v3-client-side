@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, updatePrivacy } from "../../API/Api";
+import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
 import { data } from "react-router-dom";
 
 export const useBookMarkMutation = (session) => {
@@ -223,5 +223,44 @@ export const useUpdateJournalPrivacyMutation = (session) =>{
         },
         onSuccess: (data) => console.log(data),
         retry: 1,
+    })
+}
+export const useUpdateCollectionPrivacyMutation = (session) => {
+    const queryClient= useQueryClient();
+    return useMutation({
+        mutationFn: (data) => updateCollectionPrivacy(data),
+        onMutate: async(data) =>{
+            const userId = data.get('userId')
+            const collectionId = data.get('collectionId')
+            await queryClient.cancelQueries(['getCollections', userId])
+
+            const previousData = queryClient.getQueryData(['getCollections', userId])
+            const isPublic = data.get('isPublic');
+
+            queryClient.setQueryData(['getCollections', userId], (old) => {
+                if(!old) return old;
+
+                return{
+                    ...old,
+                    pages: old.pages.map((page) =>({
+                        ...page,
+                        data: page.data.map((collection) => {
+                            if(collection.id !== collectionId) return collection;
+
+                            return {
+                                ...collection,
+                                is_public: isPublic
+                            }
+                        })
+                    }))
+                }
+            })
+            return {previousData};
+        },
+        onError: (err, data, context) =>{
+            queryClient.setQueryData(['getCollections', session?.user?.id], context.previousData)
+        },
+        retry: 1,
+        onSucces: (data) => console.log(data)
     })
 }

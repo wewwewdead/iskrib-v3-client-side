@@ -9,7 +9,7 @@ import { handleCLickContent } from "../../../helpers/handleClicks";
 import { useState } from "react";
 import NotCollectedJournalList from "./NotCollectedJournals";
 import { useInView } from "react-intersection-observer";
-import { useAddViewsMutation } from "../../utils/useMutation";
+import { useAddViewsMutation} from "../../utils/useMutation";
 
 
 const CollectionJournals = () =>{
@@ -77,7 +77,6 @@ const CollectionJournals = () =>{
     const clickCloseAddJournalCollection = () =>{
         setShowNotCollected(false)
     }
-    
     useEffect(() =>{
         if(inView && hasNextPage && !isFetchingNextPage){
             fetchNextPage();
