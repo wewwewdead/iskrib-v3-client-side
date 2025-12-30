@@ -21,6 +21,7 @@ import UnreadNotification from './components/Notifications/UnreadNotificationCar
 import Collections from './components/collections/Collection.jsx';
 import CollectionJournals from './components/collections/CollectionJournalCards.jsx';
 import CollectionViewer from './components/collections/CollectionViewer.jsx';
+import ViewUserCollection from './components/collections/ViewUserCollections.jsx';
 
 const App = () => {
 
@@ -69,6 +70,7 @@ const initaConfig = {
             <Route index element={<PostCards/>}/>
             <Route path='contentViewer' element={<ContentView/>}/>
             <Route path='bookmark' element={<Bookmarks/>}/>
+            <Route path='userCollections' element={<ViewUserCollection/>}/>
 
             <Route path='collections' element={<Collections/>}/>
             <Route path='collectionCards' element={<CollectionJournals/>}/>

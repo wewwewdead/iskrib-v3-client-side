@@ -6,9 +6,12 @@ import { useAuth } from '../../Context/useAuth';
 import { getComments } from '../../../API/Api';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { BarLoader, MoonLoader } from 'react-spinners';
+import { useNavigate } from 'react-router-dom';
+import { handleClickProfile } from '../../../helpers/handleClicks';
 
 const CommentSection = ({onclose, postId, receiverId})=>{
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
 
     const {session, user} = useAuth();
     const userId = user?.userData?.[0].id;
@@ -31,6 +34,8 @@ const CommentSection = ({onclose, postId, receiverId})=>{
         },
         refetchOnWindowFocus: false
     })
+
+    const handleClickUserProfile = handleClickProfile(navigate);
 
     const handleSeeMoreComments = (e) =>{
         e.stopPropagation();
@@ -136,8 +141,8 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                             </div>
 
                             <div className='comment-user-metadata-container'>
-                                <img className='comments-avatar' src={comment.users.image_url || '/assets/profile.jpg'} alt="" />
-                                <p className='commenter-name'>{comment?.users?.name}</p>
+                                <img onClick={(e) => handleClickUserProfile(e, user?.userData[0].id,  comment?.user_id)} className='comments-avatar' src={comment.users.image_url || '/assets/profile.jpg'} alt="" />
+                                <p onClick={(e) => handleClickUserProfile(e, user?.userData[0].id,  comment?.user_id)} className='commenter-name'>{comment?.users?.name}</p>
                                 <p>on</p>
                                 <div className='comment-date'>
                                     {new Date(comment?.created_at).toLocaleDateString('en-US', {month: 'long', day: '2-digit', year: 'numeric'})} 
