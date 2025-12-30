@@ -106,7 +106,7 @@ const CollectionViewer = () =>{
                     )}
                     
                     <div className="collection-illustration">
-                        <img className="collection-illustration-img" src={'../../public/assets/collection-banner.png'} alt="" />
+                        <img className="collection-illustration-img" src={'/assets/collection-banner.png'} alt="" />
                     </div>
                     <div className="collection-name-container">
                         {collection.name}

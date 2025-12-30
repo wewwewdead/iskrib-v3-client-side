@@ -272,7 +272,7 @@ const CollectionCards = () =>{
                         </svg>
                         </div>
                         <div onClick={(e) => handleClickCards(e, collection?.id, collection?.name, collection?.description)} className='collection-illustration'>
-                            <img className='collection-illustration-img' src="../../assets/collection-banner.png" alt="" />
+                            <img className='collection-illustration-img' src="/assets/collection-banner.png" alt="" />
                         </div>
                         <div onClick={(e) => handleClickCards(e, collection?.id, collection?.name, collection?.description)} className='collection-name-container'>
                             {collection?.name.length > 20 ? `${collection?.name.substring(0, 19)}...` : collection?.name}
