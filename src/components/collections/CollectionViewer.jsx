@@ -44,6 +44,8 @@ const CollectionViewer = () =>{
             state: 
             {
                 collectionId: collectionId,
+                collectionName: collectionName,
+                collectionDescription: collectionDescription
 
             }
         }

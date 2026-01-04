@@ -998,6 +998,13 @@ p{
     background-color: #ffeeb481;
 }
 
+.user-collection-title-description{
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
 @media (max-width: 480px){
     .deleted-message-container{
         position: fixed;

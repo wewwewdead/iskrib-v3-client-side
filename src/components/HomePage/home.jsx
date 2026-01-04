@@ -17,6 +17,8 @@ import WriteJournalButton from "../WriteJournalButton/WriteJournalButton";
 import MobileSidebarLink from "../MobileSidebarLink/MobileSidebarLink";
 import WelcomeMessage from "../WelcomeMessage/WelcomeMessage";
 import Loader from "../loadingComponent/BgLoader";
+import SidebarOpinions from "../SidebarOpinions/SidebarOpinions";
+import OpinionEditor from "../SidebarOpinions/OpinionsEditor";
 
 const HomePage = () => {
     const {session, signOut, user, loading, isLoading, notifCount} = useAuth();
@@ -114,9 +116,8 @@ const HomePage = () => {
     ]
 
     const header_links = [
-        {label: 'For You'},
-        {label: 'Following'},
-        {label: 'Trending'},
+        {label: 'Feed'},
+        {label: 'Opiions'},
     ]
 
     const imgRef = useRef(null)
@@ -130,6 +131,8 @@ const HomePage = () => {
     const [uploadingUserData, setUploadingUserData] = useState(false)
 
     const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+
+    const [showOpinionEditor, setShowOpinionEditor] = useState(false);
 
 
     const handleClickUploadPhoto = (e) =>{
@@ -205,6 +208,12 @@ const HomePage = () => {
         setShowWelcomeMessage(false)
     }
 
+    const handleOpenOpinionTextEditor = () =>{
+        setShowOpinionEditor(true)
+    }
+    const handleCloseOpiniionTextEditor = () =>{
+        setShowOpinionEditor(false);
+    }
 
     //handle show links header when stop scrolling and hides header when scrolling
     // useEffect(() =>{
@@ -272,6 +281,11 @@ const HomePage = () => {
         {showEditor && (
             <Editor key={'main-editor'} onClose={handleCloseEditor}/>
         )}
+
+        {showOpinionEditor && (
+            <OpinionEditor onClose={handleCloseOpiniionTextEditor}/>
+        )}
+
         </AnimatePresence>
 
         {uploadingUserData && (
@@ -381,6 +395,7 @@ const HomePage = () => {
             </div>
             <div className="sidebar-right-holder-container">
                 {/* Log out */}
+                <SidebarOpinions openEditor={handleOpenOpinionTextEditor}/>
             </div>
             
             <WriteJournalButton onOpen={handleOpenTextEditor}/>

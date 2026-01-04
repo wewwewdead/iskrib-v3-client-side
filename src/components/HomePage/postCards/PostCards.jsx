@@ -7,7 +7,7 @@ import {getJournals,} from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
-import { useNavigate, } from "react-router-dom";
+import { useLocation, useNavigate, } from "react-router-dom";
 
 import { useAuth } from "../../../Context/useAuth";
 import { useAddViewsMutation, useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
@@ -20,6 +20,7 @@ import formatPostDate from "../../../../helpers/formatDateString";
 const PostCards = () => {
     const {session, user} = useAuth();
     const queryClient = useQueryClient();
+    const location = useLocation();
 
     const navigate = useNavigate();
     const modalRef = useRef(null);
@@ -49,10 +50,13 @@ const PostCards = () => {
     }
 
     const header_links = [
-        {label: 'For You'},
-        {label: 'Following'},
-        {label: 'Trending'},
+        {label: 'Writings', path: '/home'},
+        {label: 'Opinions', path: '/opinions'},
     ]
+
+    const handleClickHeaderLinks = (path) =>{
+        navigate(path);
+    }
 
     const cardIcons = [
         {
@@ -253,7 +257,10 @@ const PostCards = () => {
 
                     {header_links.map((header_link, index) => (
                         <div key={index} className="header-links">
-                            {header_link.label}
+                            <div onClick={() => handleClickHeaderLinks(header_link.path) } className='header-link'>
+                                {header_link.label}
+                                <div className={header_link.path === location.pathname ? "header-underline" : ''}/>
+                            </div>  
                         </div>
                     ))}
 

@@ -59,6 +59,15 @@ const ViewUserCollection = () =>{
         </div>
 
         <div className="user-collections-parent-container">
+            <div className="user-collection-title-description">
+                <div className="collection-name">
+                    {location?.state.collectionName}
+                </div>
+                <div className="collection-description">
+                    {location?.state.collectionDescription}
+                </div>
+            </div>
+
             <div className="user-collections-container">
                 {journals.map((journal) => {
                     const parseContent = ParseContent(journal.journals.content)

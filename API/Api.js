@@ -626,6 +626,44 @@ export const updateCollectionPrivacy = async(body) =>{
     console.log(message);
     return message;
 }
+
+export const addOpinion = async(body, token) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/addOpinion`, {
+        method: 'POST',
+        body: body,
+        headers: headers
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    console.log(data)
+    return data;
+}
+
+export const getOpinions = async(cursor, limit) =>{
+    const url = cursor ? `${BASE_URL}/getOpinions?before=${cursor}&limit=${limit}` : `${BASE_URL}/getOpinions?limit=${limit}`;
+
+    const response = await fetch(url, {
+        method: 'GET'
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error)
+    }
+
+    const data = await response.json()
+    console.log(data);
+    return data;
+}
+
+
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

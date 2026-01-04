@@ -22,6 +22,7 @@ import Collections from './components/collections/Collection.jsx';
 import CollectionJournals from './components/collections/CollectionJournalCards.jsx';
 import CollectionViewer from './components/collections/CollectionViewer.jsx';
 import ViewUserCollection from './components/collections/ViewUserCollections.jsx';
+import OpinionsPage from './components/SidebarOpinions/OpinionssPage.jsx';
 
 const App = () => {
 
@@ -56,9 +57,10 @@ const initaConfig = {
         <Routes>
           <Route path='/' element={<LoginPage/>}/>
           <Route path='/profile' element={<MyProfile/>}>
-            <Route index element={<ProfilePostCards/>} />
-           
+            <Route index element={<ProfilePostCards/>} />         
           </Route>
+          
+          <Route path='/opinions'element={<OpinionsPage/>}/>
 
           <Route path='/visitProfile' element={<Visitprofile/>}> 
             <Route index element={<VisitedProfilePostCards/>}/>
