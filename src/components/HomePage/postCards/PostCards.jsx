@@ -51,7 +51,7 @@ const PostCards = () => {
 
     const header_links = [
         {label: 'Writings', path: '/home'},
-        {label: 'Opinions', path: '/opinions'},
+        {label: 'Opinions', path: '/home/opinions'},
     ]
 
     const handleClickHeaderLinks = (path) =>{
@@ -85,7 +85,7 @@ const PostCards = () => {
                 </g>
             </svg>,
             className: 'comment-button',
-            commentAction: (e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount) => clickContent(e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount ),
+            commentAction: (e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount) => viewContent(e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount ),
             countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
