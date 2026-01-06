@@ -408,7 +408,7 @@
         justify-content: flex-start;
         align-items: center;
         width: 98%;
-        height: fit-content;
+        height: 100vh;
         z-index: 12;
         background-color: rgb(255, 255, 255);
         border-left: 0.7px solid rgba(151, 151, 151, 0.168);

@@ -29,7 +29,6 @@ const SidebarOpinions = ({openEditor}) =>{
             }
         },
         refetchOnWindowFocus: false,
-        refetchOnMount: true
     });
 
     const handleClickSeeMore = () =>{
@@ -96,19 +95,16 @@ const SidebarOpinions = ({openEditor}) =>{
                     {opinions.map((opinionsData) => (
                         <div key={opinionsData.id} className='sidebar-opinions-cards'>
                             <div className='sidebar-opinions-user-metadata-container'>
+                                <div className='opinions-content'>
+                                    {opinionsData.opinion}
+                                </div>
                                 <div className='sidebar-opinions-profile-container'>
                                     <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className='sidebar-opinions-profile' src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt="opinions-profile" />
                                     <p onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className='opinions-username'>{opinionsData.users.name}</p>
-                                    <div className="name-info-separator">
-                                        •
-                                    </div>
-                                    <p className='opinions-user-email'>{opinionsData.users.user_email}</p>
                                 </div>
 
                             </div>
-                            <div className='opinions-content'>
-                                {opinionsData.opinion}
-                            </div>
+                            
                         </div>
                     ))}
                     {hasNextPage && (

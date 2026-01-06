@@ -80,7 +80,7 @@ const MobileNavlink =({clickOpenSidebar}) =>{
 
             timeOutRef.current = setTimeout(() => {
                 setShowNavlinks(true)
-            }, 500);
+            }, 100);
         }
 
         document.addEventListener('scroll', scroll, true);

@@ -19,9 +19,12 @@ import WelcomeMessage from "../WelcomeMessage/WelcomeMessage";
 import Loader from "../loadingComponent/BgLoader";
 import SidebarOpinions from "../SidebarOpinions/SidebarOpinions";
 import OpinionEditor from "../SidebarOpinions/OpinionsEditor";
+import { useMediaQuery } from 'react-responsive';
 
 const HomePage = () => {
     const {session, signOut, user, loading, isLoading, notifCount} = useAuth();
+
+    const isMobile = useMediaQuery({query: '(max-width: 480px'});
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -30,6 +33,8 @@ const HomePage = () => {
     const [editor] = useLexicalComposerContext();
 
     const [showMobileSideBar, setShowMobileSideBar] = useState(false);
+
+    const isOpinionsPage = location.pathname === '/home/opinions';
 
     const navigatePath = (path) => {
         if(window.location.pathname === path){
@@ -395,10 +400,16 @@ const HomePage = () => {
             </div>
             <div className="sidebar-right-holder-container">
                 {/* Log out */}
-                <SidebarOpinions openEditor={handleOpenOpinionTextEditor}/>
+                {!isMobile && (
+                    <SidebarOpinions openEditor={handleOpenOpinionTextEditor}/>
+                )}
+                
             </div>
             
-            <WriteJournalButton onOpen={handleOpenTextEditor}/>
+            {!isOpinionsPage && (
+                <WriteJournalButton onOpen={handleOpenTextEditor}/>
+            )}
+            
             <MobileNavlink clickOpenSidebar={handleClickMobileProfileLink}/>
         </div>
         

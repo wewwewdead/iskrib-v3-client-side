@@ -205,7 +205,7 @@ const PostCards = () => {
             }
             timeOutRef.current = setTimeout(() => {
                 setShowHeaders(showHeaders)
-            }, 500);
+            }, 100);
         }
         document.addEventListener('scroll', scroll, true);
         return() =>{
