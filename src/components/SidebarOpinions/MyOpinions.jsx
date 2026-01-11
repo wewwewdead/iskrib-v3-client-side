@@ -68,6 +68,7 @@ const MyOpinions = () =>{
                         }
                      >
                         <p style={{padding: 0, margin: 0}}>{opinion.opinion}</p>
+                        
                     </motion.div>
                     
                     <div className="opinions-visited-user-metadata">
