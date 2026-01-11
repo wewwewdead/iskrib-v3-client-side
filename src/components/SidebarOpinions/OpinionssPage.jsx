@@ -12,7 +12,7 @@ import OpinionEditor from "./OpinionsEditor";
 const OpinionsPage = () =>{
     const [showHeaders, setShowHeaders] = useState(true);
     const [showWriteContainer, setShowWriteContainer] = useState(true);
-    const {ref, inView} = useInView({threshold: 0});
+    const {ref, inView} = useInView({threshold: 0.5, rootMargin: '200px'});
 
     const isMobile = useMediaQuery({query: '(max-width: 480px'});
 
@@ -36,7 +36,6 @@ const OpinionsPage = () =>{
             }
         },
         refetchOnWindowFocus: false,
-        refetchOnMount: true
     })
 
     useEffect(() =>{
@@ -238,7 +237,8 @@ const OpinionsPage = () =>{
                     </div>
                 </div>
             ))}
-            <div ref={ref}/>
+            <div className="opinions-in-view" ref={ref}>
+            </div>
         </div>
 
             

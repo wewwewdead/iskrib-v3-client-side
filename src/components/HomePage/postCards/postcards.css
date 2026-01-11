@@ -201,7 +201,7 @@
     margin: 0;
     font-size: 0.8rem;
     font-weight: 560;
-    color: rgb(117, 127, 132);
+    color: rgb(0, 0, 0);
 }
 .user-post-date-container{
     display: flex;
@@ -226,7 +226,7 @@
     margin: 0;
     font-size: 0.8rem;
     font-weight: 560;
-    color: rgb(117, 127, 132);
+    color: rgb(0, 0, 0);
 }
 .feed-text-content-container{
     display: flex;
@@ -240,7 +240,7 @@
     padding: 0;
     margin: 0;
     font-weight: 550;
-    color: rgb(98, 98, 98);
+    color: rgb(0, 0, 0);
     line-height: 1.5rem;
 }
 .feed-title-content{
@@ -359,7 +359,7 @@
         margin: 0;
         font-weight: 550;
         font-size: 0.8rem;
-        color: rgb(98, 98, 98);
+        color: rgb(0, 0, 0);
         line-height: 1.2rem;
     }
     .journal-image {
@@ -373,14 +373,14 @@
         margin: 0;
         font-size: 0.5rem;
         font-weight: 460;
-        color: rgb(117, 127, 132);
+        color: rgb(0, 0, 0);
     }
     .user-post-date {
         padding: 0;
         margin: 0;
         font-size: 0.6rem;
         font-weight: 460;
-        color: rgb(117, 127, 132);
+        color: rgb(0, 0, 0);
     }
     .postcards-parent-loading-container {
         position: relative;

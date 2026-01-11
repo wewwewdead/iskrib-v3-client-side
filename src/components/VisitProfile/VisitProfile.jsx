@@ -30,6 +30,7 @@ const Visitprofile = () =>{
     const tablists =[
         {label: 'Writings', path: '/visitProfile', action: () => navigate('/visitProfile', {state: {userId:stateData?.userId}})},
         {label: 'Collections', path: '/visitProfile/visitedCollections', action: () => navigate('/visitProfile/visitedCollections', {state: {userId:stateData?.userId}})},
+        {label: 'Opinions', path:'/visitProfile/visitedOpinions', action: () => navigate('/visitProfile/visitedOpinions', {state: {userId:stateData?.userId}})}
     ]
 
      const navigatePath = (path) => {

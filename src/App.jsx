@@ -23,6 +23,8 @@ import CollectionJournals from './components/collections/CollectionJournalCards.
 import CollectionViewer from './components/collections/CollectionViewer.jsx';
 import ViewUserCollection from './components/collections/ViewUserCollections.jsx';
 import OpinionsPage from './components/SidebarOpinions/OpinionssPage.jsx';
+import VisitedProfileOpinions from './components/SidebarOpinions/visitedProfileOpinions.jsx';
+import MyOpinions from './components/SidebarOpinions/MyOpinions.jsx';
 
 const App = () => {
 
@@ -57,13 +59,15 @@ const initaConfig = {
         <Routes>
           <Route path='/' element={<LoginPage/>}/>
           <Route path='/profile' element={<MyProfile/>}>
-            <Route index element={<ProfilePostCards/>} />         
+            <Route index element={<ProfilePostCards/>} />
+            <Route path='myOpinions' element={<MyOpinions/>}/>         
           </Route>
 
           <Route path='/visitProfile' element={<Visitprofile/>}> 
             <Route index element={<VisitedProfilePostCards/>}/>
             <Route path='media'/>
             <Route path='visitedCollections' element={<CollectionViewer/>}/>
+            <Route path='visitedOpinions' element={<VisitedProfileOpinions/>}/>
           </Route>  
 
           <Route path='/home' element={<HomePage/>}>

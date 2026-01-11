@@ -1,4 +1,5 @@
 import { m } from "framer-motion";
+import { resetRandomKey } from "lexical";
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -659,6 +660,45 @@ export const getOpinions = async(cursor, limit) =>{
     }
 
     const data = await response.json()
+    console.log(data);
+    return data;
+}
+
+export const getUserOpinions = async(cursor, limit, userId) =>{
+    const url = cursor ? `${BASE_URL}/getUserOpinions?before=${cursor}&limit=${limit}&userId=${userId}` : `${BASE_URL}/getUserOpinions?limit=${limit}&userId=${userId}`;
+
+    const response = await fetch(url, {
+        method: 'GET',
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const data = await response.json();
+    console.log(data);
+    return data;
+}
+
+export const getMyOpinions = async(cursor, limit, token) => {
+    console.log(cursor)
+    const headers ={}
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const url =  cursor ? `${BASE_URL}/getMyOpinions?before=${cursor}&limit=${limit}` : `${BASE_URL}/getMyOpinions?limit=${limit}`;
+
+    const response = await fetch(url, {
+        method: 'get',
+        headers: headers
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const data = await response.json();
     console.log(data);
     return data;
 }
