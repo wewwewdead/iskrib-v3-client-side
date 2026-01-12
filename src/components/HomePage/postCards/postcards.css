@@ -186,7 +186,7 @@
     align-items: center;
     width: fit-content;
     height: fit-content;
-    color: rgb(117, 127, 132);
+    /* color: rgb(117, 127, 132); */
     user-select: none;
 }
 .user-info-email-container{
@@ -201,7 +201,7 @@
     margin: 0;
     font-size: 0.8rem;
     font-weight: 560;
-    color: rgb(0, 0, 0);
+    /* color: rgb(0, 0, 0); */
 }
 .user-post-date-container{
     display: flex;
@@ -226,7 +226,7 @@
     margin: 0;
     font-size: 0.8rem;
     font-weight: 560;
-    color: rgb(0, 0, 0);
+    /* color: rgb(0, 0, 0); */
 }
 .feed-text-content-container{
     display: flex;
@@ -240,7 +240,7 @@
     padding: 0;
     margin: 0;
     font-weight: 550;
-    color: rgb(0, 0, 0);
+    /* color: rgb(0, 0, 0); */
     line-height: 1.5rem;
 }
 .feed-title-content{
