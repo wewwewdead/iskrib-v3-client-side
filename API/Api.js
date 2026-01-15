@@ -703,6 +703,42 @@ export const getMyOpinions = async(cursor, limit, token) => {
     return data;
 }
 
+export const addReply = async(userId, postId, parentId, body, receiverId, token) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${BASE_URL}/submitReply/${parentId}/${userId}/${postId}/${receiverId}`, {
+        method: 'POST',
+        body: body,
+        headers: headers
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    
+    const messsage = await response.json();
+    console.log(messsage)
+    return messsage;
+}
+
+export const getPostReplies = async(parent_id, limit, cursor) =>{
+    const url = cursor ? `${BASE_URL}/getPostReplies/${parent_id}?limit=${limit}&before=${cursor}` : `${BASE_URL}/getPostReplies/${parent_id}?limit=${limit}`;
+
+    const response = await fetch(url, {
+        method: 'GET'
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const data = await response.json();
+    console.log(data);
+    return data;
+}
+
 
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}

@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './comments.css'
 import { AnimatePresence, motion} from "framer-motion";
-import { addComment } from '../../../API/Api';
+import { addComment} from '../../../API/Api';
 import { useAuth } from '../../Context/useAuth';
 import { getComments } from '../../../API/Api';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { BarLoader, MoonLoader } from 'react-spinners';
 import { useNavigate } from 'react-router-dom';
 import { handleClickProfile } from '../../../helpers/handleClicks';
+import CommentsCards from './commentsCards';
 
 const CommentSection = ({onclose, postId, receiverId})=>{
     const queryClient = useQueryClient();
@@ -17,6 +18,8 @@ const CommentSection = ({onclose, postId, receiverId})=>{
     const userId = user?.userData?.[0].id;
 
     const textAreaFocusRef = useRef();
+
+    const [replyLoaderId, setReplyLoaderId] = useState('');
 
     const [comments, setComments] = useState('');
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -68,8 +71,6 @@ const CommentSection = ({onclose, postId, receiverId})=>{
     //     }
     // }, [data])
 
-    
-
     const handeCloseCommentsSection = (e) =>{
         e.stopPropagation();
         onclose()
@@ -105,7 +106,8 @@ const CommentSection = ({onclose, postId, receiverId})=>{
         }
     }
 
-    const commentsData = data?.pages?.flatMap((comment) => comment.comments || []);
+    const commentsData = data?.pages?.flatMap((page) => page.comments || []);
+
 
     return(
         <>
@@ -124,36 +126,13 @@ const CommentSection = ({onclose, postId, receiverId})=>{
             </div>
             
             <div className='comments-section'>
-                {isLoading && (
+                {isLoading ? (
                    <div className='loading-comments-container'>
                         <MoonLoader color='rgba(19, 77, 104, 1)' size={20} loading={isLoading}/>
                    </div>
-                )}
-                {!commentsData?.length > 0 && !isLoading ? (
-                    <div>
-                        <p>no comments available</p>
-                    </div>
                 ) : (
                     commentsData?.map((comment, index) => (
-                        <div className='comment-cards' key={index}>
-                            <div className='comment'>
-                                <p>{comment.comment}</p>
-                            </div>
-
-                            <div className='comment-user-metadata-container'>
-                                <img onClick={(e) => handleClickUserProfile(e, user?.userData[0].id,  comment?.user_id)} className='comments-avatar' src={comment.users.image_url || '/assets/profile.jpg'} alt="" />
-                                <p onClick={(e) => handleClickUserProfile(e, user?.userData[0].id,  comment?.user_id)} className='commenter-name'>{comment?.users?.name}</p>
-                                <p>on</p>
-                                <div className='comment-date'>
-                                    {new Date(comment?.created_at).toLocaleDateString('en-US', {month: 'long', day: '2-digit', year: 'numeric'})} 
-                                </div>
-                                <p style={{fontSize: '0.6rem', margin: 0, padding: 0}}>at</p>
-                                <div className='comment-date'>
-                                    {new Date(comment?.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}
-                                </div>
-                            </div>
-                            
-                        </div>
+                        <CommentsCards postId={postId} key={index} comments={comment}/>
                     ))
                 )}
 

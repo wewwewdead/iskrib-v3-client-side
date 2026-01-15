@@ -4,6 +4,7 @@ const FormatNotificationType = (type) => {
     const notificationTypeArray = {
         like: 'Liked your post',
         comment: 'Commented on your post',
+        reply: 'Replied on your comment',
         follow: 'Follows you'
     }
 
