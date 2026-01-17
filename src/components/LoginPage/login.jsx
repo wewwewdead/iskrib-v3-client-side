@@ -44,40 +44,47 @@ const LoginPage = () =>{
     }, [session])
     return(
         <>
-        <div className='login-page-container'>
-            <div className='input-container'>
-                <div className='input-container-child'>
-                    <input value={email ? email : ''} onChange={(e) => setEmail(e.target.value)} className='login-input' type="text" placeholder='email'/>
-                </div>
-                <div className='input-container-child'>
-                    <input value={password ? password : ''} onChange={(e) => setPassword(e.target.value)} className='login-input' type={showPass ? 'text' : 'password'} placeholder='password'/>
-                    {password && (
-                        <div onClick={(e) => handleShowPass(e)} className='show-bttn'>
-                            {showPass ? 'hide' : 'show'}
-                        </div>
-                    )}
+        <div className='log-in-bg-container'>
+            <img className='log-in-bg-img' src="/assets/log-in-page-bg.png" alt="" />
+        </div>
+        <div className='log-in-page-bg-container'>
+
+            <div className='login-page-container'>
+                <div className='input-container'>
+                    <div className='input-container-child'>
+                        <input value={email ? email : ''} onChange={(e) => setEmail(e.target.value)} className='login-input' type="text" placeholder='email'/>
+                    </div>
+                    <div className='input-container-child'>
+                        <input value={password ? password : ''} onChange={(e) => setPassword(e.target.value)} className='login-input' type={showPass ? 'text' : 'password'} placeholder='password'/>
+                        {password && (
+                            <div onClick={(e) => handleShowPass(e)} className='show-bttn'>
+                                {showPass ? 'hide' : 'show'}
+                            </div>
+                        )}
                     
-                </div>
+                    </div>
                 
-                <button onClick={(e) => handleLogin(e)} disabled={!password} className={!password ? 'log-in-bttn-disabled' : 'log-in-bttn'}>
-                    Log in
-                </button>
+                    <button onClick={(e) => handleLogin(e)} disabled={!password} className={!password ? 'log-in-bttn-disabled' : 'log-in-bttn'}>
+                        Log in
+                    </button>
+                </div>
+
+                <div className='switch-container'>
+                    Don't have an account? <span onClick={(e) => handleNavigate(e)} className='sign-up-bttn'>Sign up</span>
+                </div>
+
+                {errorMessage && (
+                    <div className='error-message'>
+                        {errorMessage}
+                    </div>  
+                )}
             </div>
 
-            <div className='switch-container'>
-                Don't have an account? <span onClick={(e) => handleNavigate(e)} className='sign-up-bttn'>Sign up</span>
+            <div className='login-logo'>
+                Iskrib
             </div>
-
-            {errorMessage && (
-                <div className='error-message'>
-                    {errorMessage}
-                </div>  
-            )}
         </div>
-
-        <div className='login-logo'>
-            Iskrib
-        </div>
+        
         </>
     )
 }

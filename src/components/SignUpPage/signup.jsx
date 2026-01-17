@@ -109,53 +109,61 @@ const SignUp = () => {
     }
     return(
         <>
-        <div className='signup-page-container'>
-            <div className='input-container'>
-                <div className='input-container-child'>
-                    <input maxLength={50} value={!email ? '' : email} onChange={(e) => setEmail(e.target.value)} className='signUp-input' type="text" placeholder='email'/>
-                    {email&&(
-                        <div onClick={(e) => handleShowPass(e)} style={email.length >= 50 ? {color: 'red'} : {}} className='length-counter'>
-                            {`${email.length}/50`}
-                        </div>
-                    )}
+        <div className='sign-up-bg-container'>
+
+            <div className='signup-bg'>
+                <img className='sign-up-bg-image' src="/assets/log-in-page-bg.png" alt="" />
+            </div>
+
+            <div className='signup-page-container'>
+                <div className='input-container'>
+                    <div className='input-container-child'>
+                        <input maxLength={50} value={!email ? '' : email} onChange={(e) => setEmail(e.target.value)} className='signUp-input' type="text" placeholder='email'/>
+                        {email&&(
+                            <div onClick={(e) => handleShowPass(e)} style={email.length >= 50 ? {color: 'red'} : {}} className='length-counter'>
+                                {`${email.length}/50`}
+                            </div>
+                        )}
+                    </div>
+                    <div className='input-container-child'>
+                        <input value={!password ? '' : password} onChange={(e) => setPassword(e.target.value)} className='signUp-input' type={showPass ? 'text' : "password"} placeholder='password'/>
+                        {password && (
+                            <div onClick={(e) => handleShowPass(e)} className='show-bttn'>
+                                {showPass ? 'hide' : 'show'}
+                            </div>
+                        )}
+                    </div>
+                    <button onClick={(e) => handleSignUp(e)} disabled={!password} className={!password ? 'submit-bttn-disabled' : 'submit-bttn'}>
+                        Submit
+                    </button>
                 </div>
-                <div className='input-container-child'>
-                     <input value={!password ? '' : password} onChange={(e) => setPassword(e.target.value)} className='signUp-input' type={showPass ? 'text' : "password"} placeholder='password'/>
-                     {password && (
-                        <div onClick={(e) => handleShowPass(e)} className='show-bttn'>
-                            {showPass ? 'hide' : 'show'}
-                        </div>
-                     )}
+
+                <div className='switch-container'>
+                    Have an account? <span onClick={(e) => handleNavigate(e)} className='sign-in-bttn'>Log in</span>
                 </div>
-                <button onClick={(e) => handleSignUp(e)} disabled={!password} className={!password ? 'submit-bttn-disabled' : 'submit-bttn'}>
-                    Submit
-                </button>
+
+                <div>
+                    <Turnstile
+                    sitekey={SITE_KEY}
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => setCaptchaToken(null)}
+                    theme='light'
+                    />
+                </div>
+
+                {errorMessage && (
+                    <div className='error-message'>
+                        {errorMessage}
+                    </div>  
+                )}
             </div>
 
-            <div className='switch-container'>
-                Have an account? <span onClick={(e) => handleNavigate(e)} className='sign-in-bttn'>Log in</span>
+            <div className='signUp-logo'>
+                Iskrib
             </div>
-
-            <div>
-                <Turnstile
-                sitekey={SITE_KEY}
-                onVerify={(token) => setCaptchaToken(token)}
-                onExpire={() => setCaptchaToken(null)}
-                onError={() => setCaptchaToken(null)}
-                theme='light'
-                />
-            </div>
-
-            {errorMessage && (
-                <div className='error-message'>
-                    {errorMessage}
-                </div>  
-            )}
         </div>
-
-        <div className='signUp-logo'>
-            Iskrib
-        </div>
+        
         </>
     )
 }

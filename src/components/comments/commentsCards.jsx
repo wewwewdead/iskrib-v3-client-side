@@ -3,7 +3,9 @@ import { useAuth } from "../../Context/useAuth";
 import { BarLoader, ClipLoader, MoonLoader } from "react-spinners";
 import { addReply, getPostReplies } from "../../../API/Api";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { handleClickProfile } from "../../../helpers/handleClicks";
+import { useNavigate } from "react-router-dom";
+
 
 const CommentsCards = ({comments, postId}) =>{
     const {user, session} = useAuth();
@@ -12,13 +14,16 @@ const CommentsCards = ({comments, postId}) =>{
 
     const [showReplyInput, setShowReplyInput] = useState(false);
     const [showReplies, setShowReplies] = useState(false);
-    const [visibleReplies, setVisibleReplies] = useState(5);
 
     const [reply, setReply] = useState('')
     const [replyLoaderId, setReplyLoaderId] = useState('');
 
+    const navigate = useNavigate();
+
     // const totalReplies = comments.replies.length;
     // const hasMoreReplies = totalReplies > visibleReplies;
+
+    const clickProfile = handleClickProfile(navigate);
 
 
     const {data, isLoading, fetchNextPage, hasNextPage, isFetchinNextPage} = useInfiniteQuery({
@@ -43,7 +48,9 @@ const CommentsCards = ({comments, postId}) =>{
     }
 
     const handleShowMoreReplies = () => {
-        setVisibleReplies(v => v + 5);
+        if(!isFetchinNextPage){
+            fetchNextPage();
+        }
     }
 
     const submitReply = async(parent_id, receiver_id) => {
@@ -84,8 +91,8 @@ const CommentsCards = ({comments, postId}) =>{
             </div>
             
             <div className='comment-user-metadata-container'>
-                <img onClick={(e) => handleClickUserProfile(e, user?.userData[0].id,  comments?.user_id)} className='comments-avatar' src={comments?.users?.image_url || '/assets/profile.jpg'} alt="" />
-                <p onClick={(e) => handleClickUserProfile(e, user?.userData[0].id,  comments?.user_id)} className='commenter-name'>{comments?.users?.name}</p>
+                <img onClick={(e) => clickProfile(e, user?.userData[0].id,  comments?.user_id)} className='comments-avatar' src={comments?.users?.image_url || '/assets/profile.jpg'} alt="" />
+                <p onClick={(e) => clickProfile(e, user?.userData[0].id,  comments?.user_id)} className='commenter-name'>{comments?.users?.name}</p>
                 <p>on</p>
                 <div className='comment-date'>
                     {new Date(comments?.created_at).toLocaleDateString('en-US', {month: 'long', day: '2-digit', year: 'numeric'})} 
@@ -119,9 +126,12 @@ const CommentsCards = ({comments, postId}) =>{
 
             {showReplies && (
                 <div style={{marginTop: '10px'}}>
-                    {replies?.map((r, index) => (
-                        <CommentsCards postId={postId} key={r.id} comments={r}/>
-                    ))}
+                    {replies?.map((r, index) => {
+                            return(
+                                <CommentsCards postId={postId} key={r.id} comments={r}/>
+                            )  
+                        }      
+                    )}
                     
                     {hasNextPage && (
                         <div onClick={handleShowMoreReplies} className="show-more-replies-button">

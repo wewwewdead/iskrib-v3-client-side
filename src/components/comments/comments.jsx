@@ -108,7 +108,6 @@ const CommentSection = ({onclose, postId, receiverId})=>{
 
     const commentsData = data?.pages?.flatMap((page) => page.comments || []);
 
-
     return(
         <>
         <motion.div
