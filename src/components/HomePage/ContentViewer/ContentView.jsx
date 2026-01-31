@@ -18,6 +18,7 @@ import { handleClickProfile } from "../../../../helpers/handleClicks";
 import { addFollows, getFollowsData } from "../../../../API/Api";
 import { useQuery } from "@tanstack/react-query";
 import { MoonLoader } from "react-spinners";
+import VerifiedBadge from "../../Badge/VerifiedBadge";
 
 const ContentView =() =>{
     const navigate = useNavigate();
@@ -281,12 +282,13 @@ const ContentView =() =>{
                 <p className="content-title">{postData?.title}</p>
 
                 <div className="content-metadata-container">
-                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)} className="content-avatar-container">
+                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)} className={`content-avatar-container ${postData?.badge === 'legend' ? 'content-avatar-ring-legend' : postData?.badge === 'og' ? 'content-avatar-ring-og' : ''}`}>
                         <img src={postData?.avatar || '/assets/profile.jpg'} className="content-avatar" alt="user avatar" />
                     </div>
                     <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)} className="content-owner-name">
                         {postData?.name}
                     </div>
+                    <VerifiedBadge badge={postData?.badge} size={16} />
 
                     {postData?.userId !== user?.userData?.[0].id && (
                         <div onClick={(e) => debounceClickFollow(e, postData?.userId, user?.userData?.[0].id)} className={followsData?.isFollowing ? 'unfollow-bttn' : 'follow-bttn'}>

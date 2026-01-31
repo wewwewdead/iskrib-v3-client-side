@@ -8,6 +8,7 @@ import Sidebar from '../SideBar/Sidebar';
 import { MoonLoader } from 'react-spinners';
 import { useFollowMutation } from '../../utils/useMutation';
 import debounce from '../../../helpers/debounce';
+import VerifiedBadge from '../Badge/VerifiedBadge';
 import formatCounts from '../../../helpers/fomatCounts';
 import MobileNavlink from '../mobileNavLink/MobileNavLink';
 import MobileSidebarLink from '../MobileSidebarLink/MobileSidebarLink';
@@ -177,9 +178,9 @@ const Visitprofile = () =>{
     })
 
 
-    // useEffect(() =>{
-    //     console.log(followsData)
-    // }, [followsData])
+    useEffect(() =>{
+        console.log(data)
+    }, [data])
 
     useEffect(() => {
         if(!session && !loading){
@@ -211,13 +212,43 @@ const Visitprofile = () =>{
 
             <div style={{color: userData?.profile_font_color}} className="profile-center-bar-container">
                 {userData && (
-            
+
                     <div style={userData?.background} className='visit-profile-hero-section'>
-                        <div className='visited-profile-image-container'>
-                            <div className="profile-avatar-ring">
+
+                        <div className='visited-profile-top-row'>
+                            <div className={`profile-avatar-ring ${userData?.badge === 'legend' ? 'badge-ring-legend' : userData?.badge === 'og' ? 'badge-ring-og' : ''}`}>
                                 <img className='visited-profile-image' src={userData?.image_url || '/assets/profile.jpg'} alt="" />
                             </div>
 
+                            <div className='visited-profile-stats-container'>
+                                <div className='visited-profile-stat-item'>
+                                    <span className='visited-stat-number'>{formatCounts(followsData?.followersCount)}</span>
+                                    <span className='visited-stat-label'>Followers</span>
+                                </div>
+                                <div className='visited-profile-stat-item'>
+                                    <span className='visited-stat-number'>{formatCounts(followsData?.followingsCount)}</span>
+                                    <span className='visited-stat-label'>Following</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className='visited-profile-name-container'>
+                            <div className='visited-profile-name-row'>
+                                <p className='visited-profile-name'>{userData?.name}</p>
+                                <VerifiedBadge badge={userData?.badge} size={22} />
+                                {userData?.badge && (
+                                    <span className={`badge-pill ${userData.badge === 'legend' ? 'badge-pill-legend' : 'badge-pill-og'}`}>
+                                        {userData.badge === 'legend' ? 'Legend' : 'OG'}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className='visited-profile-bio-container'>
+                            <p style={{margin: 0, padding: 0}}>{userData?.bio}</p>
+                        </div>
+
+                        <div className='visited-profile-actions-row'>
                             <div onMouseMove={() => handleMouseMove(followsData?.isFollowing)} onMouseLeave={() => handleMouseLeave(followsData?.isFollowing)} className='visited-profile-follow-button-container'>
                                 <button onClick={(e) => debounceClickFollow(e, stateData?.userId, user?.userData?.[0].id)} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>
                                     {followsData?.isFollowing ? 'Following' : 'Follow'}
@@ -225,27 +256,17 @@ const Visitprofile = () =>{
                             </div>
                         </div>
 
-                        <div className='visited-profile-name-container'>
-                            <p className='visited-profile-name'>{userData?.name}</p>
-                        </div>
-                        <div className='visited-profile-metadata-container'>
+                        <div className='visited-profile-joined-date'>
                             <p className='visited-profile-date-joined'>{new Date(userData?.created_at).toLocaleDateString('en-US', {
                                 month: 'long',
                                 day: '2-digit',
                                 year: 'numeric'
                             })}</p>
-                            <div className='visited-profile-follows-container'>
-                                <p style={{padding: 0, margin: 0}}>Followers {formatCounts(followsData?.followersCount)}</p>
-                                <p style={{padding: 0, margin: 0}}>Following {formatCounts(followsData?.followingsCount)}</p>
-                            </div>
                         </div>
-            
-                        <div className='visited-profile-bio-container'>
-                            <p style={{margin: 0, padding: 0}}>{userData?.bio}</p>
-                        </div>
+
                     </div>
-                    
-                    )      
+
+                    )
                 }
 
                 <div className='my-profile-tablist'>

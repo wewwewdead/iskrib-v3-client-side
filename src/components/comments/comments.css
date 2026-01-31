@@ -73,6 +73,23 @@
     margin: 0;
     font-size: 0.8rem;
 }
+.comment-avatar-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+}
+.comment-avatar-container.comment-avatar-ring-legend{
+    padding: 2px;
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 8px 1px rgba(255, 215, 0, 0.3);
+}
+.comment-avatar-container.comment-avatar-ring-og{
+    padding: 2px;
+    border: 2px solid #9B59FF;
+    box-shadow: 0 0 8px 1px rgba(155, 89, 255, 0.3);
+}
 .comments-avatar{
     width: 25px;
     height: 25px;
@@ -156,7 +173,7 @@
     padding: 0.5rem;
     width: 80px;
     border-radius: 15px;
-    background-color:var(--bg-pill);
+    background-color: var(--accent-dark);
     color: rgb(255, 255, 255);
     cursor: pointer;
     border: none;
@@ -266,7 +283,7 @@
     padding: 0.5rem;
     width: 80px;
     border-radius: 15px;
-    background-color:var(--bg-pill);
+    background-color: var(--accent-dark);
     color: rgb(255, 255, 255);
     cursor: pointer;
     border: none;
@@ -378,7 +395,7 @@
         padding: 0.5rem;
         width: 80px;
         border-radius: 15px;
-        background-color: rgb(4, 20, 29);
+        background-color: var(--accent-dark);
         color: rgb(255, 255, 255);
         cursor: pointer;
         border: none;
@@ -462,7 +479,7 @@
         padding: 0.5rem;
         width: 80px;
         border-radius: 15px;
-        background-color: rgb(4, 20, 29);
+        background-color: var(--accent-dark);
         color: rgb(255, 255, 255);
         cursor: pointer;
         border: none;

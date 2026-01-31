@@ -10,6 +10,7 @@ import { handleCLickContent, handleClickProfile } from '../../../helpers/handleC
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
 import { useRef } from 'react';
+import VerifiedBadge from '../Badge/VerifiedBadge';
 
 const Bookmarks = () =>{
     const {user, session} = useAuth();
@@ -157,11 +158,12 @@ const Bookmarks = () =>{
                             <div className="user-info">
                                 <div className='user-info-child-container'>
 
-                                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-avatar-container">
+                                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className={`user-avatar-container ${journal?.journals?.users?.badge === 'legend' ? 'avatar-ring-legend' : journal?.journals?.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
                                         <img loading='lazy' src={journal?.journals?.users?.image_url || '../../public/assets/profile.jpg'} className="user-info-avatar" alt="" />
                                     </div>
                                     <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-name-container">
                                         <p className="user-newsfeed-name">{journal?.journals?.users?.name}</p>
+                                        <VerifiedBadge badge={journal?.journals?.users?.badge} size={14} />
                                     </div>
 
                                     <div className="name-info-separator">

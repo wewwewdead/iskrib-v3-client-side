@@ -8,6 +8,7 @@ import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
 import { useLocation, useNavigate, } from "react-router-dom";
+import VerifiedBadge from "../../Badge/VerifiedBadge";
 
 import { useAuth } from "../../../Context/useAuth";
 import { useAddViewsMutation, useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
@@ -27,7 +28,7 @@ const PostCards = () => {
     const timeOutRef = useRef();
     const {ref, inView} = useInView({
         threshold: 0,
-        rootMargin: '200px'
+        rootMargin: '800px'
     })
     const [postIdSettings, setPostIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);
@@ -48,7 +49,7 @@ const PostCards = () => {
         handleClickUserProfileOriginal(e, loggedInUserId, clickedUserId);
     }
 
-    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) =>{
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge) =>{
         if(!session){
             e.stopPropagation();
             return openAuthModal();
@@ -58,7 +59,7 @@ const PostCards = () => {
         formadata.append('journalId', journalId);
         mutateViews.mutate(formadata);
 
-        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount )
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge )
     }
 
     const header_links = [
@@ -82,13 +83,13 @@ const PostCards = () => {
                     </g>
                 </svg>
             ),
-            
+
             className: 'like-button',
             action: (e, journalId, receiverId) => debounceClickLike(e, journalId, receiverId),
             countLike: (count) => <p style={{padding:'0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
-            label: 
+            label:
             <svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="#5e5e5eff">
                 <g id="style=fill">
                 <g id="comment">
@@ -251,19 +252,19 @@ const PostCards = () => {
         return(
             <div className="postcards-parent-container">
                 <div>No post availabe...</div>
-            </div>     
-        ) 
+            </div>
+        )
     }
     return(
         <>
         <AnimatePresence>
             {showHeaders && (
-                <motion.div 
+                <motion.div
                 className="newsfeed-header"
                 initial={{opacity: 0}}
                 animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
                 exit={{ opacity: 0, y: -20,
-                        transition: { 
+                        transition: {
                         duration: 0.2,
                         ease: "easeOut"
                         }
@@ -275,14 +276,14 @@ const PostCards = () => {
                             <div onClick={() => handleClickHeaderLinks(header_link.path) } className='header-link'>
                                 {header_link.label}
                                 <div className={header_link.path === location.pathname ? "header-underline" : ''}/>
-                            </div>  
+                            </div>
                         </div>
                     ))}
 
                 </motion.div>
             )}
             </AnimatePresence>
-        
+
         <AnimatePresence>
         <div className="postcards-parent-container">
             {journals.map((journal, index) => {
@@ -290,83 +291,48 @@ const PostCards = () => {
                 const isLiked = journal?.has_liked;
                 const isBookmarked = journal?.has_bookmarked;
                 return(
-                    <div className="cards" key={journal.id}>
+                    <motion.div
+                        className="cards"
+                        key={journal.id}
+                        initial={{opacity: 0, y: 12}}
+                        animate={{opacity: 1, y: 0}}
+                        transition={{duration: 0.3, ease: 'easeOut'}}
+                    >
 
-                        {showBookmarkedMessage === journal.id && (
-                            <motion.div 
-                            className="bookmarked-content-message-container"
-                            initial={{opacity: 0, scale: 0}}
-                            animate={{opacity: 1, scale: 1}}
-                            transition={{type: 'tween', damping: 25, stiffness: 200, ease: 'easeInOut', duration: 0.1}}
-                            >
-                                {bookmarkedMessage}
-                            </motion.div>
+                        {parsedContent.firstImage && (
+                            <img
+                                className="card-image-banner"
+                                src={parsedContent.firstImage.src}
+                                alt=""
+                                loading="lazy"
+                                onClick={(e) => viewContent(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge)}
+                            />
                         )}
 
                         <div className="card-content">
-
-                            <div className="user-info">
-                                <div className="user-info-child-container">
-                                    <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-avatar-container">
-                                        <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '/assets/profile.jpg'} alt="" />
-                                    </div>
-                                    <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-name-container">
-                                        <p className="user-newsfeed-name">{journal.users.name}</p>
-                                    </div>
-
-                                    <div className="name-info-separator">
-                                        •
-                                    </div>
-
-                                    <div className="user-info-email-container">
-                                        <p className="user-info-email">{journal.users.user_email}</p>
-                                    </div>
-
-                                    <div className="name-info-separator">
-                                        •
-                                    </div>
-
-                                    <div className="user-post-date-container">
-                                        <p className="user-post-date">
-                                            {formatPostDate(journal.created_at)}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="user-post-settings">
-                                    <svg onClick={(e) => handleClickSettings(e, journal.id)} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
-                                    {postIdSettings === journal.id && (
-                                        <motion.div 
-                                        initial={{opacity:0 ,scale:0}}
-                                        animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.3}}}
-                                        exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.3}}}
-                                        ref={modalRef} className="setting-modal"
-                                        >
-                                            <p onClick={() => console.log('clicked')}>{journal.title}</p>
-                                        </motion.div>
-                                    )}
-                                </div>
-                                
-                            </div>
-
-                            <div onClick={(e) => viewContent(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} className="content-container">
-
+                            <div onClick={(e) => viewContent(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge)} className="content-container">
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">
-                                        <h2 className="feed-title">{journal.title.length > 40 ? `${journal.title.substring(0, 40)}...` : journal.title}</h2>
+                                        <h2 className="feed-title">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
                                     </div>
                                     <p className="feed-text-content">{parsedContent.slicedText}</p>
                                 </div>
-
-                                <div className="feed-image-content-container">
-                                    <img className="journal-image" src={parsedContent.firstImage?.src || '/assets/no-image.png'} alt="journal image" />
-                                </div>
-
                             </div>
-                            
                         </div>
 
                         <div className="card-icons-container">
+                            <div className="user-info-child-container">
+                                <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className={`user-avatar-container ${journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                    <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '/assets/profile.jpg'} alt="" />
+                                </div>
+                                <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-name-container">
+                                    <p className="user-newsfeed-name">{journal.users.name}</p>
+                                    <VerifiedBadge badge={journal.users.badge} size={14} />
+                                </div>
+                                <div className="name-info-separator">•</div>
+                                <p className="user-post-date">{formatPostDate(journal.created_at)}</p>
+                            </div>
+
                             {cardIcons && (
                                 cardIcons.map((icon, index) =>(
                                     <div key={index} className="icon-container">
@@ -379,13 +345,13 @@ const PostCards = () => {
 
                                         {icon.commentAction && (
                                             <div onClick={(e) => icon.commentAction(e, journal.content,parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} id="card-icons" className={icon.className}>
-                                                {icon.label} 
+                                                {icon.label}
                                             </div>
                                         )}
 
                                         {icon.bookmarkAction && (
-                                            <div onClick={(e) => icon.bookmarkAction(e, journal.id)} className={icon.className}>
-                                                {icon.checkBookrmark(isBookmarked)} 
+                                            <div onClick={(e) => icon.bookmarkAction(e, journal.id)} id="card-icons" className={icon.className}>
+                                                {icon.checkBookrmark(isBookmarked)}
                                             </div>
                                         )}
 
@@ -394,20 +360,45 @@ const PostCards = () => {
                                                 {icon.iconView}
                                             </div>
                                         )}
-                                        
-                                        {icon.countLike && icon.countLike(journal.like_count?.[0].count)} 
+
+                                        {icon.countLike && icon.countLike(journal.like_count?.[0].count)}
                                         {icon.countComments && icon.countComments(journal.comment_count?.[0]?.count)}
                                         {icon.countBookmarks && icon.countBookmarks(journal.bookmark_count?.[0].count)}
                                         {icon.iconCount && icon.iconCount(journal?.views)}
-                                    </div>  
+                                    </div>
                                 ))
                             )}
 
                             <div className="reading-time-container">
                                 <p className="reading-time-text">{CalculateText(parsedContent.wholeText)}</p>
                             </div>
+
+                            <div className="user-post-settings">
+                                <svg onClick={(e) => handleClickSettings(e, journal.id)} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
+                                {postIdSettings === journal.id && (
+                                    <motion.div
+                                    initial={{opacity:0 ,scale:0}}
+                                    animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.3}}}
+                                    exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.3}}}
+                                    ref={modalRef} className="setting-modal"
+                                    >
+                                        <p onClick={() => console.log('clicked')}>{journal.title}</p>
+                                    </motion.div>
+                                )}
+                            </div>
                         </div>
-                    </div>
+
+                        {showBookmarkedMessage === journal.id && (
+                            <motion.div
+                            className="bookmarked-content-message-container"
+                            initial={{opacity: 0, scale: 0.9}}
+                            animate={{opacity: 1, scale: 1}}
+                            transition={{type: 'spring', damping: 25, stiffness: 300, duration: 0.15}}
+                            >
+                                {bookmarkedMessage}
+                            </motion.div>
+                        )}
+                    </motion.div>
                 )
             })}
 

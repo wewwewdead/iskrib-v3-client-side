@@ -3,6 +3,7 @@ import './sidebar.css'
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from '../../Context/useAuth';
 import { useTheme } from '../../Context/useTheme';
+import VerifiedBadge from '../Badge/VerifiedBadge';
 
 const Sidebar = ({links}) =>{
     const {user, session, signOut} = useAuth();
@@ -52,7 +53,7 @@ const Sidebar = ({links}) =>{
                         <img loading='lazy' className='sidebar-avatar' src={userData.image_url || '/assets/profile.jpg'} alt="" />
 
                         <div className='sidebar-metadata-container'>
-                            <span className='sidebar-name'>{userData.name}</span>
+                            <span className='sidebar-name'>{userData.name}<VerifiedBadge badge={userData.badge} size={14} /></span>
                             <span className='sidebar-email'>{session?.user.email}</span>
                         </div>
                     </div>

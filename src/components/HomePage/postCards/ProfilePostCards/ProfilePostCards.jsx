@@ -12,6 +12,7 @@ import { handleCLickContent } from '../../../../../helpers/handleClicks';
 import { useNavigate } from 'react-router-dom';
 import EditJournal from './editJournal';
 import { useAddViewsMutation, useUpdateJournalPrivacyMutation } from '../../../../utils/useMutation';
+import VerifiedBadge from '../../../Badge/VerifiedBadge';
 
 const ProfilePostCards = () =>{
     const queryClient = useQueryClient();
@@ -100,12 +101,12 @@ const ProfilePostCards = () =>{
     
     const clickContent = handleCLickContent(navigate);
     const mutateViews = useAddViewsMutation(session);
-    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) => {
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge) => {
         const formadata = new FormData();
 
         formadata.append('journalId', journalId);
         mutateViews.mutate(formadata);
-        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount)
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge)
     }
 
     const mutatePrivacy = useUpdateJournalPrivacyMutation(session);
@@ -235,190 +236,183 @@ const ProfilePostCards = () =>{
             {journals.map((journal, index) => {
                 const parsedContent =  ParseContent(journal?.content);
                 return (
-                    <div key={journal.id} className='profile-postcards-child-container'>
-                    <div className='profile-postcards'>
-                        {showEditor === journal.id && (
-                            <EditJournal key={index} journalData={journalData ? journalData : {}} onClose={handleClickCloseEditor}/>
-                        )}
-
-                        {showConfirmationBttn === journal.id && (
-                            <AnimatePresence>
-                            <div className="confirmation-delete-bg">
-                                
-                                {journalIsDeleted && (
-                                        <motion.div
-                                        className='journal-is-deleted-message-container'
-                                        initial={{opacity: 0, scale: 0}}
-                                        animate={{opacity: 1, scale: 1, transition:{type: 'tween', duration: 0.1}}}
-                                        exit={{y: -900, opacity: 0, transition:{type:'tween', duration: 0.5, ease: 'easeOut'}}}
-                                        >
-                                            Journal deleted successfuly! 
-                                            <svg xmlns="http://www.w3.org/2000/svg" height="44px" viewBox="0 -960 960 960" width="44px" fill="#00d61dff"><path d="M268-240 42-466l57-56 170 170 56 56-57 56Zm226 0L268-466l56-57 170 170 368-368 56 57-424 424Zm0-226-57-56 198-198 57 56-198 198Z"/></svg>
-                                        </motion.div>
-                                )}
-
-
-                                {isDeletingJournal && (
-                                    <div className='delete-journal-loader-container'>
-                                        <FadeLoader loading={isDeletingJournal} speedMultiplier={2}/>
-                                        <p style={{margin: '0', padding: '0', fontWeight: 760}}>Deleting the journal...</p>
-                                    </div>
-                                )}
-                                
-                                    <motion.div
-                                    className="confirmation-delete-container"
-                                    initial={{opacity:0 ,scale:0}}
-                                    animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.1}}}
-                                    exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.1}}}
-                                    >
-                                        <div className="confirmation-delete-heading">
-                                            Do you want to delete the journal?
-                                        </div>
-                                        <div className="confirm-buttons-container">
-                                            <div onClick={(e) => handleConfirmDeleteJournal(e, journal.id, session?.access_token, parsedContent?.firstImage?.src)} className="confirm-buttons-yes">Yes</div>
-                                            <div onClick={() => setShowConfirmationBttn(null)} className="confirm-buttons-cancel">Cancel</div>
-                                        </div> 
-                                    </motion.div>
-
-                            </div>
-                            </AnimatePresence>
-                        )}
+                    <motion.div
+                        key={journal.id}
+                        className='profile-postcards-child-container'
+                        initial={{opacity: 0, y: 12}}
+                        animate={{opacity: 1, y: 0}}
+                        transition={{duration: 0.3, ease: 'easeOut'}}
+                    >
                         
-                        <div className='user-profile-card-content'>
+                        <div className='profile-postcards'>
+                            {showEditor === journal.id && (
+                                <EditJournal key={index} journalData={journalData ? journalData : {}} onClose={handleClickCloseEditor}/>
+                            )}
 
-                            <div className="user-info">
-                                <div className='user-info-child-container'>
+                            {showConfirmationBttn === journal.id && (
+                                <AnimatePresence>
+                                <div className="confirmation-delete-bg">
 
-                                    <div className="user-avatar-container">
-                                        <img src={user?.userData?.[0].image_url || '/assets/profile.jpg'} alt="user-profile" loading='lazy' className="user-info-avatar" />
+                                    {journalIsDeleted && (
+                                            <motion.div
+                                            className='journal-is-deleted-message-container'
+                                            initial={{opacity: 0, scale: 0}}
+                                            animate={{opacity: 1, scale: 1, transition:{type: 'tween', duration: 0.1}}}
+                                            exit={{y: -900, opacity: 0, transition:{type:'tween', duration: 0.5, ease: 'easeOut'}}}
+                                            >
+                                                Journal deleted successfuly!
+                                                <svg xmlns="http://www.w3.org/2000/svg" height="44px" viewBox="0 -960 960 960" width="44px" fill="#00d61dff"><path d="M268-240 42-466l57-56 170 170 56 56-57 56Zm226 0L268-466l56-57 170 170 368-368 56 57-424 424Zm0-226-57-56 198-198 57 56-198 198Z"/></svg>
+                                            </motion.div>
+                                    )}
+
+                                    {isDeletingJournal && (
+                                        <div className='delete-journal-loader-container'>
+                                            <FadeLoader loading={isDeletingJournal} speedMultiplier={2}/>
+                                            <p style={{margin: '0', padding: '0', fontWeight: 760}}>Deleting the journal...</p>
+                                        </div>
+                                    )}
+
+                                        <motion.div
+                                        className="confirmation-delete-container"
+                                        initial={{opacity:0 ,scale:0}}
+                                        animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.1}}}
+                                        exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.1}}}
+                                        >
+                                            <div className="confirmation-delete-heading">
+                                                Do you want to delete the journal?
+                                            </div>
+                                            <div className="confirm-buttons-container">
+                                                <div onClick={(e) => handleConfirmDeleteJournal(e, journal.id, session?.access_token, parsedContent?.firstImage?.src)} className="confirm-buttons-yes">Yes</div>
+                                                <div onClick={() => setShowConfirmationBttn(null)} className="confirm-buttons-cancel">Cancel</div>
+                                            </div>
+                                        </motion.div>
+
+                                </div>
+                                </AnimatePresence>
+                            )}
+
+                            {parsedContent?.firstImage && (
+                                <img
+                                    className="card-image-banner"
+                                    src={parsedContent.firstImage.src}
+                                    alt=""
+                                    loading="lazy"
+                                    onClick={(e) => viewContent(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge)}
+                                />
+                            )}
+
+                            <div className='user-profile-card-content'>
+                                <div onClick={(e) => viewContent(
+                                    e,
+                                    journal.content,
+                                    parsedContent.wholeText,
+                                    journal.title,
+                                    journal.users.id,
+                                    journal.users.name,
+                                    journal.users.image_url,
+                                    journal.created_at,
+                                    journal.id,
+                                    journal.has_liked,
+                                    journal.comment_count?.[0].count,
+                                    journal.has_bookmarked,
+                                    journal.like_count?.[0].count,
+                                    journal.bookmark_count?.[0].count,
+                                    journal.users.badge
+                                )}
+                                    className="content-container">
+
+                                    <div className='feed-text-content-container'>
+                                        <div className='feed-title-content'>
+                                            <h2 className="feed-title-profile-page">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
+                                        </div>
+                                        <p className="feed-text-content-profile-page">{parsedContent.slicedText}</p>
                                     </div>
+                                </div>
 
-                                    <div className="user-name-container">
-                                        <p className="user-newsfeed-name-profile-page">{user?.userData?.[0].name}</p>
-                                    </div>
-
-                                    <div className="name-info-separator">
-                                        •
-                                    </div>
-
-                                    <div className="user-info-email-container">
-                                        <p className="user-info-email"> {user?.userData?.[0].user_email}</p>
-                                    </div>
-
-                                    <div className="name-info-separator">
-                                        •
-                                    </div>
-
-                                    <div className="user-post-date-container">
+                                <div className="card-icons-container">
+                                    <div className='user-info-child-container'>
+                                        <div className={`user-avatar-container ${user?.userData?.[0]?.badge === 'legend' ? 'avatar-ring-legend' : user?.userData?.[0]?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                            <img src={user?.userData?.[0].image_url || '/assets/profile.jpg'} alt="user-profile" loading='lazy' className="user-info-avatar" />
+                                        </div>
+                                        <div className="user-name-container">
+                                            <p className="user-newsfeed-name-profile-page">{user?.userData?.[0].name}</p>
+                                            <VerifiedBadge badge={user?.userData?.[0]?.badge} size={14} />
+                                        </div>
+                                        <div className="name-info-separator">•</div>
                                         <p className="user-post-date">{new Date(journal.created_at).toLocaleDateString('en-US', {
                                             month: 'long',
                                             day: 'numeric',
                                             year: 'numeric'
-                                        })}</p>
+                                        })}
+                                        </p>
+                                        <div className="name-info-separator">•</div>
+                                        <div className="user-post-privacy">
+                                            {journal.privacy === 'public' &&(
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 16 16" fill="none"><path fill="currentColor" fillRule="evenodd" d="M8 0a8 8 0 100 16A8 8 0 008 0zM6.128 1.774A6.508 6.508 0 001.576 7H4.07a11.095 11.095 0 012.06-5.226zm3.744 0A11.096 11.096 0 0111.932 7h2.492a6.508 6.508 0 00-4.552-5.226zM10.42 7C10.165 5.124 9.333 3.335 8 1.836 6.667 3.335 5.835 5.124 5.58 7h4.84zM5.527 8.5h4.946C10.31 10.557 9.451 12.533 8 14.164 6.55 12.533 5.691 10.557 5.527 8.5zm-1.505 0H1.52a6.505 6.505 0 004.61 5.726C4.896 12.525 4.163 10.555 4.021 8.5zm5.85 5.726c1.231-1.701 1.964-3.671 2.106-5.726h2.503a6.505 6.505 0 01-4.61 5.726z" clipRule="evenodd"/></svg>
+                                            )}
+                                            {journal.privacy === 'private' &&(
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M7 10.0288C7.47142 10 8.05259 10 8.8 10H15.2C15.9474 10 16.5286 10 17 10.0288M7 10.0288C6.41168 10.0647 5.99429 10.1455 5.63803 10.327C5.07354 10.6146 4.6146 11.0735 4.32698 11.638C4 12.2798 4 13.1198 4 14.8V16.2C4 17.8802 4 18.7202 4.32698 19.362C4.6146 19.9265 5.07354 20.3854 5.63803 20.673C6.27976 21 7.11984 21 8.8 21H15.2C16.8802 21 17.7202 21 18.362 20.673C18.9265 20.3854 19.3854 19.9265 19.673 19.362C20 18.7202 20 17.8802 20 16.2V14.8C20 13.1198 20 12.2798 19.673 11.638C19.3854 11.0735 18.9265 10.6146 18.362 10.327C18.0057 10.1455 17.5883 10.0647 17 10.0288M7 10.0288V8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8V10.0288" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                            )}
+                                        </div>
+
+                                        <div className="user-post-settings">
+                                        <svg onClick={(e) => handleClickSettings(e, journal.id)}  xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
                                     </div>
-                                    <div className="name-info-separator">
-                                        •
-                                    </div>
-                                    <div className="user-post-privacy">
-                                        {journal.privacy === 'public' &&(
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 16 16" fill="none"><path fill="currentColor" fillRule="evenodd" d="M8 0a8 8 0 100 16A8 8 0 008 0zM6.128 1.774A6.508 6.508 0 001.576 7H4.07a11.095 11.095 0 012.06-5.226zm3.744 0A11.096 11.096 0 0111.932 7h2.492a6.508 6.508 0 00-4.552-5.226zM10.42 7C10.165 5.124 9.333 3.335 8 1.836 6.667 3.335 5.835 5.124 5.58 7h4.84zM5.527 8.5h4.946C10.31 10.557 9.451 12.533 8 14.164 6.55 12.533 5.691 10.557 5.527 8.5zm-1.505 0H1.52a6.505 6.505 0 004.61 5.726C4.896 12.525 4.163 10.555 4.021 8.5zm5.85 5.726c1.231-1.701 1.964-3.671 2.106-5.726h2.503a6.505 6.505 0 01-4.61 5.726z" clipRule="evenodd"/></svg>
-                                        )}
-                                        {journal.privacy === 'private' &&(
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24" fill="none">
-                                                <path d="M7 10.0288C7.47142 10 8.05259 10 8.8 10H15.2C15.9474 10 16.5286 10 17 10.0288M7 10.0288C6.41168 10.0647 5.99429 10.1455 5.63803 10.327C5.07354 10.6146 4.6146 11.0735 4.32698 11.638C4 12.2798 4 13.1198 4 14.8V16.2C4 17.8802 4 18.7202 4.32698 19.362C4.6146 19.9265 5.07354 20.3854 5.63803 20.673C6.27976 21 7.11984 21 8.8 21H15.2C16.8802 21 17.7202 21 18.362 20.673C18.9265 20.3854 19.3854 19.9265 19.673 19.362C20 18.7202 20 17.8802 20 16.2V14.8C20 13.1198 20 12.2798 19.673 11.638C19.3854 11.0735 18.9265 10.6146 18.362 10.327C18.0057 10.1455 17.5883 10.0647 17 10.0288M7 10.0288V8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8V10.0288" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                            </svg>
-                                        )} 
-                                    </div>
-
-                                </div>
-
-                                <div className="user-post-settings">
-                                    <svg onClick={(e) => handleClickSettings(e, journal.id)}  xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
-
-                                    {showSettings === journal.id && (
-                                        <AnimatePresence>
-                                        <motion.div
-                                        initial={{opacity:0 ,scale:0}}
-                                        animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.1}}}
-                                        exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.1}}}
-                                        className='post-settings-container'
-                                        
-                                        >
-                                            {settingsList.map((setting, index) => (
-                                                <div className='setting-buttons' key={index}>
-                                                    {setting.actionDelete && (
-                                                        <div className={setting.className} onClick={(e) => setting.actionDelete(e, journal.id)}>
-                                                            {setting.icon}
-                                                            {setting.label}
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {setting.actionEdit &&(
-                                                        <div className={setting.className} onClick={(e) => setting.actionEdit(e, journal.content, journal.id, journal.title)}>
-                                                            {setting.icon}
-                                                            {setting.label}
-                                                        </div>
-                                                        
-                                                    )}   
-                                                    {journal.privacy === 'public' && setting.actionOnlyMe &&(
-                                                        <div onClick={(e) => setting.actionOnlyMe(e, journal.privacy, journal.id)} className={setting.className}>
-                                                            {setting.icon}
-                                                            {setting.label}
-                                                        </div>
-                                                    )}
-
-                                                    {journal.privacy === 'private' && setting.actionPublic &&(
-                                                        <div onClick={(e) => {setting.actionPublic(e, journal.privacy, journal.id)}} className={setting.className}>
-                                                            {setting.icon}
-                                                            {setting.label}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                
-                                            ))}
-                                        </motion.div>
-                                        </AnimatePresence>
-                                    )}
-                                    
-                                </div>
+                                </div> 
 
                             </div>
 
-                            <div onClick={(e) => viewContent(
-                                e,
-                                journal.content, 
-                                parsedContent.wholeText, 
-                                journal.title, 
-                                journal.users.id, 
-                                journal.users.name, 
-                                journal.users.image_url, 
-                                journal.created_at, 
-                                journal.id, 
-                                journal.has_liked, 
-                                journal.comment_count?.[0].count, 
-                                journal.has_bookmarked, 
-                                journal.like_count?.[0].count, 
-                                journal.bookmark_count?.[0].count)} 
-                                className="content-container">
+                            {showSettings === journal.id && (
+                                <AnimatePresence>
+                                    <motion.div
+                                    initial={{opacity:0 ,scale:0}}
+                                    animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.1}}}
+                                    exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.1}}}
+                                    className='post-settings-container'
+                                    >
+                                        {settingsList.map((setting, index) => (
+                                            <div className='setting-buttons' key={index}>
+                                                {setting.actionDelete && (
+                                                    <div className={setting.className} onClick={(e) => setting.actionDelete(e, journal.id)}>
+                                                        {setting.icon}
+                                                        {setting.label}
+                                                    </div>
+                                                )}
 
-                                <div className='feed-text-content-container'>
-                                    <div className='feed-title-content'>
-                                        <h2  className="feed-title-profile-page">{journal.title.length > 40 ? `${journal.title.substring(0, 40)}...` : journal.title}</h2>
-                                    </div>
-                                    <p className="feed-text-content-profile-page">{parsedContent.slicedText}</p>
-                                </div>
+                                                {setting.actionEdit &&(
+                                                    <div className={setting.className} onClick={(e) => setting.actionEdit(e, journal.content, journal.id, journal.title)}>
+                                                        {setting.icon}
+                                                        {setting.label}
+                                                    </div>
+                                                )}
+                                                {journal.privacy === 'public' && setting.actionOnlyMe &&(
+                                                    <div onClick={(e) => setting.actionOnlyMe(e, journal.privacy, journal.id)} className={setting.className}>
+                                                        {setting.icon}
+                                                        {setting.label}
+                                                    </div>
+                                                )}
 
-                                <div className="feed-image-content-container">
-                                    <img loading='lazy' className="journal-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="preview image" />
-                                </div>
+                                                {journal.privacy === 'private' && setting.actionPublic &&(
+                                                    <div onClick={(e) => {setting.actionPublic(e, journal.privacy, journal.id)}} className={setting.className}>
+                                                        {setting.icon}
+                                                        {setting.label}
+                                                    </div>
+                                                )}
+                                            </div>
+                                                ))}
+                                </motion.div>
+                            </AnimatePresence>
+                            )}
 
-                            </div>
                         </div>
-                    </div>     
-                    </ div> 
-                )
+                    </div>
+                    
+            </motion.div> 
+            )
                 
-            })}
+        })}
 
             <div ref={ref} className='in-view-container'>
                 {isFetchingNextPage && (

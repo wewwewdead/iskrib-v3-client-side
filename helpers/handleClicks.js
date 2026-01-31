@@ -1,7 +1,7 @@
 
 
 export const handleCLickContent = (navigate) => {
-    return (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) => {
+    return (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge) => {
     e.stopPropagation()
 
     navigate('/home/contentViewer', {
@@ -19,6 +19,7 @@ export const handleCLickContent = (navigate) => {
             isBookmarked: isBookmarked,
             likesCount: likesCount,
             bookmarksCount: bookmarksCount,
+            badge: badge
         }
     })
     }

@@ -11,6 +11,7 @@ import { handleCLickContent } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { AnimatePresence, motion } from "framer-motion";
+import VerifiedBadge from "../Badge/VerifiedBadge";
 
 
 const UnreadNotification = () =>{
@@ -167,12 +168,13 @@ const UnreadNotification = () =>{
 
                                 <div className="notification-sender-user-metadata">
                                     <div className="notification-sender-user-metadata-child">
-                                        <div className="notif-sender-profilepic-container">
+                                        <div className={`notif-sender-profilepic-container ${unreadNotification?.users?.badge === 'legend' ? 'notif-avatar-ring-legend' : unreadNotification?.users?.badge === 'og' ? 'notif-avatar-ring-og' : ''}`}>
                                             <img className="notif-sender-profilepic" loading="lazy" src={unreadNotification?.users?.image_url || '/assets/profile.jpg'} alt="notificataion sender profile picture" />
                                         </div>
 
                                         <div className="notif-sender-name-container">
                                             <p className="notif-sender-name">{unreadNotification?.users?.name}</p>
+                                            <VerifiedBadge badge={unreadNotification?.users?.badge} size={14} />
                                             <p className="notif-type">{FormatNotificationType(unreadNotification?.type)}</p>
                                         </div>
 

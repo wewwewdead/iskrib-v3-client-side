@@ -5,6 +5,7 @@ import { addReply, getPostReplies } from "../../../API/Api";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { handleClickProfile } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
+import VerifiedBadge from "../Badge/VerifiedBadge";
 
 
 const CommentsCards = ({comments, postId}) =>{
@@ -105,8 +106,11 @@ const CommentsCards = ({comments, postId}) =>{
             </div>
             
             <div className='comment-user-metadata-container'>
-                <img onClick={(e) => clickProfile(e, user?.userData[0].id,  comments?.user_id)} className='comments-avatar' src={comments?.users?.image_url || '/assets/profile.jpg'} alt="" />
+                <div onClick={(e) => clickProfile(e, user?.userData[0].id, comments?.user_id)} className={`comment-avatar-container ${comments?.users?.badge === 'legend' ? 'comment-avatar-ring-legend' : comments?.users?.badge === 'og' ? 'comment-avatar-ring-og' : ''}`}>
+                    <img className='comments-avatar' src={comments?.users?.image_url || '/assets/profile.jpg'} alt="" />
+                </div>
                 <p onClick={(e) => clickProfile(e, user?.userData[0].id,  comments?.user_id)} className='commenter-name'>{comments?.users?.name}</p>
+                <VerifiedBadge badge={comments?.users?.badge} size={14} />
                 <p>on</p>
                 <div className='comment-date'>
                     {new Date(comments?.created_at).toLocaleDateString('en-US', {month: 'long', day: '2-digit', year: 'numeric'})} 

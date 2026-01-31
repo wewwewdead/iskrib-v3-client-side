@@ -1,0 +1,232 @@
+.visit-profile-hero-section{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 90%;
+    padding: 1.4rem 1.4rem 1.2rem 1.4rem;
+    margin-top: 1rem;
+    border-radius: 20px;
+    gap: 0.8rem;
+    border: 0.7px solid var(--border-light);
+}
+.visited-profile-top-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+.profile-avatar-ring.badge-ring-legend{
+    border: 3px solid #FFD700;
+    box-shadow: 0 0 18px 4px rgba(255, 215, 0, 0.35), inset 0 0 12px rgba(255, 215, 0, 0.15);
+    opacity: 1;
+}
+.profile-avatar-ring.badge-ring-og{
+    border: 3px solid #9B59FF;
+    box-shadow: 0 0 18px 4px rgba(155, 89, 255, 0.35), inset 0 0 12px rgba(155, 89, 255, 0.15);
+    opacity: 1;
+}
+.visited-profile-image{
+    position: relative;
+    border-radius: 50%;
+    object-fit: cover;
+    width: 120px;
+    height: 120px;
+}
+.visited-profile-stats-container{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 12px;
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+}
+.visited-profile-stat-item{
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+}
+.visited-stat-number{
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+.visited-stat-label{
+    font-family: "Nunito", sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    opacity: 0.65;
+}
+.visited-profile-name-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    width: fit-content;
+    height: fit-content;
+    gap: 0.1rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 12px;
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+}
+.visited-profile-name-row{
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+.badge-pill{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.15rem 0.6rem;
+    border-radius: 20px;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    user-select: none;
+}
+.badge-pill-legend{
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+.badge-pill-og{
+    background: linear-gradient(135deg, #9B59FF, #7B2FFF);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(155, 89, 255, 0.4);
+}
+.badge-pill-year{
+    background: linear-gradient(135deg, #3a3a3a, #555555);
+    color: #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.visited-profile-name{
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+.visited-profile-bio-container{
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: fit-content;
+    height: fit-content;
+    padding: 0.4rem 0.6rem;
+    border-radius: 12px;
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+}
+.visited-profile-bio-container p{
+    font-family: "Nunito", sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    line-height: 1.55;
+    opacity: 0.85;
+}
+.visited-profile-actions-row{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    padding: 0.4rem 0.6rem;
+    border-radius: 12px;
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+}
+.visited-profile-follow-button-container{
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+}
+
+.follow-visited-profile-bttn{
+    border: 1.5px solid currentColor;
+    padding: 0.5rem 1.2rem;
+    cursor: pointer;
+    color: currentColor;
+    background-color: transparent;
+    border-radius: 25px;
+    outline: none;
+    font-family: "Lexend Deca", sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    transition: background-color 0.15s ease;
+    opacity: 0.85;
+}
+.follow-visited-profile-bttn:hover{
+    background-color: var(--bg-glass);
+    opacity: 1;
+}
+
+.unfollow-visited-profile-bttn{
+    border: 1.5px solid currentColor;
+    padding: 0.5rem 1.2rem;
+    cursor: pointer;
+    color: currentColor;
+    background-color: transparent;
+    border-radius: 25px;
+    outline: none;
+    transition: ease-in-out 0.2s;
+    font-family: "Lexend Deca", sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    opacity: 0.85;
+}
+
+.unfollow-visited-profile-bttn:hover{
+    background-color: rgba(209, 114, 114, 0.521);
+    border-color: rgba(209, 114, 114, 0.6);
+    color: rgb(193, 27, 27);
+    opacity: 1;
+}
+
+.visited-profile-joined-date{
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    padding: 0.4rem 0.6rem;
+    border-radius: 12px;
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+}
+.visited-profile-date-joined{
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    font-family: "Nunito", sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0.5;
+}
+
+@media (max-width: 428px){
+    .visited-profile-image {
+        width: 90px;
+        height: 90px;
+    }
+    .visited-stat-number {
+        font-size: 1.2rem;
+    }
+    .visited-profile-name {
+        font-size: 1.35rem;
+    }
+}
