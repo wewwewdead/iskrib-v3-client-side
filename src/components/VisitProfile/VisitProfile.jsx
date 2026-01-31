@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import './visitprofile.css';
+import './visitProfile.css';
 import { useAuth } from '../../Context/useAuth';
 import { getFollowsData, getUserData, getUserJournals } from '../../../API/Api';
 import { useEffect, useRef } from 'react';
