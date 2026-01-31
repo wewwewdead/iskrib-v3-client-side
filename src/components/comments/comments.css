@@ -8,7 +8,7 @@
     top: 200px;
     width: 90%;
     height: 60%;
-    background-color: rgb(255, 255, 255);
+    background-color: var(--bg-primary);
     z-index: 4;
     border-radius: 15px;
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
@@ -129,13 +129,14 @@
     font-family: "Nunito", sans-serif;
     background-color: transparent;
     border: none;
-    color: rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
     width: 70%;
     padding: 0.5rem;
     resize: none;
     overflow-y: auto;
     border: 0.7px solid rgba(151, 151, 151, 0.168);
     border-radius: 10px;
+    background-color: var(--bg-pill);
     
 }
 .comments-input:focus{
@@ -155,7 +156,7 @@
     padding: 0.5rem;
     width: 80px;
     border-radius: 15px;
-    background-color: rgb(4, 20, 29);
+    background-color:var(--bg-pill);
     color: rgb(255, 255, 255);
     cursor: pointer;
     border: none;
@@ -249,8 +250,8 @@
 .reply-comment-input{
     width: 50%;
     font-family: "Nunito", sans-serif;
-    background-color: transparent;
-    color: rgb(0, 0, 0);
+    background-color: var(--bg-pill);
+    color: rgb(255, 255, 255);
     padding: 0.5rem;
     overflow-y: auto;
     border: 0.7px solid rgba(151, 151, 151, 0.168);
@@ -265,7 +266,7 @@
     padding: 0.5rem;
     width: 80px;
     border-radius: 15px;
-    background-color: rgb(4, 20, 29);
+    background-color:var(--bg-pill);
     color: rgb(255, 255, 255);
     cursor: pointer;
     border: none;
