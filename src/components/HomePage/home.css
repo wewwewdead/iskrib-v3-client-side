@@ -220,6 +220,7 @@
     padding: 0.5rem 0;
     outline: none;
     width: 90%;
+    color: #ffffff;
 }
 .bio-input-container{
     display: flex;
@@ -239,6 +240,7 @@
     width: 90%;
     resize: none;
     height: 100px;
+    color: #ffffff;
 }
 .input-title-container{
     display: flex;
