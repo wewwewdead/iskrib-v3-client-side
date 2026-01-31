@@ -678,7 +678,7 @@
         display: flex;
         flex-wrap: wrap;
         width: 100%;
-        padding: 0.4rem 0 0 0;
+        padding: 0.4rem 0 0rem 0;
         height: auto;
         gap: 0.35rem;
         row-gap: 0.5rem;
@@ -688,13 +688,12 @@
     .card-icons-container .user-info-child-container {
         display: flex;
         align-items: center;
-        width: 100%;
-        min-width: 0;
+        width: fit-content;
         gap: 0.3rem;
         overflow: visible;
-        padding-bottom: 0.25rem;
         border-bottom: 1px solid var(--border-card);
         margin-bottom: 0.1rem;
+        padding: 0 0 0 0.8rem;
     }
     .user-newsfeed-name-profile-page {
         font-size: 0.72rem;
