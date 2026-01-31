@@ -47,14 +47,16 @@
     align-items: center;
     width: 100%;
     min-height: fit-content;
+    background-color: var(--bg-card);
     border: 1px solid var(--border-card);
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
-    transition: box-shadow 0.2s ease, transform 0.15s ease;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 .cards:hover{
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+    transform: translateY(-2px);
 }
 
 .bookmarked-content-message-container{
@@ -75,6 +77,11 @@
     max-height: 220px;
     object-fit: cover;
     display: block;
+    border-bottom: 1px solid var(--border-card);
+    transition: opacity 0.2s ease;
+}
+.cards:hover .card-image-banner{
+    opacity: 0.95;
 }
 
 /* ── Card content area ── */
@@ -108,8 +115,8 @@
     cursor: pointer;
 }
 .user-info-avatar{
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -131,7 +138,7 @@
     gap: 0.2rem;
 }
 .user-newsfeed-name{
-    font-family: "Nunito", sans-serif;
+    font-family: var(--font-ui);
     font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 0.005rem;
@@ -139,9 +146,11 @@
     padding: 0;
     cursor: pointer;
     color: var(--text-secondary);
+    transition: color 0.15s ease;
 }
 .user-newsfeed-name:hover{
     text-decoration: underline;
+    color: var(--accent-sage);
 }
 .name-info-separator{
     display: flex;
@@ -159,7 +168,7 @@
 .user-info-email{
     padding: 0;
     margin: 0;
-    font-family: "Nunito", sans-serif;
+    font-family: var(--font-ui);
     font-size: 0.75rem;
     font-weight: 400;
     color: var(--text-faint);
@@ -186,7 +195,7 @@
 .user-post-date{
     padding: 0;
     margin: 0;
-    font-family: "Nunito", sans-serif;
+    font-family: var(--font-ui);
     font-size: 0.75rem;
     font-weight: 400;
     color: var(--text-faint);
@@ -211,10 +220,11 @@
     bottom: 10px;
     width: 200px;
     height: 100px;
-    border-radius: 12px;
+    border-radius: 10px;
     z-index: 200;
     background-color: var(--bg-elevated);
-    box-shadow: var(--shadow-modal);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--border-card);
 }
 
 /* ── Content (title + text) ── */
@@ -244,10 +254,10 @@
     margin: 0;
     padding: 0;
     font-family: "Lexend Deca", sans-serif;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 700;
     line-height: 1.45;
-    letter-spacing: -0.02rem;
+    letter-spacing: -0.025rem;
     color: var(--text-heading);
 }
 .feed-text-content{
@@ -256,7 +266,7 @@
     font-family: var(--font-serif);
     font-weight: 400;
     color: var(--text-body);
-    line-height: 1.65;
+    line-height: 1.7;
     font-size: 0.88rem;
     letter-spacing: 0.005rem;
 }
@@ -272,6 +282,7 @@
     justify-content: flex-start;
     gap: 0.5rem;
     box-sizing: border-box;
+    border-top: 1px solid var(--border-card);
 }
 #card-icons{
     display: flex;
@@ -279,7 +290,7 @@
     align-items: center;
     padding: 0.35rem;
     border-radius: 50%;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.2s ease;
     gap: 0.3rem;
 }
 #card-icons-view{
@@ -288,7 +299,7 @@
     align-items: center;
     padding: 0.1rem;
     border-radius: 50%;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.2s ease;
     gap: 0.3rem;
 }
 .card-icons{
@@ -303,24 +314,27 @@
     justify-content: center;
     align-items: center;
 }
+.icon-container p{
+    font-family: var(--font-ui);
+}
 
 .like-button:hover .svg-like path{
     fill: rgb(255, 116, 116);
 }
 .like-button:hover{
-    background-color: rgba(255, 161, 161, 0.15);
+    background-color: rgba(255, 161, 161, 0.12);
 }
 .comment-button:hover{
-    background-color: rgba(149, 223, 255, 0.15);
+    background-color: rgba(107, 143, 113, 0.12);
 }
 .comment-button:hover .svg-comment path{
-    fill: rgb(47, 154, 255);
+    fill: var(--accent-sage);
 }
 .bookmark-button:hover{
-    background-color: rgba(169, 255, 209, 0.2);
+    background-color: rgba(245, 158, 11, 0.12);
 }
 .bookmark-button:hover .svg-bookmark path{
-    fill: rgb(72, 208, 135);
+    fill: var(--accent-amber);
 }
 
 /* ── Reading time pill ── */
@@ -328,18 +342,19 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0.15rem 0.6rem;
+    padding: 0.2rem 0.7rem;
     background-color: var(--bg-pill);
+    border: 1px solid var(--border-card);
     border-radius: 10px;
     margin-left: auto;
 }
 .reading-time-text{
     padding: 0;
     margin: 0;
-    font-family: "Nunito", sans-serif;
+    font-family: var(--font-ui);
     font-size: 0.62rem;
     font-weight: 550;
-    color: var(--text-muted);
+    color: var(--accent-sage);
     letter-spacing: 0.01rem;
 }
 
@@ -437,6 +452,7 @@
         margin-bottom: 0.1rem;
     }
     .card-icons-container .user-info-child-container .user-newsfeed-name{
+        font-family: var(--font-ui);
         font-size: 0.72rem;
         white-space: nowrap;
         overflow: hidden;
@@ -444,12 +460,13 @@
         max-width: 120px;
     }
     .card-icons-container .user-info-child-container .user-post-date{
+        font-family: var(--font-ui);
         font-size: 0.6rem;
         white-space: nowrap;
     }
     .card-icons-container .user-info-child-container .user-info-avatar{
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
     }
 
     /* Row 2: Action icons — guaranteed visible */
@@ -471,7 +488,7 @@
         align-items: center;
         padding: 0.3rem;
         border-radius: 50%;
-        transition: background-color 0.15s ease;
+        transition: background-color 0.2s ease;
     }
 
     .svg-like{
@@ -504,6 +521,7 @@
         height: 22px;
     }
     .icon-container p{
+        font-family: var(--font-ui);
         font-size: 0.68rem !important;
         white-space: nowrap;
         margin: 0 !important;
@@ -515,7 +533,7 @@
         display: flex !important;
         visibility: visible;
         margin-left: auto;
-        padding: 0.15rem 0.5rem;
+        padding: 0.2rem 0.6rem;
         flex-shrink: 0;
         min-width: fit-content;
     }
@@ -571,5 +589,5 @@
         cursor: pointer;
         border: hidden;
     }
-    
+
 }

@@ -86,7 +86,7 @@ const PostCards = () => {
 
             className: 'like-button',
             action: (e, journalId, receiverId) => debounceClickLike(e, journalId, receiverId),
-            countLike: (count) => <p style={{padding:'0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
+            countLike: (count) => <p style={{padding:'0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
         },
         {
             label:
@@ -99,7 +99,7 @@ const PostCards = () => {
             </svg>,
             className: 'comment-button',
             commentAction: (e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount) => viewContent(e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount ),
-            countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
+            countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
         },
         {
             checkBookrmark: (isBookmarked) => (
@@ -112,7 +112,7 @@ const PostCards = () => {
             </svg>),
             className: 'bookmark-button',
             bookmarkAction: (e, journalId) => debounceClickBookmark(e, journalId),
-            countBookmarks: (count) => <p  style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
+            countBookmarks: (count) => <p  style={{padding: '0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
         },
         {
             iconCount: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.6rem', color: "var(--icon-view-count)"}}>{formatCounts(count)}</p>,
@@ -242,7 +242,7 @@ const PostCards = () => {
         return(
             <>
             <div className="postcards-parent-loading-container">
-                <MoonLoader loading={isLoading} color="rgba(0, 0, 0, 1)" speedMultiplier={1} size={20}/>
+                <MoonLoader loading={isLoading} color="#2D2D2D" speedMultiplier={1} size={20}/>
             </div>
             </>
         )
@@ -294,9 +294,6 @@ const PostCards = () => {
                     <motion.div
                         className="cards"
                         key={journal.id}
-                        initial={{opacity: 0, y: 12}}
-                        animate={{opacity: 1, y: 0}}
-                        transition={{duration: 0.3, ease: 'easeOut'}}
                     >
 
                         {parsedContent.firstImage && (

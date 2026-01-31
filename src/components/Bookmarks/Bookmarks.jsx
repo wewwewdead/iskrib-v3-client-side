@@ -4,6 +4,7 @@ import { useAuth } from '../../Context/useAuth';
 import './bookmarks.css';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import ParseContent from '../HomePage/postCards/parseData';
+import CalculateText from '../HomePage/postCards/calculateReadingTime';
 import { MoonLoader } from 'react-spinners';
 import { motion, AnimatePresence } from 'framer-motion';
 import { handleCLickContent, handleClickProfile } from '../../../helpers/handleClicks';
@@ -11,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
 import { useRef } from 'react';
 import VerifiedBadge from '../Badge/VerifiedBadge';
+import formatPostDate from '../../../helpers/formatDateString';
 
 const Bookmarks = () =>{
     const {user, session} = useAuth();
@@ -22,6 +24,7 @@ const Bookmarks = () =>{
     });
     const timeOutRef = useRef();
     const scrollToTop = useRef();
+    const modalRef = useRef(null);
 
     const [bookmarkIdSettings, setBookmarkIdSettings] = useState('');
     const [showHeaders, setShowHeaders] = useState(true);
@@ -30,7 +33,6 @@ const Bookmarks = () =>{
 
     const handleClickBookmarkSettings = (e, journalId) => {
         e.stopPropagation();
-        console.log(journalId)
         setBookmarkIdSettings(journalId === bookmarkIdSettings ? null : journalId)
     }
 
@@ -40,10 +42,7 @@ const Bookmarks = () =>{
     }
 
     const handleClick = handleCLickContent(navigate);
-    const handleClickSettings = (e) =>{
-        e.stopPropagation();
-        console.log(e.target)
-    }
+
     const queryClient = useQueryClient();
     const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['getBookmarks', userId],
@@ -62,7 +61,6 @@ const Bookmarks = () =>{
 
     useEffect(() =>{
         if(inView && hasNextPage && !isFetchingNextPage){
-            console.log('fetching')
             fetchNextPage();
         }
 
@@ -72,7 +70,7 @@ const Bookmarks = () =>{
         const scroll = () =>{
             setShowHeaders(false)
             if(timeOutRef.current){
-                clearTimeout(timeOutRef.current)      
+                clearTimeout(timeOutRef.current)
             }
             timeOutRef.current = setTimeout(() =>{
                 setShowHeaders(true)
@@ -83,23 +81,25 @@ const Bookmarks = () =>{
         return () =>{
              if(timeOutRef.current){
                 clearTimeout(timeOutRef.current);
-            }  
+            }
             document.removeEventListener('scroll', scroll, true)
+        }
+    }, [])
+
+    useEffect(() => {
+        const handleClickOutside = (e) =>{
+            if(modalRef.current && !modalRef.current.contains(e.target)){
+                setBookmarkIdSettings(null)
+            }
+        }
+        window.addEventListener('click', handleClickOutside)
+        return() => {
+            window.removeEventListener('click', handleClickOutside)
         }
     }, [])
 
     const journals = data?.pages?.flatMap((journal) => journal.bookmarks|| []);
     const totalBookmarks = data?.pages?.flatMap((journal) => journal.totalBookmarks)
-
-    // useEffect(() =>{
-    //     console.log(data)
-    // }, [data])
-
-    // useEffect(() =>{
-    //     if(journals){
-    //         console.log(journals)
-    //     }
-    // }, [journals])
 
     useEffect(() => {
         if(!isLoading && scrollToTop.current){
@@ -109,136 +109,141 @@ const Bookmarks = () =>{
 
     if(isLoading){
         return(
-            <>
             <div className='bookmark-loading-container'>
-                <MoonLoader loading={isLoading} size={25}/>
+                <MoonLoader loading={isLoading} color="#2D2D2D" speedMultiplier={1} size={20}/>
             </div>
-            </>
         )
     }
     if(journals?.length === 0){
         return(
-            <>
             <div className='bookmark-parent-container'>
                 <p>No bookmarks available</p>
             </div>
-            </>
         )
     }
 
-    
+
     return(
         <>
         <div ref={scrollToTop}/>
         <AnimatePresence>
         {showHeaders && (
-            <motion.div 
-            className='boomarks-header'
+            <motion.div
+            className='bookmarks-header'
             initial={{opacity: 0}}
             animate={{opacity: 1, transition:{ type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
             exit={{opacity:0, y: -20, transition:{duration: 0.2, ease: 'easeInOut'}}}
             >
                 <div onClick={(e) => handleBackLocation(e)} className='back-button'>
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M360-240 120-480l240-240 56 56-144 144h568v80H272l144 144-56 56Z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M360-240 120-480l240-240 56 56-144 144h568v80H272l144 144-56 56Z"/></svg>
                 </div>
-            
-                <p className='bookmarks-header-text'>Bookmarks <span style={{fontSize: '1.2rem', fontWeight: '700'}}>({totalBookmarks})</span></p>
+
+                <p className='bookmarks-header-text'>Bookmarks <span className='bookmarks-header-count'>({totalBookmarks})</span></p>
             </motion.div>
         )}
         </AnimatePresence>
 
         <div className='bookmark-parent-container'>
-            {/* create a bookmarks cards component here! */}
             {journals?.map((journal, index) => {
                 const parsedContent = ParseContent(journal.journals.content);
                 return(
-                    <div className='cards' key={index}>
-                        <div className='card-content'>
+                    <motion.div
+                        className='bookmark-card'
+                        key={journal.journals.id || index}
+                    >
 
-                            <div className="user-info">
-                                <div className='user-info-child-container'>
+                        {parsedContent.firstImage && (
+                            <img
+                                className="bookmark-card-image-banner"
+                                src={parsedContent.firstImage.src}
+                                alt=""
+                                loading="lazy"
+                                onClick={(e) => handleClick(
+                                    e,
+                                    journal.journals.content,
+                                    parsedContent?.wholeText,
+                                    journal.journals.title,
+                                    journal.journals.user_id,
+                                    journal.journals.users.name,
+                                    journal.journals.users.image_url,
+                                    journal.journals.created_at,
+                                    journal.journals.id,
+                                    journal.journals.has_liked,
+                                    journal.journals.comment_count?.[0]?.count,
+                                    journal.journals.has_bookmarked,
+                                    journal.journals.like_count?.[0]?.count,
+                                    journal.journals.bookmark_count?.[0]?.count,
+                                )}
+                            />
+                        )}
 
-                                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className={`user-avatar-container ${journal?.journals?.users?.badge === 'legend' ? 'avatar-ring-legend' : journal?.journals?.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                        <img loading='lazy' src={journal?.journals?.users?.image_url || '../../public/assets/profile.jpg'} className="user-info-avatar" alt="" />
+                        <div className="card-content">
+                            <div onClick={(e) => handleClick(
+                                e,
+                                journal.journals.content,
+                                parsedContent?.wholeText,
+                                journal.journals.title,
+                                journal.journals.user_id,
+                                journal.journals.users.name,
+                                journal.journals.users.image_url,
+                                journal.journals.created_at,
+                                journal.journals.id,
+                                journal.journals.has_liked,
+                                journal.journals.comment_count?.[0]?.count,
+                                journal.journals.has_bookmarked,
+                                journal.journals.like_count?.[0]?.count,
+                                journal.journals.bookmark_count?.[0]?.count,)}
+                                className="content-container">
+
+                                <div className='feed-text-content-container'>
+                                    <div className='feed-title-content'>
+                                        <h2 className="feed-title">{journal.journals.title.length > 55 ? `${journal.journals.title.substring(0, 55)}...` : journal.journals.title}</h2>
                                     </div>
-                                    <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-name-container">
-                                        <p className="user-newsfeed-name">{journal?.journals?.users?.name}</p>
-                                        <VerifiedBadge badge={journal?.journals?.users?.badge} size={14} />
-                                    </div>
-
-                                    <div className="name-info-separator">
-                                        •
-                                    </div>
-
-                                    <div className="user-info-email-container">
-                                        <p className="user-info-email">{journal?.journals?.users?.user_email}</p>
-                                    </div>
-
-                                    <div className="name-info-separator">
-                                        •
-                                    </div>
-
-                                    <div className="user-post-date-container">
-                                        <p className="user-post-date">{new Date(journal.created_at).toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric'
-                                    })} </p>
-                                    </div>
-
+                                    <p className="feed-text-content">{parsedContent.slicedText}</p>
                                 </div>
-                                
+                            </div>
+                        </div>
+
+                        <div className="bookmark-card-footer">
+                            <div className='user-info-child-container'>
+                                <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className={`user-avatar-container ${journal?.journals?.users?.badge === 'legend' ? 'avatar-ring-legend' : journal?.journals?.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                    <img loading='lazy' src={journal?.journals?.users?.image_url || '/assets/profile.jpg'} className="user-info-avatar" alt="" />
+                                </div>
+                                <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-name-container">
+                                    <p className="user-newsfeed-name">{journal?.journals?.users?.name}</p>
+                                    <VerifiedBadge badge={journal?.journals?.users?.badge} size={14} />
+                                </div>
+                                <div className="name-info-separator">•</div>
+                                <p className="user-post-date">{formatPostDate(journal.created_at)}</p>
+                            </div>
+
+                            <div className="bookmark-card-footer-right">
+                                <div className="reading-time-container">
+                                    <p className="reading-time-text">{CalculateText(parsedContent.wholeText)}</p>
+                                </div>
+
                                 <div className="user-post-settings">
-                                    <svg onClick={(e) => handleClickBookmarkSettings(e, journal.journals.id)} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
+                                    <svg onClick={(e) => handleClickBookmarkSettings(e, journal.journals.id)} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
                                     {bookmarkIdSettings === journal.journals.id && (
-                                        <motion.div 
-                                        onClick={(e) => {handleClickSettings(e)}}
+                                        <motion.div
                                         initial={{opacity:0 ,scale:0}}
                                         animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.3}}}
                                         exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.3}}}
+                                        ref={modalRef}
                                         className="setting-modal"
                                         >
                                             <p>{journal.journals.title}</p>
                                         </motion.div>
                                     )}
                                 </div>
-
                             </div>
-
-                            <div onClick={(e) => handleClick(
-                                e,
-                                journal.journals.content, 
-                                parsedContent?.wholeText, 
-                                journal.journals.title, 
-                                journal.journals.user_id,
-                                journal.journals.users.name, 
-                                journal.journals.users.image_url, 
-                                journal.journals.created_at,
-                                journal.journals.id,
-                                journal.journals.has_liked, 
-                                journal.journals.comment_count?.[0].count, 
-                                journal.journals.has_bookmarked,
-                                journal.journals.like_count?.[0].count,
-                                journal.journals.bookmark_count?.[0].count,)} 
-                                className="content-container">
-
-                                <div className='feed-text-content-container'>
-                                    <div className='feed-title-content'>
-                                        <h2 className="feed-title">{journal.journals.title.length > 40 ? `${journal.journals.title.substring(0, 40)}...` : journal.journals.title}</h2>
-                                    </div>
-                                    <p className="feed-text-content">{parsedContent.slicedText}</p>
-                                </div>
-
-                                <div className="feed-image-content-container">
-                                    <img className="journal-image" src={parsedContent?.firstImage?.src || '../../assets/no-image.png'} alt="content thumbnail" />
-                                </div>
-                            </div>
-
                         </div>
-                    </div>
+
+                    </motion.div>
                 )
             })}
             <div ref={inviewRef} className='inview-container'>
+                <MoonLoader loading={isFetchingNextPage} color="rgba(255, 255, 255, 0.64)" speedMultiplier={1} size={20}/>
             </div>
         </div>
         </>

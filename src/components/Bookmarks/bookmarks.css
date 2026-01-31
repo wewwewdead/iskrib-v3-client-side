@@ -1,3 +1,4 @@
+/* ── Loading ── */
 .bookmark-loading-container{
     display: flex;
     justify-content: center;
@@ -5,102 +6,393 @@
     width: 100%;
     height: 100vh;
 }
+
+/* ── Header ── */
+.bookmarks-header{
+    position: fixed;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1.15rem;
+    width: 716px;
+    height: 60px;
+    user-select: none;
+    background-color: var(--bg-elevated, rgba(255, 255, 255, 0.23));
+    backdrop-filter: blur(25px);
+    z-index: 2;
+    border-bottom: 1px solid var(--border-card, rgba(151, 151, 151, 0.168));
+    box-sizing: border-box;
+}
+.back-button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.35rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: var(--text-heading, #000);
+}
+.back-button:hover{
+    background-color: rgba(0, 0, 0, 0.06);
+}
+.bookmarks-header-text{
+    padding: 0;
+    margin: 0;
+    font-family: var(--font-ui, sans-serif);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02rem;
+    color: var(--text-heading, #000);
+}
+.bookmarks-header-count{
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-faint, #888);
+}
+
+/* ── Parent container ── */
 .bookmark-parent-container{
     position: relative;
     top: 90px;
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100vh;
     margin-bottom: 1rem;
+    gap: 16px;
+    padding: 0 8px;
+    box-sizing: border-box;
 }
-.bookmarks{
+
+/* ── Card ── */
+.bookmark-card{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    min-height: fit-content;
+    background-color: var(--bg-card, #fff);
+    border: 1px solid var(--border-card, rgba(0,0,0,0.08));
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.bookmark-card:hover{
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+    transform: translateY(-2px);
+}
+
+/* ── Banner image ── */
+.bookmark-card-image-banner{
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    display: block;
+    border-bottom: 1px solid var(--border-card, rgba(0,0,0,0.08));
+    transition: opacity 0.2s ease;
+}
+.bookmark-card:hover .bookmark-card-image-banner{
+    opacity: 0.95;
+}
+
+/* ── Card content area ── */
+.bookmark-card .card-content{
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 1rem 1.15rem 0.6rem 1.15rem;
+    box-sizing: border-box;
+}
+
+/* ── Content (title + text) ── */
+.bookmark-card .content-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    user-select: none;
+    gap: 0.5rem;
+}
+.bookmark-card .feed-text-content-container{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0.35rem;
+}
+.bookmark-card .feed-title-content{
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 90%;
-    height: fit-content;
 }
-.boomarks-header{
-    position: fixed;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    width: 716px;
-    height: 60px;
-    user-select: none;
-    background-color: rgba(255, 255, 255, 0.23);
-    backdrop-filter: blur(25px);
-    z-index: 2;
-    border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+.bookmark-card .feed-title{
+    margin: 0;
+    padding: 0;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.45;
+    letter-spacing: -0.025rem;
+    color: var(--text-heading, #1a1a1a);
 }
-.bookmarks-header-text{
+.bookmark-card .feed-text-content{
     padding: 0;
     margin: 0;
-    font-size: 1.2rem;
-    font-weight: 600;
+    font-family: var(--font-serif, Georgia, serif);
+    font-weight: 400;
+    color: var(--text-body, #444);
+    line-height: 1.7;
+    font-size: 0.88rem;
+    letter-spacing: 0.005rem;
 }
+
+/* ── Footer (user info + reading time + settings) ── */
+.bookmark-card-footer{
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    padding: 0.5rem 1.15rem 0.85rem 1.15rem;
+    min-height: 22px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    border-top: 1px solid var(--border-card, rgba(0,0,0,0.08));
+}
+.bookmark-card-footer .user-info-child-container{
+    display: flex;
+    align-items: center;
+    height: 100%;
+    gap: 0.4rem;
+    width: fit-content;
+}
+.bookmark-card-footer .user-avatar-container{
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    cursor: pointer;
+}
+.bookmark-card-footer .user-info-avatar{
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.bookmark-card-footer .user-avatar-container.avatar-ring-legend{
+    padding: 2px;
+    border-radius: 50%;
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 8px 1px rgba(255, 215, 0, 0.3);
+}
+.bookmark-card-footer .user-avatar-container.avatar-ring-og{
+    padding: 2px;
+    border-radius: 50%;
+    border: 2px solid #9B59FF;
+    box-shadow: 0 0 8px 1px rgba(155, 89, 255, 0.3);
+}
+.bookmark-card-footer .user-name-container{
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+.bookmark-card-footer .user-newsfeed-name{
+    font-family: var(--font-ui, sans-serif);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.005rem;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-secondary, #333);
+    transition: color 0.15s ease;
+}
+.bookmark-card-footer .user-newsfeed-name:hover{
+    text-decoration: underline;
+    color: var(--accent-sage, #6b8f71);
+}
+.bookmark-card-footer .name-info-separator{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    height: fit-content;
+    color: var(--text-separator, #aaa);
+    font-size: 0.4rem;
+    user-select: none;
+}
+.bookmark-card-footer .user-post-date{
+    padding: 0;
+    margin: 0;
+    font-family: var(--font-ui, sans-serif);
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-faint, #888);
+}
+
+/* ── Footer right side ── */
+.bookmark-card-footer-right{
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* ── Reading time pill ── */
+.bookmark-card-footer .reading-time-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.2rem 0.7rem;
+    background-color: var(--bg-pill, rgba(0,0,0,0.04));
+    border: 1px solid var(--border-card, rgba(0,0,0,0.08));
+    border-radius: 10px;
+}
+.bookmark-card-footer .reading-time-text{
+    padding: 0;
+    margin: 0;
+    font-family: var(--font-ui, sans-serif);
+    font-size: 0.62rem;
+    font-weight: 550;
+    color: var(--accent-sage, #6b8f71);
+    letter-spacing: 0.01rem;
+}
+
+/* ── Settings ── */
+.bookmark-card-footer .user-post-settings{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    height: fit-content;
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-heading, #000);
+}
+.bookmark-card-footer .setting-modal{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    right: 25px;
+    bottom: 10px;
+    width: 200px;
+    height: 100px;
+    border-radius: 10px;
+    z-index: 200;
+    background-color: var(--bg-elevated, #fff);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--border-card, rgba(0,0,0,0.08));
+}
+
+/* ── Inview trigger ── */
 .inview-container{
     display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
-    height: 50px;
-    position: relative;
+    min-height: 35px;
 }
 
-/* mobile responsive */
+/* ── Mobile: 768px ── */
 @media(max-width: 768px){
-    .boomarks-header {
-        position: fixed;
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
+    .bookmarks-header{
         width: 100%;
-        height: 60px;
-        user-select: none;
-        background-color: rgba(255, 255, 255, 0.23);
-        backdrop-filter: blur(25px);
-        z-index: 2;
-        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
-        box-sizing: border-box;
     }
 }
 
+/* ── Mobile: 480px ── */
 @media (max-width: 480px){
-    .boomarks-header {
-        position: fixed;
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
+    .bookmarks-header{
         width: 100%;
-        height: 60px;
-        user-select: none;
-        background-color: rgba(255, 255, 255, 0.23);
-        backdrop-filter: blur(25px);
-        z-index: 2;
-        border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
-        box-sizing: border-box;
+        padding: 0 0.75rem;
     }
-    .bookmark-parent-container {
-        position: relative;
-        top: 90px;
-        display: flex;
+    .bookmarks-header-text{
+        font-size: 1rem;
+    }
+    .bookmark-parent-container{
+        top: 80px;
+        gap: 12px;
+        padding: 0 6px;
+    }
+    .bookmark-card{
+        border-radius: 10px;
+        overflow: visible;
+        max-width: 100%;
+    }
+    .bookmark-card-image-banner{
+        max-height: 160px;
+        border-radius: 10px 10px 0 0;
+    }
+    .bookmark-card .card-content{
+        padding: 0.75rem 0.75rem 0.4rem 0.75rem;
+    }
+    .bookmark-card .content-container{
+        gap: 0.3rem;
+    }
+    .bookmark-card .feed-title{
+        font-size: 0.92rem;
+        line-height: 1.3;
+    }
+    .bookmark-card .feed-text-content{
+        font-size: 0.78rem;
+        line-height: 1.5;
+    }
+
+    /* Footer */
+    .bookmark-card-footer{
         flex-direction: column;
-        width: 100%;
-        height: 100vh;
-        margin-bottom: 1rem;
-        box-sizing: border-box;
+        align-items: flex-start;
+        padding: 0.5rem 0.75rem 0.7rem 0.75rem;
+        gap: 0.5rem;
     }
-    .bookmark-loading-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    .bookmark-card-footer .user-info-child-container{
         width: 100%;
-        height: 100vh;
+        gap: 0.3rem;
+        padding-bottom: 0.25rem;
+        border-bottom: 0.5px solid var(--border-card, rgba(0,0,0,0.08));
+    }
+    .bookmark-card-footer .user-info-child-container .user-newsfeed-name{
+        font-size: 0.72rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+    .bookmark-card-footer .user-info-child-container .user-post-date{
+        font-size: 0.6rem;
+        white-space: nowrap;
+    }
+    .bookmark-card-footer .user-info-child-container .user-info-avatar{
+        width: 20px;
+        height: 20px;
+    }
+    .bookmark-card-footer-right{
+        width: 100%;
+        justify-content: flex-end;
+    }
+    .bookmark-card-footer .reading-time-container{
+        padding: 0.2rem 0.6rem;
+    }
+    .bookmark-card-footer .reading-time-text{
+        font-size: 0.58rem;
+        white-space: nowrap;
+    }
+    .bookmark-card-footer .user-post-settings svg{
+        width: 20px;
+        height: 20px;
+    }
+    .bookmark-card-footer .setting-modal{
+        right: 0;
+        bottom: 25px;
+        width: 180px;
+        height: 80px;
+        font-size: 0.75rem;
     }
 }
