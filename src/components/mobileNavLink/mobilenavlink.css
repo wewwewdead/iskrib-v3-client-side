@@ -28,7 +28,7 @@
     .mobile-navlink-container{
         position: fixed;
         display: flex;
-        background-color: rgba(255, 255, 255, 0.575);
+        background-color: var(--bg-backdrop-heavy);
         backdrop-filter: blur(25px);
         justify-content: space-evenly;
         box-shadow: 2px 3px 10px 5px rgba(0, 0, 0, 0.355);
@@ -70,7 +70,7 @@
     .mobile-navlink-container{
         position: fixed;
         display: flex;
-        background-color: rgba(255, 255, 255, 0.575);
+        background-color: var(--bg-backdrop-heavy);
         backdrop-filter: blur(25px);
         justify-content: space-evenly;
         box-shadow: 2px 3px 10px 5px rgba(0, 0, 0, 0.355);

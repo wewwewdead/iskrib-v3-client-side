@@ -18,7 +18,7 @@ import formatPostDate from "../../../../helpers/formatDateString";
 
 
 const PostCards = () => {
-    const {session, user} = useAuth();
+    const {session, user, openAuthModal} = useAuth();
     const queryClient = useQueryClient();
     const location = useLocation();
 
@@ -35,12 +35,24 @@ const PostCards = () => {
     const [bookmarkedMessage, setBookmarkedMessage] = useState('');
     const [showBookmarkedMessage, setShowBookmarkedMessage] = useState(null);
 
-    const handleClickUserProfile = handleClickProfile(navigate);
+    const handleClickUserProfileOriginal = handleClickProfile(navigate);
     const clickContent = handleCLickContent(navigate);
 
     const mutateViews = useAddViewsMutation(session)
 
+    const handleClickUserProfile = (e, loggedInUserId, clickedUserId) => {
+        if(!session){
+            e.stopPropagation();
+            return openAuthModal();
+        }
+        handleClickUserProfileOriginal(e, loggedInUserId, clickedUserId);
+    }
+
     const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) =>{
+        if(!session){
+            e.stopPropagation();
+            return openAuthModal();
+        }
         const formadata = new FormData();
 
         formadata.append('journalId', journalId);
@@ -102,15 +114,17 @@ const PostCards = () => {
             countBookmarks: (count) => <p  style={{padding: '0', margin: '0', fontSize: '0.8rem'}}>{formatCounts(count)}</p>
         },
         {
-            iconCount: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.6rem', color: "#00000099"}}>{formatCounts(count)}</p>,
-            iconView: 
-            <svg xmlns="http://www.w3.org/2000/svg" fill="#00000044" width="28px" height="28px" viewBox="-3.5 0 32 32" version="1.1">
+            iconCount: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.6rem', color: "var(--icon-view-count)"}}>{formatCounts(count)}</p>,
+            iconView:
+            <svg xmlns="http://www.w3.org/2000/svg" fill="var(--icon-view)" width="28px" height="28px" viewBox="-3.5 0 32 32" version="1.1">
                 <title>view</title>
                 <path d="M12.406 13.844c1.188 0 2.156 0.969 2.156 2.156s-0.969 2.125-2.156 2.125-2.125-0.938-2.125-2.125 0.938-2.156 2.125-2.156zM12.406 8.531c7.063 0 12.156 6.625 12.156 6.625 0.344 0.438 0.344 1.219 0 1.656 0 0-5.094 6.625-12.156 6.625s-12.156-6.625-12.156-6.625c-0.344-0.438-0.344-1.219 0-1.656 0 0 5.094-6.625 12.156-6.625zM12.406 21.344c2.938 0 5.344-2.406 5.344-5.344s-2.406-5.344-5.344-5.344-5.344 2.406-5.344 5.344 2.406 5.344 5.344 5.344z"/>
             </svg>,
 
         }
     ]
+
+    const userId = user?.userData?.[0]?.id || null;
 
     const {
         data,
@@ -119,16 +133,15 @@ const PostCards = () => {
         isFetchingNextPage,
         isLoading,
     } = useInfiniteQuery({
-        queryKey: ['journals'],
-        queryFn: ({pageParam = null}) => getJournals(pageParam, 5, user?.userData?.[0].id),
+        queryKey: ['journals', userId],
+        queryFn: ({pageParam = null}) => getJournals(pageParam, 5, userId),
         getNextPageParam: (lastPage) => {
             if(lastPage?.hasMore) {
-                const lastJournal = lastPage?.data[lastPage?.data?.length - 1]; //get the last array of object using index 
+                const lastJournal = lastPage?.data[lastPage?.data?.length - 1]; //get the last array of object using index
                 return new Date(lastJournal.created_at).toISOString();
             }
             return undefined;
         } ,
-        enabled: !!user?.userData?.[0]?.id,
         refetchOnWindowFocus: false
     })
 
@@ -141,6 +154,7 @@ const PostCards = () => {
 
     const handleClickLike = async(e, journalId, receiverId) => {
         e.stopPropagation();
+        if(!session) return openAuthModal();
         console.log(journalId)
         mutationLike.mutate({journalId, receiverId}) //passing this into mutationFn {journalId: the id}
     }
@@ -151,6 +165,7 @@ const PostCards = () => {
 
     const handleClickBookmark = async(e, journalId,) =>{
         e.stopPropagation();
+        if(!session) return openAuthModal();
         console.log(journalId)
         // mutationBookmark.mutate({journalId});
         const response = await mutationBookmark.mutateAsync({journalId})
@@ -319,7 +334,7 @@ const PostCards = () => {
                                 </div>
 
                                 <div className="user-post-settings">
-                                    <svg onClick={(e) => handleClickSettings(e, journal.id)} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
+                                    <svg onClick={(e) => handleClickSettings(e, journal.id)} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
                                     {postIdSettings === journal.id && (
                                         <motion.div 
                                         initial={{opacity:0 ,scale:0}}

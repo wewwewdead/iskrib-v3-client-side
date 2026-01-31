@@ -10,7 +10,7 @@ const LoginPage = () =>{
     const [errorMessage, setErrorMessage] = useState('')
 
     const {session} = useAuth();
-    
+
     const navigate = useNavigate(null);
     const handleShowPass = (e) =>{
         e.stopPropagation();
@@ -43,28 +43,28 @@ const LoginPage = () =>{
         }
     }, [session])
     return(
-        <>
-        <div className='log-in-bg-container'>
-            <img className='log-in-bg-img' src="/assets/log-in-page-bg.png" alt="" />
-        </div>
-        <div className='log-in-page-bg-container'>
+        <div className='login-page-wrapper'>
+            <div className='login-logo'>
+                Iskrib
+            </div>
+            <p className='login-tagline'>Where your stories find their voice</p>
 
             <div className='login-page-container'>
                 <div className='input-container'>
                     <div className='input-container-child'>
-                        <input value={email ? email : ''} onChange={(e) => setEmail(e.target.value)} className='login-input' type="text" placeholder='email'/>
+                        <input value={email ? email : ''} onChange={(e) => setEmail(e.target.value)} className='login-input' type="email" placeholder='Email' aria-label='Email'/>
                     </div>
                     <div className='input-container-child'>
-                        <input value={password ? password : ''} onChange={(e) => setPassword(e.target.value)} className='login-input' type={showPass ? 'text' : 'password'} placeholder='password'/>
+                        <input value={password ? password : ''} onChange={(e) => setPassword(e.target.value)} className='login-input' type={showPass ? 'text' : 'password'} placeholder='Password' aria-label='Password'/>
                         {password && (
                             <div onClick={(e) => handleShowPass(e)} className='show-bttn'>
                                 {showPass ? 'hide' : 'show'}
                             </div>
                         )}
-                    
+
                     </div>
-                
-                    <button onClick={(e) => handleLogin(e)} disabled={!password} className={!password ? 'log-in-bttn-disabled' : 'log-in-bttn'}>
+
+                    <button onClick={(e) => handleLogin(e)} disabled={!password} className={!password ? 'log-in-bttn log-in-bttn-disabled' : 'log-in-bttn'}>
                         Log in
                     </button>
                 </div>
@@ -76,16 +76,10 @@ const LoginPage = () =>{
                 {errorMessage && (
                     <div className='error-message'>
                         {errorMessage}
-                    </div>  
+                    </div>
                 )}
             </div>
-
-            <div className='login-logo'>
-                Iskrib
-            </div>
         </div>
-        
-        </>
     )
 }
 export default LoginPage

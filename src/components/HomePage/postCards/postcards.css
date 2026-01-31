@@ -1,16 +1,5 @@
-/* .newsfeed-header{
-    position: fixed;
-    display: flex;
-    background-color: rgba(255, 255, 255, 0.23);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(5px);
-    justify-content: space-evenly;
-    align-items: center;
-    width: 750px;
-    height: 90px;
-    border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
-    z-index: 1;
-} */
+.newsfeed-header{
+}
 .postcards-parent-container{
     position: relative;
     display: flex;
@@ -47,6 +36,8 @@
     width: 100%;
     min-height: 35px;
 }
+
+/* ── Card ── */
 .cards{
     position: relative;
     display: flex;
@@ -55,70 +46,36 @@
     align-items: center;
     width: 100%;
     min-height: fit-content;
-    border-bottom: 0.7px solid  rgba(151, 151, 151, 0.363);
+    border-bottom: 1px solid var(--border-card);
     cursor: pointer;
+    transition: background-color 0.18s ease;
 }
+.cards:hover{
+    background-color: var(--bg-hover);
+}
+
 .bookmarked-content-message-container{
     position: absolute;
     top: 180px;
     background-color: rgb(72, 208, 135);
     color: rgb(255, 255, 255);
-    font-size: 0.8rem;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
     z-index: 11;
 }
-.cards:hover{
-    background-color:rgb(245, 245, 245) ;
-}
+
+/* ── Card content area ── */
 .card-content{
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.8rem;
     width: 95%;
-    padding: 1rem;
-}
-#card-icons{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: ease-in-out 0.3s;
-    gap: 0.5rem;
-}
-#card-icons-view{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.1rem;
-    border-radius: 50%;
-    transition: ease-in-out 0.3s;
-    gap: 0.5rem;
+    padding: 1.35rem 1rem 0.7rem 1rem;
 }
 
-.like-button:hover .svg-like path{
-    fill: rgb(255, 116, 116);
-}
-
-.like-button:hover{
-    background-color: rgba(255, 161, 161, 0.295);
-}
-.comment-button:hover{
-    background-color: rgba(149, 223, 255, 0.274);
-}
-.comment-button:hover .svg-comment path{
-    fill: rgb(47, 154, 255);
-}
-
-.bookmark-button:hover{
-    background-color: rgba(169, 255, 209, 0.358);
-}
-.bookmark-button:hover .svg-bookmark path{
-    fill: rgb(72, 208, 135);
-}
-
-
+/* ── User info row ── */
 .user-info{
     display: flex;
     justify-content: space-between;
@@ -126,41 +83,10 @@
 }
 .user-info-child-container{
     display: flex;
-    justify-content: center;
     align-items: center;
     height: 100%;
-    gap: 0.3rem;
+    gap: 0.4rem;
     width: fit-content;
-}
-.user-post-settings{
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-self: flex-end;
-    width: fit-content;
-    height: fit-content;
-    cursor: pointer;
-    user-select: none;
-}
-.setting-modal{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    top: 25px;
-    right: 5px;
-    width: 200px;
-    height: 150px;
-    border-radius: 15px;
-    z-index: 11;
-    background-color: rgb(255, 255, 255);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-.user-info-avatar{
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
 }
 .user-avatar-container{
     display: flex;
@@ -169,13 +95,25 @@
     height: fit-content;
     cursor: pointer;
 }
+.user-info-avatar{
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.user-name-container{
+    display: flex;
+    align-items: center;
+}
 .user-newsfeed-name{
+    font-family: "Nunito", sans-serif;
     font-size: 0.8rem;
-    font-weight: 660;
-    letter-spacing: 0.02rem;
+    font-weight: 650;
+    letter-spacing: 0.005rem;
     margin: 0;
     padding: 0;
     cursor: pointer;
+    color: var(--text-secondary);
 }
 .user-newsfeed-name:hover{
     text-decoration: underline;
@@ -186,7 +124,8 @@
     align-items: center;
     width: fit-content;
     height: fit-content;
-    /* color: rgb(117, 127, 132); */
+    color: var(--text-separator);
+    font-size: 0.4rem;
     user-select: none;
 }
 .user-info-email-container{
@@ -199,9 +138,10 @@
 .user-info-email{
     padding: 0;
     margin: 0;
-    font-size: 0.8rem;
-    font-weight: 560;
-    /* color: rgb(0, 0, 0); */
+    font-family: "Nunito", sans-serif;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-faint);
 }
 .user-post-date-container{
     display: flex;
@@ -224,9 +164,43 @@
 .user-post-date{
     padding: 0;
     margin: 0;
-    font-size: 0.8rem;
-    font-weight: 560;
-    /* color: rgb(0, 0, 0); */
+    font-family: "Nunito", sans-serif;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-faint);
+}
+.user-post-settings{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-self: flex-end;
+    width: fit-content;
+    height: fit-content;
+    cursor: pointer;
+    user-select: none;
+}
+.setting-modal{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 28px;
+    right: 5px;
+    width: 200px;
+    height: 150px;
+    border-radius: 12px;
+    z-index: 11;
+    background-color: var(--bg-elevated);
+    box-shadow: var(--shadow-modal);
+}
+
+/* ── Content (title + text + image) ── */
+.content-container{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    user-select: none;
+    gap: 1.5rem;
 }
 .feed-text-content-container{
     display: flex;
@@ -235,13 +209,7 @@
     height: 100%;
     justify-content: flex-start;
     align-items: flex-start;
-}
-.feed-text-content{
-    padding: 0;
-    margin: 0;
-    font-weight: 550;
-    /* color: rgb(0, 0, 0); */
-    line-height: 1.5rem;
+    gap: 0.35rem;
 }
 .feed-title-content{
     display: flex;
@@ -251,16 +219,23 @@
 .feed-title{
     margin: 0;
     padding: 0;
-    line-height: 1.8rem;
-    font-weight: 860;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.5rem;
+    letter-spacing: -0.02rem;
+    color: var(--text-heading);
 }
-.content-container{
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    user-select: none;
+.feed-text-content{
+    padding: 0;
+    margin: 0;
+    font-family: "Nunito", sans-serif;
+    font-weight: 400;
+    color: var(--text-body);
+    line-height: 1.5rem;
+    font-size: 0.88rem;
+    letter-spacing: 0.005rem;
 }
-
 .feed-image-content-container{
     display: flex;
     justify-content: flex-end;
@@ -269,20 +244,39 @@
     height: fit-content;
 }
 .journal-image{
-    width: 150px;
-    height: 100px;
+    width: 136px;
+    height: 92px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
+/* ── Icon bar ── */
 .card-icons-container{
     display: flex;
     width: 95%;
-    padding: 0 1rem 1rem 1rem;
-    height: 20px;
+    padding: 0.1rem 1rem 1rem 1rem;
+    height: 22px;
     align-items: center;
     justify-content: flex-start;
-    gap: 1rem;
+    gap: 0.5rem;
+}
+#card-icons{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.35rem;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
+    gap: 0.3rem;
+}
+#card-icons-view{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.1rem;
+    border-radius: 50%;
+    transition: background-color 0.15s ease;
+    gap: 0.3rem;
 }
 .card-icons{
     display: flex;
@@ -291,36 +285,59 @@
     justify-content: center;
     align-items: center;
 }
-
 .icon-container{
     display: flex;
     justify-content: center;
     align-items: center;
 }
+
+.like-button:hover .svg-like path{
+    fill: rgb(255, 116, 116);
+}
+.like-button:hover{
+    background-color: rgba(255, 161, 161, 0.15);
+}
+.comment-button:hover{
+    background-color: rgba(149, 223, 255, 0.15);
+}
+.comment-button:hover .svg-comment path{
+    fill: rgb(47, 154, 255);
+}
+.bookmark-button:hover{
+    background-color: rgba(169, 255, 209, 0.2);
+}
+.bookmark-button:hover .svg-bookmark path{
+    fill: rgb(72, 208, 135);
+}
+
+/* ── Reading time pill ── */
 .reading-time-container{
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0.2rem 0.8rem;
-    background-color: rgb(237, 237, 237);
-    border-radius: 15px;
+    padding: 0.15rem 0.6rem;
+    background-color: var(--bg-pill);
+    border-radius: 10px;
+    margin-left: auto;
 }
 .reading-time-text{
     padding: 0;
     margin: 0;
-    font-size: 0.6rem;
-    font-weight: 560;
-    color: rgb(57, 57, 57);
+    font-family: "Nunito", sans-serif;
+    font-size: 0.62rem;
+    font-weight: 550;
+    color: var(--text-muted);
+    letter-spacing: 0.01rem;
 }
 
 .sample-content-show{
     width: 100%;
     height: 100%;
-    background-color: rgb(255, 255, 255);
+    background-color: var(--bg-primary);
     z-index: 10;
 }
 
-/* mobile responsive */
+/* ── Mobile responsive ── */
 @media (max-width: 480px){
     .postcards-parent-container {
         position: relative;
@@ -331,57 +348,6 @@
         height: 100vh;
         margin-bottom: 1rem;
     }
-    .svg-like{
-        width: 18px;
-        height: 18px;
-        padding: 0 0.2rem 0 0; 
-        
-    }
-    .svg-comment{
-        width: 18px;
-        height: 18px;
-        padding: 0 0.2rem 0 0; 
-    }
-    .svg-bookmark{
-        width: 18px;
-        height: 18px;
-        padding: 0 0.2rem 0 0; 
-    }
-    .content-container {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        user-select: none;
-        gap: 0.4rem;
-    }
-    .feed-text-content {
-        padding: 0;
-        margin: 0;
-        font-weight: 550;
-        font-size: 0.8rem;
-        color: rgb(0, 0, 0);
-        line-height: 1.2rem;
-    }
-    .journal-image {
-        width: 120px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 8px;
-    }
-    .user-info-email {
-        padding: 0;
-        margin: 0;
-        font-size: 0.5rem;
-        font-weight: 460;
-        color: rgb(0, 0, 0);
-    }
-    .user-post-date {
-        padding: 0;
-        margin: 0;
-        font-size: 0.6rem;
-        font-weight: 460;
-        color: rgb(0, 0, 0);
-    }
     .postcards-parent-loading-container {
         position: relative;
         top: 60px;
@@ -389,7 +355,99 @@
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        width: 420px;
+        width: 100%;
         height: 100vh;
+    }
+    .svg-like{
+        width: 18px;
+        height: 18px;
+        padding: 0 0.2rem 0 0;
+    }
+    .svg-comment{
+        width: 18px;
+        height: 18px;
+        padding: 0 0.2rem 0 0;
+    }
+    .svg-bookmark{
+        width: 18px;
+        height: 18px;
+        padding: 0 0.2rem 0 0;
+    }
+    .content-container {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        user-select: none;
+        gap: 0.75rem;
+    }
+    .feed-title{
+        font-size: 0.98rem;
+        line-height: 1.35rem;
+    }
+    .feed-text-content {
+        padding: 0;
+        margin: 0;
+        font-weight: 400;
+        font-size: 0.78rem;
+        color: var(--text-body);
+        line-height: 1.25rem;
+    }
+    .journal-image {
+        width: 105px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+    .user-info-email {
+        padding: 0;
+        margin: 0;
+        font-size: 0.55rem;
+        font-weight: 400;
+        color: var(--text-faint);
+    }
+    .user-post-date {
+        padding: 0;
+        margin: 0;
+        font-size: 0.6rem;
+        font-weight: 400;
+        color: var(--text-faint);
+    }
+    .card-content{
+        padding: 1rem 0.8rem 0.5rem 0.8rem;
+    }
+    .card-icons-container{
+        padding: 0.1rem 0.8rem 0.8rem 0.8rem;
+    }
+    .toolbar {
+        display: flex;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+    }
+    .toolbar-bttns {
+        display: flex;
+        width: 16px;
+        height: 16px;
+        justify-content: center;
+        align-items: center;
+        padding: 0.5rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: ease-in-out 0.1s;
+        user-select: none;
+    }
+    .editor-save-bttn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0.2rem 0.8rem;
+        font-size: 0.8rem;
+        border-radius: 15px;
+        margin-right: 1rem;
+        background-color: rgb(255, 255, 255);
+        color: rgb(4, 20, 29);
+        font-weight: 600;
+        cursor: pointer;
+        border: hidden;
     }
 }

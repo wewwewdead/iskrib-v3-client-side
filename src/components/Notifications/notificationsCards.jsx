@@ -165,7 +165,7 @@ const NotificationCards = () =>{
                 const parsedContent = ParseContent(notification?.journals.content)
 
                 return(
-                <div key={notification.id} className={notification.read ? "notification-cards" : "notification-cards-unread"}>
+                <div key={notification.id} className={notification?.read ? "notification-cards" : "notification-cards-unread"}>
                     
                     <div className="notification-cards-child-container">
 

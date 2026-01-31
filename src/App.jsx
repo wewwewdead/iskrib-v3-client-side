@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import './App.css'
-import { Routes, Route, BrowserRouter, HashRouter} from 'react-router-dom'
+import { Routes, Route, BrowserRouter, HashRouter, Navigate} from 'react-router-dom'
+import AuthModal from './components/AuthModal/AuthModal.jsx';
+import { useAuth } from './Context/useAuth.js';
 import HomePage from './components/HomePage/home.jsx';
 import LoginPage from './components/LoginPage/login.jsx';
 import SignUp from './components/SignUpPage/signup.jsx';
@@ -25,6 +27,12 @@ import ViewUserCollection from './components/collections/ViewUserCollections.jsx
 import OpinionsPage from './components/SidebarOpinions/OpinionssPage.jsx';
 import VisitedProfileOpinions from './components/SidebarOpinions/visitedProfileOpinions.jsx';
 import MyOpinions from './components/SidebarOpinions/MyOpinions.jsx';
+import OpinionViewer from './components/SidebarOpinions/opinionViewer.jsx';
+
+const AppAuthModal = () => {
+  const {showAuthModal, closeAuthModal} = useAuth();
+  return <AuthModal isOpen={showAuthModal} onClose={closeAuthModal}/>;
+}
 
 const App = () => {
 
@@ -56,8 +64,9 @@ const initaConfig = {
     <>
     <LexicalComposer initialConfig={initaConfig}>
       <HashRouter>
+        <AppAuthModal/>
         <Routes>
-          <Route path='/' element={<LoginPage/>}/>
+          <Route path='/' element={<Navigate to='/home' replace/>}/>
           <Route path='/profile' element={<MyProfile/>}>
             <Route index element={<ProfilePostCards/>} />
             <Route path='myOpinions' element={<MyOpinions/>}/>         
@@ -76,6 +85,7 @@ const initaConfig = {
             <Route path='bookmark' element={<Bookmarks/>}/>
             <Route path='userCollections' element={<ViewUserCollection/>}/>
             <Route path='opinions'element={<OpinionsPage/>}/>
+            <Route path='opinionsViewer' element={<OpinionViewer/>}/>
 
             <Route path='collections' element={<Collections/>}/>
             <Route path='collectionCards' element={<CollectionJournals/>}/>

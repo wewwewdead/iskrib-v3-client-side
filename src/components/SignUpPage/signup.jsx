@@ -25,22 +25,6 @@ const SignUp = () => {
         setShowPass(!showPass)
     }
 
-    // //wait the turnstile script to be ready
-    // useEffect(() =>{
-    //     const interval = setInterval(() => {
-    //         if(window.turnstile){
-    //             clearInterval(interval);
-    //             window.turnstile.render('#captcha-container', {
-    //                 sitekey: SITE_KEY,
-    //                 callback: (token) =>setCaptchaToken(token),
-    //                 'error-callback': () => setCaptchaToken(null),
-    //                 'expired-callback': () => setCaptchaToken(null),
-    //             })
-    //         }
-    //     }, 300);
-    // }, [])
-
-
     const handleSignUp = async(e) =>{
         e.stopPropagation()
         setIsLoadingSignUp(true)
@@ -86,7 +70,7 @@ const SignUp = () => {
             setPassword(null);
             setIsLoadingSignUp(false)
         }
-        
+
     }
     const handleNavigate = (e) => {
         e.stopPropagation();
@@ -97,43 +81,40 @@ const SignUp = () => {
             return navigate('/home')
         }
     }, [session])
-    
+
     if(isLoadingSignUp){
         return(
-            <>
             <div className='signup-loading-container'>
-                <MoonLoader loading={isLoadingSignUp} size={20} speedMultiplier={1} color='rgba(255, 255, 255, 0.53)'/>
+                <MoonLoader loading={isLoadingSignUp} size={20} speedMultiplier={1} color='rgba(157, 139, 254, 0.8)'/>
             </div>
-            </>
         )
     }
     return(
-        <>
-        <div className='sign-up-bg-container'>
-
-            <div className='signup-bg'>
-                <img className='sign-up-bg-image' src="/assets/log-in-page-bg.png" alt="" />
+        <div className='signup-page-wrapper'>
+            <div className='signUp-logo'>
+                Iskrib
             </div>
+            <p className='signup-tagline'>Where your stories find their voice</p>
 
             <div className='signup-page-container'>
                 <div className='input-container'>
                     <div className='input-container-child'>
-                        <input maxLength={50} value={!email ? '' : email} onChange={(e) => setEmail(e.target.value)} className='signUp-input' type="text" placeholder='email'/>
+                        <input maxLength={50} value={!email ? '' : email} onChange={(e) => setEmail(e.target.value)} className='signUp-input' type="email" placeholder='Email' aria-label='Email'/>
                         {email&&(
-                            <div onClick={(e) => handleShowPass(e)} style={email.length >= 50 ? {color: 'red'} : {}} className='length-counter'>
+                            <div style={email.length >= 50 ? {color: 'rgb(200, 40, 40)'} : {}} className='length-counter'>
                                 {`${email.length}/50`}
                             </div>
                         )}
                     </div>
                     <div className='input-container-child'>
-                        <input value={!password ? '' : password} onChange={(e) => setPassword(e.target.value)} className='signUp-input' type={showPass ? 'text' : "password"} placeholder='password'/>
+                        <input value={!password ? '' : password} onChange={(e) => setPassword(e.target.value)} className='signUp-input' type={showPass ? 'text' : "password"} placeholder='Password' aria-label='Password'/>
                         {password && (
                             <div onClick={(e) => handleShowPass(e)} className='show-bttn'>
                                 {showPass ? 'hide' : 'show'}
                             </div>
                         )}
                     </div>
-                    <button onClick={(e) => handleSignUp(e)} disabled={!password} className={!password ? 'submit-bttn-disabled' : 'submit-bttn'}>
+                    <button onClick={(e) => handleSignUp(e)} disabled={!password} className={!password ? 'submit-bttn submit-bttn-disabled' : 'submit-bttn'}>
                         Submit
                     </button>
                 </div>
@@ -142,7 +123,7 @@ const SignUp = () => {
                     Have an account? <span onClick={(e) => handleNavigate(e)} className='sign-in-bttn'>Log in</span>
                 </div>
 
-                <div>
+                <div className='captcha-container'>
                     <Turnstile
                     sitekey={SITE_KEY}
                     onVerify={(token) => setCaptchaToken(token)}
@@ -155,16 +136,10 @@ const SignUp = () => {
                 {errorMessage && (
                     <div className='error-message'>
                         {errorMessage}
-                    </div>  
+                    </div>
                 )}
             </div>
-
-            <div className='signUp-logo'>
-                Iskrib
-            </div>
         </div>
-        
-        </>
     )
 }
 export default SignUp;

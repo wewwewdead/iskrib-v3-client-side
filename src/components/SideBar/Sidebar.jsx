@@ -2,9 +2,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import './sidebar.css'
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from '../../Context/useAuth';
+import { useTheme } from '../../Context/useTheme';
 
 const Sidebar = ({links}) =>{
     const {user, session, signOut} = useAuth();
+    const {theme, toggleTheme} = useTheme();
     const navigate = useNavigate(null)
     const location = useLocation();
     
@@ -37,6 +39,12 @@ const Sidebar = ({links}) =>{
                 </div>
                 )
             })}
+            <div className='sidebar-theme-toggle' onClick={toggleTheme}>
+                <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+                <div className={`theme-toggle-track ${theme === 'dark' ? 'active' : ''}`}>
+                    <div className='theme-toggle-thumb'/>
+                </div>
+            </div>
             <div className='sidebar-user-container'>
                 {userData && (
                     <>

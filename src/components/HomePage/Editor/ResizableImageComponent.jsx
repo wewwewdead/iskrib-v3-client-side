@@ -5,7 +5,7 @@ import { deleteJournalImage } from '../../../../API/Api';
 import { useAuth } from '../../../Context/useAuth';
 import { AnimatePresence, motion, scale } from 'framer-motion';
 
-const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = true }) => {
+const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false, isEditable = true }) => {
   const [editor] = useLexicalComposerContext();
   const [isResizing, setIsResizing] = useState(false);
   const [currentWidth, setCurrentWidth] = useState(width);
@@ -229,6 +229,12 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, isEditable = tru
         className='image-content'
       />
       </AnimatePresence>
+
+      {loading && (
+        <div className="image-loading-overlay">
+          <div className="image-loading-spinner" />
+        </div>
+      )}
 
       {isEditable && (
       <div onClick={(e) => handleDelete(e)} className='image-delete'>

@@ -184,9 +184,10 @@ export const deleteJournalImage = async(token, url) => {
 export const getJournals = async(cursor = null, limit = 5, userId) =>{
     // console.log(userId)
     try {
-        const url = cursor 
-        ? `${BASE_URL}/journals?limit=${limit}&before=${cursor}&userId=${userId}`
-        : `${BASE_URL}/journals?limit=${limit}&userId=${userId}`;
+        let url = cursor
+        ? `${BASE_URL}/journals?limit=${limit}&before=${cursor}`
+        : `${BASE_URL}/journals?limit=${limit}`;
+        if(userId) url += `&userId=${userId}`;
 
         const response = await fetch(url, {
             method: 'GET'
@@ -737,6 +738,38 @@ export const getPostReplies = async(parent_id, limit, cursor) =>{
     const data = await response.json();
     console.log(data);
     return data;
+}
+
+export const getViewOpinion = async(postId, userId) =>{
+    const url = `${BASE_URL}/viewOpinion/${postId}/${userId}`;
+
+    const response = await fetch(url, {
+        method: 'GET'
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+
+    const data = await response.json();
+    console.log(data);
+    return data;
+}
+
+export const addReplyOpinion = async(body, opinion_id, receiver_id, user_id, parent_id) =>{
+    
+    const response = await fetch(`${BASE_URL}/addOpinionReply/${parent_id}/${user_id}/${receiver_id}/${opinion_id}`, {
+        method: 'POST',
+        body: body
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const message = await response.json();
+    return message;
 }
 
 

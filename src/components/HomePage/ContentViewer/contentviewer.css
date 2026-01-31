@@ -14,9 +14,9 @@
     width: 100%;
     height: fit-content;
     z-index: 3;
-    background-color: rgb(255, 255, 255);
-    border-left: 0.7px solid  rgba(151, 151, 151, 0.168);
-    border-right: 0.7px solid rgba(151, 151, 151, 0.168);
+    background-color: var(--bg-primary);
+    border-left: 0.7px solid var(--border-light);
+    border-right: 0.7px solid var(--border-light);
     overflow-y: auto;
 }
 .content-viewer-container::-webkit-scrollbar{
@@ -35,7 +35,7 @@
     height: 50px;
     user-select: none;
     z-index: inherit;
-    background-color: rgba(255, 255, 255, 0.23);
+    background-color: var(--bg-backdrop);
     backdrop-filter: blur(25px);
 }
 .back-button{
@@ -45,9 +45,10 @@
     cursor: pointer;
     padding: 0.2rem;
     border-radius: 50%;
+    background-color: rgba(154, 154, 154, 0.718);
 }
 .back-button:hover{
-    background-color:rgb(245, 245, 245) ;
+    background-color: rgb(85, 85, 85);
     
 }
 
@@ -156,14 +157,14 @@
     padding: 0;
     margin: 0;
     font-weight: 500;
-    color: rgb(126, 126, 126);
+    color: var(--text-muted);
 }
 .read-time{
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 0.2rem 0.8rem 0.2rem 0.8rem;
-    background-color: rgb(237, 237, 237);
+    background-color: var(--bg-pill);
     border-radius: 15px;
     font-size: 0.6rem;
 }
@@ -173,8 +174,8 @@
     align-items: center;
     height: 50px;
     width: 100%;
-    border-top: 0.7px solid rgba(151, 151, 151, 0.168);
-    border-bottom: 0.7px solid rgba(151, 151, 151, 0.168);
+    border-top: 0.7px solid var(--border-light);
+    border-bottom: 0.7px solid var(--border-light);
 
 }
 .like-button{
@@ -259,7 +260,7 @@
         height: 50px;
         user-select: none;
         z-index: inherit;
-        background-color: rgba(255, 255, 255, 0.23);
+        background-color: var(--bg-backdrop);
         backdrop-filter: blur(25px);
     }
 }
@@ -283,7 +284,7 @@
         height: 50px;
         user-select: none;
         z-index: inherit;
-        background-color: rgba(255, 255, 255, 0.23);
+        background-color: var(--bg-backdrop);
         backdrop-filter: blur(25px);
     }
     .content-viewer-container {
@@ -295,9 +296,9 @@
         width: 400px;
         height: fit-content;
         z-index: 3;
-        background-color: rgb(255, 255, 255);
+        background-color: var(--bg-primary);
         border-left: 0.7px solid rgba(151, 151, 151, 0.168);
-        border-right: 0.7px solid rgba(151, 151, 151, 0.168);
+        border-right: 0.7px solid var(--border-light);
         overflow-y: auto;
     }
     .content-title-container {
@@ -339,7 +340,7 @@
         padding: 0;
         margin: 0;
         font-weight: 500;
-        color: rgb(126, 126, 126);
+        color: var(--text-muted);
     }
     .follow-bttn{
         font-size: 0.7rem;
@@ -364,7 +365,7 @@
         justify-content: center;
         align-items: center;
         padding: 0.1rem 0.7rem 0.1rem 0.7rem;
-        background-color: rgb(237, 237, 237);
+        background-color: var(--bg-pill);
         border-radius: 15px;
         font-size: 0.5rem;
 }
@@ -398,7 +399,7 @@
         height: 50px;
         user-select: none;
         z-index: inherit;
-        background-color: rgba(255, 255, 255, 0.23);
+        background-color: var(--bg-backdrop);
         backdrop-filter: blur(25px);
     }
     .content-viewer-container {
@@ -410,9 +411,9 @@
         width: 98%;
         height: 100vh;
         z-index: 12;
-        background-color: rgb(255, 255, 255);
+        background-color: var(--bg-primary);
         border-left: 0.7px solid rgba(151, 151, 151, 0.168);
-        border-right: 0.7px solid rgba(151, 151, 151, 0.168);
+        border-right: 0.7px solid var(--border-light);
         overflow-y: auto;
     }
     .content-title-container {
@@ -454,7 +455,7 @@
         padding: 0;
         margin: 0;
         font-weight: 500;
-        color: rgb(126, 126, 126);
+        color: var(--text-muted);
     }
     .follow-bttn{
         font-size: 0.7rem;
@@ -479,7 +480,7 @@
         justify-content: center;
         align-items: center;
         padding: 0.1rem 0.7rem 0.1rem 0.7rem;
-        background-color: rgb(237, 237, 237);
+        background-color: var(--bg-pill);
         border-radius: 15px;
         font-size: 0.5rem;
 }

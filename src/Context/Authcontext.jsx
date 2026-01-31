@@ -8,6 +8,10 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
     const [loading, setLoading] = useState(true);
+    const [showAuthModal, setShowAuthModal] = useState(false);
+
+    const openAuthModal = () => setShowAuthModal(true);
+    const closeAuthModal = () => setShowAuthModal(false);
 
     const queryClient = useQueryClient();
 
@@ -91,10 +95,18 @@ export const AuthProvider = ({children}) => {
     // }, [userData])
 
     const signOut = async() =>{
-        await supabase.auth.signOut({scope: 'global'});
+        await supabase.auth.signOut();
         queryClient.setQueryData(['authsession'], null)
         queryClient.clear();
 
+    }
+
+    const requireAuth = (callback) => {
+        if(authData){
+            callback();
+        } else {
+            openAuthModal();
+        }
     }
 
     const value = {
@@ -103,7 +115,11 @@ export const AuthProvider = ({children}) => {
         loading: loading,
         isLoading: isLoading,
         notifCount: notifCount?.count,
-        signOut
+        signOut,
+        showAuthModal,
+        openAuthModal,
+        closeAuthModal,
+        requireAuth
     }
     return <AuthContext.Provider value={value}>
         {children}

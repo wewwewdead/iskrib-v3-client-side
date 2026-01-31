@@ -18,7 +18,7 @@ import ImageNode, {$createImageNode, INSERT_IMAGE_COMMAND} from "./nodes/ImageNo
 import { saveJournalImage } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
 
-const ToolBar = () =>{
+const ToolBar = ({addUploadedImagePath}) =>{
     //bold and italic style are textFormatTypeStrings
     const [editor] = useLexicalComposerContext();
     const {session} = useAuth();
@@ -72,24 +72,56 @@ const ToolBar = () =>{
 
     //insert image
     const insertImageFromFile = async() => {
-        
+
         const handleOnChange = async(e) => {
             const filedata = e.target.files?.[0];
             if(!filedata) return;
 
+            // create a local blob URL for immediate preview
+            const blobUrl = URL.createObjectURL(filedata);
+
+            // insert image immediately with loading state
+            editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+                src: blobUrl,
+                width: 500,
+                height: 500,
+                loading: true,
+            })
+
+            // upload in background
             const formdata = new FormData();
             formdata.append('image', filedata);
 
-            const data_url = await saveJournalImage(session?.access_token, formdata);
-            if(!data_url){
-                return console.log('error: no image_url')
-            }
+            try {
+                const data_url = await saveJournalImage(session?.access_token, formdata);
+                if(!data_url){
+                    console.log('error: no image_url');
+                    return;
+                }
 
-            editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
-                src: data_url.img_url,
-                width: 500,
-                height: 500,
-            })
+                // track the uploaded image path
+                const filePath = data_url.img_url.split('/journal-images/').pop();
+                if (filePath && addUploadedImagePath) {
+                    addUploadedImagePath(filePath);
+                }
+
+                // update the node with the real URL and clear loading state
+                editor.update(() => {
+                    const root = editor.getEditorState()._nodeMap;
+                    for (const [, node] of root) {
+                        if (node.__type === 'image' && node.__src === blobUrl) {
+                            node.getWritable().__src = data_url.img_url;
+                            node.getWritable().__loading = false;
+                            break;
+                        }
+                    }
+                });
+
+                // revoke the blob URL to free memory
+                URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+                console.error('Image upload failed:', err);
+            }
         }
 
         const input = document.createElement('input'); //create an input element

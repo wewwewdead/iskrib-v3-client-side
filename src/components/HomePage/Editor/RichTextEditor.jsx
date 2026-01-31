@@ -124,7 +124,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
         </div>
 
         <div className='editor-lower-part-container'>
-            <ToolBar/>
+            <ToolBar addUploadedImagePath={addUploadImagesPath}/>
             <button disabled={!title || !hasContent} onClick={(e) =>handleClickSave(e, title)} className={title && hasContent ? 'editor-save-bttn' : 'editor-save-bttn-disabled'}>
                 Share
             </button>
