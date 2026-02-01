@@ -1,204 +1,296 @@
-.editor-text-bold{
+/* ── Editor text formats ── */
+.editor-text-bold {
     font-weight: bold;
 }
-.editor-text-italic{
+.editor-text-italic {
     font-style: italic;
 }
-.editor-text-underline{
+.editor-text-underline {
     text-decoration: underline;
 }
 
-.editor-parent-container{
+/* ── Editor container variables (derived from global theme) ── */
+.editor-container {
+    --editor-bg: var(--bg-elevated);
+    --editor-surface: var(--bg-secondary);
+    --editor-text: var(--text-primary);
+    --editor-border: var(--border-light);
+    --editor-accent: var(--accent-purple);
+}
+
+/* ── Overlay backdrop ── */
+.editor-parent-container {
     display: flex;
     justify-content: center;
     align-items: center;
     position: absolute;
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0.089);
+    background-color: var(--bg-overlay);
     backdrop-filter: blur(25px);
     z-index: 130;
 }
-.editor-text-container{
-    white-space: pre-wrap;
-    color: rgb(255, 255, 255);
-    max-height: 300px;
-    height: 300px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 1rem 0.5rem;
-}
-.content-title-input{
-    margin: 1rem 0rem;
-    border: none;
-    background-color: transparent;
-    font-size: 1.5rem;
-    font-weight: 650;
-    padding: 0.5rem;
-    border: 1px solid rgba(151, 151, 151, 0.168);
-    color: rgb(255, 255, 255) !important;
-}
-.content-title-input:focus{
-    outline: none;
-}
 
-.editor-container{
+/* ── Main editor card ── */
+.editor-container {
     display: flex;
     flex-direction: column;
-    width: 60%;
+    width: 100%;
+    max-width: 720px;
     height: 80%;
-    background-color: rgb(4, 20, 29);
-    color: #ffffff;
-    border-radius: 15px;
-    padding: 1rem;
+    background-color: var(--editor-bg);
+    color: var(--editor-text);
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    box-shadow: var(--shadow-modal);
 }
 
-.editor-paragraph{
-    margin: 0;
-}
-.editor-close-bttn-container{
+/* ── Close button row ── */
+.editor-close-bttn-container {
     display: flex;
     width: 100%;
     justify-content: flex-end;
     align-items: center;
 }
-.editor-close-bttn{
-    padding: 0.5rem;
+.editor-close-bttn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    border: none;
+    background: transparent;
     border-radius: 50%;
     cursor: pointer;
+    color: var(--text-muted);
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
-.editor-close-bttn:hover{
-    background-color: rgb(15, 41, 56);
+.editor-close-bttn svg {
+    fill: var(--text-muted);
+    transition: fill 0.15s ease;
+}
+.editor-close-bttn:hover {
+    background-color: var(--bg-pill);
+    color: var(--editor-text);
+    transform: scale(1.05);
+}
+.editor-close-bttn:hover svg {
+    fill: var(--editor-text);
 }
 
-.is-active{
+/* ── Title input ── */
+.content-title-input {
+    margin: 0.5rem 0;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background-color: transparent;
+    font-size: 1.75rem;
+    font-weight: 650;
+    font-family: var(--font-serif);
+    padding: 0.5rem 0.25rem;
+    color: var(--editor-text);
+    transition: border-color 0.25s ease;
+}
+.content-title-input::placeholder {
+    color: var(--text-muted);
+}
+.content-title-input:focus {
+    outline: none;
+    border-bottom-color: var(--editor-accent);
+}
+
+/* ── Toolbar (above content) ── */
+.toolbar-wrapper {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid var(--editor-border);
+    border-bottom: 1px solid var(--editor-border);
+    padding: 0.35rem 0;
+    margin-bottom: 0;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background-color: var(--editor-bg);
+}
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+.group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background-color: var(--editor-border);
+    margin: 0 6px;
+    flex-shrink: 0;
+}
+.toolbar-bttns {
+    display: flex;
+    width: fit-content;
+    height: fit-content;
+    justify-content: center;
+    align-items: center;
+    padding: 0.4rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    color: var(--editor-text);
+}
+.toolbar-bttns svg {
+    fill: var(--editor-text);
+    transition: fill 0.15s ease;
+}
+.toolbar-bttns:hover {
+    background-color: var(--bg-pill);
+}
+.is-active {
     display: flex;
     justify-content: center;
     align-items: center;
     width: fit-content;
     height: fit-content;
-    padding: 0.5rem;
-    color: rgba(0, 0, 0, 0.168);
-    background-color: rgb(52, 123, 255);
-    transition: ease-in-out 0.1s;
-    border-radius: 50%;
+    padding: 0.4rem;
+    border-radius: 6px;
     cursor: pointer;
-    box-shadow: 0 0 10px 5px rgba(40, 115, 255, 0.1), 0 0 15px 3px rgba(40, 115, 255, 0.5), 0 0 0 0.1px rgb(40, 115, 255);
-}
-.editor-lower-part-container{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 50px;
-    width: 100%;
-    margin: 1rem 0rem;
-    border-radius: 4px;
-    border: 1px solid rgba(151, 151, 151, 0.168);
-}
-.editor-upload-image-icon{
-    padding: 0.5rem;
-    border-radius: 50%;
-    margin-left: 1rem;
-    cursor: pointer;
-    transition: ease-in-out 0.1s;
-}
-.editor-upload-image-icon:hover{
-    background-color: rgba(52, 123, 255, 0.285);
-}
-.editor-save-bttn{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border-radius: 15px;
-    margin-right: 1rem;
-    background-color: rgb(255, 255, 255);
-    color: rgb(4, 20, 29);
-    font-weight: 650;
-    cursor: pointer;
-    border: hidden;
-}
-.editor-save-bttn:focus{
-    border: hidden;
-}
-.editor-save-bttn-disabled{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border-radius: 15px;
-    margin-right: 1rem;
-    background-color: rgb(185, 185, 185);
-    color: rgb(4, 20, 29);
-    font-weight: 650;
+    transition: all 0.15s ease;
     user-select: none;
-    border: hidden;
-}.editor-save-bttn-disabled:focus{
-    border: hidden;
+    background-color: color-mix(in srgb, var(--editor-accent) 15%, transparent);
 }
-.editor-shell{
-    position: relative;
-    height: 400px;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-.editor-shell::-webkit-scrollbar{
-    width: 6px;
-}
-.editor-shell::-webkit-scrollbar-thumb{
-    background: rgb(27, 87, 121);
-    border-radius: 4px;
-}
-.editor-shell::-webkit-scrollbar-track{
-    background-color: rgba(15, 59, 85, 0.501);
+.is-active svg {
+    fill: var(--editor-accent);
 }
 
-.editor-input:focus{
+/* ── Editor shell (flex-grow, scrollable) ── */
+.editor-shell {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-muted) transparent;
+}
+.editor-shell::-webkit-scrollbar {
+    width: 6px;
+}
+.editor-shell::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 4px;
+}
+.editor-shell::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* ── Editor content area ── */
+.editor-text-container {
+    white-space: pre-wrap;
+    color: var(--editor-text);
+    padding: 1rem 0.5rem;
+}
+.editor-input:focus {
     outline: none;
 }
 .editor-placeholder {
-  color: #999;
-  overflow: hidden;
-  position: absolute;
-  top: -4px;
-  user-select: none;
-  pointer-events: none;
-  margin: 0;
-}
-.toolbar{
-    display: flex;
-    height: 100%;
-    width: 100%;
-}
-.group{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.toolbar-bttns{
-    display: flex;
-    width: fit-content;
-    height: fit-content;
-    justify-content: center;
-    align-items: center;
-    padding: 0.5rem;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: ease-in-out 0.1s;
+    color: var(--text-muted);
+    overflow: hidden;
+    position: absolute;
+    top: -4px;
     user-select: none;
+    pointer-events: none;
+    margin: 0;
 }
-.toolbar-bttns:hover{
-    background-color:rgb(15, 41, 56) ;
+.editor-paragraph {
+    margin: 0;
 }
 
-.image-container{
+/* ── Footer bar (word count + save) ── */
+.editor-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--editor-border);
+    margin-top: auto;
+}
+.editor-word-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    user-select: none;
+    padding-left: 0.25rem;
+}
+
+/* ── Bar loader positioning ── */
+.editor-loader-wrapper {
+    height: 4px;
+    flex-shrink: 0;
+}
+
+/* ── Save button ── */
+.editor-save-bttn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 1.25rem;
+    border-radius: 15px;
+    background-color: var(--editor-accent);
+    color: #ffffff;
+    font-weight: 650;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+}
+.editor-save-bttn:hover {
+    opacity: 0.9;
+}
+.editor-save-bttn:active {
+    transform: scale(0.98);
+}
+.editor-save-bttn:focus {
+    outline: none;
+}
+.editor-save-bttn-disabled {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 1.25rem;
+    border-radius: 15px;
+    background-color: var(--bg-pill);
+    color: var(--text-muted);
+    font-weight: 650;
+    user-select: none;
+    border: none;
+    cursor: not-allowed;
+}
+.editor-save-bttn-disabled:focus {
+    outline: none;
+}
+
+/* ── Image upload icon (inside toolbar) ── */
+.editor-upload-image-icon {
+    padding: 0.4rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.editor-upload-image-icon:hover {
+    background-color: var(--bg-pill);
+}
+
+/* ── Image components ── */
+.image-container {
     display: flex;
     justify-content: center;
     width: 100%;
     height: fit-content;
 }
-
-.image-wrapper{
+.image-wrapper {
     position: relative;
     display: flex;
     justify-content: flex-end;
@@ -206,7 +298,7 @@
     width: fit-content;
     height: fit-content;
 }
-.image-actions{
+.image-actions {
     position: absolute;
     display: flex;
     gap: 0.3rem;
@@ -215,7 +307,7 @@
     margin: 0.5rem;
     z-index: 11;
 }
-.image-action-btn{
+.image-action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -223,13 +315,12 @@
     border-radius: 50%;
     cursor: pointer;
     transition: ease-in-out 0.1s;
-    background-color:rgba(15, 41, 56, 0.5);
+    background-color: rgba(0, 0, 0, 0.35);
 }
-.image-action-btn:hover{
-    background-color:rgba(15, 41, 56, 0.75);
+.image-action-btn:hover {
+    background-color: rgba(0, 0, 0, 0.55);
 }
-
-.dimension-display{
+.dimension-display {
     position: absolute;
     display: flex;
     justify-content: center;
@@ -237,103 +328,106 @@
     top: -35px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(151, 151, 151, 0.168);
-    color: #ffffffa4;
+    background-color: var(--bg-pill);
+    color: var(--text-muted);
     padding: 0.4rem 0.5rem;
     white-space: nowrap;
     pointer-events: none;
     font-size: 0.8rem;
     border-radius: 4px;
 }
-.southeast-side-handle{
+
+/* ── Resize handles ── */
+.southeast-side-handle {
     position: absolute;
     bottom: -4px;
     right: -4px;
     width: 12px;
     height: 12px;
-    background-color: rgba(151, 151, 151, 0.168);
-    border: 1px solid white;
+    background-color: var(--bg-pill);
+    border: 1px solid var(--editor-text);
     border-radius: 50%;
     cursor: nwse-resize;
     z-index: 10;
 }
-.southwest-side-handle{
+.southwest-side-handle {
     position: absolute;
     bottom: -4px;
     left: -4px;
     width: 12px;
     height: 12px;
-    background-color: rgba(151, 151, 151, 0.168);
-    border: 1px solid rgb(255, 255, 255);
+    background-color: var(--bg-pill);
+    border: 1px solid var(--editor-text);
     border-radius: 50%;
     cursor: nesw-resize;
     z-index: 10;
 }
-.northeast-side-handle{
+.northeast-side-handle {
     position: absolute;
     top: -4px;
     right: -4px;
     width: 12px;
     height: 12px;
-    background-color: rgba(151, 151, 151, 0.168);
-    border: 1px solid rgb(255, 255, 255);
+    background-color: var(--bg-pill);
+    border: 1px solid var(--editor-text);
     border-radius: 50%;
     cursor: sw-resize;
     z-index: 10;
 }
-
-.northwest-side-handle{
+.northwest-side-handle {
     position: absolute;
     top: -4px;
     left: -4px;
     width: 12px;
     height: 12px;
-    background-color: rgba(151, 151, 151, 0.168);
-    border: 1px solid rgb(255, 255, 255);
+    background-color: var(--bg-pill);
+    border: 1px solid var(--editor-text);
     border-radius: 50%;
     cursor: se-resize;
     z-index: 10;
 }
-.east-side-handle{
+.east-side-handle {
     position: absolute;
     top: 50%;
     right: -4px;
     width: 8px;
     height: 20px;
-    background-color: rgba(151, 151, 151, 0.168);
-    border: 1px solid rgb(255, 255, 255);
+    background-color: var(--bg-pill);
+    border: 1px solid var(--editor-text);
     border-radius: 2px;
     transform: translateY(-50%);
     cursor: ew-resize;
     z-index: 10;
 }
-.south-side-handle{
+.south-side-handle {
     position: absolute;
     bottom: -4px;
     left: 50%;
     width: 20px;
     height: 8px;
-    background-color: rgba(151, 151, 151, 0.168);
-    border: 1px solid rgb(255, 255, 255);
+    background-color: var(--bg-pill);
+    border: 1px solid var(--editor-text);
     border-radius: 2px;
     transform: translateX(-50%);
     cursor: ns-resize;
     z-index: 10;
 }
-.north-side-handle{
+.north-side-handle {
     position: absolute;
     top: -4px;
     left: 50%;
     width: 20px;
     height: 8px;
-    background-color: rgba(151, 151, 151, 0.168);
-    border: 1px solid rgb(255, 255, 255);
+    background-color: var(--bg-pill);
+    border: 1px solid var(--editor-text);
     border-radius: 2px;
     transform: translateX(-50%);
     cursor: nw-resize;
     z-index: 10;
 }
-.image-loading-overlay{
+
+/* ── Image loading overlay ── */
+.image-loading-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -343,25 +437,26 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(4, 20, 29, 0.6);
+    background-color: rgba(0, 0, 0, 0.45);
     border-radius: 5px;
     gap: 8px;
     pointer-events: none;
 }
-.image-loading-spinner{
+.image-loading-spinner {
     width: 28px;
     height: 28px;
     border: 3px solid rgba(255, 255, 255, 0.2);
-    border-top: 3px solid rgb(40, 115, 255);
+    border-top: 3px solid var(--editor-accent);
     border-radius: 50%;
     animation: image-spin 0.8s linear infinite;
 }
-@keyframes image-spin{
+@keyframes image-spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
-.image-view{
+/* ── Full-screen image view ── */
+.image-view {
     position: fixed;
     top: 0;
     left: 0;
@@ -375,168 +470,42 @@
     scale: 1.2;
 }
 
-/* mobile responsive */
-@media (max-width: 428px){
+/* ── Mobile responsive (overrides only) ── */
+@media (max-width: 640px) {
     .editor-parent-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: absolute;
-        width: 428px;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.089);
-        backdrop-filter: blur(25px);
         z-index: 132;
     }
-    .editor-container{
-        display: flex;
-        flex-direction: column;
-        width: 80%;
-        height: 90%;
-        background-color: rgb(4, 20, 29);
-        color: #ffffff;
-        border-radius: 15px;
-        padding: 1rem;
-    }
-
-    .editor-lower-part-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-        height: 90px;
-        width: 100%;
-        margin: 0.4rem 0rem;
-        border-radius: 4px;
-        border: 1px solid rgba(151, 151, 151, 0.168);
-    }
-    .editor-shell {
-        position: relative;
-        height: 400px;
-        overflow-y: auto;
-        overflow-x: auto;
-    }
-    .edit-content {
-        width: 100%;
-        height: 400px;
-        cursor: text;
-        margin-bottom: 2rem;
-        overflow-y: auto;
-        overflow-x: auto;
+    .editor-container {
+        width: 95%;
+        height: 95%;
+        padding: 0.75rem;
+        border-radius: 12px;
     }
     .toolbar {
-        display: flex;
         justify-content: center;
-        height: 100%;
-        width: 100%;
     }
-    .toolbar-bttns {
-        display: flex;
-        width: 16px;
+    .toolbar-bttns,
+    .is-active {
+        padding: 0.35rem;
+    }
+    .toolbar-bttns svg,
+    .is-active svg {
+        width: 18px;
+        height: 18px;
+    }
+    .toolbar-divider {
+        margin: 0 4px;
         height: 16px;
-        justify-content: center;
-        align-items: center;
-        padding: 0.5rem;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: ease-in-out 0.1s;
-        user-select: none;
+    }
+    .content-title-input {
+        font-size: 1.35rem;
     }
     .editor-save-bttn {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.2rem 0.8rem;
-        font-size: 0.8rem;
-        border-radius: 15px;
-        margin-right: 1rem;
-        background-color: rgb(255, 255, 255);
-        color: rgb(4, 20, 29);
-        font-weight: 600;
-        cursor: pointer;
-        border: hidden;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.85rem;
     }
-}
-
-/* mobile responsive */
-@media (max-width: 480px){
-    .editor-parent-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.089);
-        backdrop-filter: blur(25px);
-        z-index: 132;
-    }
-    .editor-container{
-        display: flex;
-        flex-direction: column;
-        width: 90%;
-        height: 90%;
-        background-color: rgb(4, 20, 29);
-        color: #ffffff;
-        border-radius: 15px;
-        padding: 1rem;
-    }
-
-    .editor-lower-part-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-        height: 90px;
-        width: 100%;
-        margin: 0.4rem 0rem;
-        border-radius: 4px;
-        border: 1px solid rgba(151, 151, 151, 0.168);
-    }
-    .editor-shell {
-        position: relative;
-        height: 100%;
-        overflow-y: auto;
-        overflow-x: auto;
-    }
-    .edit-content {
-        width: 100%;
-        height: 100%;
-        cursor: text;
-        margin-bottom: 2rem;
-        overflow-y: auto;
-        overflow-x: auto;
-    }
-    .toolbar {
-        display: flex;
-        justify-content: center;
-        height: 100%;
-        width: 100%;
-    }
-    .toolbar-bttns {
-        display: flex;
-        width: 16px;
-        height: 16px;
-        justify-content: center;
-        align-items: center;
-        padding: 0.5rem;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: ease-in-out 0.1s;
-        user-select: none;
-    }
-    .editor-save-bttn {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.2rem 0.8rem;
-        font-size: 0.8rem;
-        border-radius: 15px;
-        margin-right: 1rem;
-        background-color: rgb(255, 255, 255);
-        color: rgb(4, 20, 29);
-        font-weight: 600;
-        cursor: pointer;
-        border: hidden;
+    .editor-save-bttn-disabled {
+        padding: 0.35rem 0.9rem;
+        font-size: 0.85rem;
     }
 }

@@ -159,10 +159,10 @@ const PostCards = () => {
         console.log(journalId)
         mutationLike.mutate({journalId, receiverId}) //passing this into mutationFn {journalId: the id}
     }
-    const debounceClickLike = debounce(handleClickLike, 300)
+    const debounceClickLike = debounce(handleClickLike, 200);
 
 
-    const mutationBookmark = useBookMarkMutation(session);
+    const mutationBookmark = useBookMarkMutation(session, userId);
 
     const handleClickBookmark = async(e, journalId,) =>{
         e.stopPropagation();

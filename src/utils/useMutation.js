@@ -2,16 +2,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
 import { data } from "react-router-dom";
 
-export const useBookMarkMutation = (session) => {
+export const useBookMarkMutation = (session, userId) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data) => addBookmark(session?.access_token, data),
 
         onMutate: async(data) =>{
-            await queryClient.cancelQueries(['journals'])
-            const previousData = queryClient.getQueryData(['journals']);
+            await queryClient.cancelQueries(['journals', userId])
+            const previousData = queryClient.getQueryData(['journals', userId]);
 
-            queryClient.setQueryData(['journals'], (old) => {
+            queryClient.setQueryData(['journals', userId], (old) => {
                 if(!old) return old;
                 
                 return{
@@ -37,10 +37,10 @@ export const useBookMarkMutation = (session) => {
             return {previousData};
         },
         onError: (err,data, context) =>{
-            queryClient.setQueryData(['journals'], context.previousData)
+            queryClient.setQueryData(['journals', userId], context.previousData)
         },
         onSettled: () =>{
-            queryClient.invalidateQueries(['journals'])
+            queryClient.invalidateQueries(['journals', userId])
         }
     })
 }
@@ -48,16 +48,16 @@ export const useBookMarkMutation = (session) => {
 
 
 
-export const useLikeMutation = (session) =>{
+export const useLikeMutation = (session, userId) =>{
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data) => clickLike(session?.access_token, data), //receiving the object data {journalId: the Id}
 
         onMutate: async(data) => {
-            await queryClient.cancelQueries(['journals'])
-            const previousData = queryClient.getQueryData(['journals']);
+            await queryClient.cancelQueries(['journals', userId])
+            const previousData = queryClient.getQueryData(['journals', userId]);
 
-            queryClient.setQueryData(['journals'], (old) => {
+            queryClient.setQueryData(['journals', userId], (old) => {
                 if(!old) return old;
                 return{
                     ...old, 
@@ -83,10 +83,10 @@ export const useLikeMutation = (session) =>{
         return {previousData};
     },
     onError: (err, data, context) => {
-      queryClient.setQueryData(['journals'], context.previousData);
+      queryClient.setQueryData(['journals', userId], context.previousData);
     },
     onSettled: () => {
-      queryClient.invalidateQueries(['journals']);
+      queryClient.invalidateQueries(['journals', userId]);
     },
 })
 }

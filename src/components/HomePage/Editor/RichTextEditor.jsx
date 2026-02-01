@@ -37,10 +37,9 @@ const theme = {
     heading: 'editor-heading',
 }
 
-const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
+const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWordCount, wordCount}) => {
     const [editor] = useLexicalComposerContext();
     const [editorState, setEditorState] = useState(null);
-    // const [textContent, setTextContent] = useState('')
     const [hasContent, setHasContent] = useState(false);
     const [isSending, setIsSending] = useState(false);
 
@@ -52,7 +51,6 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
         e.stopPropagation();
         setIsSending(true)
         try {
-             // console.log(editorState);
             const formdata = new FormData();
             if(title && editorState){
                 formdata.append('title', title)
@@ -65,7 +63,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
                 queryClient.invalidateQueries({queryKey: ['journals']});
                 queryClient.invalidateQueries({queryKey: ['userJournals', user?.userData?.[0].id]})
             }
-            
+
             setIsSending(false)
         } catch (error) {
             console.error("Error saving journal:", error);
@@ -75,23 +73,15 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
             onCloseOnSave();
             addUploadImagesPath([])
         }
-       
+
     }
 
     const onchange = useCallback((state) => {
         const jsonb = JSON.stringify(state.toJSON());
         setEditorState(jsonb)
-        // console.log(jsonb)
 
         state.read(() => {
             const root = $getRoot();
-            // const image_node = root.getChildren().find(type => type.__type === 'image')
-            // console.log(image_node.__src)
-
-            // const text = root.getTextContent().trim();
-            // if(text){
-            //     setTextContent(text)
-            // }
 
             const children = root.getChildren();
 
@@ -99,42 +89,58 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath}) => {
             const hasParargraphSize = children[0]?.__size > 0
 
             const hasContent = hasParargraphSize || hasEnoughParagraphNodes
-            console.log(hasContent)
-            setHasContent(hasContent); //set the state boolean of hasContent depends on hasParargraphSize || hasEnoughParagraphNodes
+            setHasContent(hasContent);
+
+            // Calculate word count
+            const text = root.getTextContent().trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            setWordCount(words);
         })
-    }, [])
+    }, [setWordCount])
 
     return(
         <>
+        {/* Toolbar above content */}
+        <div className="toolbar-wrapper">
+            <ToolBar addUploadedImagePath={addUploadImagesPath}/>
+        </div>
+
+        {/* Bar loader directly under toolbar */}
+        <div className="editor-loader-wrapper">
+            {isSending && (
+                <BarLoader loading={isSending} width={'100%'} height={3} color="var(--accent-purple)" speedMultiplier={0.7}/>
+            )}
+        </div>
+
+        {/* Editor content area */}
         <div className="editor-shell">
             <RichTextPlugin
             contentEditable={
-            <ContentEditable 
-            className="editor-input" 
-            aria-placeholder="Write your thoughts here..." 
+            <ContentEditable
+            className="editor-input"
+            aria-placeholder="Write your thoughts here..."
             placeholder={<div className="editor-placeholder">Write your thoughts here...</div>}/>
             }
             ErrorBoundary={LexicalErrorBoundary}
             />
-            
-            <ImagePlugin addUploadedImagePath={addUploadImagesPath}/>{/* imageplugin where the image will be inserted */}
+
+            <ImagePlugin addUploadedImagePath={addUploadImagesPath}/>
             <HistoryPlugin/>
             <OnChangePlugin onChange={onchange}/>
 
         </div>
 
-        <div className='editor-lower-part-container'>
-            <ToolBar addUploadedImagePath={addUploadImagesPath}/>
+        {/* Footer: word count + save */}
+        <div className='editor-footer'>
+            <span className="editor-word-count">
+                {wordCount} {wordCount === 1 ? 'word' : 'words'}
+            </span>
             <button disabled={!title || !hasContent} onClick={(e) =>handleClickSave(e, title)} className={title && hasContent ? 'editor-save-bttn' : 'editor-save-bttn-disabled'}>
                 Share
             </button>
         </div>
-        {isSending && (
-            <BarLoader loading={isSending} width={'100%'} color="rgb(40, 115, 255)" speedMultiplier={0.7}/>
-        )}
         </>
     )
 }
 
-// export default RichTextEditor;
 export default EditorInner;
