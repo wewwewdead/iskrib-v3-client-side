@@ -7,7 +7,7 @@ import FormatNotificationType from "../../../helpers/formatNoficationType";
 import formatPostDate from "../../../helpers/formatDateString";
 import { userDeleteNotificationMutation, useReadNotificationMutation } from "../../utils/useMutation";
 import { MoonLoader } from "react-spinners";
-import { handleCLickContent } from "../../../helpers/handleClicks";
+import { handleCLickContent, handleClickOpinion } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { AnimatePresence, motion } from "framer-motion";
@@ -29,10 +29,10 @@ const UnreadNotification = () =>{
     }
 
     const deleteNotifMutation = userDeleteNotificationMutation(session);
-    const handleClickDeleteNotification = (e, notifId) =>{
+    const handleClickDeleteNotification = (e, notifId, source) =>{
         e.stopPropagation();
         try {
-            const message = deleteNotifMutation.mutateAsync({notifId});
+            const message = deleteNotifMutation.mutateAsync({notifId, source});
             if(message){
                 console.log(message)
             }
@@ -64,6 +64,22 @@ const UnreadNotification = () =>{
                 </g>
                 </g>
             </svg>,
+        },
+        {
+            type: 'reply',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" fill="var(--accent-amber)" width="30px" height="30px" viewBox="0 0 32 32" version="1.1">
+                    <title>reply-all</title>
+                    <path d="M0 16q0-1.056 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.64 0.352 0.928 1.056l-8.096 5.376q-0.832 0.576-1.312 1.472t-0.448 1.856 0.448 1.888 1.312 1.44l8.096 5.376q-0.288 0.736-0.928 1.088-0.48 0.256-1.056 0.224t-0.992-0.352l-12-8q-0.896-0.544-0.896-1.664zM8 16q0-1.088 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.48 0.256 0.768 0.736t0.288 1.024v4q3.328 0 5.664 2.336t2.336 5.664q0 2.080-1.12 4-1.056-1.824-2.88-2.912t-4-1.088v4q0 0.544-0.288 1.024t-0.768 0.736-1.056 0.224-0.992-0.32l-12-8q-0.896-0.576-0.896-1.664z"/>
+                </svg>,
+        },
+        {
+            type: 'opinion_reply',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" fill="var(--accent-amber)" width="30px" height="30px" viewBox="0 0 32 32" version="1.1">
+                    <title>reply-all</title>
+                    <path d="M0 16q0-1.056 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.64 0.352 0.928 1.056l-8.096 5.376q-0.832 0.576-1.312 1.472t-0.448 1.856 0.448 1.888 1.312 1.44l8.096 5.376q-0.288 0.736-0.928 1.088-0.48 0.256-1.056 0.224t-0.992-0.352l-12-8q-0.896-0.544-0.896-1.664zM8 16q0-1.088 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.48 0.256 0.768 0.736t0.288 1.024v4q3.328 0 5.664 2.336t2.336 5.664q0 2.080-1.12 4-1.056-1.824-2.88-2.912t-4-1.088v4q0 0.544-0.288 1.024t-0.768 0.736-1.056 0.224-0.992-0.32l-12-8q-0.896-0.576-0.896-1.664z"/>
+                </svg>,
         }
     ]
 
@@ -89,26 +105,34 @@ const UnreadNotification = () =>{
     }, [fetchNextPage, hasNextPage, isFetchinNextPage, inView])
 
     const handleClickNotif = handleCLickContent(navigate);
+    const handleClickOpinionNotif = handleClickOpinion(navigate);
     const mutationReadNotif = useReadNotificationMutation(session);
 
-    const handleReadNotif = async(e, notifId, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) =>{
-        mutationReadNotif.mutate({notifId});
-        handleClickNotif(
-            e, 
-            jsonbContent,
-            wholeText,
-            title,
-            userId,
-            name,
-            avatar,
-            created_at,
-            journalId,
-            isLiked,
-            commentsCount,
-            isBookmarked,
-            likesCount,
-            bookmarksCount
-        )
+    const handleReadNotif = async(e, notification) =>{
+        const source = notification?.source || 'journal';
+        mutationReadNotif.mutate({notifId: notification.id, source});
+
+        if(source === 'opinion'){
+            handleClickOpinionNotif(e, notification?.opinions?.id, notification?.opinions?.user_id)
+        } else {
+            const parsedContent = ParseContent(notification?.journals?.content);
+            handleClickNotif(
+                e,
+                notification?.journals?.content,
+                parsedContent?.wholeText,
+                notification?.journals?.title,
+                notification?.journals?.users?.id,
+                notification?.journals?.users?.name,
+                notification?.journals?.users?.image_url,
+                notification?.journals?.created_at,
+                notification?.journal_id,
+                notification?.hasLiked,
+                notification?.journals?.comments?.[0]?.count,
+                notification?.hasBookMarked,
+                notification?.journals?.likes?.[0]?.count,
+                notification?.journals?.bookmarks?.[0]?.count
+            )
+        }
     }
 
     const unreadNotifications = data?.pages?.flatMap((page) => page.data) || [];
@@ -149,17 +173,19 @@ const UnreadNotification = () =>{
         <>
         <div className="unread-notification-component-container">
             {unreadNotifications?.map((unreadNotification) => {
-                const parsedContent = ParseContent(unreadNotification?.journals?.content)
-                
+                const isOpinion = unreadNotification?.source === 'opinion';
+                const displayType = isOpinion ? 'opinion_reply' : unreadNotification?.type;
+                const parsedContent = !isOpinion ? ParseContent(unreadNotification?.journals?.content) : null;
+
                 return(
-                    <div key={unreadNotification.id} className={unreadNotification?.read ? "notification-cards" : "notification-cards-unread"}>
+                    <div key={`${unreadNotification.source}-${unreadNotification.id}`} className={unreadNotification?.read ? "notification-cards" : "notification-cards-unread"}>
 
                         <div className="notification-cards-child-container">
 
                             <div className="notification-icon-container">
                                 {iconArray.map((icon, index) => (
                                     <div className="notification-icon" key={index}>
-                                        {icon.type === unreadNotification.type ? icon.icon : null}
+                                        {icon.type === displayType ? icon.icon : null}
                                     </div>
                                 ))}
                             </div>
@@ -175,7 +201,7 @@ const UnreadNotification = () =>{
                                         <div className="notif-sender-name-container">
                                             <p className="notif-sender-name">{unreadNotification?.users?.name}</p>
                                             <VerifiedBadge badge={unreadNotification?.users?.badge} size={14} />
-                                            <p className="notif-type">{FormatNotificationType(unreadNotification?.type)}</p>
+                                            <p className="notif-type">{FormatNotificationType(displayType)}</p>
                                         </div>
 
                                         <div className="notification-date-container">
@@ -187,13 +213,13 @@ const UnreadNotification = () =>{
                                     <div ref={modalRef} className="notification-settings">
                                         {settingsId === unreadNotification?.id && (
                                             <AnimatePresence>
-                                            <motion.div 
+                                            <motion.div
                                             initial={{opacity: 0, scale: 0}}
                                             animate={{opacity: 1, scale: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
                                             exit={{opacity: 0, scale: 0, transition: {duration: 0.2, ease: 'easeInOut'}}}
                                             className="settings-container"
                                             >
-                                                <div onClick={(e) => handleClickDeleteNotification(e, unreadNotification?.id)} className="delete-notification">
+                                                <div onClick={(e) => handleClickDeleteNotification(e, unreadNotification?.id, unreadNotification?.source)} className="delete-notification">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
                                                         <path d="M10 12V17" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                                         <path d="M14 12V17" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -220,35 +246,24 @@ const UnreadNotification = () =>{
 
                                 </div>
 
-                                <div className="notification-content">
-
-                                    <div onClick={(e) => handleReadNotif(
-                                        e, 
-                                        unreadNotification?.id, 
-                                        unreadNotification?.journals?.content, 
-                                        parsedContent?.wholeText, 
-                                        unreadNotification?.journals?.title,
-                                        user?.userData?.[0]?.id, 
-                                        user?.userData?.[0]?.name, 
-                                        user?.userData?.[0]?.image_url, 
-                                        unreadNotification?.journals?.created_at, 
-                                        unreadNotification?.journal_id, 
-                                        unreadNotification?.hasLiked, 
-                                        unreadNotification?.journals?.comments?.[0]?.count, 
-                                        unreadNotification?.hasBookMarked, 
-                                        unreadNotification?.journals?.likes?.[0]?.count, 
-                                        unreadNotification?.journals?.bookmarks?.[0]?.count  
-                                        )} 
-                                    className="notification-content-text">
-
-                                        <p className="notif-content-title">{unreadNotification?.journals?.title?.length > 40 ? unreadNotification?.journals?.title?.substring(0, 39) : unreadNotification?.journals?.title}</p>
-                                        <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
-
-                                    </div>
-
-                                    <div className="notif-content-image-container">
-                                        <img className="notif-content-image" loading="lazy" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="" />
-                                    </div>
+                                <div className="notification-content"
+                                    onClick={(e) => handleReadNotif(e, unreadNotification)}
+                                >
+                                    {isOpinion ? (
+                                        <div className="notification-content-text">
+                                            <p className="notif-content-sliced-text">{unreadNotification?.opinions?.opinion?.length > 100 ? unreadNotification?.opinions?.opinion?.substring(0, 100) + '...' : unreadNotification?.opinions?.opinion}</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                        <div className="notification-content-text">
+                                            <p className="notif-content-title">{unreadNotification?.journals?.title?.length > 40 ? unreadNotification?.journals?.title?.substring(0, 39) : unreadNotification?.journals?.title}</p>
+                                            <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
+                                        </div>
+                                        <div className="notif-content-image-container">
+                                            <img className="notif-content-image" loading="lazy" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="" />
+                                        </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>

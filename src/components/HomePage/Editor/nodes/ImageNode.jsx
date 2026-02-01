@@ -16,16 +16,18 @@ export default class ImageNode extends DecoratorNode {
       node.__width,
       node.__height,
       node.__loading,
+      node.__rotation,
       node.__key,
     );
   }
 
-  constructor(src, width = 400, height = 300, loading = false, key) {
+  constructor(src, width = 400, height = 300, loading = false, rotation = 0, key) {
     super(key);
     this.__src = src;
     this.__width = width;
     this.__height = height;
     this.__loading = loading;
+    this.__rotation = rotation;
   }
 
   createDOM() {
@@ -45,12 +47,13 @@ export default class ImageNode extends DecoratorNode {
       src: this.__src,
       width: this.__width,
       height: this.__height,
+      rotation: this.__rotation,
     };
   }
 
   static importJSON(serializedNode) {
-    const { src, width, height, filePath } = serializedNode;
-    return $createImageNode(src, width, height); 
+    const { src, width, height, rotation } = serializedNode;
+    return $createImageNode(src, width, height, false, rotation);
   }
 
   // update dimensions when user resizes
@@ -58,6 +61,11 @@ export default class ImageNode extends DecoratorNode {
     const writable = this.getWritable();
     writable.__width = width;
     writable.__height = height;
+  }
+
+  setRotation(rotation) {
+    const writable = this.getWritable();
+    writable.__rotation = rotation;
   }
 
   setSrcAndLoading(src, loading) {
@@ -80,12 +88,13 @@ export default class ImageNode extends DecoratorNode {
     const width = this.__width;
     const height = this.__height;
     const loading = this.__loading;
+    const rotation = this.__rotation;
     const isEditable = editor.isEditable();
-    return <ResizableImageComponent src={src} nodeKey={nodeKey} width={width} height={height} loading={loading} isEditable={isEditable}/>;
+    return <ResizableImageComponent src={src} nodeKey={nodeKey} width={width} height={height} loading={loading} rotation={rotation} isEditable={isEditable}/>;
   }
 }
 
 //helper function to create ImageNode
-export function $createImageNode(src, width = 400, height = 300, loading = false) {
-  return new ImageNode(src, width, height, loading);
+export function $createImageNode(src, width = 400, height = 300, loading = false, rotation = 0) {
+  return new ImageNode(src, width, height, loading, rotation);
 }

@@ -26,6 +26,18 @@ export const handleCLickContent = (navigate) => {
     
 }
 
+export const handleClickOpinion = (navigate) => {
+    return (e, opinionId, userId) => {
+        e.stopPropagation();
+        navigate('/home/opinionsViewer', {
+            state: {
+                opinionId: opinionId,
+                userId: userId
+            }
+        })
+    }
+}
+
 export const handleClickProfile = (navigate) => {
     return(e, loggedInUserId, clickedUserId) =>{
         if(loggedInUserId === clickedUserId){

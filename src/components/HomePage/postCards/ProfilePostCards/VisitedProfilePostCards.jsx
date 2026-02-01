@@ -49,8 +49,8 @@ const VisitedProfilePostCards = () =>{
     }
 
     useEffect(() =>{
-        console.log(journalData)
-    },[journalData])
+        console.log(userData)
+    },[userData])
 
     useEffect(() =>{
         if(!isFetchingNextPage && hasNextPage && inView){

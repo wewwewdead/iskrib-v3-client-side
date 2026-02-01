@@ -141,6 +141,10 @@ const ContentView = () => {
         }
     }, []);
 
+    useEffect(() =>{
+         console.log(postData)
+    }, [postData])
+
     if (isLoading) {
         return (
             <div className="cv-loading">
@@ -148,6 +152,7 @@ const ContentView = () => {
             </div>
         )
     }
+    
 
     return (
         <>
@@ -184,7 +189,7 @@ const ContentView = () => {
                     {/* Metadata */}
                     <div className="cv-meta">
                         <div
-                            onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)}
+                            onClick={(e) => handleclickUserProfile(e, user?.userData[0].id, postData?.userId)}
                             className={`cv-avatar-wrap ${postData?.badge === 'legend' ? 'cv-avatar-ring-legend' : postData?.badge === 'og' ? 'cv-avatar-ring-og' : ''}`}
                         >
                             <img src={postData?.avatar || '/assets/profile.jpg'} className="cv-avatar" alt="user avatar" />
@@ -192,7 +197,7 @@ const ContentView = () => {
                         <div className="cv-meta-info">
                             <div className="cv-meta-top">
                                 <span
-                                    onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, postData?.userId)}
+                                    onClick={(e) => handleclickUserProfile(e, user?.userData[0].id, postData?.userId)}
                                     className="cv-author-name"
                                 >
                                     {postData?.name}

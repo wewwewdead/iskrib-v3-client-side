@@ -5,11 +5,12 @@ import { deleteJournalImage } from '../../../../API/Api';
 import { useAuth } from '../../../Context/useAuth';
 import { AnimatePresence, motion, scale } from 'framer-motion';
 
-const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false, isEditable = true }) => {
+const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false, rotation = 0, isEditable = true }) => {
   const [editor] = useLexicalComposerContext();
   const [isResizing, setIsResizing] = useState(false);
   const [currentWidth, setCurrentWidth] = useState(width);
   const [currentHeight, setCurrentHeight] = useState(height);
+  const [currentRotation, setCurrentRotation] = useState(rotation);
   const [isSelected, setIsSelected] = useState(false);
   const imageRef = useRef(null);
   const startPosRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
@@ -50,6 +51,23 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
       await deleteImgSync(data.filepath);
     }
   }
+
+  const handleRotate = (e) => {
+    e.stopPropagation();
+    const newRotation = (currentRotation + 90) % 360;
+    setCurrentRotation(newRotation);
+
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if (node && typeof node.setRotation === 'function') {
+        node.setRotation(newRotation);
+      }
+    }, {
+      onUpdate: () => {
+        editor.update(() => {});
+      }
+    });
+  };
 
   // handle mouse down on resize handle
   const handleMouseDown = (e, corner) => {
@@ -223,6 +241,8 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
           display: 'block',
           border: isSelected ? '1px solid rgba(153, 200, 255, 0.99)' : '2px solid transparent',
           userSelect: 'none',
+          transform: `rotate(${currentRotation}deg)`,
+          transition: isResizing ? 'none' : 'transform 0.3s ease',
         }}
         draggable={false}
         onClick={() => handleViewImage()}
@@ -237,8 +257,13 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
       )}
 
       {isEditable && (
-      <div onClick={(e) => handleDelete(e)} className='image-delete'>
-        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+      <div className='image-actions'>
+        <div onClick={(e) => handleRotate(e)} className='image-action-btn' title='Rotate image'>
+          <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF"><path d="M482-160q-134 0-228-93t-94-227q0-134 94-228t228-94q62 0 118 23t98 65V-840h80v240H538v-80h128q-30-38-74.5-59T482-740q-100 0-170 70.5T242-480q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
+        </div>
+        <div onClick={(e) => handleDelete(e)} className='image-action-btn' title='Delete image'>
+          <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#FFFFFF"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+        </div>
       </div>
       )}
 

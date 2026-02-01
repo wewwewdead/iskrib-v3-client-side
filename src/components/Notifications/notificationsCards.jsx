@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import FormatNotificationType from "../../../helpers/formatNoficationType";
 import ParseContent from "../HomePage/postCards/parseData";
 import formatPostDate from "../../../helpers/formatDateString";
-import { handleCLickContent } from "../../../helpers/handleClicks";
+import { handleCLickContent, handleClickOpinion } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
 import { userDeleteNotificationMutation, useReadNotificationMutation } from "../../utils/useMutation";
 import { AnimatePresence, motion} from "framer-motion";
@@ -55,31 +55,48 @@ const NotificationCards = () =>{
                     <title>reply-all</title>
                     <path d="M0 16q0-1.056 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.64 0.352 0.928 1.056l-8.096 5.376q-0.832 0.576-1.312 1.472t-0.448 1.856 0.448 1.888 1.312 1.44l8.096 5.376q-0.288 0.736-0.928 1.088-0.48 0.256-1.056 0.224t-0.992-0.352l-12-8q-0.896-0.544-0.896-1.664zM8 16q0-1.088 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.48 0.256 0.768 0.736t0.288 1.024v4q3.328 0 5.664 2.336t2.336 5.664q0 2.080-1.12 4-1.056-1.824-2.88-2.912t-4-1.088v4q0 0.544-0.288 1.024t-0.768 0.736-1.056 0.224-0.992-0.32l-12-8q-0.896-0.576-0.896-1.664z"/>
                 </svg>,
+        },
+        {
+            type: 'opinion_reply',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" fill="var(--accent-amber)" width="30px" height="30px" viewBox="0 0 32 32" version="1.1">
+                    <title>reply-all</title>
+                    <path d="M0 16q0-1.056 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.64 0.352 0.928 1.056l-8.096 5.376q-0.832 0.576-1.312 1.472t-0.448 1.856 0.448 1.888 1.312 1.44l8.096 5.376q-0.288 0.736-0.928 1.088-0.48 0.256-1.056 0.224t-0.992-0.352l-12-8q-0.896-0.544-0.896-1.664zM8 16q0-1.088 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.48 0.256 0.768 0.736t0.288 1.024v4q3.328 0 5.664 2.336t2.336 5.664q0 2.080-1.12 4-1.056-1.824-2.88-2.912t-4-1.088v4q0 0.544-0.288 1.024t-0.768 0.736-1.056 0.224-0.992-0.32l-12-8q-0.896-0.576-0.896-1.664z"/>
+                </svg>,
         }
     ]
 
     const handleClickNotif = handleCLickContent(navigate);
+    const handleClickOpinionNotif = handleClickOpinion(navigate);
     const mutationReadNotif = useReadNotificationMutation(session);
 
-    const handleReadNotif = async(e, notifId, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) => {
+    const handleReadNotif = async(e, notification) => {
         e.stopPropagation();
-        mutationReadNotif.mutate({notifId})
-        handleClickNotif(
-            e, 
-            jsonbContent, 
-            wholeText, 
-            title, 
-            userId, 
-            name, 
-            avatar, 
-            created_at, 
-            journalId, 
-            isLiked, 
-            commentsCount, 
-            isBookmarked, 
-            likesCount,
-            bookmarksCount
-        )
+        const source = notification?.source || 'journal';
+        mutationReadNotif.mutate({notifId: notification.id, source})
+
+        if(source === 'opinion'){
+            handleClickOpinionNotif(e, notification?.opinions?.id, notification?.opinions?.user_id)
+        } else {
+            const parsedContent = ParseContent(notification?.journals?.content);
+            handleClickNotif(
+                e,
+                notification?.journals?.content,
+                parsedContent.wholeText,
+                notification?.journals?.title,
+                notification?.journals?.users.id,
+                notification?.journals?.users?.name,
+                notification?.journals?.users?.image_url,
+                notification?.created_at,
+                notification?.journal_id,
+                notification?.hasLiked,
+                notification?.journals?.comments[0].count,
+                notification?.hasBookMarked,
+                notification?.journals?.likes[0].count,
+                notification?.journals?.bookmarks[0].count,
+                notification?.journals?.users?.badge,
+            )
+        }
     }
 
     const {data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} = useInfiniteQuery({
@@ -138,10 +155,10 @@ const NotificationCards = () =>{
 
     const mutationDeleteNotif  = userDeleteNotificationMutation(session);
 
-    const handleClickDeleteNotification = async(e, notifId) =>{
+    const handleClickDeleteNotification = async(e, notifId, source) =>{
         e.stopPropagation();
         try {
-           const message = mutationDeleteNotif.mutateAsync({notifId});
+           const message = mutationDeleteNotif.mutateAsync({notifId, source});
             if(message){
                 // console.log(message)
             }
@@ -171,23 +188,25 @@ const NotificationCards = () =>{
         <div ref={scrollToTop}/>
         <div className="notifications-container">
             {notifications?.map((notification) => {
-                const parsedContent = ParseContent(notification?.journals.content)
+                const isOpinion = notification?.source === 'opinion';
+                const displayType = isOpinion ? 'opinion_reply' : notification?.type;
+                const parsedContent = !isOpinion ? ParseContent(notification?.journals?.content) : null;
 
                 return(
-                <div key={notification.id} className={notification?.read ? "notification-cards" : "notification-cards-unread"}>
-                    
+                <div key={`${notification.source}-${notification.id}`} className={notification?.read ? "notification-cards" : "notification-cards-unread"}>
+
                     <div className="notification-cards-child-container">
 
                         <div className="notification-icon-container">
                             {iconArray.map((icon, index) => (
                                 <div className="notification-icon" key={index}>
-                                    {icon.type === notification.type ? icon.icon : null}
+                                    {icon.type === displayType ? icon.icon : null}
                                 </div>
                             ))}
                         </div>
 
                         <div className="notification-contents-container">
-                            
+
                             <div className="notification-sender-user-metadata">
                                 <div className="notification-sender-user-metadata-child">
                                     <div className={`notif-sender-profilepic-container ${notification?.users?.badge === 'legend' ? 'notif-avatar-ring-legend' : notification?.users?.badge === 'og' ? 'notif-avatar-ring-og' : ''}`}>
@@ -197,13 +216,13 @@ const NotificationCards = () =>{
                                     <div className="notif-sender-name-container">
                                         <p className="notif-sender-name">{notification?.users?.name}</p>
                                         <VerifiedBadge badge={notification?.users?.badge} size={14} />
-                                        <p className="notif-type">{FormatNotificationType(notification?.type)}</p>
+                                        <p className="notif-type">{FormatNotificationType(displayType)}</p>
                                     </div>
 
                                     <div className="notification-date-container">
                                         <p className="notification-date">{formatPostDate(notification?.created_at)}</p>
                                     </div>
-                                </div>   
+                                </div>
                                 <div className="notification-settings">
                                     {settingsId === notification.id && (
                                         <AnimatePresence>
@@ -211,15 +230,15 @@ const NotificationCards = () =>{
                                         initial={{opacity: 0, scale: 0}}
                                         animate={{opacity: 1, scale: 1, transition:{type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
                                         exit={{ opacity: 0, scale: 0,
-                                            transition: { 
+                                            transition: {
                                             duration: 0.2,
                                             ease: "easeOut"
                                             }
                                         }}
-                                        ref={modalRef} 
+                                        ref={modalRef}
                                         className="settings-container">
-                                            
-                                            <div onClick={(e) => handleClickDeleteNotification(e, notification?.id)} className="delete-notification">
+
+                                            <div onClick={(e) => handleClickDeleteNotification(e, notification?.id, notification?.source)} className="delete-notification">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
                                                     <path d="M10 12V17" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                                     <path d="M14 12V17" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -229,11 +248,11 @@ const NotificationCards = () =>{
                                                 </svg>
                                                 Delete this notification
                                             </div>
-                                            
+
                                         </motion.div>
                                         </AnimatePresence>
                                     )}
-                                    
+
                                     <svg onClick={(e) => handleClickSettings(e, notification?.id)} xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
                                         <g id="style=fill">
                                             <g id="menu-meatballs">
@@ -243,39 +262,32 @@ const NotificationCards = () =>{
                                             </g>
                                         </g>
                                     </svg>
-                                </div>  
+                                </div>
 
                             </div>
 
-                            <div 
+                            <div
                             className="notification-content"
-                            onClick={(e) => handleReadNotif(
-                                e, 
-                                notification?.id,
-                                notification?.journals?.content, 
-                                parsedContent?.wholeText, 
-                                notification?.journals?.title, 
-                                user?.userData?.[0].id, 
-                                user?.userData?.[0].name, 
-                                user?.userData?.[0]?.image_url, 
-                                notification?.journals?.created_at,
-                                notification?.journal_id, 
-                                notification?.hasLiked, 
-                                notification?.journals?.comments?.[0].count, 
-                                notification?.hasBookMarked, 
-                                notification?.journals?.likes?.[0].count, 
-                                notification?.journals?.bookmarks?.[0].count)} 
+                            onClick={(e) => handleReadNotif(e, notification)}
                             >
-                                <div className="notification-content-text">
-                                    <p className="notif-content-title">{notification?.journals?.title?.length > 40 ? notification?.journals?.title?.substring(0, 39) : notification?.journals.title}</p>
-                                    <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
-                                </div>
-                                <div className="notif-content-image-container">
-                                    <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="" />
-                                </div>
+                                {isOpinion ? (
+                                    <div className="notification-content-text">
+                                        <p className="notif-content-sliced-text">{notification?.opinions?.opinion?.length > 100 ? notification?.opinions?.opinion?.substring(0, 100) + '...' : notification?.opinions?.opinion}</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                    <div className="notification-content-text">
+                                        <p className="notif-content-title">{notification?.journals?.title?.length > 40 ? notification?.journals?.title?.substring(0, 39) : notification?.journals?.title}</p>
+                                        <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
+                                    </div>
+                                    <div className="notif-content-image-container">
+                                        <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="" />
+                                    </div>
+                                    </>
+                                )}
                             </div>
                         </div>
-                        
+
                     </div>
 
                 </div>

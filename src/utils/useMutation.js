@@ -125,7 +125,7 @@ export const useFollowMutation = () =>{
 export const useReadNotificationMutation = (session) =>{
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data) => readNotification(session?.access_token, data), //receiving the object data {notifId: the Id}
+        mutationFn: (data) => readNotification(session?.access_token, data?.notifId, data?.source),
         onMutate: async(data) => {
             await queryClient.cancelQueries(['notifcounts', session?.user?.id]);
             const previousData = queryClient.getQueryData(['notifcount', session?.user?.id])
@@ -146,7 +146,7 @@ export const useReadNotificationMutation = (session) =>{
 export const userDeleteNotificationMutation = (session) =>{
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data) => deleteNotification(session?.access_token, data?.notifId),
+        mutationFn: (data) => deleteNotification(session?.access_token, data?.notifId, data?.source),
 
         onMutate: async(data) =>{
             await queryClient.cancelQueries(['getNotifications', session?.user?.id]);

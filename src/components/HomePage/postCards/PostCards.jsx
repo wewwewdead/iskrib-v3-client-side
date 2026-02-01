@@ -328,43 +328,45 @@ const PostCards = () => {
                                 </div>
                                 <div className="name-info-separator">•</div>
                                 <p className="user-post-date">{formatPostDate(journal.created_at)}</p>
+
+                                    {cardIcons && (
+                                        cardIcons.map((icon, index) =>(
+                                            <div key={index} className="icon-container">
+
+                                                {icon.likeAction && (
+                                                    <div onClick={(e) => icon.action(e, journal.id, journal.users.id, user?.userData?.[0].image_url, user?.userData?.[0].name, user?.userData?.[0].user_email)} id="card-icons" className={icon.className}>
+                                                        {icon.likeAction && icon.likeAction(isLiked)}
+                                                    </div>
+                                                )}
+
+                                                {icon.commentAction && (
+                                                    <div onClick={(e) => icon.commentAction(e, journal.content,parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} id="card-icons" className={icon.className}>
+                                                        {icon.label}
+                                                    </div>
+                                                )}
+
+                                            {icon.bookmarkAction && (
+                                                <div onClick={(e) => icon.bookmarkAction(e, journal.id)} id="card-icons" className={icon.className}>
+                                                    {icon.checkBookrmark(isBookmarked)}
+                                                </div>
+                                            )}
+
+                                            {icon.iconView && (
+                                                <div id="card-icons-view">
+                                                    {icon.iconView}
+                                                </div>
+                                            )}
+
+                                            {icon.countLike && icon.countLike(journal.like_count?.[0].count)}
+                                            {icon.countComments && icon.countComments(journal.comment_count?.[0]?.count)}
+                                            {icon.countBookmarks && icon.countBookmarks(journal.bookmark_count?.[0].count)}
+                                            {icon.iconCount && icon.iconCount(journal?.views)}
+                                        </div>
+                                    ))
+                                )}
                             </div>
 
-                            {cardIcons && (
-                                cardIcons.map((icon, index) =>(
-                                    <div key={index} className="icon-container">
-
-                                        {icon.likeAction && (
-                                            <div onClick={(e) => icon.action(e, journal.id, journal.users.id, user?.userData?.[0].image_url, user?.userData?.[0].name, user?.userData?.[0].user_email)} id="card-icons" className={icon.className}>
-                                                {icon.likeAction && icon.likeAction(isLiked)}
-                                            </div>
-                                        )}
-
-                                        {icon.commentAction && (
-                                            <div onClick={(e) => icon.commentAction(e, journal.content,parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} id="card-icons" className={icon.className}>
-                                                {icon.label}
-                                            </div>
-                                        )}
-
-                                        {icon.bookmarkAction && (
-                                            <div onClick={(e) => icon.bookmarkAction(e, journal.id)} id="card-icons" className={icon.className}>
-                                                {icon.checkBookrmark(isBookmarked)}
-                                            </div>
-                                        )}
-
-                                        {icon.iconView && (
-                                            <div id="card-icons-view">
-                                                {icon.iconView}
-                                            </div>
-                                        )}
-
-                                        {icon.countLike && icon.countLike(journal.like_count?.[0].count)}
-                                        {icon.countComments && icon.countComments(journal.comment_count?.[0]?.count)}
-                                        {icon.countBookmarks && icon.countBookmarks(journal.bookmark_count?.[0].count)}
-                                        {icon.iconCount && icon.iconCount(journal?.views)}
-                                    </div>
-                                ))
-                            )}
+                            
 
                             <div className="reading-time-container">
                                 <p className="reading-time-text">{CalculateText(parsedContent.wholeText)}</p>

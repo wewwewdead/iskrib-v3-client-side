@@ -407,13 +407,13 @@ export const getNotifications = async(token, cursor = null, limit = 5) =>{
     return data;
 }
 
-export const readNotification = async(token, notifId) =>{
+export const readNotification = async(token, notifId, source) =>{
     const headers = {'Content-Type': 'application/json'};
     if(token) headers['Authorization'] = `Bearer ${token}`;
-    
+
     const response = await fetch(`${BASE_URL}/readNotification`, {
         method: 'POST',
-        body: JSON.stringify(notifId),
+        body: JSON.stringify({notifId, source}),
         headers: headers
     })
 
@@ -426,15 +426,16 @@ export const readNotification = async(token, notifId) =>{
     return message;
 }
 
-export const deleteNotification = async(token, notifId) =>{
+export const deleteNotification = async(token, notifId, source) =>{
     const headers = {};
     if(token) headers['Authorization'] = `Bearer ${token}`;
 
-    const response = await fetch(`${BASE_URL}/deleteNotification/${notifId}`, {
+    const url = source ? `${BASE_URL}/deleteNotification/${notifId}?source=${source}` : `${BASE_URL}/deleteNotification/${notifId}`;
+    const response = await fetch(url, {
         method: 'DELETE',
         headers: headers
     })
-    
+
     if(!response.ok){
         const error = await response.json();
         throw new Error(error);
@@ -757,9 +758,9 @@ export const getViewOpinion = async(postId, userId) =>{
     return data;
 }
 
-export const addReplyOpinion = async(body, opinion_id, receiver_id, user_id, parent_id) =>{
+export const addReplyOpinion = async(body, receiver_id, user_id, parent_id) =>{
     
-    const response = await fetch(`${BASE_URL}/addOpinionReply/${parent_id}/${user_id}/${receiver_id}/${opinion_id}`, {
+    const response = await fetch(`${BASE_URL}/addOpinionReply/${parent_id}/${user_id}/${receiver_id}`, {
         method: 'POST',
         body: body
     })
@@ -772,6 +773,21 @@ export const addReplyOpinion = async(body, opinion_id, receiver_id, user_id, par
     return message;
 }
 
+export const getOpinionReply = async(parentId, limit, cursor) =>{
+    const url =  cursor ? `${BASE_URL}/getOpinionReply/${parentId}?limit=${limit}&cursor=${cursor}` : `${BASE_URL}/getOpinionReply/${parentId}?limit=${limit}`;
+
+    const response = await fetch(url, {
+        method: 'GET'
+    })
+
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error);
+    }
+    const data = await response.json();
+    return data;
+
+}
 
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}

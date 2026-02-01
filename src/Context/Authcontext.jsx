@@ -80,6 +80,31 @@ export const AuthProvider = ({children}) => {
             console.log('new notification:', payload)
             queryClient.setQueryData(['notifcounts', authData?.user?.id], (old) => ({count: (old?.count ? old?.count : 0) + 1}));
         }
+
+
+    )
+    .subscribe();
+
+    return () => {
+        supabase.removeChannel(channel);
+    }
+
+    },[userData])
+
+    //hook for realtime opinion notifications
+    useEffect(() =>{
+        if(!userData) return;
+
+        const channel = supabase
+        .channel('opinions-notifications')
+        .on('postgres_changes',
+        {event: 'INSERT', schema: 'public', table: 'notification_opinions', filter: `receiver_id=eq.${userData?.userData?.[0]?.id}`},
+        (payload) => {
+            console.log('new notification:', payload)
+            queryClient.setQueryData(['notifcounts', authData?.user?.id], (old) => ({count: (old?.count ? old?.count : 0) + 1}));
+        }
+
+
     )
     .subscribe();
 
