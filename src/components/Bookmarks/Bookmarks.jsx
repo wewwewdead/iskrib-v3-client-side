@@ -86,6 +86,10 @@ const Bookmarks = () =>{
         }
     }, [])
 
+    useEffect(() =>{
+        console.log(data)
+    }, [data])
+
     useEffect(() => {
         const handleClickOutside = (e) =>{
             if(modalRef.current && !modalRef.current.contains(e.target)){
@@ -161,18 +165,19 @@ const Bookmarks = () =>{
                                 onClick={(e) => handleClick(
                                     e,
                                     journal.journals.content,
-                                    parsedContent?.wholeText,
+                                    parsedContent.wholeText,
                                     journal.journals.title,
                                     journal.journals.user_id,
                                     journal.journals.users.name,
                                     journal.journals.users.image_url,
                                     journal.journals.created_at,
                                     journal.journals.id,
-                                    journal.journals.has_liked,
-                                    journal.journals.comment_count?.[0]?.count,
-                                    journal.journals.has_bookmarked,
+                                    journal.has_liked,
+                                    journal.journals.comment_count[0]?.count,
+                                    journal.has_bookmarked,
                                     journal.journals.like_count?.[0]?.count,
                                     journal.journals.bookmark_count?.[0]?.count,
+                                    journal.journals.users.badge
                                 )}
                             />
                         )}
@@ -181,18 +186,20 @@ const Bookmarks = () =>{
                             <div onClick={(e) => handleClick(
                                 e,
                                 journal.journals.content,
-                                parsedContent?.wholeText,
+                                parsedContent.wholeText,
                                 journal.journals.title,
                                 journal.journals.user_id,
                                 journal.journals.users.name,
                                 journal.journals.users.image_url,
                                 journal.journals.created_at,
                                 journal.journals.id,
-                                journal.journals.has_liked,
-                                journal.journals.comment_count?.[0]?.count,
-                                journal.journals.has_bookmarked,
+                                journal.has_liked,
+                                journal.journals.comment_count[0]?.count,
+                                journal.has_bookmarked,
                                 journal.journals.like_count?.[0]?.count,
-                                journal.journals.bookmark_count?.[0]?.count,)}
+                                journal.journals.bookmark_count?.[0]?.count,
+                                journal.journals.users.badge
+                            )}
                                 className="content-container">
 
                                 <div className='feed-text-content-container'>

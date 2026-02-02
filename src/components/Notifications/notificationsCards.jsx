@@ -87,7 +87,7 @@ const NotificationCards = () =>{
                 notification?.journals?.users.id,
                 notification?.journals?.users?.name,
                 notification?.journals?.users?.image_url,
-                notification?.created_at,
+                notification?.journals?.created_at,
                 notification?.journal_id,
                 notification?.hasLiked,
                 notification?.journals?.comments[0].count,

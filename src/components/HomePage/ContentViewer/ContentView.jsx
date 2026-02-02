@@ -91,7 +91,7 @@ const ContentView = () => {
         setIsBookmarked(!isBookmarked);
         setBookmarkCounts(isBookmarked ? bookmarkCounts - 1 : bookmarkCounts + 1);
     }
-    const debounceClickBookmark = debounce(handleClickBookmark, 200);
+    const debounceClickBookmark = debounce(handleClickBookmark, 100);
 
     const mutationFollow = useFollowMutation();
     const handleClickFollow = async (e, followingId, followerId) => {

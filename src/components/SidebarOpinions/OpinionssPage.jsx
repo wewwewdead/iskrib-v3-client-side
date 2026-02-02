@@ -8,6 +8,8 @@ import { useInView } from "react-intersection-observer";
 import { useMediaQuery } from "react-responsive";
 import { handleClickProfile } from "../../../helpers/handleClicks";
 import OpinionEditor from "./OpinionsEditor";
+import formatPostDate from "../../../helpers/formatDateString";
+import VerifiedBadge from "../Badge/VerifiedBadge";
 
 const OpinionsPage = () =>{
     const [showHeaders, setShowHeaders] = useState(true);
@@ -207,8 +209,14 @@ const OpinionsPage = () =>{
             {opinions.map((opinion) => (
                 <div key={opinion.id} className="so-card">
                     <div className="so-user-row">
-                        <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
+                        <div className={`so-avatar-container ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                            <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
+                        </div>
                         <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-username">{opinion.users.name}</span>
+                        <VerifiedBadge badge={opinion.users.badge} size={14}/>
+                        <span className="ov-dot">·</span>
+                        <span className="ov-date">{formatPostDate(opinion.created_at)}</span>
+                        
                     </div>
                     <div className="so-body" onClick={(e) => handleClickContent(e, opinion.id, opinion.user_id)}>
                         {opinion.opinion}

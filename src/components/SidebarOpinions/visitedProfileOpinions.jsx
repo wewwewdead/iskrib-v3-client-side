@@ -77,7 +77,9 @@ const VisitedProfileOpinions = () =>{
                     </motion.div>
 
                     <div className="opinions-visited-user-metadata">
-                        <img className="opinions-profile" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
+                        <div className={`opinions-profile-container ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                            <img className="opinions-profile" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
+                        </div>
                         <p className="opinion-username">{opinion.users.name}</p>
                     </div>
                 </div>

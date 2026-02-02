@@ -346,6 +346,7 @@ export const getBookmarks = async(cursor= null, limit= 5, userId) =>{
         throw new Error(error);
     }
     const data = await response.json();
+    console.log(data)
     return data;
 }
 

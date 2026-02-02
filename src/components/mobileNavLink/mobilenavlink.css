@@ -1,110 +1,142 @@
-/* .mobile-navlink-container{
-    position: fixed;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100px;
-    background-color: red;
-    z-index: 11;
-    top: 495px;
-} */
+/* ── Mobile Nav ── Hidden on desktop ── */
+.mobile-navlink-container{
+    display: none;
+}
 .mobile-navlink-profile-container{
-     display: none;
-    justify-content: center;
-    align-items: center;
-    width: fit-content;
-    height: fit-content;
+    display: none;
 }
 .mobile-navlink-icon-container{
-    width: 95%;
     display: none;
-    justify-content: space-between;
-    align-items: center;
-    height: 80%;
 }
 
-@media (max-width: 428px){
-    .mobile-navlink-container{
-        position: fixed;
-        display: flex;
-        background-color: var(--bg-backdrop-heavy);
-        backdrop-filter: blur(25px);
-        justify-content: space-evenly;
-        box-shadow: 2px 3px 10px 5px rgba(0, 0, 0, 0.355);
-        align-items: center;
-        width: 428px;
-        height: 60px;
-        z-index: 11;
-    }
-    
-    .mobile-navlink-profile-container{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: fit-content;
-        height: fit-content;
-    }
-    .navlink-profile{
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-    .mobile-navlink-icon-container{
-        width: 95%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        height: 80%;
-    }
-    .mobile-navlink-icons{
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-}
-
+/* ── Mobile breakpoint ── */
 @media (max-width: 480px){
+
+    /* ── Floating bar ── */
     .mobile-navlink-container{
         position: fixed;
+        bottom: 0.6rem;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
         display: flex;
-        background-color: var(--bg-backdrop-heavy);
-        backdrop-filter: blur(25px);
+        justify-content: center;
+        align-items: center;
+        width: calc(100% - 1.5rem);
+        max-width: 420px;
+        height: 56px;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-card);
+        border-radius: 16px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        z-index: 120;
+    }
+
+    /* ── Icon row ── */
+    .mobile-navlink-icon-container{
+        display: flex;
         justify-content: space-evenly;
-        box-shadow: 2px 3px 10px 5px rgba(0, 0, 0, 0.355);
         align-items: center;
         width: 100%;
-        height: 60px;
-        z-index: 120;
-        bottom: 0.2rem;
+        height: 100%;
+        padding: 0 0.5rem;
+        box-sizing: border-box;
     }
-    
+
+    /* ── Each nav item ── */
+    .mobile-navlink-item{
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2px;
+        padding: 0.4rem 0.75rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-navlink-item:active{
+        background-color: var(--bg-pill, rgba(107, 143, 113, 0.08));
+    }
+
+    /* ── Active dot indicator ── */
+    .mobile-navlink-active-dot{
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: #5f92ff;
+    }
+
+    /* ── Profile avatar ── */
     .mobile-navlink-profile-container{
         display: flex;
         justify-content: center;
         align-items: center;
-        width: fit-content;
-        height: fit-content;
+        position: relative;
     }
     .navlink-profile{
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         object-fit: cover;
+        border: 1.5px solid var(--border-card);
+        transition: border-color 0.2s ease;
     }
-    .mobile-navlink-icon-container{
-        width: 95%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        height: 80%;
+    .navlink-profile-active{
+        border-color: #5f92ff;
     }
+
+    /* ── Icon base styles ── */
     .mobile-navlink-icons{
         position: relative;
         display: flex;
         justify-content: center;
         align-items: center;
+    }
+    .mobile-navlink-icons svg{
+        transition: transform 0.2s ease;
+    }
+    .mobile-navlink-item:active .mobile-navlink-icons svg{
+        transform: scale(0.9);
+    }
+
+    /* ── Notification badge ── */
+    .notification-count{
+        position: absolute;
+        top: -4px;
+        right: -6px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
+        border-radius: 10px;
+        background-color: rgb(255, 100, 100);
+        color: #fff;
+        font-family: var(--font-ui, sans-serif);
+        font-size: 0.6rem;
+        font-weight: 700;
+        line-height: 1;
+        box-sizing: border-box;
+    }
+
+    /* ── Nav label ── */
+    .mobile-navlink-label{
+        font-family: var(--font-ui, sans-serif);
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 0.01rem;
+        color: var(--text-faint, #999);
+        margin: 0;
+        padding: 0;
+        transition: color 0.2s ease;
+    }
+    .mobile-navlink-label-active{
+        color: #5f92ff;
     }
 }

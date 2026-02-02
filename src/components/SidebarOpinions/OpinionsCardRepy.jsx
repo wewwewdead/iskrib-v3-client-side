@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useAuth } from "../../Context/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import formatPostDate from "../../../helpers/formatDateString";
+import VerifiedBadge from "../Badge/VerifiedBadge";
 
 const MAX_VISUAL_DEPTH = 4;
 
@@ -82,12 +83,15 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
 
                     <div className="rc-content">
                         <div className="rc-user-row">
-                            <img
-                                className="rc-avatar"
-                                src={opinion.users?.image_url || '../assets/profile.jpg'}
-                                alt=""
-                            />
+                            <div className={`rc-avatar-container ${opinion.users?.badge === 'legend' ? 'avatar-ring-legend' : opinion.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                <img
+                                    className="rc-avatar"
+                                    src={opinion.users?.image_url || '../assets/profile.jpg'}
+                                    alt=""
+                                />
+                            </div>
                             <span className="rc-username">{opinion.users?.name}</span>
+                            <VerifiedBadge badge={opinion.users?.badge} size={14}/>
                             <span className="rc-dot">·</span>
                             <span className="rc-date">{formatPostDate(opinion.created_at)}</span>
                         </div>

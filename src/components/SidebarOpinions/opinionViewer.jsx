@@ -6,6 +6,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import formatPostDate from "../../../helpers/formatDateString";
 import OpinionsReplyCard from "./OpinionsCardRepy";
+import VerifiedBadge from "../Badge/VerifiedBadge";
 
 const OpinionViewer = () => {
     const queryClient = useQueryClient();
@@ -58,6 +59,8 @@ const OpinionViewer = () => {
 
     const opinionData = data?.data;
 
+    console.log(opinionData)
+
     return (
         <>
             {opinionData?.map((opinion) => (
@@ -69,13 +72,16 @@ const OpinionViewer = () => {
                     transition={{ duration: 0.3, ease: "easeOut" }}
                 >
                     <div className="ov-user-row">
-                        <img
-                            className="ov-avatar"
-                            src={opinion.users.image_url || '../assets/profile.jpg'}
-                            alt=""
-                        />
+                        <div className={`ov-avatar-container ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                            <img
+                                className="ov-avatar"
+                                src={opinion.users.image_url || '../assets/profile.jpg'}
+                                alt=""
+                            />
+                        </div>
                         <span className="ov-username">{opinion.users.name}</span>
                         <span className="ov-dot">·</span>
+                        <VerifiedBadge badge={opinion.users.badge} size={14}/>
                         <span className="ov-date">{formatPostDate(opinion.created_at)}</span>
                     </div>
 

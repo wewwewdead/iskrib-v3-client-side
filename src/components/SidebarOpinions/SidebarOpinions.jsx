@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { handleClickProfile } from '../../../helpers/handleClicks';
 import { useAuth } from '../../Context/useAuth';
 import { BarLoader, MoonLoader } from 'react-spinners';
+import VerifiedBadge from '../Badge/VerifiedBadge';
 
 const SidebarOpinions = ({openEditor}) =>{
     const {user, session, openAuthModal} = useAuth();
@@ -109,8 +110,11 @@ const SidebarOpinions = ({openEditor}) =>{
                     {opinions.map((opinionsData) => (
                         <div key={opinionsData.id} className="so-card">
                             <div className="so-user-row">
-                                <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt="" />
+                                <div className={`so-avatar-container ${opinionsData.users.badge === 'legend' ? 'avatar-ring-legend' : opinionsData.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                    <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt="" />
+                                </div>
                                 <span onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-username">{opinionsData.users.name}</span>
+                                <VerifiedBadge badge={opinionsData.users.badge} size={14} />
                             </div>
                             <div className="so-body" onClick={(e) => handleClickContent(e, opinionsData.id, opinionsData.user_id)}>
                                 {opinionsData.opinion}
