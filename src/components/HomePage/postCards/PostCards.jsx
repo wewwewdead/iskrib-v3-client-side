@@ -170,17 +170,21 @@ const PostCards = () => {
         console.log(journalId)
         // mutationBookmark.mutate({journalId});
         const response = await mutationBookmark.mutateAsync({journalId})
+
+        if(timeOutRef.current){
+            clearTimeout(timeOutRef.current);
+        }
         if(response.message === 'success'){
             setBookmarkedMessage('Post was added to your Bookmarks')
             setShowBookmarkedMessage(journalId);
-            setTimeout(() =>{
+            timeOutRef.current = setTimeout(() =>{
                 setShowBookmarkedMessage(null)
                 setBookmarkedMessage('')
             }, 2500)
         } else {
             setBookmarkedMessage('Post was removed from your Bookmarks')
             setShowBookmarkedMessage(journalId);
-            setTimeout(() =>{
+            timeOutRef.current = setTimeout(() =>{
                 setShowBookmarkedMessage(null)
                 setBookmarkedMessage('')
             }, 2500)

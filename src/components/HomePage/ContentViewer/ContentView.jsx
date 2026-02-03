@@ -26,6 +26,7 @@ const ContentView = () => {
     const { session, user } = useAuth();
 
     const timeOutRef = useRef();
+    const timeOutRefBookmark = useRef();
 
     const [showCommentsContainer, setShowCommentsContainer] = useState(false);
     const [isLiked, setIsliked] = useState('');
@@ -34,7 +35,6 @@ const ContentView = () => {
     const [bookmarkCounts, setBookmarkCounts] = useState(null);
 
     const [bookmarkedMessage, setBookmarkedMessage] = useState('');
-    const [showBookmarkedMessage, setShowBookmarkedMessage] = useState(false);
 
     const contentRef = useRef();
 
@@ -77,19 +77,23 @@ const ContentView = () => {
     const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
     const handleClickBookmark = async (e, journalId) => {
         e.stopPropagation();
+        setIsBookmarked(!isBookmarked);
+        setBookmarkCounts(isBookmarked ? bookmarkCounts - 1 : bookmarkCounts + 1);
         const response = await mutationBookmark.mutateAsync({ journalId });
+        
+        if(timeOutRefBookmark.current){
+            clearTimeout(timeOutRefBookmark.current);
+        }
         if (response.message === 'success') {
-            setBookmarkedMessage('Post was added to your Bookmarks');
+            setBookmarkedMessage('Post was added to your Bookmarks'); 
         } else {
             setBookmarkedMessage('Post was removed from your Bookmarks');
         }
-        setShowBookmarkedMessage(true);
-        setTimeout(() => {
-            setShowBookmarkedMessage(false);
+            
+        timeOutRefBookmark.current = setTimeout(() => {
             setBookmarkedMessage('');
         }, 1500);
-        setIsBookmarked(!isBookmarked);
-        setBookmarkCounts(isBookmarked ? bookmarkCounts - 1 : bookmarkCounts + 1);
+
     }
     const debounceClickBookmark = debounce(handleClickBookmark, 100);
 
@@ -282,7 +286,7 @@ const ContentView = () => {
 
                 {/* Toast notification */}
             <AnimatePresence>
-                {showBookmarkedMessage && (
+                {bookmarkedMessage && (
                     <motion.div
                         className="cv-toast"
                         initial={{ opacity: 0, y: 8 }}

@@ -80,8 +80,8 @@ const OpinionViewer = () => {
                             />
                         </div>
                         <span className="ov-username">{opinion.users.name}</span>
-                        <span className="ov-dot">·</span>
                         <VerifiedBadge badge={opinion.users.badge} size={14}/>
+                        <span className="ov-dot">·</span>
                         <span className="ov-date">{formatPostDate(opinion.created_at)}</span>
                     </div>
 
