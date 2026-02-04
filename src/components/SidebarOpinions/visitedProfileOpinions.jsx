@@ -1,16 +1,21 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getUserOpinions } from "../../../API/Api";
 import { AnimatePresence, motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import VerifiedBadge from "../Badge/VerifiedBadge";
+import { useAuth } from "../../Context/useAuth";
+import { handleClickProfile } from "../../../helpers/handleClicks";
 
 
 
 const VisitedProfileOpinions = () =>{
     const {ref, inView} = useInView({threshold: 0, rootMargin: '200px'})
     const location = useLocation();
+    const navigate = useNavigate();
     const {userId} = location.state;
+   const {openAuthModal, session} = useAuth();;
 
     const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['getUserOpinions', userId],
@@ -26,6 +31,27 @@ const VisitedProfileOpinions = () =>{
         refetchOnWindowFocus: false,
         enabled: !!userId
     })
+
+
+    const handleClickOpionionsProfileOriginal = handleClickProfile(navigate);
+    const handleClickOpionionsProfile = (e, loggedInUserId, clickedUserId) => {
+        if(!session){
+            e.stopPropagation();
+            return openAuthModal();
+        }
+        handleClickOpionionsProfileOriginal(e, loggedInUserId, clickedUserId);
+    };
+
+    const handleClickContent = (e, opinionId, userId) =>{
+        e.stopPropagation();
+        if(!session) return openAuthModal();
+        navigate('/home/opinionsViewer', {
+            state: {
+                opinionId: opinionId,
+                userId: userId
+            }
+        })
+    }
 
     useEffect(() =>{
         console.log(userId)
@@ -54,33 +80,36 @@ const VisitedProfileOpinions = () =>{
         <AnimatePresence>
         <div className="visited-profile-opinions-container">
             {opinions.map((opinion) => (
-                <div key={opinion.id} className="visited-profile-opinion-card">
+                <div key={opinion.id} className="so-card">
+                    <div className="so-user-row">
+                        <div className={`so-avatar-container ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                            <img onClick={(e) => handleClickOpionionsProfile(e, user)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
+                        </div>
+                        <span className="so-username">{opinion.users.name}</span>
+                        <VerifiedBadge badge={opinion.users.badge} size={14} />
+                    </div>
 
-                    <motion.div
-                     className="visited-profile-opinion-content"
-                     initial={{opacity: 0, scale: 0.5, y: 10}}
-                        animate={{opacity: 1, scale: 1, y: [0, -8, 0]}}
-                        exit={{ opacity: 0, scale: 0.5 }}
+                    <motion.div onClick={(e) => handleClickContent(e, opinion.id, opinion.users.id)}
+                        className="so-body"
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 6 }}
                         transition={
                             {
-                                scale: {type: 'spring', stiffness: 300, damping: 15},
-                                opacity: {duration: 0.2},
-                                y:{
-                                    duration: 3,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut'
-                                }
+                                opacity: { duration: 0.2 },
+                                y: { duration: 0.25, ease: 'easeOut' }
                             }
                         }
-                     >
-                        <p style={{padding: 0, margin: 0}}>{opinion.opinion}</p>
+                    >
+                        {opinion.opinion}
                     </motion.div>
-
-                    <div className="opinions-visited-user-metadata">
-                        <div className={`opinions-profile-container ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                            <img className="opinions-profile" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
-                        </div>
-                        <p className="opinion-username">{opinion.users.name}</p>
+                    <div className="so-meta-bar">
+                        <span className="so-reply-pill" onClick={(e) => { e.stopPropagation(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Reply
+                        </span>
                     </div>
                 </div>
             ))}
