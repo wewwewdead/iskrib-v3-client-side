@@ -1,85 +1,149 @@
 import './login.css';
-import React, {useEffect, useState} from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from '../../Context/useAuth.js';
 import supabase from '../../utils/supabaseClient.js';
-const LoginPage = () =>{
-    const [showPass, setShowPass] = useState(false)
-    const [password, setPassword] = useState(null)
-    const [email, setEmail] = useState(null);
-    const [errorMessage, setErrorMessage] = useState('')
 
-    const {session} = useAuth();
+const LoginPage = () => {
+    const [showPass, setShowPass] = useState(false);
+    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const navigate = useNavigate(null);
-    const handleShowPass = (e) =>{
-        e.stopPropagation();
-        setShowPass(!showPass)
-    }
-    const handleNavigate = (e) =>{
-        e.stopPropagation();
-        return navigate('/signUp');
-    }
-    const handleLogin = async(e) =>{
-        e.stopPropagation();
+    const { session } = useAuth();
+    const navigate = useNavigate();
+
+    const handleShowPass = (e) => {
+        e.preventDefault();
+        setShowPass((prev) => !prev);
+    };
+
+    const handleNavigate = (e) => {
+        e.preventDefault();
+        navigate('/signUp');
+    };
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setErrorMessage('');
+        setSuccessMessage('');
+        setIsLoading(true);
         try {
-            const {error} = await supabase.auth.signInWithPassword({email: email, password: password})
-            if(error){
-                return setErrorMessage(error.message)
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                setIsLoading(false);
+                return setErrorMessage(error.message);
             }
-            navigate('/home')
+            setSuccessMessage('Signed in. Redirecting...');
+            setTimeout(() => navigate('/home'), 600);
         } catch (error) {
-            console.error('Error during sign-up:', error.message);
+            console.error('Error during sign-in:', error.message);
             setErrorMessage(error.message);
-        } finally {
-            setEmail(null);
-            setPassword(null);
+            setIsLoading(false);
         }
-    }
+    };
 
-    useEffect(() =>{
-        if(session){
-            navigate('/home')
+    useEffect(() => {
+        if (session) {
+            navigate('/home');
         }
-    }, [session])
-    return(
-        <div className='login-page-wrapper'>
-            <div className='login-logo'>
-                Iskrib
-            </div>
-            <p className='login-tagline'>Where your stories find their voice</p>
+    }, [session, navigate]);
 
-            <div className='login-page-container'>
-                <div className='input-container'>
-                    <div className='input-container-child'>
-                        <input value={email ? email : ''} onChange={(e) => setEmail(e.target.value)} className='login-input' type="email" placeholder='Email' aria-label='Email'/>
+    const isSubmitDisabled = !email || !password || isLoading;
+
+    return (
+        <div className='auth-shell login-shell'>
+            <section className='auth-panel'>
+                <div className='brand'>Iskrib</div>
+                <h1 className='panel-title'>A calm place to write, reflect, and share.</h1>
+                <p className='panel-copy'>
+                    Keep your thoughts in one quiet space. Publish when you are ready.
+                </p>
+                <div className='panel-details'>
+                    Minimalist editor · Private drafts · Thoughtful community
+                </div>
+            </section>
+
+            <section className='auth-form-panel'>
+                <div className='auth-form-card'>
+                    <div>
+                        <div className='form-title'>Welcome back</div>
+                        <p className='form-subtitle'>Sign in to continue your writing journey.</p>
                     </div>
-                    <div className='input-container-child'>
-                        <input value={password ? password : ''} onChange={(e) => setPassword(e.target.value)} className='login-input' type={showPass ? 'text' : 'password'} placeholder='Password' aria-label='Password'/>
-                        {password && (
-                            <div onClick={(e) => handleShowPass(e)} className='show-bttn'>
-                                {showPass ? 'hide' : 'show'}
+
+                    <form className='auth-form' onSubmit={handleLogin} aria-busy={isLoading ? 'true' : 'false'}>
+                        <div className='form-field'>
+                            <label htmlFor='login-email'>Email</label>
+                            <input
+                                id='login-email'
+                                type='email'
+                                autoComplete='email'
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder='you@iskrib.com'
+                                className='auth-input'
+                                required
+                            />
+                        </div>
+
+                        <div className='form-field'>
+                            <label htmlFor='login-password'>Password</label>
+                            <div className='input-with-action'>
+                                <input
+                                    id='login-password'
+                                    type={showPass ? 'text' : 'password'}
+                                    autoComplete='current-password'
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder='Enter your password'
+                                    className='auth-input'
+                                    required
+                                />
+                                <button className='show-toggle' type='button' onClick={handleShowPass}>
+                                    {showPass ? 'Hide' : 'Show'}
+                                </button>
                             </div>
-                        )}
+                        </div>
 
+                        <button className='primary-button' type='submit' disabled={isSubmitDisabled}>
+                            <span className='button-label'>Log in</span>
+                            {isLoading && <span className='button-spinner' aria-hidden='true' />}
+                        </button>
+
+                        <button
+                            className='secondary-button'
+                            type='button'
+                            onClick={() => navigate('/home')}
+                            disabled={isLoading}
+                        >
+                            Explore Iskrib
+                        </button>
+                    </form>
+
+                    <div className='auth-footer'>
+                        Don&apos;t have an account?
+                        <button className='link-button' type='button' onClick={handleNavigate}>
+                            Sign up
+                        </button>
                     </div>
 
-                    <button onClick={(e) => handleLogin(e)} disabled={!password} className={!password ? 'log-in-bttn log-in-bttn-disabled' : 'log-in-bttn'}>
-                        Log in
-                    </button>
-                </div>
+                    {errorMessage && (
+                        <div className='form-message error' role='alert'>
+                            {errorMessage}
+                        </div>
+                    )}
 
-                <div className='switch-container'>
-                    Don't have an account? <span onClick={(e) => handleNavigate(e)} className='sign-up-bttn'>Sign up</span>
+                    {successMessage && (
+                        <div className='form-message success' role='status'>
+                            {successMessage}
+                        </div>
+                    )}
                 </div>
-
-                {errorMessage && (
-                    <div className='error-message'>
-                        {errorMessage}
-                    </div>
-                )}
-            </div>
+            </section>
         </div>
-    )
-}
-export default LoginPage
+    );
+};
+
+export default LoginPage;

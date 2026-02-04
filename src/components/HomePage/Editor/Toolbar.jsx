@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   FORMAT_TEXT_COMMAND,
@@ -11,8 +11,8 @@ import {
   $setSelection,
 } from "lexical";
 
-import { $createHeadingNode, $isHeadingNode,} from "@lexical/rich-text";
-import { $setBlocksType } from "@lexical/selection";
+import { $createHeadingNode, $isHeadingNode, $createQuoteNode, $isQuoteNode } from "@lexical/rich-text";
+import { $getSelectionStyleValueForProperty, $patchStyleText, $setBlocksType } from "@lexical/selection";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $insertNodeToNearestRoot } from '@lexical/utils';
 
@@ -23,6 +23,7 @@ import { useAuth } from "../../../Context/useAuth";
 const ToolBar = ({addUploadedImagePath}) =>{
     const [editor] = useLexicalComposerContext();
     const {session} = useAuth();
+    const colorPickerRef = useRef(null);
 
     // Active state tracking
     const [activeStates, setActiveStates] = useState({
@@ -30,8 +31,40 @@ const ToolBar = ({addUploadedImagePath}) =>{
         italic: false,
         underline: false,
         heading: null,   // 'h1' | 'h2' | 'h3' | null
+        quote: false,
         alignment: 'left',
+        textColor: '',
+        highlightColor: '',
     });
+
+    const [showTextColorPicker, setShowTextColorPicker] = useState(false);
+    const [showHighlightColorPicker, setShowHighlightColorPicker] = useState(false);
+
+    const COLOR_PALETTE = [
+        { label: 'Default', value: null },
+        { label: 'Black', value: '#000000' },
+        { label: 'Dark Gray', value: '#4d4d4d' },
+        { label: 'Gray', value: '#888888' },
+        { label: 'Light Gray', value: '#bfbfbf' },
+        { label: 'Red', value: '#f44336' },
+        { label: 'Pink', value: '#e91e63' },
+        { label: 'Purple', value: '#9c27b0' },
+        { label: 'Deep Purple', value: '#673ab7' },
+        { label: 'Indigo', value: '#3f51b5' },
+        { label: 'Blue', value: '#2196f3' },
+        { label: 'Light Blue', value: '#03a9f4' },
+        { label: 'Cyan', value: '#00bcd4' },
+        { label: 'Teal', value: '#009688' },
+        { label: 'Green', value: '#4caf50' },
+        { label: 'Light Green', value: '#8bc34a' },
+        { label: 'Lime', value: '#cddc39' },
+        { label: 'Yellow', value: '#ffeb3b' },
+        { label: 'Amber', value: '#ffc107' },
+        { label: 'Orange', value: '#ff9800' },
+        { label: 'Deep Orange', value: '#ff5722' },
+        { label: 'Brown', value: '#795548' },
+        { label: 'Blue Gray', value: '#607d8b' },
+    ];
 
     // Register update listener for active state detection
     useEffect(() => {
@@ -55,11 +88,15 @@ const ToolBar = ({addUploadedImagePath}) =>{
                 }
 
                 let heading = null;
+                let quote = false;
                 let alignment = 'left';
 
                 if (element) {
                     if ($isHeadingNode(element)) {
                         heading = element.getTag(); // 'h1', 'h2', 'h3'
+                    }
+                    if ($isQuoteNode(element)) {
+                        quote = true;
                     }
                     const formatType = element.getFormatType?.();
                     if (formatType) {
@@ -67,15 +104,48 @@ const ToolBar = ({addUploadedImagePath}) =>{
                     }
                 }
 
-                setActiveStates({ bold, italic, underline, heading, alignment });
+                const textColor = $getSelectionStyleValueForProperty(selection, 'color', '');
+                const highlightColor = $getSelectionStyleValueForProperty(selection, 'background-color', '');
+
+                setActiveStates({
+                    bold,
+                    italic,
+                    underline,
+                    heading,
+                    quote,
+                    alignment,
+                    textColor,
+                    highlightColor,
+                });
             });
         });
     }, [editor]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!colorPickerRef.current) return;
+            if (!colorPickerRef.current.contains(event.target)) {
+                setShowTextColorPicker(false);
+                setShowHighlightColorPicker(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
 
     const applyTextFormat = (format) => {
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, format)
     }
+
+    const applyTextStyle = useCallback((styles) => {
+        editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+                $patchStyleText(selection, styles);
+            }
+        });
+    }, [editor]);
 
     //heading node (H1, H2, H3)
     const setHeading = (tag) => {
@@ -114,6 +184,39 @@ const ToolBar = ({addUploadedImagePath}) =>{
     //align element
     const setAlignment = (value) => {
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, value);
+    }
+
+    //quote block (toggle)
+    const setQuote = () => {
+        editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+                const anchorNode = selection.anchor.getNode();
+
+                let element;
+                try {
+                    element = anchorNode.getKey() === 'root'
+                        ? anchorNode
+                        : anchorNode.getTopLevelElement() || anchorNode.getTopLevelElementOrThrow();
+                } catch (e) {
+                    console.error('Could not get top level element:', e);
+                    return;
+                }
+
+                if (!element) return;
+
+                const type = typeof element.getType === 'function' ? element.getType() : null;
+                if (type && type !== "paragraph" && type !== "heading" && type !== "quote") {
+                    return;
+                }
+
+                const isActive = $isQuoteNode(element);
+
+                $setBlocksType(selection, () =>
+                    isActive ? $createParagraphNode() : $createQuoteNode()
+                );
+            }
+        })
     }
 
     //insert image
@@ -211,6 +314,108 @@ const ToolBar = ({addUploadedImagePath}) =>{
                 </div>
                 <div onMouseDown={(e) => e.preventDefault()} onClick={() => setHeading('h3')} className={getBtnClass(activeStates.heading === 'h3')} title="Heading 3">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M120-280v-400h80v160h160v-160h80v400h-80v-160H200v160h-80Zm400 0v-80h240v-80H600v-80h160v-80H520v-80h240q33 0 56.5 23.5T840-600v240q0 33-23.5 56.5T760-280H520Z"/></svg>
+                </div>
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => setQuote()} className={getBtnClass(activeStates.quote)} title="Quote">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M220-280q-50 0-85-35t-35-85q0-33 16-63t44-47l80-51v-159h160v240H300l-46 29q-14 9-14 26 0 17 12 29t28 12h140v104H220Zm420 0q-50 0-85-35t-35-85q0-33 16-63t44-47l80-51v-159h160v240H720l-46 29q-14 9-14 26 0 17 12 29t28 12h140v104H640Z"/></svg>
+                </div>
+            </div>
+
+            <div className="toolbar-divider" />
+
+            {/* Group 5: Text color + highlight */}
+            <div className="group" ref={colorPickerRef}>
+                <div className="toolbar-color-picker">
+                    <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                            setShowTextColorPicker((prev) => !prev);
+                            setShowHighlightColorPicker(false);
+                        }}
+                        className="toolbar-color-trigger"
+                        title="Text color"
+                        aria-label="Text color"
+                    >
+                        <span className="toolbar-color-icon">A</span>
+                        <span
+                            className="toolbar-color-swatch"
+                            style={{ backgroundColor: activeStates.textColor || 'transparent' }}
+                        />
+                    </button>
+                    {showTextColorPicker && (
+                        <div className="color-popover" onMouseDown={(e) => e.preventDefault()}>
+                            {COLOR_PALETTE.map((color) => {
+                                const isActive = color.value
+                                    ? activeStates.textColor?.toLowerCase() === color.value.toLowerCase()
+                                    : !activeStates.textColor;
+                                const swatchClass = color.value
+                                    ? 'color-swatch'
+                                    : 'color-swatch is-default';
+                                return (
+                                    <button
+                                        key={`text-${color.label}`}
+                                        type="button"
+                                        className={isActive ? `${swatchClass} is-selected` : swatchClass}
+                                        title={color.label}
+                                        aria-label={`Text color ${color.label}`}
+                                        onClick={() => {
+                                            applyTextStyle({ color: color.value });
+                                            setShowTextColorPicker(false);
+                                        }}
+                                        style={{ backgroundColor: color.value || 'transparent' }}
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <div className="toolbar-color-picker">
+                    <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                            setShowHighlightColorPicker((prev) => !prev);
+                            setShowTextColorPicker(false);
+                        }}
+                        className="toolbar-color-trigger"
+                        title="Highlight"
+                        aria-label="Highlight"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                            <path d="m320-240 60-120 160 160-120 60-100-100ZM560-400l-240-240 60-60 240 240-60 60ZM660-300l-60-60 160-160 60 60-160 160ZM200-80v-80h560v80H200Zm500-580-60-60 60-60 60 60-60 60Z"/>
+                        </svg>
+                        <span
+                            className="toolbar-color-swatch"
+                            style={{ backgroundColor: activeStates.highlightColor || 'transparent' }}
+                        />
+                    </button>
+                    {showHighlightColorPicker && (
+                        <div className="color-popover" onMouseDown={(e) => e.preventDefault()}>
+                            {COLOR_PALETTE.map((color) => {
+                                const isActive = color.value
+                                    ? activeStates.highlightColor?.toLowerCase() === color.value.toLowerCase()
+                                    : !activeStates.highlightColor;
+                                const swatchClass = color.value
+                                    ? 'color-swatch'
+                                    : 'color-swatch is-default';
+                                return (
+                                    <button
+                                        key={`highlight-${color.label}`}
+                                        type="button"
+                                        className={isActive ? `${swatchClass} is-selected` : swatchClass}
+                                        title={color.label}
+                                        aria-label={`Highlight color ${color.label}`}
+                                        onClick={() => {
+                                            applyTextStyle({ 'background-color': color.value });
+                                            setShowHighlightColorPicker(false);
+                                        }}
+                                        style={{ backgroundColor: color.value || 'transparent' }}
+                                    />
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
 

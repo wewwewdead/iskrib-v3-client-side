@@ -1,7 +1,7 @@
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import ImageNode from "../Editor/nodes/ImageNode";
-import { HeadingNode } from "@lexical/rich-text";
+import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -45,6 +45,7 @@ const ContentView = () => {
             h2: 'editor-heading-h2',
             h3: 'editor-heading-h3',
         },
+        quote: 'editor-quote',
         text: {
             bold: 'editor-text-bold',
             italic: 'editor-text-italic',
@@ -271,7 +272,7 @@ const ContentView = () => {
                             theme: theme,
                             editable: false,
                             editorState: postData?.content,
-                            nodes: [HeadingNode, ImageNode],
+                            nodes: [HeadingNode, ImageNode, QuoteNode],
                             onError(error) {
                                 throw error;
                             },

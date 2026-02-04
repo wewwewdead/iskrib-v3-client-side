@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import './profilepostcards.css';
+import '../../Editor/editor.css';
 import { AnimatePresence, motion} from 'framer-motion';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
-import { HeadingNode } from '@lexical/rich-text';
+import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import ImageNode from '../../Editor/nodes/ImageNode';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
-import ToolBarForEdit from '../../Editor/ToolbarForEdit';
+import ToolBar from '../../Editor/Toolbar';
+import ImagePlugin from '../../Editor/nodes/Plugins/ImagePlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { updateJournal } from '../../../../../API/Api';
@@ -26,6 +28,7 @@ const EditJournal = ({onClose, journalData}) => {
             h2: 'editor-heading-h2',
             h3: 'editor-heading-h3',
         },
+        quote: 'editor-quote',
         text: {
             bold: 'editor-text-bold',
             italic: 'editor-text-italic',
@@ -37,6 +40,7 @@ const EditJournal = ({onClose, journalData}) => {
     const [showNotes, setShowNotes] = useState(true);
     const [editorState , setEditorState] = useState(journalData?.content);
     const [isUpdatingJournal, setIsUpdatingJournal] = useState(false);
+    const addUploadedImagePath = useCallback(() => {}, []);
 
     const handlClickCloseEditor = (e) =>{
         e.stopPropagation();
@@ -102,9 +106,6 @@ const EditJournal = ({onClose, journalData}) => {
         animate={{scale:1, opacity: 1, transition: {type: 'spring', stiffness: 200, damping: 25}}}
         exit={{opacity: 0, scale: 0}}
         >
-            {isUpdatingJournal && (
-                <BarLoader loading={isUpdatingJournal} width={'100%'} color="rgb(40, 115, 255)" speedMultiplier={0.9}/>
-            )}
             {showNotes && (
                 <div className='important-notes-container'>
 
@@ -129,7 +130,7 @@ const EditJournal = ({onClose, journalData}) => {
 
                 <div className='first-child-header-container'>
                      <div onClick={(e) => handlClickCloseEditor(e)} className='edit-journal-close-bttn'>
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffffff"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentcolor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
                     </div>
                     <div className='edit-journal-header'>
                         Edit Post
@@ -154,19 +155,37 @@ const EditJournal = ({onClose, journalData}) => {
                 editable: true,
                 editorState: typeof journalData?.content === 'string'
                 ? journalData.content : JSON.stringify(journalData?.content),
-                nodes: [HeadingNode, ImageNode],
+                nodes: [HeadingNode, ImageNode, QuoteNode],
                 onError(error){
                     throw error
                 },
             }}>
-                <ToolBarForEdit/>
-                <RichTextPlugin
-                contentEditable={<ContentEditable
-                className='edit-content'/>}
-                ErrorBoundary={LexicalErrorBoundary}
-                />
-                <HistoryPlugin/>
-                <OnChangePlugin onChange={onChange}/>
+                <div className="toolbar-wrapper">
+                    <ToolBar addUploadedImagePath={addUploadedImagePath}/>
+                </div>
+
+                <div className="editor-loader-wrapper">
+                    {isUpdatingJournal && (
+                        <BarLoader loading={isUpdatingJournal} width={'100%'} height={3} color="var(--accent-purple)" speedMultiplier={0.7}/>
+                    )}
+                </div>
+
+                <div className="editor-shell">
+                    <RichTextPlugin
+                        contentEditable={
+                            <ContentEditable
+                                className="editor-input"
+                                aria-placeholder="Edit your post..."
+                                placeholder={<div className="editor-placeholder">Edit your post...</div>}
+                            />
+                        }
+                        ErrorBoundary={LexicalErrorBoundary}
+                    />
+
+                    <ImagePlugin addUploadedImagePath={addUploadedImagePath}/>
+                    <HistoryPlugin/>
+                    <OnChangePlugin onChange={onChange}/>
+                </div>
 
             </LexicalComposer>
 

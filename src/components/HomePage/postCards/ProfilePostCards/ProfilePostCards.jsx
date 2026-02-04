@@ -244,7 +244,7 @@ const ProfilePostCards = () =>{
                         transition={{duration: 0.3, ease: 'easeOut'}}
                     >
                         
-                        <div className='profile-postcards'>
+                        <div className={`profile-postcards ${showEditor === journal.id ? 'is-editing' : ''}`}>
                             {showEditor === journal.id && (
                                 <EditJournal key={index} journalData={journalData ? journalData : {}} onClose={handleClickCloseEditor}/>
                             )}

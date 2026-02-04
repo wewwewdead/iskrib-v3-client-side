@@ -263,6 +263,14 @@
     margin: 1rem 0 0.5rem;
     color: var(--text-heading);
 }
+.cv-body .editor-quote {
+    margin: 0.75rem 0;
+    padding: 0.3rem 0.75rem;
+    border-left: 2px solid var(--accent-purple);
+    background: color-mix(in srgb, var(--accent-purple) 5%, transparent);
+    color: var(--text-primary);
+    font-style: italic;
+}
 .cv-body img {
     max-width: 100%;
     border-radius: 4px;

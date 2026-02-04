@@ -34,7 +34,6 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
     const handleClick = (e, collected, journal) =>{
         e.stopPropagation();
         if(collected){
-            console.log('collected')
             return;
         }
         setSelectedPost((prev) => {
@@ -53,10 +52,6 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
         return selectedPost.has(journalId);
     }
 
-    useEffect(() =>{
-        console.log(data)
-    }, [data])
-
     const unMount = () =>{
         onClose();
     }
@@ -65,8 +60,6 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
         e.stopPropagation();
         const journalIds = Array.from(selectedPost.values());
         const journalIdsArray = journalIds.flatMap((journal) => journal.id);
-        // console.log(collectionId)
-        // console.log(jouralArray)
 
         const formdata = new FormData();
         formdata.append('journalIds', journalIdsArray);
@@ -87,32 +80,38 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
             throw new Error('error saving journals in to collections');
         }
 
-        
+
     }
 
     useEffect(() =>{
         if(inView && !isFetchingNextPage && hasNextPage){
-            console.log('inview');
             fetchNextPage();
         }
     }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
     const notCollectedJournals = data?.pages?.flatMap((page) => page.data) || [];
 
-    if(notCollectedJournals.length === 0){
+    if(notCollectedJournals.length === 0 && !isLoading){
         return(
             <>
             <div className="notCollectedJournalList">
                 <div className="close-bttn-container">
-                <div onClick={() => unMount()} className="close-bttn">
+                <div onClick={() => unMount()} className="close-bttn" role="button" tabIndex={0} aria-label="Close" onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') unMount() }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill="none">
                         <g id="Menu / Close_SM">
-                            <path id="Vector" d="M16 16L12 12M12 12L8 8M12 12L16 8M12 12L8 16" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path id="Vector" d="M16 16L12 12M12 12L8 8M12 12L16 8M12 12L8 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </g>
                     </svg>
                 </div>
                 </div>
-                No post availabe to collect
+                <div className="no-collections-container">
+                    <svg className="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                    <h3 className="empty-state-title">No posts available</h3>
+                    <p className="empty-state-description">All your journals have already been collected or you haven't written any yet.</p>
+                </div>
             </div>
             </>
         )
@@ -123,7 +122,7 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
             <div className="notCollectedJournalList">
                 <div className="notCollectedJournalList-loading-container">
                     <MoonLoader loading={isLoading} size={25}/>
-                </div> 
+                </div>
             </div>
         )
     }
@@ -138,10 +137,10 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
                 </div>
             )}
             <div className="close-bttn-container">
-                <div onClick={() => unMount()} className="close-bttn">
+                <div onClick={() => unMount()} className="close-bttn" role="button" tabIndex={0} aria-label="Close" onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') unMount() }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill="none">
                         <g id="Menu / Close_SM">
-                            <path id="Vector" d="M16 16L12 12M12 12L8 8M12 12L16 8M12 12L8 16" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path id="Vector" d="M16 16L12 12M12 12L8 8M12 12L16 8M12 12L8 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </g>
                     </svg>
                 </div>
@@ -152,13 +151,20 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
                     const parseContent = ParseContent(journal?.content);
 
                     return(
-                        <div onClick={(e) => {handleClick(e, journal.hasCollected, journal)}} className={isSelected(journal.id) ? "collected-cards" : "not-collected-cards"} key={journal.id}>
+                        <div onClick={(e) => {handleClick(e, journal.hasCollected, journal)}} className={isSelected(journal.id) ? "collected-cards" : "not-collected-cards"} key={journal.id} role="button" tabIndex={0} onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') handleClick(e, journal.hasCollected, journal) }}>
+                            {isSelected(journal.id) && (
+                                <div className="selection-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                            )}
                             <div className="not-collected-title">
-                                <p>{journal?.title}</p> 
+                                <p>{journal?.title}</p>
                                 {journal.hasCollected && (
                                     <div className="if-collected-text">already collected</div>
                                 )}
-                                
+
                             </div>
 
                             <div className="not-collected-text">
@@ -171,11 +177,11 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
             </div>
 
             <div className="save-button-container">
-                <button onClick={(e) => handleClickSave(e)} className="save-collected-post-bttn">
-                    save
+                <button onClick={(e) => handleClickSave(e)} className="btn-collection btn-collection--primary">
+                    Save
                 </button>
                 <div>
-                    Selected post: {selectedPost.size}
+                    Selected: <span style={{color: 'var(--accent-purple)', fontWeight: 700}}>{selectedPost.size}</span>
                 </div>
             </div>
         </div>

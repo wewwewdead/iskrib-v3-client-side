@@ -13,7 +13,7 @@ const OlderPost = ({onSave, onClose}) =>{
 
     const handleClickContent = (e, journal) =>{
         e.stopPropagation();
-        
+
         setSelectedPostMap((prev) => {
             const newMap = new Map(prev);
 
@@ -28,7 +28,6 @@ const OlderPost = ({onSave, onClose}) =>{
 
     const handleSave = (e) =>{
         e.stopPropagation()
-        console.log(selectedPostMap)
         onSave(selectedPostMap)
     }
 
@@ -36,11 +35,6 @@ const OlderPost = ({onSave, onClose}) =>{
         e.stopPropagation();
         onClose();
     }
-
-    // useEffect(() =>{
-    //     console.log(selectedPostMap)
-    // }, [selectedPostMap])
-    
 
     const {
         data,
@@ -65,7 +59,6 @@ const OlderPost = ({onSave, onClose}) =>{
 
     useEffect(() =>{
         if(inView && hasNextPage && !isFetchingNextPage){
-            console.log('view')
             fetchNextPage();
         }
     }, [inView, isFetchingNextPage, hasNextPage, fetchNextPage])
@@ -82,7 +75,7 @@ const OlderPost = ({onSave, onClose}) =>{
             <div className="older-loading-container">
                 <MoonLoader loading={isLoading} size={25}/>
             </div>
-            
+
         )
     }
     return(
@@ -92,14 +85,21 @@ const OlderPost = ({onSave, onClose}) =>{
                 {journals?.map((journal) => {
                     const parsedContent = ParseContent(journal?.content);
                     return(
-                        <div onClick={(e) => handleClickContent(e, journal)} key={journal.id} className={isSelected(journal.id) ? "old-post-cards-selected" : "old-post-cards"}>
+                        <div onClick={(e) => handleClickContent(e, journal)} key={journal.id} className={isSelected(journal.id) ? "old-post-cards-selected" : "old-post-cards"} role="button" tabIndex={0} onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') handleClickContent(e, journal) }}>
+                            {isSelected(journal.id) && (
+                                <div className="selection-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                            )}
                             <div className="collection-journal-title">
                                 {journal.title}
                             </div>
                             <div className="collection-sliced-text">{parsedContent.slicedText}</div>
                         </div>
                     )
-                
+
                 })}
                 <div ref={ref} className="inview-container">
                 </div>
@@ -107,19 +107,19 @@ const OlderPost = ({onSave, onClose}) =>{
 
             <div className="save-older-post-container">
                 <div className="save-child-container">
-                    <div onClick={(e) => handleSave(e)} className="save-older-post-button">
-                        save
-                    </div>
+                    <button onClick={(e) => handleSave(e)} className="btn-collection btn-collection--primary">
+                        Save
+                    </button>
                     <div>
-                        <p className="selected-post">selected post: <span style={{color: 'rgba(66, 148, 255, 1)'}}>{selectedPostMap.size}</span></p>
+                        <p className="selected-post">Selected: <span style={{color: 'var(--accent-purple)'}}>{selectedPostMap.size}</span></p>
                     </div>
                 </div>
-                
-                <div onClick={(e) => handleClose(e)} className="cancel-older-post-container">
-                    cancel
-                </div>
+
+                <button onClick={(e) => handleClose(e)} className="btn-collection btn-collection--secondary">
+                    Cancel
+                </button>
             </div>
-            
+
         </div>
         </>
     )

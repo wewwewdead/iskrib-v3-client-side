@@ -8,7 +8,7 @@ import LoginPage from './components/LoginPage/login.jsx';
 import SignUp from './components/SignUpPage/signup.jsx';
 import MyProfile from './components/ProfilePage/MyProfile.jsx';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
-import {HeadingNode} from "@lexical/rich-text";
+import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
 
 import PostCards from './components/HomePage/postCards/PostCards.jsx';
@@ -36,25 +36,26 @@ const AppAuthModal = () => {
 
 const App = () => {
 
-const theme = {
-  paragraph: 'editor-paragraph',
-  heading: {
-    h1: 'editor-heading-h1',
-    h2: 'editor-heading-h2',
-    h3: 'editor-heading-h3',
-  },
-  text: {
-    bold: 'editor-text-bold',
-    italic: 'editor-text-italic',
-    underline: 'editor-text-underline',
+  const theme = {
+    paragraph: 'editor-paragraph',
+    heading: {
+      h1: 'editor-heading-h1',
+      h2: 'editor-heading-h2',
+      h3: 'editor-heading-h3',
+    },
+    quote: 'editor-quote',
+    text: {
+      bold: 'editor-text-bold',
+      italic: 'editor-text-italic',
+      underline: 'editor-text-underline',
+    }
   }
-}
   
-const initaConfig = {
+  const initaConfig = {
   namespace: "MyLexicalEditor",
   theme,
   //register nodes
-  nodes: [ImageNode, HeadingNode ],
+  nodes: [ImageNode, HeadingNode, QuoteNode],
   onError(error){
   throw error;
   },

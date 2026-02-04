@@ -209,7 +209,16 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
   return (
     <>
     {viewImage && (
-      <img onClick={() => setViewImage(!viewImage)} className='image-view' src={src} alt="view-image" />
+      <img
+        onClick={() => setViewImage(!viewImage)}
+        className='image-view'
+        src={src}
+        alt="view-image"
+        style={{
+          transform: `rotate(${currentRotation}deg) scale(1.2)`,
+          transition: 'transform 0.3s ease',
+        }}
+      />
     )}
 
     <div

@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "../../Context/useAuth";
 import { getCollectionJournals } from "../../../API/Api";
 import { useEffect } from "react";
@@ -29,10 +29,6 @@ const ViewUserCollection = () =>{
         enabled: !!collectionId && !!session?.access_token,
     })
 
-    useEffect(() => {
-        console.log(data)
-    }, [data])
-
     const handleClickBack = (e) =>{
         e.stopPropagation();
         window.history.back();
@@ -43,17 +39,16 @@ const ViewUserCollection = () =>{
     useEffect(() => {
         if(inView && hasNextPage && !isFetchingNextPage){
             fetchNextPage()
-            console.log(inView)
         }
     }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
     const journals = data?.pages.flatMap((page) => page.data) || [];
-    
+
     return(
         <>
         <div className="back-button-container-user-collections">
-            <div onClick={(e) => handleClickBack(e)} className="back-button">
-                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M360-240 120-480l240-240 56 56-144 144h568v80H272l144 144-56 56Z"/></svg>
+            <div onClick={(e) => handleClickBack(e)} className="back-button" role="button" tabIndex={0} aria-label="Go back" onKeyDown={(e) => { if(e.key === 'Enter' || e.key === ' ') handleClickBack(e) }}>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M360-240 120-480l240-240 56 56-144 144h568v80H272l144 144-56 56Z"/></svg>
             </div>
             <div className="back-text">Back</div>
         </div>
@@ -63,7 +58,7 @@ const ViewUserCollection = () =>{
                 <div className="collection-name">
                     {location?.state.collectionName}
                 </div>
-                <div className="collection-description">
+                <div className="collection-description-container">
                     {location?.state.collectionDescription}
                 </div>
             </div>
@@ -77,11 +72,11 @@ const ViewUserCollection = () =>{
                             <div className="journal-collection-image-container">
                                 <img className="journal-collection-image" src={parseContent?.firstImage?.src || "/assets/no-image.png"} alt="journal image" />
                             </div>
-                            <div className="collections-title">
-                                {journal.journals.title.length > 22 ? `${journal.journals.title.substring(0, 21)}...` : journal.journals.title}
+                            <div className="collections-title text-truncate">
+                                {journal.journals.title}
                             </div>
-                            <div className="collections-text">
-                                {parseContent?.wholeText.length > 100 ? `${parseContent?.wholeText.substring(0, 99)}...` : parseContent?.wholeText}
+                            <div className="collections-text text-truncate-2">
+                                {parseContent?.wholeText}
                             </div>
                         </div>
                     )

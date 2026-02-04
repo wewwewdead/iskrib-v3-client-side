@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query"
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom"
 import { getCollections } from "../../../API/Api";
 import { MoonLoader } from "react-spinners";
@@ -15,10 +15,6 @@ const CollectionViewer = () =>{
     const {ref, inView} = useInView({
         threshold: 0,
     })
-
-    // useEffect(() =>{
-    //     console.log(userId)
-    // }, [userId])
 
     const {data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['visitedProfileCollections', userId],
@@ -41,7 +37,7 @@ const CollectionViewer = () =>{
             return;
         }
         navigate('/home/userCollections', {
-            state: 
+            state:
             {
                 collectionId: collectionId,
                 collectionName: collectionName,
@@ -52,16 +48,11 @@ const CollectionViewer = () =>{
     )
     }
 
-
-    // useEffect(() =>{
-    //     console.log(data)
-    // }, [data])
-
     useEffect(() =>{
         if(inView && !isFetchingNextPage && hasNextPage){
             fetchNextPage();
         }
-        
+
     }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
     const collections = data?.pages.flatMap((page) => page.data) || [];
@@ -82,8 +73,13 @@ const CollectionViewer = () =>{
         return(
             <>
             <div key={2} className="collection-container">
-                <div>
-                    No collections to show.
+                <div className="no-collections-container">
+                    <svg className="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                    <h3 className="empty-state-title">No collections yet</h3>
+                    <p className="empty-state-description">This user hasn't created any collections.</p>
                 </div>
             </div>
             </>
@@ -93,7 +89,9 @@ const CollectionViewer = () =>{
     return(
         <>
         <div className="collection-container">
-            {collections?.map((collection) => (
+            {collections?.map((collection) => {
+                const accentIndex = collection.id ? collection.id.toString().charCodeAt(0) % 4 : 0;
+                return (
                 <div key={collection.id} className="collection-cards-profile-container">
                 <div onClick={(e) => handleClickCards(e, collection.id, collection.name, collection.description, collection.is_public)} key={collection.id} className="collection-cards-profile">
 
@@ -106,11 +104,13 @@ const CollectionViewer = () =>{
                             </svg>
                         </div>
                     )}
-                    
-                    <div className="collection-illustration">
-                        <img className="collection-illustration-img" src={'/assets/collection-banner.png'} alt="" />
+
+                    <div className="collection-gradient-header" data-accent={accentIndex}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ffffff', opacity: 0.2 }}>
+                            <path d="M18,2 C19.3807,2 20.5,3.11929 20.5,4.5 L20.5,18.75 C20.5,19.1642 20.1642,19.5 19.75,19.5 L5.5,19.5 C5.5,20.0523 5.94772,20.5 6.5,20.5 L19.75,20.5 C20.1642,20.5 20.5,20.8358 20.5,21.25 C20.5,21.6642 20.1642,22 19.75,22 L6.5,22 C5.11929,22 4,20.8807 4,19.5 L4,4.5 C4,3.11929 5.11929,2 6.5,2 L18,2 Z"/>
+                        </svg>
                     </div>
-                    <div className="collection-name-container">
+                    <div className="collection-name-container text-truncate">
                         {collection.name}
                     </div>
                     <div className="collection-date-created">
@@ -119,9 +119,9 @@ const CollectionViewer = () =>{
                     </div>
                 </div>
                 </div>
- 
-            ))}
-            
+                )
+            })}
+
         </div>
         <div ref={ref} className="viewer">
         </div>
