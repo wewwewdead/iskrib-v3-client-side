@@ -98,7 +98,7 @@ const PostCards = () => {
                 </g>
             </svg>,
             className: 'comment-button',
-            commentAction: (e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount) => viewContent(e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount ),
+            commentAction: (e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount, badge) => viewContent(e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount, badge ),
             countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -344,7 +344,7 @@ const PostCards = () => {
                                                 )}
 
                                                 {icon.commentAction && (
-                                                    <div onClick={(e) => icon.commentAction(e, journal.content,parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count)} id="card-icons" className={icon.className}>
+                                                    <div onClick={(e) => icon.commentAction(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge)} id="card-icons" className={icon.className}>
                                                         {icon.label}
                                                     </div>
                                                 )}
