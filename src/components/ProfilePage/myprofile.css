@@ -230,13 +230,57 @@
 }
 .profile-avatar-ring.badge-ring-legend{
     border: 3px solid #FFD700;
-    box-shadow: 0 0 18px 4px rgba(255, 215, 0, 0.35), inset 0 0 12px rgba(255, 215, 0, 0.15);
+    box-shadow:
+        0 0 10px 3px rgba(255, 215, 0, 0.5),
+        0 0 20px 6px rgba(255, 215, 0, 0.35),
+        0 0 35px 10px rgba(255, 215, 0, 0.2),
+        inset 0 0 12px rgba(255, 215, 0, 0.15);
     opacity: 1;
+    animation: glow-legend-profile 2s ease-in-out infinite alternate;
 }
 .profile-avatar-ring.badge-ring-og{
     border: 3px solid #9B59FF;
-    box-shadow: 0 0 18px 4px rgba(155, 89, 255, 0.35), inset 0 0 12px rgba(155, 89, 255, 0.15);
+    box-shadow:
+        0 0 10px 3px rgba(155, 89, 255, 0.5),
+        0 0 20px 6px rgba(155, 89, 255, 0.35),
+        0 0 35px 10px rgba(155, 89, 255, 0.2),
+        inset 0 0 12px rgba(155, 89, 255, 0.15);
     opacity: 1;
+    animation: glow-og-profile 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow-legend-profile {
+    from {
+        box-shadow:
+            0 0 10px 3px rgba(255, 215, 0, 0.5),
+            0 0 20px 6px rgba(255, 215, 0, 0.35),
+            0 0 35px 10px rgba(255, 215, 0, 0.2),
+            inset 0 0 12px rgba(255, 215, 0, 0.15);
+    }
+    to {
+        box-shadow:
+            0 0 14px 5px rgba(255, 215, 0, 0.6),
+            0 0 28px 10px rgba(255, 215, 0, 0.4),
+            0 0 45px 15px rgba(255, 215, 0, 0.25),
+            inset 0 0 16px rgba(255, 215, 0, 0.2);
+    }
+}
+
+@keyframes glow-og-profile {
+    from {
+        box-shadow:
+            0 0 10px 3px rgba(155, 89, 255, 0.5),
+            0 0 20px 6px rgba(155, 89, 255, 0.35),
+            0 0 35px 10px rgba(155, 89, 255, 0.2),
+            inset 0 0 12px rgba(155, 89, 255, 0.15);
+    }
+    to {
+        box-shadow:
+            0 0 14px 5px rgba(155, 89, 255, 0.6),
+            0 0 28px 10px rgba(155, 89, 255, 0.4),
+            0 0 45px 15px rgba(155, 89, 255, 0.25),
+            inset 0 0 16px rgba(155, 89, 255, 0.2);
+    }
 }
 .my-profile-image{
     position: relative;

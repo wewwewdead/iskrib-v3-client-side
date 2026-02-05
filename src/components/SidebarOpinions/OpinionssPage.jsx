@@ -42,6 +42,32 @@ const OpinionsPage = () =>{
         console.log(data);
     }, [data])
 
+    const getUserHandle = (opinionUser) => {
+        if(!opinionUser?.user_email) return null;
+        const handle = opinionUser.user_email.split('@')[0];
+        return handle ? `@${handle}` : null;
+    }
+
+    const getOpinionTheme = (opinionUser) => {
+        if(!opinionUser) return { className: '', style: undefined };
+        const background = opinionUser.background || {};
+        const hasTheme = Boolean(
+            background.backgroundImage ||
+            opinionUser.dominant_colors ||
+            opinionUser.profile_font_color
+        );
+        if(!hasTheme) return { className: '', style: undefined };
+        return {
+            className: 'so-card--profile',
+            style: {
+                ...background,
+                backgroundColor: opinionUser.dominant_colors || background.backgroundColor,
+                "--profile-font-color": opinionUser.profile_font_color,
+                "--profile-dominant": opinionUser.dominant_colors
+            }
+        };
+    }
+
     const links = [
         {label: 'Writings', path: '/home'},
         {label: 'Opinions', path: '/home/opinions'}
@@ -224,31 +250,49 @@ const OpinionsPage = () =>{
             )}
              
 
-            {opinions.map((opinion) => (
-                <div key={opinion.id} className="so-card">
-                    <div className="so-user-row">
-                        <div className={`so-avatar-container ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+            {opinions.map((opinion) => {
+                const theme = getOpinionTheme(opinion?.users);
+                const handle = getUserHandle(opinion?.users);
+                return (
+                    <div key={opinion.id} className="so-card-wrapper">
+                        <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
                             <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
                         </div>
-                        <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-username">{opinion.users.name}</span>
-                        <VerifiedBadge badge={opinion.users.badge} size={14}/>
-                        <span className="ov-dot">·</span>
-                        <span className="ov-date">{formatPostDate(opinion.created_at)}</span>
-                        
+                        <div className={`so-card ${theme.className}`} style={theme.style}>
+                            <div className="so-card-content">
+                                <div className="so-user-row">
+                                    <div className="so-user-meta">
+                                        <div className="so-name-block">
+                                            <div className="so-name-line">
+                                                <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-username">{opinion.users.name}</span>
+                                                <VerifiedBadge badge={opinion.users.badge} size={14}/>
+                                            </div>
+                                            {handle && (
+                                                <span className="so-handle">{handle}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="so-date-row">
+                                        <span className="ov-dot">·</span>
+                                        <span className="ov-date">{formatPostDate(opinion.created_at)}</span>
+                                    </div>
+                                </div>
+                                <div className="so-body" onClick={(e) => handleClickContent(e, opinion.id, opinion.user_id)}>
+                                    {opinion.opinion}
+                                </div>
+                                <div className="so-meta-bar">
+                                    <span className="so-reply-pill" onClick={(e) => { e.stopPropagation(); if(!session) return openAuthModal(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        Reply
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div className="so-body" onClick={(e) => handleClickContent(e, opinion.id, opinion.user_id)}>
-                        {opinion.opinion}
-                    </div>
-                    <div className="so-meta-bar">
-                        <span className="so-reply-pill" onClick={(e) => { e.stopPropagation(); if(!session) return openAuthModal(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                            </svg>
-                            Reply
-                        </span>
-                    </div>
-                </div>
-            ))}
+                )
+            })}
             <div className="opinions-in-view" ref={ref}>
             </div>
         </div>

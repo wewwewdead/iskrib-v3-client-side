@@ -68,10 +68,10 @@ const LoginPage = () => {
 
             <section className='auth-form-panel'>
                 <div className='auth-form-card'>
-                    <div>
-                        <div className='form-title'>Welcome back</div>
+                    <header>
+                        <h2 className='form-title'>Welcome back</h2>
                         <p className='form-subtitle'>Sign in to continue your writing journey.</p>
-                    </div>
+                    </header>
 
                     <form className='auth-form' onSubmit={handleLogin} aria-busy={isLoading ? 'true' : 'false'}>
                         <div className='form-field'>
@@ -82,7 +82,7 @@ const LoginPage = () => {
                                 autoComplete='email'
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder='you@iskrib.com'
+                                placeholder='you@example.com'
                                 className='auth-input'
                                 required
                             />
@@ -101,7 +101,12 @@ const LoginPage = () => {
                                     className='auth-input'
                                     required
                                 />
-                                <button className='show-toggle' type='button' onClick={handleShowPass}>
+                                <button
+                                    className='show-toggle'
+                                    type='button'
+                                    onClick={handleShowPass}
+                                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                                >
                                     {showPass ? 'Hide' : 'Show'}
                                 </button>
                             </div>
@@ -122,12 +127,12 @@ const LoginPage = () => {
                         </button>
                     </form>
 
-                    <div className='auth-footer'>
-                        Don&apos;t have an account?
+                    <footer className='auth-footer'>
+                        <span>Don&apos;t have an account?</span>
                         <button className='link-button' type='button' onClick={handleNavigate}>
                             Sign up
                         </button>
-                    </div>
+                    </footer>
 
                     {errorMessage && (
                         <div className='form-message error' role='alert'>

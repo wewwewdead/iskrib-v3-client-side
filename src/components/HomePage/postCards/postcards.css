@@ -112,6 +112,7 @@
 .user-avatar-container{
     display: flex;
     align-items: center;
+    justify-content: center;
     width: fit-content;
     height: fit-content;
     cursor: pointer;
@@ -123,16 +124,52 @@
     object-fit: cover;
 }
 .user-avatar-container.avatar-ring-legend{
-    padding: 2px;
     border-radius: 50%;
     border: 2px solid #FFD700;
-    box-shadow: 0 0 8px 1px rgba(255, 215, 0, 0.3);
+    box-shadow:
+        0 0 6px 1px rgba(255, 215, 0, 0.5),
+        0 0 12px 2px rgba(255, 215, 0, 0.35),
+        0 0 20px 4px rgba(255, 215, 0, 0.2);
+    animation: glow-legend 2s ease-in-out infinite alternate;
 }
 .user-avatar-container.avatar-ring-og{
-    padding: 2px;
     border-radius: 50%;
     border: 2px solid #9B59FF;
-    box-shadow: 0 0 8px 1px rgba(155, 89, 255, 0.3);
+    box-shadow:
+        0 0 6px 1px rgba(155, 89, 255, 0.5),
+        0 0 12px 2px rgba(155, 89, 255, 0.35),
+        0 0 20px 4px rgba(155, 89, 255, 0.2);
+    animation: glow-og 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow-legend {
+    from {
+        box-shadow:
+            0 0 6px 1px rgba(255, 215, 0, 0.5),
+            0 0 12px 2px rgba(255, 215, 0, 0.35),
+            0 0 20px 4px rgba(255, 215, 0, 0.2);
+    }
+    to {
+        box-shadow:
+            0 0 8px 2px rgba(255, 215, 0, 0.6),
+            0 0 16px 4px rgba(255, 215, 0, 0.4),
+            0 0 24px 6px rgba(255, 215, 0, 0.25);
+    }
+}
+
+@keyframes glow-og {
+    from {
+        box-shadow:
+            0 0 6px 1px rgba(155, 89, 255, 0.5),
+            0 0 12px 2px rgba(155, 89, 255, 0.35),
+            0 0 20px 4px rgba(155, 89, 255, 0.2);
+    }
+    to {
+        box-shadow:
+            0 0 8px 2px rgba(155, 89, 255, 0.6),
+            0 0 16px 4px rgba(155, 89, 255, 0.4),
+            0 0 24px 6px rgba(155, 89, 255, 0.25);
+    }
 }
 .user-name-container{
     display: flex;

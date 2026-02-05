@@ -259,12 +259,10 @@
     border-radius: 50%;
 }
 .notif-sender-profilepic-container.notif-avatar-ring-legend{
-    padding: 2px;
     border: 2px solid #FFD700;
     box-shadow: 0 0 8px 1px rgba(255, 215, 0, 0.3);
 }
 .notif-sender-profilepic-container.notif-avatar-ring-og{
-    padding: 2px;
     border: 2px solid #9B59FF;
     box-shadow: 0 0 8px 1px rgba(155, 89, 255, 0.3);
 }
