@@ -9,7 +9,7 @@ import ViewUserCollection from "./ViewUserCollections";
 
 const CollectionViewer = () =>{
     const location = useLocation();
-    const userId = location.state.userId;
+    const userId = location.state?.userId || new URLSearchParams(location.search).get('userId');
     const navigate = useNavigate();
 
     const {ref, inView} = useInView({

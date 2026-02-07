@@ -68,26 +68,6 @@ const SidebarOpinions = ({openEditor}) =>{
         return handle ? `@${handle}` : null;
     }
 
-    const getOpinionTheme = (opinionUser) => {
-        if(!opinionUser) return { className: '', style: undefined };
-        const background = opinionUser.background || {};
-        const hasTheme = Boolean(
-            background.backgroundImage ||
-            opinionUser.dominant_colors ||
-            opinionUser.profile_font_color
-        );
-        if(!hasTheme) return { className: '', style: undefined };
-        return {
-            className: 'so-card--profile',
-            style: {
-                ...background,
-                backgroundColor: opinionUser.dominant_colors || background.backgroundColor,
-                "--profile-font-color": opinionUser.profile_font_color,
-                "--profile-dominant": opinionUser.dominant_colors
-            }
-        };
-    }
-
     const opinions = data?.pages.flatMap((page) => page.data) || [];
     
     if(opinions.length === 0){
@@ -135,17 +115,16 @@ const SidebarOpinions = ({openEditor}) =>{
                 </div>
                 <div className='sidebar-opinions-cards-container'>
                     {opinions.map((opinionsData) => {
-                        const theme = getOpinionTheme(opinionsData?.users);
                         const handle = getUserHandle(opinionsData?.users);
                         return (
                             <div key={opinionsData.id} className="so-card-wrapper">
-                                <div className={`so-avatar-outer ${opinionsData.users.badge === 'legend' ? 'avatar-ring-legend' : opinionsData.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                    <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt="" />
-                                </div>
-                                <div className={`so-card ${theme.className}`} style={theme.style}>
+                                <div className="so-card so-card--flat">
                                     <div className="so-card-content">
                                         <div className="so-user-row">
                                             <div className="so-user-meta">
+                                                <div className={`so-avatar-outer ${opinionsData.users.badge === 'legend' ? 'avatar-ring-legend' : opinionsData.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                                    <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt="" />
+                                                </div>
                                                 <div className="so-name-block">
                                                     <div className="so-name-line">
                                                         <span onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-username">{opinionsData.users.name}</span>
@@ -186,3 +165,4 @@ const SidebarOpinions = ({openEditor}) =>{
     )
 }
 export default SidebarOpinions;
+

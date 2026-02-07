@@ -48,26 +48,6 @@ const OpinionsPage = () =>{
         return handle ? `@${handle}` : null;
     }
 
-    const getOpinionTheme = (opinionUser) => {
-        if(!opinionUser) return { className: '', style: undefined };
-        const background = opinionUser.background || {};
-        const hasTheme = Boolean(
-            background.backgroundImage ||
-            opinionUser.dominant_colors ||
-            opinionUser.profile_font_color
-        );
-        if(!hasTheme) return { className: '', style: undefined };
-        return {
-            className: 'so-card--profile',
-            style: {
-                ...background,
-                backgroundColor: opinionUser.dominant_colors || background.backgroundColor,
-                "--profile-font-color": opinionUser.profile_font_color,
-                "--profile-dominant": opinionUser.dominant_colors
-            }
-        };
-    }
-
     const links = [
         {label: 'Writings', path: '/home'},
         {label: 'Opinions', path: '/home/opinions'}
@@ -251,17 +231,16 @@ const OpinionsPage = () =>{
              
 
             {opinions.map((opinion) => {
-                const theme = getOpinionTheme(opinion?.users);
                 const handle = getUserHandle(opinion?.users);
                 return (
                     <div key={opinion.id} className="so-card-wrapper">
-                        <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                            <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
-                        </div>
-                        <div className={`so-card ${theme.className}`} style={theme.style}>
+                        <div className="so-card so-card--flat">
                             <div className="so-card-content">
                                 <div className="so-user-row">
                                     <div className="so-user-meta">
+                                        <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                            <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
+                                        </div>
                                         <div className="so-name-block">
                                             <div className="so-name-line">
                                                 <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-username">{opinion.users.name}</span>
@@ -304,3 +283,4 @@ const OpinionsPage = () =>{
 }
 
 export default OpinionsPage;
+

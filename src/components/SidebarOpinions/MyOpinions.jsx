@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import formatPostDate from "../../../helpers/formatDateString";
+import { MoonLoader } from "react-spinners";
 
 const MyOpinions = () =>{
     const {session, user} = useAuth();

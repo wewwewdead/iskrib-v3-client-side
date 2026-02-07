@@ -65,90 +65,99 @@ const OpinionViewer = () => {
         <>
             {opinionData?.map((opinion) => (
                 <motion.div
-                    className="ov-card"
+                    className="so-card-wrapper"
                     key={opinion.id}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                    <div className="ov-user-row">
-                        <div className={`ov-avatar-container ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                            <img
-                                className="ov-avatar"
-                                src={opinion.users.image_url || '../assets/profile.jpg'}
-                                alt=""
-                            />
+                    <div className="so-card so-card--flat">
+                        <div className="so-card-content">
+                            <div className="so-user-row">
+                                <div className="so-user-meta">
+                                    <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                        <img
+                                            className="so-avatar"
+                                            src={opinion.users.image_url || '../assets/profile.jpg'}
+                                            alt=""
+                                        />
+                                    </div>
+                                    <div className="so-name-block">
+                                        <div className="so-name-line">
+                                            <span className="so-username">{opinion.users.name}</span>
+                                            <VerifiedBadge badge={opinion.users.badge} size={14}/>
+                                        </div>
+                                        <span className="so-handle">{formatPostDate(opinion.created_at)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="so-body">
+                                {opinion.opinion}
+                            </div>
+
+                            <div className="so-meta-bar">
+                                <span className="so-reply-pill">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                    {opinion.reply_count} {opinion.reply_count === 1 ? 'reply' : 'replies'}
+                                </span>
+                                <span className="ov-full-date">
+                                    {new Date(opinion.created_at).toLocaleDateString('en-US', {
+                                        month: 'long',
+                                        day: '2-digit',
+                                        year: 'numeric',
+                                    })}
+                                </span>
+                            </div>
+
+                            <div className="ov-reply-row">
+                                <img
+                                    className="ov-reply-avatar"
+                                    src={user?.userData[0].image_url || '../assets/profile.jpg'}
+                                    alt=""
+                                />
+                                <div
+                                    className="ov-reply-input"
+                                    onFocus={() => setIsTyping(true)}
+                                    ref={textAreaRef}
+                                    onInput={(e) => setReplyOpinion(e.currentTarget.innerText.trim())}
+                                    data-placeholder={`Add a reply to '${opinion.users.name}'`}
+                                    contentEditable="true"
+                                    role="textbox"
+                                />
+                            </div>
+
+                            <AnimatePresence>
+                                {isTyping && (
+                                    <motion.div
+                                        className="ov-btn-row"
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <button
+                                            onClick={cancelTyping}
+                                            className="ov-btn-cancel"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            disabled={replyOpinion.trim().length === 0}
+                                            onClick={() => submitReply(userId, user?.userData[0].id, opinion.id)}
+                                            className={`ov-btn-submit ${replyOpinion.trim().length === 0 ? 'ov-btn-disabled' : ''}`}
+                                        >
+                                            Submit
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <OpinionsReplyCard opinionId={opinion.id} depth={0} />
                         </div>
-                        <span className="ov-username">{opinion.users.name}</span>
-                        <VerifiedBadge badge={opinion.users.badge} size={14}/>
-                        <span className="ov-dot">·</span>
-                        <span className="ov-date">{formatPostDate(opinion.created_at)}</span>
                     </div>
-
-                    <div className="ov-body">
-                        {opinion.opinion}
-                    </div>
-
-                    <div className="ov-meta-bar">
-                        <span className="ov-reply-pill">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                            </svg>
-                            {opinion.reply_count} {opinion.reply_count === 1 ? 'reply' : 'replies'}
-                        </span>
-                        <span className="ov-full-date">
-                            {new Date(opinion.created_at).toLocaleDateString('en-US', {
-                                month: 'long',
-                                day: '2-digit',
-                                year: 'numeric',
-                            })}
-                        </span>
-                    </div>
-
-                    <div className="ov-reply-row">
-                        <img
-                            className="ov-reply-avatar"
-                            src={user?.userData[0].image_url || '../assets/profile.jpg'}
-                            alt=""
-                        />
-                        <div
-                            className="ov-reply-input"
-                            onFocus={() => setIsTyping(true)}
-                            ref={textAreaRef}
-                            onInput={(e) => setReplyOpinion(e.currentTarget.innerText.trim())}
-                            data-placeholder={`Add a reply to '${opinion.users.name}'`}
-                            contentEditable="true"
-                            role="textbox"
-                        />
-                    </div>
-
-                    <AnimatePresence>
-                        {isTyping && (
-                            <motion.div
-                                className="ov-btn-row"
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <button
-                                    onClick={cancelTyping}
-                                    className="ov-btn-cancel"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    disabled={replyOpinion.trim().length === 0}
-                                    onClick={() => submitReply(userId, user?.userData[0].id, opinion.id)}
-                                    className={`ov-btn-submit ${replyOpinion.trim().length === 0 ? 'ov-btn-disabled' : ''}`}
-                                >
-                                    Submit
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <OpinionsReplyCard opinionId={opinion.id} depth={0} />
                 </motion.div>
             ))}
         </>

@@ -73,7 +73,7 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
         >
             {opinioData?.map((opinion, index) => (
                 <motion.div
-                    className="rc-card"
+                    className="so-card-wrapper rc-card"
                     key={opinion.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -81,98 +81,105 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
                 >
                     {depth > 0 && <div className="rc-thread-line" />}
 
-                    <div className="rc-content">
-                        <div className="rc-user-row">
-                            <div className={`rc-avatar-container ${opinion.users?.badge === 'legend' ? 'avatar-ring-legend' : opinion.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                <img
-                                    className="rc-avatar"
-                                    src={opinion.users?.image_url || '../assets/profile.jpg'}
-                                    alt=""
-                                />
+                    <div className="so-card so-card--flat">
+                        <div className="so-card-content">
+                            <div className="so-user-row">
+                                <div className="so-user-meta">
+                                    <div className={`so-avatar-outer ${opinion.users?.badge === 'legend' ? 'avatar-ring-legend' : opinion.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                        <img
+                                            className="so-avatar"
+                                            src={opinion.users?.image_url || '../assets/profile.jpg'}
+                                            alt=""
+                                        />
+                                    </div>
+                                    <div className="so-name-block">
+                                        <div className="so-name-line">
+                                            <span className="so-username">{opinion.users?.name}</span>
+                                            <VerifiedBadge badge={opinion.users?.badge} size={14}/>
+                                        </div>
+                                        <span className="so-handle">{formatPostDate(opinion.created_at)}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <span className="rc-username">{opinion.users?.name}</span>
-                            <VerifiedBadge badge={opinion.users?.badge} size={14}/>
-                            <span className="rc-dot">·</span>
-                            <span className="rc-date">{formatPostDate(opinion.created_at)}</span>
-                        </div>
 
-                        <div className="rc-body">
-                            {opinion.opinion}
-                        </div>
+                            <div className="so-body">
+                                {opinion.opinion}
+                            </div>
 
-                        <div className="rc-action-row">
-                            {opinion.reply_count > 0 && (
-                                <button
-                                    className="rc-toggle-btn"
-                                    onClick={() => setShowReply(prev => !prev)}
+                            <div className="so-meta-bar">
+                                {opinion.reply_count > 0 && (
+                                    <span
+                                        className="so-reply-pill"
+                                        onClick={() => setShowReply(prev => !prev)}
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                        </svg>
+                                        {showReply ? 'Hide' : 'Show'} {opinion.reply_count} {opinion.reply_count === 1 ? 'reply' : 'replies'}
+                                    </span>
+                                )}
+                                <span
+                                    className="so-reply-pill"
+                                    onClick={() => setShowReplyButtonId(
+                                        showReplyButtonId === opinion.id ? '' : opinion.id
+                                    )}
                                 >
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                        <polyline points="9 17 4 12 9 7" />
+                                        <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
                                     </svg>
-                                    {showReply ? 'Hide' : 'Show'} {opinion.reply_count} {opinion.reply_count === 1 ? 'reply' : 'replies'}
-                                </button>
-                            )}
-                            <button
-                                className="rc-toggle-btn"
-                                onClick={() => setShowReplyButtonId(
-                                    showReplyButtonId === opinion.id ? '' : opinion.id
+                                    Reply
+                                </span>
+                            </div>
+
+                            <AnimatePresence>
+                                {showReplyButtonId === opinion.id && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="rc-reply-input-wrapper"
+                                    >
+                                        <div
+                                            className="ov-reply-input"
+                                            onFocus={() => setIsTypingId(opinion.id)}
+                                            ref={textAreaRef}
+                                            onInput={(e) => setReplyOpinion(e.currentTarget.innerText.trim())}
+                                            data-placeholder={`Add a reply to '${opinion.users?.name}'`}
+                                            contentEditable="true"
+                                            role="textbox"
+                                        />
+
+                                        {isTypingId === opinion.id && (
+                                            <div className="ov-btn-row">
+                                                <button onClick={cancelTyping} className="ov-btn-cancel">Cancel</button>
+                                                <button
+                                                    disabled={replyOpinion.trim().length === 0}
+                                                    onClick={() => handleSubmitReplyOpinion(replyOpinion, opinion.users.id, user?.userData[0].id, opinion.id)}
+                                                    className={`ov-btn-submit ${replyOpinion.trim().length === 0 ? 'ov-btn-disabled' : ''}`}
+                                                >
+                                                    Submit
+                                                </button>
+                                            </div>
+                                        )}
+                                    </motion.div>
                                 )}
-                            >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="9 17 4 12 9 7" />
-                                    <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
-                                </svg>
-                                Reply
-                            </button>
+                            </AnimatePresence>
+
+                            <AnimatePresence>
+                                {showReply && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <OpinionsReplyCard opinionId={opinion.id} depth={depth + 1} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
-
-                        <AnimatePresence>
-                            {showReplyButtonId === opinion.id && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="rc-reply-input-wrapper"
-                                >
-                                    <div
-                                        className="ov-reply-input"
-                                        onFocus={() => setIsTypingId(opinion.id)}
-                                        ref={textAreaRef}
-                                        onInput={(e) => setReplyOpinion(e.currentTarget.innerText.trim())}
-                                        data-placeholder={`Add a reply to '${opinion.users?.name}'`}
-                                        contentEditable="true"
-                                        role="textbox"
-                                    />
-
-                                    {isTypingId === opinion.id && (
-                                        <div className="ov-btn-row">
-                                            <button onClick={cancelTyping} className="ov-btn-cancel">Cancel</button>
-                                            <button
-                                                disabled={replyOpinion.trim().length === 0}
-                                                onClick={() => handleSubmitReplyOpinion(replyOpinion, opinion.users.id, user?.userData[0].id, opinion.id)}
-                                                className={`ov-btn-submit ${replyOpinion.trim().length === 0 ? 'ov-btn-disabled' : ''}`}
-                                            >
-                                                Submit
-                                            </button>
-                                        </div>
-                                    )}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        <AnimatePresence>
-                            {showReply && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <OpinionsReplyCard opinionId={opinion.id} depth={depth + 1} />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
                     </div>
                 </motion.div>
             ))}

@@ -14,7 +14,7 @@ import VerifiedBadge from '../../../Badge/VerifiedBadge';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
-    const userData = location.state;
+    const userId = location.state?.userId || new URLSearchParams(location.search).get('userId');
     const {user, session} = useAuth();
 
     const navigate = useNavigate();
@@ -24,7 +24,7 @@ const VisitedProfilePostCards = () =>{
     })
 
     const {data: journalData, isLoading: isLoadingJournals, isFetchingNextPage, fetchNextPage, hasNextPage,} = useInfiniteQuery({
-        queryKey: ['visitedProfileJournals', userData?.userId, user?.userData?.[0]?.id],
+        queryKey: ['visitedProfileJournals', userId, user?.userData?.[0]?.id],
         queryFn: ({pageParam = null, queryKey}) => getVisitedUserJournals(pageParam, 5, queryKey[1], queryKey[2]),
         getNextPageParam: (lastPage) => {
             if(lastPage.hasMore){
@@ -34,7 +34,7 @@ const VisitedProfilePostCards = () =>{
                 return undefined
             }
         },
-        enabled: !!userData?.userId,
+        enabled: !!userId,
         refetchOnWindowFocus: false
     })
 
@@ -49,8 +49,8 @@ const VisitedProfilePostCards = () =>{
     }
 
     useEffect(() =>{
-        console.log(userData)
-    },[userData])
+        console.log(userId)
+    },[userId])
 
     useEffect(() =>{
         if(!isFetchingNextPage && hasNextPage && inView){
@@ -105,7 +105,7 @@ const VisitedProfilePostCards = () =>{
                                     journal?.content,
                                     parsedContent?.wholeText,
                                     journal?.title,
-                                    userData?.userId,
+                                    userId,
                                     journal?.users?.name,
                                     journal?.users?.image_url,
                                     journal?.created_at,
@@ -124,7 +124,7 @@ const VisitedProfilePostCards = () =>{
                                 journal?.content,
                                  parsedContent?.wholeText,
                                  journal?.title,
-                                 userData?.userId,
+                                 userId,
                                  journal?.users?.name,
                                  journal?.users?.image_url,
                                  journal?.created_at,

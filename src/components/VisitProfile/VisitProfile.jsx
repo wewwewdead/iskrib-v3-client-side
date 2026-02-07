@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import './visitProfile.css';
 import { useAuth } from '../../Context/useAuth';
 import { getFollowsData, getUserData, getUserJournals } from '../../../API/Api';
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from '../SideBar/Sidebar';
 import { MoonLoader } from 'react-spinners';
@@ -16,22 +16,125 @@ import { useState } from 'react';
 import WriteJournalButton from '../WriteJournalButton/WriteJournalButton';
 import Editor from '../HomePage/Editor/Editor';
 import Loader from '../loadingComponent/BgLoader';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getWidgetBlockCanvasStyle } from '../../utils/profileLayout/layoutEstimators';
+
+const DEFAULT_PROFILE_LAYOUT = {
+    version: 1,
+    preset: 'classic',
+    spacing: 'md',
+    radius: 'lg',
+    sections: [
+        {id: 'stats', visible: true, size: 'md'},
+        {id: 'bio', visible: true, size: 'md'},
+        {id: 'joined_date', visible: true, size: 'md'},
+    ]
+};
+const PROFILE_SECTION_IDS = ['stats', 'bio', 'joined_date'];
+const PROFILE_SECTION_SIZES = ['sm', 'md', 'lg'];
+const PROFILE_WIDGET_TYPES = ['note', 'photo-notes'];
+const normalizeWidgetType = (type) => {
+    if(type === 'photo_note' || type === 'photo_notes' || type === 'photo-note'){
+        return 'photo-notes';
+    }
+    return type;
+};
+const isPhotoNoteType = (type) => normalizeWidgetType(type) === 'photo-notes';
+
+const normalizeProfileLayout = (layout) => {
+    const incomingSections = Array.isArray(layout?.sections) ? layout.sections : [];
+    const normalizedSections = [];
+
+    incomingSections.forEach((section) => {
+        if(!PROFILE_SECTION_IDS.includes(section?.id)){
+            return;
+        }
+        if(normalizedSections.find((item) => item.id === section.id)){
+            return;
+        }
+
+        normalizedSections.push({
+            id: section.id,
+            visible: section.visible !== false,
+            size: PROFILE_SECTION_SIZES.includes(section?.size) ? section.size : 'md'
+        });
+    });
+
+    PROFILE_SECTION_IDS.forEach((sectionId) => {
+        if(normalizedSections.find((section) => section.id === sectionId)){
+            return;
+        }
+
+        const defaultSection = DEFAULT_PROFILE_LAYOUT.sections.find((section) => section.id === sectionId);
+        normalizedSections.push({...defaultSection});
+    });
+
+    return {
+        version: layout?.version || DEFAULT_PROFILE_LAYOUT.version,
+        preset: layout?.preset || DEFAULT_PROFILE_LAYOUT.preset,
+        spacing: layout?.spacing || DEFAULT_PROFILE_LAYOUT.spacing,
+        radius: layout?.radius || DEFAULT_PROFILE_LAYOUT.radius,
+        sections: normalizedSections,
+        widgets: (Array.isArray(layout?.widgets) ? layout.widgets : [])
+            .filter((widget) => widget && typeof widget === 'object')
+            .map((widget) => ({
+                id: widget.id || `widget_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                type: PROFILE_WIDGET_TYPES.includes(normalizeWidgetType(widget.type)) ? normalizeWidgetType(widget.type) : 'note',
+                size: PROFILE_SECTION_SIZES.includes(widget.size) ? widget.size : 'md',
+                title: typeof widget.title === 'string' ? widget.title : '',
+                note: typeof widget.note === 'string' ? widget.note : '',
+                image_url: typeof widget.image_url === 'string' ? widget.image_url : '',
+                x: Number.isFinite(widget?.x) ? widget.x : 24,
+                y: Number.isFinite(widget?.y) ? widget.y : 24,
+                width: Number.isFinite(widget?.width) ? widget.width : null,
+                height: Number.isFinite(widget?.height) ? widget.height : null,
+                image_width: Number.isFinite(widget?.image_width) ? widget.image_width : null,
+                image_height: Number.isFinite(widget?.image_height) ? widget.image_height : null,
+                pinned_section: PROFILE_SECTION_IDS.includes(widget?.pinned_section) ? widget.pinned_section : null,
+                bg_color: typeof widget.bg_color === 'string' ? widget.bg_color : null,
+                blocks: Array.isArray(widget.blocks) ? widget.blocks
+                    .filter((b) => b && typeof b === 'object')
+                    .map((block) => ({
+                        id: block.id || `block_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                        type: ['text', 'image', 'widget_card'].includes(block.type) ? block.type : 'text',
+                        content: typeof block.content === 'string' ? block.content : '',
+                        title: typeof block.title === 'string' ? block.title : '',
+                        note: typeof block.note === 'string' ? block.note : '',
+                        image_url: typeof block.image_url === 'string' ? block.image_url : '',
+                        bg_color: typeof block.bg_color === 'string' ? block.bg_color : null,
+                        x: Number.isFinite(block.x) ? block.x : 0,
+                        y: Number.isFinite(block.y) ? block.y : 0,
+                        width: Number.isFinite(block.width) ? block.width : 160,
+                        height: Number.isFinite(block.height) ? block.height : 40,
+                        image_width: Number.isFinite(block.image_width) ? block.image_width : null,
+                        image_height: Number.isFinite(block.image_height) ? block.image_height : null
+                    }))
+                    : []
+            }))
+    };
+};
 
 const Visitprofile = () =>{
     const location = useLocation();
     const stateData = location.state;
+    const queryUserId = new URLSearchParams(location.search).get('userId');
+    const visitedUserId = stateData?.userId || queryUserId;
     const {session, user, notifCount, loading} = useAuth();
 
     const [showSidebar, setShowSidebar]= useState(false)
     const [opendRichTextEditor, setOpenRichTextEditor] = useState(false);
+    const [expandedWidgetId, setExpandedWidgetId] = useState(null);
+    const [fullViewImageUrl, setFullViewImageUrl] = useState(null);
+    const [expandedBlockWidget, setExpandedBlockWidget] = useState(null);
 
     const buttonRef = useRef();
 
     const navigate = useNavigate();
+    const visitedProfileNavState = { userId: visitedUserId };
     const tablists =[
-        {label: 'Writings', path: '/visitProfile', action: () => navigate('/visitProfile', {state: {userId:stateData?.userId}})},
-        {label: 'Collections', path: '/visitProfile/visitedCollections', action: () => navigate('/visitProfile/visitedCollections', {state: {userId:stateData?.userId}})},
-        {label: 'Opinions', path:'/visitProfile/visitedOpinions', action: () => navigate('/visitProfile/visitedOpinions', {state: {userId:stateData?.userId}})}
+        {label: 'Writings', path: '/visitProfile', action: () => navigate(`/visitProfile?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
+        {label: 'Collections', path: '/visitProfile/visitedCollections', action: () => navigate(`/visitProfile/visitedCollections?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
+        {label: 'Opinions', path:'/visitProfile/visitedOpinions', action: () => navigate(`/visitProfile/visitedOpinions?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})}
     ]
 
      const navigatePath = (path) => {
@@ -153,27 +256,120 @@ const Visitprofile = () =>{
             </svg>,
         },
         {
-            label: 'Write', action: () => setShowEditor(true), 
+            label: 'Write', action: () => setOpenRichTextEditor(true), 
             className: 'write-journal-bttn'
         }, // the action function will set the state  to (true)and pass to the HOME.jsx when user clicks the function
     ]
 
     
     const {data, isLoading} = useQuery({
-        queryKey: ['visitedProfile', stateData?.userId],
+        queryKey: ['visitedProfile', visitedUserId],
         queryFn:({queryKey}) => getUserData(queryKey[1]),
-        enabled: !!stateData?.userId,
+        enabled: !!visitedUserId,
         refetchOnWindowFocus: false
     })
 
     const userData = data?.userData?.[0]
+    const profileLayout = normalizeProfileLayout(userData?.profile_layout);
+    const profileSections = profileLayout.sections;
+    const profileWidgets = profileLayout.widgets;
+    const visibleProfileSections = profileSections.filter((section) => section.visible !== false);
+    const getProfileSectionSize = (sectionId) => {
+        const section = profileSections.find((item) => item?.id === sectionId);
+        return PROFILE_SECTION_SIZES.includes(section?.size) ? section.size : 'md';
+    };
+    const pinnedWidgetsBySection = visibleProfileSections.reduce((acc, section) => {
+        acc[section.id] = profileWidgets.filter((widget) => widget?.pinned_section === section.id);
+        return acc;
+    }, {});
+    const floatingProfileWidgets = profileWidgets.filter((widget) => !widget?.pinned_section);
+    const estimateWidgetHeight = (widget) => {
+        if(Number.isFinite(widget?.height)) return widget.height;
+        if(Array.isArray(widget?.blocks) && widget.blocks.length > 0){
+            const blockBottom = widget.blocks.reduce((max, block) => Math.max(max, (block.y || 0) + (block.height || 40)), 0);
+            return Math.max(170, blockBottom + 12);
+        }
+        let h = widget.size === 'lg' ? 220 : widget.size === 'sm' ? 130 : 170;
+        if(isPhotoNoteType(widget?.type) && widget.image_url){
+            h += Number.isFinite(widget?.image_height) ? widget.image_height : 120;
+        }
+        return h;
+    };
+    const layoutCanvasHeight = Math.max(0, ...floatingProfileWidgets.map((w) => (w.y || 0) + estimateWidgetHeight(w))) + 20;
+    const expandedWidget = expandedWidgetId ? profileWidgets.find((w) => w.id === expandedWidgetId) : null;
+
+    const renderPinnedWidgets = (sectionId) => {
+        const widgets = pinnedWidgetsBySection[sectionId];
+        if(!widgets?.length) return null;
+        return (
+            <div className="visited-profile-section-pinned-widgets">
+                {widgets.map((widget) => (
+                    <div
+                        key={widget.id}
+                        className={`visited-profile-widget-card is-pinned profile-section-size-${widget.size || 'md'}`}
+                        style={{
+                            minHeight: Number.isFinite(widget?.height) ? `${widget.height}px` : undefined,
+                            backgroundColor: widget.bg_color || undefined
+                        }}
+                        onClick={() => setExpandedWidgetId(widget.id)}
+                    >
+                        {(!widget.blocks || widget.blocks.length === 0) && (
+                            <>
+                                {widget.title && <p className="visited-profile-widget-title"><strong>{widget.title}</strong></p>}
+                                {isPhotoNoteType(widget?.type) && widget.image_url && (
+                                    <img className="visited-profile-widget-image" src={widget.image_url} alt={widget.title || 'widget'} style={{width: Number.isFinite(widget.image_width) ? `${widget.image_width}px` : undefined, height: Number.isFinite(widget.image_height) ? `${widget.image_height}px` : undefined}} />
+                                )}
+                                {widget.note && <p className="visited-profile-widget-note">{widget.note}</p>}
+                            </>
+                        )}
+                        {widget.blocks && widget.blocks.length > 0 && (
+                            <div className="visited-profile-widget-block-canvas" style={getWidgetBlockCanvasStyle(widget)}>
+                                {widget.blocks.map((block) => (
+                                    <div
+                                        key={block.id}
+                                        className={`visited-profile-widget-block visited-profile-widget-block-${block.type}`}
+                                        style={{
+                                            left: `${block.x || 0}px`,
+                                            top: `${block.y || 0}px`,
+                                            width: `${block.width || 160}px`,
+                                            minHeight: `${block.height || 40}px`,
+                                            backgroundColor: block.bg_color || (block.type === 'widget_card' ? 'rgba(255, 255, 255, 0.25)' : 'transparent')
+                                        }}
+                                    >
+                                        {block.type === 'text' && (
+                                            <p className="visited-profile-widget-block-text">{block.content}</p>
+                                        )}
+                                        {block.type === 'image' && (
+                                            <>
+                                                {block.title && <p className="visited-profile-widget-block-title">{block.title}</p>}
+                                                {block.image_url && (
+                                                    <img className="visited-profile-widget-block-image" src={block.image_url} alt={block.title || 'block'} style={{width: Number.isFinite(block.image_width) ? `${block.image_width}px` : '100%', height: Number.isFinite(block.image_height) ? `${block.image_height}px` : undefined}} />
+                                                )}
+                                                {block.note && <p className="visited-profile-widget-block-note">{block.note}</p>}
+                                            </>
+                                        )}
+                                        {block.type === 'widget_card' && (
+                                            <>
+                                                {block.title && <p className="visited-profile-widget-block-title">{block.title}</p>}
+                                                {block.note && <p className="visited-profile-widget-block-note">{block.note}</p>}
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        );
+    };
 
     const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
-        queryKey: ['followsData',user?.userData?.[0].id, stateData?.userId ],
+        queryKey: ['followsData', user?.userData?.[0].id, visitedUserId],
         queryFn: ({queryKey}) => getFollowsData(queryKey[1], queryKey[2]),
         staleTime: 1000 * 60 * 60,
         cacheTime: 1000 * 60 * 60,
-        enabled: !!user?.userData?.[0].id && !!stateData?.userId,
+        enabled: !!user?.userData?.[0].id && !!visitedUserId,
         refetchOnWindowFocus: false
     })
 
@@ -190,7 +386,23 @@ const Visitprofile = () =>{
     
     },[session, loading])
 
-    
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if(e.key === 'Escape'){
+                if(fullViewImageUrl){
+                    setFullViewImageUrl(null);
+                } else if(expandedBlockWidget){
+                    setExpandedBlockWidget(null);
+                } else if(expandedWidgetId){
+                    setExpandedWidgetId(null);
+                }
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [expandedWidgetId, fullViewImageUrl, expandedBlockWidget]);
+
+
     if(isLoading){
         return(
             <Loader/>
@@ -219,17 +431,6 @@ const Visitprofile = () =>{
                             <div className={`profile-avatar-ring ${userData?.badge === 'legend' ? 'badge-ring-legend' : userData?.badge === 'og' ? 'badge-ring-og' : ''}`}>
                                 <img className='visited-profile-image' src={userData?.image_url || '/assets/profile.jpg'} alt="" />
                             </div>
-
-                            <div className='visited-profile-stats-container'>
-                                <div className='visited-profile-stat-item'>
-                                    <span className='visited-stat-number'>{formatCounts(followsData?.followersCount)}</span>
-                                    <span className='visited-stat-label'>Followers</span>
-                                </div>
-                                <div className='visited-profile-stat-item'>
-                                    <span className='visited-stat-number'>{formatCounts(followsData?.followingsCount)}</span>
-                                    <span className='visited-stat-label'>Following</span>
-                                </div>
-                            </div>
                         </div>
 
                         <div className='visited-profile-name-container'>
@@ -244,30 +445,135 @@ const Visitprofile = () =>{
                             </div>
                         </div>
 
-                        <div className='visited-profile-bio-container'>
-                            <p style={{margin: 0, padding: 0}}>{userData?.bio}</p>
+                        <div className='visited-profile-layout-sections'>
+                            {visibleProfileSections.map((section) => {
+                                const sectionSize = getProfileSectionSize(section.id);
+
+                                if(section.id === 'stats'){
+                                    return (
+                                        <Fragment key={section.id}>
+                                            <div className={`visited-profile-stats-container profile-section-size-${sectionSize}`}>
+                                                <div className='visited-profile-stat-item'>
+                                                    <span className='visited-stat-number'>{formatCounts(followsData?.followersCount)}</span>
+                                                    <span className='visited-stat-label'>Followers</span>
+                                                </div>
+                                                <div className='visited-profile-stat-item'>
+                                                    <span className='visited-stat-number'>{formatCounts(followsData?.followingsCount)}</span>
+                                                    <span className='visited-stat-label'>Following</span>
+                                                </div>
+                                            </div>
+                                            {renderPinnedWidgets(section.id)}
+                                        </Fragment>
+                                    );
+                                }
+
+                                if(section.id === 'bio'){
+                                    return (
+                                        <Fragment key={section.id}>
+                                            <div className={`visited-profile-bio-container profile-section-size-${sectionSize}`}>
+                                                <p style={{margin: 0, padding: 0}}>{userData?.bio}</p>
+                                            </div>
+                                            {renderPinnedWidgets(section.id)}
+                                        </Fragment>
+                                    );
+                                }
+
+                                if(section.id === 'joined_date'){
+                                    return (
+                                        <Fragment key={section.id}>
+                                            <div className={`visited-profile-joined-date profile-section-size-${sectionSize}`}>
+                                                <p className='visited-profile-date-joined'>{new Date(userData?.created_at).toLocaleDateString('en-US', {
+                                                    month: 'long',
+                                                    day: '2-digit',
+                                                    year: 'numeric'
+                                                })}</p>
+                                            </div>
+                                            {renderPinnedWidgets(section.id)}
+                                        </Fragment>
+                                    );
+                                }
+
+                                return null;
+                            })}
                         </div>
 
                         <div className='visited-profile-actions-row'>
                             <div onMouseMove={() => handleMouseMove(followsData?.isFollowing)} onMouseLeave={() => handleMouseLeave(followsData?.isFollowing)} className='visited-profile-follow-button-container'>
-                                <button onClick={(e) => debounceClickFollow(e, stateData?.userId, user?.userData?.[0].id)} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>
+                                <button onClick={(e) => debounceClickFollow(e, visitedUserId, user?.userData?.[0].id)} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>
                                     {followsData?.isFollowing ? 'Following' : 'Follow'}
                                 </button>
                             </div>
-                        </div>
-
-                        <div className='visited-profile-joined-date'>
-                            <p className='visited-profile-date-joined'>{new Date(userData?.created_at).toLocaleDateString('en-US', {
-                                month: 'long',
-                                day: '2-digit',
-                                year: 'numeric'
-                            })}</p>
                         </div>
 
                     </div>
 
                     )
                 }
+
+                {profileWidgets.length > 0 && (
+                    <div className="visited-profile-widget-canvas" style={{minHeight: `${layoutCanvasHeight}px`}}>
+                        {floatingProfileWidgets.map((widget) => (
+                            <div
+                                key={widget.id}
+                                className={`visited-profile-widget-card profile-section-size-${widget.size || 'md'}`}
+                                style={{
+                                    left: `${Number.isFinite(widget?.x) ? widget.x : 0}px`,
+                                    top: `${Number.isFinite(widget?.y) ? widget.y : 0}px`,
+                                    width: Number.isFinite(widget?.width) ? `${widget.width}px` : undefined,
+                                    minHeight: Number.isFinite(widget?.height) ? `${widget.height}px` : undefined,
+                                    backgroundColor: widget.bg_color || undefined
+                                }}
+                                onClick={() => setExpandedWidgetId(widget.id)}
+                            >
+                                {(!widget.blocks || widget.blocks.length === 0) && (
+                                    <>
+                                        {widget.title && <p className="visited-profile-widget-title"><strong>{widget.title}</strong></p>}
+                                        {isPhotoNoteType(widget?.type) && widget.image_url && (
+                                            <img className="visited-profile-widget-image" src={widget.image_url} alt={widget.title || 'widget'} style={{width: Number.isFinite(widget.image_width) ? `${widget.image_width}px` : undefined, height: Number.isFinite(widget.image_height) ? `${widget.image_height}px` : undefined}} />
+                                        )}
+                                        {widget.note && <p className="visited-profile-widget-note">{widget.note}</p>}
+                                    </>
+                                )}
+                                {widget.blocks && widget.blocks.length > 0 && (
+                                    <div className="visited-profile-widget-block-canvas" style={getWidgetBlockCanvasStyle(widget)}>
+                                        {widget.blocks.map((block) => (
+                                            <div
+                                                key={block.id}
+                                                className={`visited-profile-widget-block visited-profile-widget-block-${block.type}`}
+                                                style={{
+                                                    left: `${block.x || 0}px`,
+                                                    top: `${block.y || 0}px`,
+                                                    width: `${block.width || 160}px`,
+                                                    minHeight: `${block.height || 40}px`,
+                                                    backgroundColor: block.bg_color || (block.type === 'widget_card' ? 'rgba(255, 255, 255, 0.25)' : 'transparent')
+                                                }}
+                                            >
+                                                {block.type === 'text' && (
+                                                    <p className="visited-profile-widget-block-text">{block.content}</p>
+                                                )}
+                                                {block.type === 'image' && (
+                                                    <>
+                                                        {block.title && <p className="visited-profile-widget-block-title">{block.title}</p>}
+                                                        {block.image_url && (
+                                                            <img className="visited-profile-widget-block-image" src={block.image_url} alt={block.title || 'block'} style={{width: Number.isFinite(block.image_width) ? `${block.image_width}px` : '100%', height: Number.isFinite(block.image_height) ? `${block.image_height}px` : undefined}} />
+                                                        )}
+                                                        {block.note && <p className="visited-profile-widget-block-note">{block.note}</p>}
+                                                    </>
+                                                )}
+                                                {block.type === 'widget_card' && (
+                                                    <>
+                                                        {block.title && <p className="visited-profile-widget-block-title">{block.title}</p>}
+                                                        {block.note && <p className="visited-profile-widget-block-note">{block.note}</p>}
+                                                    </>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 <div className='my-profile-tablist'>
                     {tablists.map((tab, index) => (
@@ -289,9 +595,161 @@ const Visitprofile = () =>{
             
             {<MobileNavlink clickOpenSidebar={openSidebar}/>}
             <WriteJournalButton onOpen={handleClickRichtextEditor}/>
+
+            <AnimatePresence>
+                {expandedWidget && (
+                    <motion.div
+                        className="visited-profile-widget-overlay"
+                        initial={{opacity: 0}}
+                        animate={{opacity: 1}}
+                        exit={{opacity: 0}}
+                        transition={{duration: 0.2}}
+                        onClick={() => { setExpandedWidgetId(null); setFullViewImageUrl(null); setExpandedBlockWidget(null); }}
+                    >
+                        <motion.div
+                            className="visited-profile-widget-expanded"
+                            initial={{opacity: 0, y: 24, scale: 0.97}}
+                            animate={{opacity: 1, y: 0, scale: 1}}
+                            exit={{opacity: 0, y: 12, scale: 0.97, transition: {type: 'tween', duration: 0.15}}}
+                            transition={{type: 'spring', stiffness: 320, damping: 28}}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{color: userData?.profile_font_color}}
+                        >
+                            <div className="visited-profile-widget-expanded-header">
+                                {expandedWidget.title && <p className="visited-profile-widget-expanded-title"><strong>{expandedWidget.title}</strong></p>}
+                                <button className="visited-profile-widget-expanded-close" onClick={() => { setExpandedWidgetId(null); setFullViewImageUrl(null); setExpandedBlockWidget(null); }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                                </button>
+                            </div>
+                            <div className="visited-profile-widget-expanded-body" style={{backgroundColor: expandedWidget.bg_color || undefined}}>
+                                {(!expandedWidget.blocks || expandedWidget.blocks.length === 0) && (
+                                    <>
+                                        {isPhotoNoteType(expandedWidget?.type) && expandedWidget.image_url && (
+                                            <img
+                                                className="visited-profile-widget-expanded-image"
+                                                src={expandedWidget.image_url}
+                                                alt={expandedWidget.title || 'widget'}
+                                                onClick={() => setFullViewImageUrl(expandedWidget.image_url)}
+                                            />
+                                        )}
+                                        {expandedWidget.note && <p className="visited-profile-widget-expanded-note">{expandedWidget.note}</p>}
+                                    </>
+                                )}
+                                {expandedWidget.blocks && expandedWidget.blocks.length > 0 && (
+                                    <div className="visited-profile-widget-block-canvas" style={{minHeight: `${Math.max(60, ...expandedWidget.blocks.map((b) => (b.y || 0) + (b.height || 40))) + 8}px`}}>
+                                        {expandedWidget.blocks.map((block) => (
+                                            <div
+                                                key={block.id}
+                                                className={`visited-profile-widget-block visited-profile-widget-block-${block.type}`}
+                                                onClick={(e) => {
+                                                    if(block.type !== 'widget_card'){
+                                                        return;
+                                                    }
+                                                    e.stopPropagation();
+                                                    setExpandedBlockWidget(block);
+                                                }}
+                                                style={{
+                                                    left: `${block.x || 0}px`,
+                                                    top: `${block.y || 0}px`,
+                                                    width: `${block.width || 160}px`,
+                                                    minHeight: `${block.height || 40}px`,
+                                                    backgroundColor: block.bg_color || (block.type === 'widget_card' ? 'rgba(255, 255, 255, 0.25)' : 'transparent'),
+                                                    cursor: block.type === 'widget_card' ? 'pointer' : undefined
+                                                }}
+                                            >
+                                                {block.type === 'text' && (
+                                                    <p className="visited-profile-widget-block-text">{block.content}</p>
+                                                )}
+                                                {block.type === 'image' && (
+                                                    <>
+                                                        {block.title && <p className="visited-profile-widget-block-title">{block.title}</p>}
+                                                        {block.image_url && (
+                                                            <img
+                                                                className="visited-profile-widget-block-image"
+                                                                src={block.image_url}
+                                                                alt={block.title || 'block'}
+                                                                style={{width: Number.isFinite(block.image_width) ? `${block.image_width}px` : '100%', height: Number.isFinite(block.image_height) ? `${block.image_height}px` : undefined, cursor: 'zoom-in'}}
+                                                                onClick={() => setFullViewImageUrl(block.image_url)}
+                                                            />
+                                                        )}
+                                                        {block.note && <p className="visited-profile-widget-block-note">{block.note}</p>}
+                                                    </>
+                                                )}
+                                                {block.type === 'widget_card' && (
+                                                    <>
+                                                        {block.title && <p className="visited-profile-widget-block-title">{block.title}</p>}
+                                                        {block.note && <p className="visited-profile-widget-block-note">{block.note}</p>}
+                                                    </>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {expandedBlockWidget && (
+                    <motion.div
+                        className="visited-profile-widget-overlay"
+                        initial={{opacity: 0}}
+                        animate={{opacity: 1}}
+                        exit={{opacity: 0}}
+                        transition={{duration: 0.2}}
+                        onClick={() => setExpandedBlockWidget(null)}
+                    >
+                        <motion.div
+                            className="visited-profile-widget-expanded"
+                            initial={{opacity: 0, y: 24, scale: 0.97}}
+                            animate={{opacity: 1, y: 0, scale: 1}}
+                            exit={{opacity: 0, y: 12, scale: 0.97, transition: {type: 'tween', duration: 0.15}}}
+                            transition={{type: 'spring', stiffness: 320, damping: 28}}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{color: userData?.profile_font_color}}
+                        >
+                            <div className="visited-profile-widget-expanded-header">
+                                <p className="visited-profile-widget-expanded-title"><strong>{expandedBlockWidget.title || 'Widget card'}</strong></p>
+                                <button className="visited-profile-widget-expanded-close" onClick={() => setExpandedBlockWidget(null)}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                                </button>
+                            </div>
+                            <div className="visited-profile-widget-expanded-body" style={{backgroundColor: expandedBlockWidget.bg_color || undefined}}>
+                                {expandedBlockWidget.note && <p className="visited-profile-widget-expanded-note">{expandedBlockWidget.note}</p>}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {fullViewImageUrl && (
+                    <motion.div
+                        className="visited-profile-image-overlay"
+                        initial={{opacity: 0}}
+                        animate={{opacity: 1}}
+                        exit={{opacity: 0}}
+                        transition={{duration: 0.18}}
+                        onClick={() => setFullViewImageUrl(null)}
+                    >
+                        <motion.img
+                            className="visited-profile-image-fullview"
+                            src={fullViewImageUrl}
+                            alt="Full view"
+                            initial={{opacity: 0, scale: 0.9}}
+                            animate={{opacity: 1, scale: 1}}
+                            exit={{opacity: 0, scale: 0.9, transition: {type: 'tween', duration: 0.15}}}
+                            transition={{type: 'spring', stiffness: 300, damping: 25}}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
         </>
-        
+
     )
 }
 export default Visitprofile;
