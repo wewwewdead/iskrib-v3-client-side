@@ -40,12 +40,12 @@ const VisitedProfilePostCards = () =>{
 
     const clickContent = handleCLickContent(navigate);
     const mutateViews = useAddViewsMutation(session);
-    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount) =>{
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge) =>{
         const formadata = new FormData();
         formadata.append('journalId', journalId)
         mutateViews.mutate(formadata);
 
-        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount);
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge);
     }
 
     useEffect(() =>{
@@ -133,7 +133,8 @@ const VisitedProfilePostCards = () =>{
                                  journal?.comment_count?.[0].count,
                                  journal?.has_bookmarked,
                                  journal?.like_count?.[0].count,
-                                 journal?.bookmark_count?.[0].count )} className="content-container">
+                                 journal?.bookmark_count?.[0].count,
+                                 journal?.users.badge )} className="content-container">
 
                                 <div className='feed-text-content-container'>
                                     <div className='feed-title-content'>
