@@ -1,33 +1,33 @@
-import { useState } from 'react'
+import { lazy, Suspense } from 'react'
 import './App.css'
-import { Routes, Route, BrowserRouter, HashRouter, Navigate} from 'react-router-dom'
-import AuthModal from './components/AuthModal/AuthModal.jsx';
+import { Routes, Route, HashRouter, Navigate} from 'react-router-dom'
 import { useAuth } from './Context/useAuth.js';
-import HomePage from './components/HomePage/home.jsx';
-import LoginPage from './components/LoginPage/login.jsx';
-import SignUp from './components/SignUpPage/signup.jsx';
-import MyProfile from './components/ProfilePage/MyProfile.jsx';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
 
-import PostCards from './components/HomePage/postCards/PostCards.jsx';
-import ContentView from './components/HomePage/ContentViewer/ContentView.jsx';
-import Bookmarks from './components/Bookmarks/Bookmarks.jsx';
-import Visitprofile from './components/VisitProfile/VisitProfile.jsx';
-import ProfilePostCards from './components/HomePage/postCards/ProfilePostCards/ProfilePostCards.jsx';
-import VisitedProfilePostCards from './components/HomePage/postCards/ProfilePostCards/VisitedProfilePostCards.jsx';
-import Notifications from './components/Notifications/Notifications.jsx';
-import NotificationCards from './components/Notifications/notificationsCards.jsx';
-import UnreadNotification from './components/Notifications/UnreadNotificationCard.jsx';
-import Collections from './components/collections/Collection.jsx';
-import CollectionJournals from './components/collections/CollectionJournalCards.jsx';
-import CollectionViewer from './components/collections/CollectionViewer.jsx';
-import ViewUserCollection from './components/collections/ViewUserCollections.jsx';
-import OpinionsPage from './components/SidebarOpinions/OpinionssPage.jsx';
-import VisitedProfileOpinions from './components/SidebarOpinions/visitedProfileOpinions.jsx';
-import MyOpinions from './components/SidebarOpinions/MyOpinions.jsx';
-import OpinionViewer from './components/SidebarOpinions/opinionViewer.jsx';
+const AuthModal = lazy(() => import('./components/AuthModal/AuthModal.jsx'));
+const HomePage = lazy(() => import('./components/HomePage/home.jsx'));
+const LoginPage = lazy(() => import('./components/LoginPage/login.jsx'));
+const SignUp = lazy(() => import('./components/SignUpPage/signup.jsx'));
+const MyProfile = lazy(() => import('./components/ProfilePage/MyProfile.jsx'));
+const PostCards = lazy(() => import('./components/HomePage/postCards/PostCards.jsx'));
+const ContentView = lazy(() => import('./components/HomePage/ContentViewer/ContentView.jsx'));
+const Bookmarks = lazy(() => import('./components/Bookmarks/Bookmarks.jsx'));
+const Visitprofile = lazy(() => import('./components/VisitProfile/VisitProfile.jsx'));
+const ProfilePostCards = lazy(() => import('./components/HomePage/postCards/ProfilePostCards/ProfilePostCards.jsx'));
+const VisitedProfilePostCards = lazy(() => import('./components/HomePage/postCards/ProfilePostCards/VisitedProfilePostCards.jsx'));
+const Notifications = lazy(() => import('./components/Notifications/Notifications.jsx'));
+const NotificationCards = lazy(() => import('./components/Notifications/notificationsCards.jsx'));
+const UnreadNotification = lazy(() => import('./components/Notifications/UnreadNotificationCard.jsx'));
+const Collections = lazy(() => import('./components/collections/Collection.jsx'));
+const CollectionJournals = lazy(() => import('./components/collections/CollectionJournalCards.jsx'));
+const CollectionViewer = lazy(() => import('./components/collections/CollectionViewer.jsx'));
+const ViewUserCollection = lazy(() => import('./components/collections/ViewUserCollections.jsx'));
+const OpinionsPage = lazy(() => import('./components/SidebarOpinions/OpinionssPage.jsx'));
+const VisitedProfileOpinions = lazy(() => import('./components/SidebarOpinions/visitedProfileOpinions.jsx'));
+const MyOpinions = lazy(() => import('./components/SidebarOpinions/MyOpinions.jsx'));
+const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionViewer.jsx'));
 
 const AppAuthModal = () => {
   const {showAuthModal, closeAuthModal} = useAuth();
@@ -65,42 +65,44 @@ const App = () => {
     <>
     <LexicalComposer initialConfig={initaConfig}>
       <HashRouter>
-        <AppAuthModal/>
-        <Routes>
-          <Route path='/' element={<Navigate to='/home' replace/>}/>
-          <Route path='/profile' element={<MyProfile/>}>
-            <Route index element={<ProfilePostCards/>} />
-            <Route path='myOpinions' element={<MyOpinions/>}/>         
-          </Route>
+        <Suspense fallback={null}>
+          <AppAuthModal/>
+          <Routes>
+            <Route path='/' element={<Navigate to='/home' replace/>}/>
+            <Route path='/profile' element={<MyProfile/>}>
+              <Route index element={<ProfilePostCards/>} />
+              <Route path='myOpinions' element={<MyOpinions/>}/>         
+            </Route>
 
-          <Route path='/visitProfile' element={<Visitprofile/>}> 
-            <Route index element={<VisitedProfilePostCards/>}/>
-            <Route path='media'/>
-            <Route path='visitedCollections' element={<CollectionViewer/>}/>
-            <Route path='visitedOpinions' element={<VisitedProfileOpinions/>}/>
-          </Route>  
-
-          <Route path='/home' element={<HomePage/>}>
-            <Route index element={<PostCards/>}/>
-            <Route path='contentViewer' element={<ContentView/>}/>
-            <Route path='bookmark' element={<Bookmarks/>}/>
-            <Route path='userCollections' element={<ViewUserCollection/>}/>
-            <Route path='opinions'element={<OpinionsPage/>}/>
-            <Route path='opinionsViewer' element={<OpinionViewer/>}/>
-
-            <Route path='collections' element={<Collections/>}/>
-            <Route path='collectionCards' element={<CollectionJournals/>}/>
-            
-            {/* route for nested notifications */}
-            <Route path='notifications' element={<Notifications/>}>
-              <Route index element={<NotificationCards/>}/>
-              <Route path='unreadNotification' element={<UnreadNotification/>}/>
+            <Route path='/visitProfile' element={<Visitprofile/>}> 
+              <Route index element={<VisitedProfilePostCards/>}/>
+              <Route path='media'/>
+              <Route path='visitedCollections' element={<CollectionViewer/>}/>
+              <Route path='visitedOpinions' element={<VisitedProfileOpinions/>}/>
             </Route>  
-          </Route>   
 
-          <Route path='/login' element={<LoginPage/>}/>
-          <Route path='/signUp' element={<SignUp/>}/>
-        </Routes>
+            <Route path='/home' element={<HomePage/>}>
+              <Route index element={<PostCards/>}/>
+              <Route path='contentViewer' element={<ContentView/>}/>
+              <Route path='bookmark' element={<Bookmarks/>}/>
+              <Route path='userCollections' element={<ViewUserCollection/>}/>
+              <Route path='opinions'element={<OpinionsPage/>}/>
+              <Route path='opinionsViewer' element={<OpinionViewer/>}/>
+
+              <Route path='collections' element={<Collections/>}/>
+              <Route path='collectionCards' element={<CollectionJournals/>}/>
+              
+              {/* route for nested notifications */}
+              <Route path='notifications' element={<Notifications/>}>
+                <Route index element={<NotificationCards/>}/>
+                <Route path='unreadNotification' element={<UnreadNotification/>}/>
+              </Route>  
+            </Route>   
+
+            <Route path='/login' element={<LoginPage/>}/>
+            <Route path='/signUp' element={<SignUp/>}/>
+          </Routes>
+        </Suspense>
       </HashRouter>
     </LexicalComposer>
     </>

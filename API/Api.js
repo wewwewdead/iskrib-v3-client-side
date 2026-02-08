@@ -65,6 +65,39 @@ export const getUserData = async(userId) =>{
      const data = await response.json();
      return data;
 }
+export const updateProfileLayout = async(token, profileLayout) => {
+    const headers = {'Content-Type': 'application/json'};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${BASE_URL}/updateProfileLayout`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ profileLayout })
+    })
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error?.error || 'failed to update profile layout');
+    }
+    const data = await response.json();
+    return data;
+}
+
+export const uploadNotesImage = async(token, body) => {
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${BASE_URL}/uploadNotesImage`, {
+        method: 'POST',
+        body: body,
+        headers: headers
+    })
+    if(!response.ok){
+        const error = await response.json();
+        throw new Error(error?.error || 'error uploading notes image');
+    }
+    const data = await response.json();
+    return data;
+}
+
 export const updateFontColor = async(token, fontColor) => {
     const headers = {};
     if(token) headers['Authorization'] = `Bearer ${token}`;
@@ -99,42 +132,6 @@ export const saveJournalImage = async(token, body) => {
     const data = await response.json();
     console.log(data)
     return data;
-}
-
-export const saveProfileNoteImage = async(token, body) => {
-    const headers = {};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await fetch(`${BASE_URL}/save-profile-note-image`, {
-        method: 'POST',
-        body: body,
-        headers: headers
-    })
-    if(!response.ok){
-        const error = await response.json();
-        throw new Error(error);
-    }
-    const data = await response.json();
-    return data;
-}
-export const deleteProfileNoteImage = async(token, url) => {
-    const filepath = url.split('/profile-notes-images/').pop();
-    if(!filepath){
-        return;
-    }
-    const headers = {'Content-Type': 'application/json'};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-    const response = await fetch(`${BASE_URL}/delete-profile-note-image`, {
-        method: 'POST',
-        body: JSON.stringify({filepath: [filepath]}),
-        headers: headers
-    })
-    if(!response.ok){
-        const error = await response.json();
-        throw new Error(error);
-    }
-    const message = await response.json();
-    return message;
 }
 
 export const saveJournal = async(token, body) => {

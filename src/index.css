@@ -52,13 +52,6 @@
   --accent-sage: #6B8F71;
   --accent-amber: #F59E0B;
 
-  --bg-widget-card: #f8f5ef;
-  --border-widget: rgba(180, 170, 150, 0.55);
-  --shadow-widget: 0 2px 12px rgba(120, 100, 70, 0.08), 0 1px 3px rgba(120, 100, 70, 0.06);
-  --shadow-widget-hover: 0 6px 20px rgba(120, 100, 70, 0.12), 0 2px 6px rgba(120, 100, 70, 0.08);
-  --shadow-widget-drag: 0 12px 28px rgba(120, 100, 70, 0.18);
-  --font-widget: "Patrick Hand", "Shadows Into Light", cursive;
-
   --color-danger: #DC2626;
   --color-danger-bg: rgba(220, 38, 38, 0.08);
   --color-success: #16A34A;
@@ -117,13 +110,6 @@
   --bg-card: rgb(24, 24, 22);
   --accent-sage: #7FA886;
   --accent-amber: #FBBF24;
-
-  --bg-widget-card: #2a2824;
-  --border-widget: rgba(180, 170, 150, 0.35);
-  --shadow-widget: 0 2px 12px rgba(0, 0, 0, 0.20), 0 1px 3px rgba(0, 0, 0, 0.15);
-  --shadow-widget-hover: 0 6px 20px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.20);
-  --shadow-widget-drag: 0 12px 28px rgba(0, 0, 0, 0.35);
-  --font-widget: "Patrick Hand", "Shadows Into Light", cursive;
 
   --color-danger: #EF4444;
   --color-danger-bg: rgba(239, 68, 68, 0.12);

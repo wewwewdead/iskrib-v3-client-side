@@ -24,23 +24,24 @@ export const PROFILE_SECTION_CODES = {
 
 export const PROFILE_SECTION_IDS = Object.keys(PROFILE_SECTION_LABELS);
 export const PROFILE_SECTION_SIZES = ["sm", "md", "lg"];
-export const PROFILE_WIDGET_TYPES = ["note", "photo-notes"];
-export const PROFILE_WIDGET_BLOCK_TYPES = ["text", "image"];
-export const PROFILE_WIDGET_SIZES = ["sm", "md", "lg"];
-export const PROFILE_WIDGET_GRID_SIZE = 24;
 export const PROFILE_SECTION_GRID_SIZE = 24;
 export const PROFILE_HERO_SECTION_IDS = ["stats", "bio", "joined_date"];
 
-export const normalizeProfileWidgetType = (type) => {
-    if (type === "photo_note" || type === "photo_notes" || type === "photo-note") {
-        return "photo-notes";
-    }
+export const MAX_NOTES_COUNT = 10;
 
-    return type;
+export const DEFAULT_NOTE_CONTAINER_STYLE = {
+    bgColor: "rgba(255, 255, 255, 0.15)",
+    borderColor: "#888888",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderRadius: 8,
 };
 
-export const isPhotoNoteType = (type) =>
-    normalizeProfileWidgetType(type) === "photo-notes";
+export const ALLOWED_BORDER_STYLES = ["solid", "dashed", "dotted", "double", "none"];
+export const ALLOWED_FONT_FAMILIES = [
+    "inherit", "Arial", "Helvetica", "Times New Roman",
+    "Georgia", "Courier New", "Verdana", "Lora", "Inter",
+];
 
 export const getDefaultSectionPosition = (sectionId) => {
     if (sectionId === "stats") {

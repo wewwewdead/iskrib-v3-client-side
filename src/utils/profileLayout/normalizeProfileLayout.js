@@ -2,13 +2,12 @@ import {
     DEFAULT_PROFILE_LAYOUT,
     PROFILE_SECTION_IDS,
     PROFILE_SECTION_SIZES,
-    PROFILE_WIDGET_BLOCK_TYPES,
-    PROFILE_WIDGET_SIZES,
-    PROFILE_WIDGET_TYPES,
+    MAX_NOTES_COUNT,
+    DEFAULT_NOTE_CONTAINER_STYLE,
+    ALLOWED_BORDER_STYLES,
+    ALLOWED_FONT_FAMILIES,
     getDefaultSectionPosition,
-    normalizeProfileWidgetType,
 } from "./constants";
-import { createProfileLayoutId } from "./widgetFactories";
 
 export const normalizeProfileLayout = (layout) => {
     const normalized = {
@@ -17,7 +16,6 @@ export const normalizeProfileLayout = (layout) => {
         spacing: layout?.spacing || DEFAULT_PROFILE_LAYOUT.spacing,
         radius: layout?.radius || DEFAULT_PROFILE_LAYOUT.radius,
         sections: DEFAULT_PROFILE_LAYOUT.sections.map((section) => ({ ...section })),
-        widgets: [],
     };
 
     const incomingSections = Array.isArray(layout?.sections) ? layout.sections : [];
@@ -34,7 +32,7 @@ export const normalizeProfileLayout = (layout) => {
 
         normalizedSections.push({
             id: section.id,
-            visible: true,
+            visible: section.visible !== false,
             size: PROFILE_SECTION_SIZES.includes(section?.size) ? section.size : "md",
             x: Number.isFinite(section?.x)
                 ? Math.max(0, section.x)
@@ -65,86 +63,38 @@ export const normalizeProfileLayout = (layout) => {
 
     normalized.sections = normalizedSections;
 
-    const incomingWidgets = Array.isArray(layout?.widgets) ? layout.widgets : [];
-    normalized.widgets = incomingWidgets
-        .filter((widget) => (
-            widget
-            && typeof widget === "object"
-            && typeof widget?.parent_block_id !== "string"
-            && typeof widget?.parent_widget_id !== "string"
-        ))
-        .map((widget) => {
-            const normalizedWidgetType = normalizeProfileWidgetType(widget.type);
+    // Normalize notes
+    const incomingNotes = Array.isArray(layout?.notes) ? layout.notes : [];
+    const normalizedNotes = [];
 
-            return {
-            id: widget.id || createProfileLayoutId("widget"),
-            type: PROFILE_WIDGET_TYPES.includes(normalizedWidgetType)
-                ? normalizedWidgetType
-                : "note",
-            size: PROFILE_WIDGET_SIZES.includes(widget.size) ? widget.size : "md",
-            title: typeof widget.title === "string" ? widget.title : "",
-            note: typeof widget.note === "string" ? widget.note : "",
-            image_url: typeof widget.image_url === "string" ? widget.image_url : "",
-            x: Number.isFinite(widget?.x) ? Math.max(0, widget.x) : 24,
-            y: Number.isFinite(widget?.y) ? Math.max(0, widget.y) : 24,
-            width: Number.isFinite(widget?.width) ? Math.max(180, widget.width) : null,
-            height: Number.isFinite(widget?.height) ? Math.max(96, widget.height) : null,
-            image_width: Number.isFinite(widget?.image_width)
-                ? Math.max(60, widget.image_width)
-                : null,
-            image_height: Number.isFinite(widget?.image_height)
-                ? Math.max(40, widget.image_height)
-                : null,
-            pinned_section: PROFILE_SECTION_IDS.includes(widget?.pinned_section)
-                ? widget.pinned_section
-                : null,
-            bg_color: typeof widget.bg_color === "string" ? widget.bg_color : null,
-            blocks: Array.isArray(widget.blocks)
-                ? widget.blocks
-                      .filter((block) => block && typeof block === "object")
-                      .map((block) => {
-                          const isLegacyWidgetCard = block.type === "widget_card";
-                          const normalizedBlockType = PROFILE_WIDGET_BLOCK_TYPES.includes(block.type)
-                              ? block.type
-                              : "text";
-                          const fallbackLegacyContent = [
-                              typeof block.title === "string" ? block.title : "",
-                              typeof block.note === "string" ? block.note : "",
-                          ].filter(Boolean).join("\n");
+    incomingNotes.forEach((note) => {
+        if (!note?.id || typeof note.id !== "string" || !note.id.startsWith("note_")) return;
+        if (normalizedNotes.length >= MAX_NOTES_COUNT) return;
 
-                          return {
-                              id: block.id || createProfileLayoutId("block"),
-                              type: normalizedBlockType,
-                              content: normalizedBlockType === "text"
-                                  ? (
-                                      typeof block.content === "string" && block.content.trim().length > 0
-                                          ? block.content
-                                          : (isLegacyWidgetCard ? fallbackLegacyContent : "")
-                                  )
-                                  : "",
-                              title: normalizedBlockType === "image" && typeof block.title === "string"
-                                  ? block.title
-                                  : "",
-                              note: normalizedBlockType === "image" && typeof block.note === "string"
-                                  ? block.note
-                                  : "",
-                              image_url: typeof block.image_url === "string" ? block.image_url : "",
-                              bg_color: typeof block.bg_color === "string" ? block.bg_color : null,
-                              x: Number.isFinite(block.x) ? Math.max(0, block.x) : 0,
-                              y: Number.isFinite(block.y) ? Math.max(0, block.y) : 0,
-                              width: Number.isFinite(block.width) ? Math.max(40, block.width) : 160,
-                              height: Number.isFinite(block.height) ? Math.max(24, block.height) : 40,
-                              image_width: Number.isFinite(block.image_width)
-                                  ? block.image_width
-                                  : null,
-                              image_height: Number.isFinite(block.image_height)
-                                  ? block.image_height
-                                  : null,
-                          };
-                      })
-                : [],
-        };
+        const style = note.containerStyle || {};
+        normalizedNotes.push({
+            id: note.id,
+            order: Number.isFinite(note?.order) ? note.order : normalizedNotes.length,
+            content: typeof note.content === "string" ? note.content : null,
+            containerStyle: {
+                bgColor: typeof style.bgColor === "string" ? style.bgColor : DEFAULT_NOTE_CONTAINER_STYLE.bgColor,
+                borderColor: typeof style.borderColor === "string" ? style.borderColor : DEFAULT_NOTE_CONTAINER_STYLE.borderColor,
+                borderWidth: Number.isFinite(style?.borderWidth)
+                    ? Math.min(10, Math.max(0, style.borderWidth))
+                    : DEFAULT_NOTE_CONTAINER_STYLE.borderWidth,
+                borderStyle: ALLOWED_BORDER_STYLES.includes(style?.borderStyle)
+                    ? style.borderStyle
+                    : DEFAULT_NOTE_CONTAINER_STYLE.borderStyle,
+                borderRadius: Number.isFinite(style?.borderRadius)
+                    ? Math.min(50, Math.max(0, style.borderRadius))
+                    : DEFAULT_NOTE_CONTAINER_STYLE.borderRadius,
+            },
+            fontColor: typeof note.fontColor === "string" ? note.fontColor : "#000000",
+            fontFamily: ALLOWED_FONT_FAMILIES.includes(note?.fontFamily) ? note.fontFamily : "inherit",
         });
+    });
+
+    normalized.notes = normalizedNotes;
 
     return normalized;
 };

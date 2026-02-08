@@ -7,9 +7,6 @@ const ProfileHeroSection = ({
     user,
     fontColor,
     handleClickEdit,
-    handleAddWidget,
-    showLayoutBuilder,
-    triggerAutoSave,
     handleClickFontColorSelector,
     croppedImage,
     gradientPicked,
@@ -73,18 +70,6 @@ const ProfileHeroSection = ({
                     </svg>
                     Edit Profile
                 </div>
-                <button
-                    type="button"
-                    onClick={() => {
-                        handleAddWidget();
-                        if (!showLayoutBuilder) {
-                            triggerAutoSave();
-                        }
-                    }}
-                    className="edit-profile-bttn"
-                >
-                    + Add Widget
-                </button>
                 <div onClick={(e) => handleClickFontColorSelector(e)} className="font-picker-container">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
