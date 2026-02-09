@@ -8,6 +8,28 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { BarLoader, MoonLoader } from 'react-spinners';
 import CommentsCards from './commentsCards';
 
+const incrementJournalCommentCount = (old, postId) => {
+    if (!old || !Array.isArray(old.pages)) return old;
+
+    return {
+        ...old,
+        pages: old.pages.map((page) => ({
+            ...page,
+            data: Array.isArray(page?.data)
+                ? page.data.map((journal) => {
+                    if (journal?.id !== postId) return journal;
+
+                    const currentCount = journal?.comment_count?.[0]?.count ?? 0;
+                    return {
+                        ...journal,
+                        comment_count: [{ count: currentCount + 1 }],
+                    };
+                })
+                : page?.data,
+        })),
+    };
+};
+
 const CommentSection = ({onclose, postId, receiverId})=>{
     const queryClient = useQueryClient();
 
@@ -62,8 +84,57 @@ const CommentSection = ({onclose, postId, receiverId})=>{
 
     const handaleSubmitComment = async(e, postId, receiverId) =>{
         e.stopPropagation();
+        const trimmedComment = comments.trim();
+        if (!trimmedComment) return;
+
+        const optimisticComment = {
+            id: `optimistic-${Date.now()}`,
+            comment: trimmedComment,
+            created_at: new Date().toISOString(),
+            parent_id: null,
+            post_id: postId,
+            reply_count: 0,
+            user_id: user?.userData?.[0]?.id,
+            users: {
+                id: user?.userData?.[0]?.id,
+                name: user?.userData?.[0]?.name,
+                image_url: user?.userData?.[0]?.image_url,
+                badge: user?.userData?.[0]?.badge,
+            },
+        };
+
+        queryClient.cancelQueries({ queryKey: ['postComments', postId] });
+        const previousComments = queryClient.getQueryData(['postComments', postId]);
+        const previousJournalCaches = [
+            ...queryClient.getQueriesData({ queryKey: ['journals'] }),
+            ...queryClient.getQueriesData({ queryKey: ['userJournals'] }),
+            ...queryClient.getQueriesData({ queryKey: ['visitedProfileJournals'] }),
+        ];
+
+        queryClient.setQueryData(['postComments', postId], (old) => {
+            if (!old || !Array.isArray(old.pages)) {
+                return {
+                    pageParams: [null],
+                    pages: [{ comments: [optimisticComment], hasMore: false }],
+                };
+            }
+
+            return {
+                ...old,
+                pages: old.pages.map((page, index) =>
+                    index === 0
+                        ? { ...page, comments: [optimisticComment, ...(page?.comments || [])] }
+                        : page
+                ),
+            };
+        });
+
+        queryClient.setQueriesData({ queryKey: ['journals'] }, (old) => incrementJournalCommentCount(old, postId));
+        queryClient.setQueriesData({ queryKey: ['userJournals'] }, (old) => incrementJournalCommentCount(old, postId));
+        queryClient.setQueriesData({ queryKey: ['visitedProfileJournals'] }, (old) => incrementJournalCommentCount(old, postId));
+
         const body = {
-            comments: comments,
+            comments: trimmedComment,
             postId: postId,
             receiverId: receiverId,
         }
@@ -74,12 +145,19 @@ const CommentSection = ({onclose, postId, receiverId})=>{
             if(message){
                 console.log(message)
             }
+            queryClient.invalidateQueries({ queryKey: ['postComments', postId] });
+            queryClient.invalidateQueries({ queryKey: ['journals'] });
+            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
+            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
         } catch (error) {
+            queryClient.setQueryData(['postComments', postId], previousComments);
+            previousJournalCaches.forEach(([key, value]) => {
+                queryClient.setQueryData(key, value);
+            });
             throw new Error('error adding comments')
         } finally {
             setIsSubmittingComment(false)
             setComments('')
-            queryClient.invalidateQueries(['postComments', postId]);
         }
     }
 
@@ -112,7 +190,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                     </div>
                 ) : (
                     commentsData?.map((comment, index) => (
-                        <CommentsCards postId={postId} key={index} comments={comment}/>
+                        <CommentsCards postId={postId} key={comment?.id || index} comments={comment}/>
                     ))
                 )}
 

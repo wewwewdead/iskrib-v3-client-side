@@ -135,6 +135,8 @@ const ProfilePostCards = () =>{
         e.stopPropagation();
 
         const imageUrlArray = [image_url];
+        const queryKey = ['userJournals', user?.userData?.[0].id];
+        let previousUserJournals = null;
         // console.log({
         //     journalId: journalId,
         //     image_url: imageUrlArray,
@@ -143,6 +145,21 @@ const ProfilePostCards = () =>{
 
         try {
             setIsDeletingJournal(true);
+            previousUserJournals = queryClient.getQueryData(queryKey);
+
+            queryClient.setQueryData(queryKey, (old) => {
+                if (!old || !Array.isArray(old.pages)) return old;
+
+                return {
+                    ...old,
+                    pages: old.pages.map((page) => ({
+                        ...page,
+                        data: Array.isArray(page?.data)
+                            ? page.data.filter((journal) => journal?.id !== journalId)
+                            : page?.data
+                    }))
+                };
+            });
 
             const deleteJournalPromise = deleteJournal(journalId, token,)
             const deleteImageJournalPromise = image_url ? deleteJournalImage(token, imageUrlArray) : Promise.resolve(null);
@@ -155,17 +172,28 @@ const ProfilePostCards = () =>{
                 console.log({deletePostJournal: deletePostJournal, deletePostJournalImage: deletePostJournalImage})
             }
 
+            if(deletePostJournal.status !== 'fulfilled'){
+                queryClient.setQueryData(queryKey, previousUserJournals);
+                throw deletePostJournal.reason || new Error('failed to delete journal');
+            }
+
             setJournalIsDeleted(true)
+            queryClient.invalidateQueries({ queryKey: queryKey });
+            queryClient.invalidateQueries({ queryKey: ['journals'] });
+            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
 
             setTimeout(() =>{
                 setIsDeletingJournal(false)
                 setJournalIsDeleted(false)
                 setShowConfirmationBttn(null)
-                queryClient.invalidateQueries(['userJournals', user?.userData?.[0].id]);
             }, 1500)
 
         } catch (error) {
+            if(previousUserJournals){
+                queryClient.setQueryData(queryKey, previousUserJournals);
+            }
             console.error("Error deleting journal:", error);
+            setIsDeletingJournal(false);
         }
     }
 

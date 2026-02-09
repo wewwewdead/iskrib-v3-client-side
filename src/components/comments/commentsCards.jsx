@@ -9,6 +9,26 @@ import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import formatPostDate from "../../../helpers/formatDateString";
 
+const incrementReplyCount = (old, parentId) => {
+    if (!old || !Array.isArray(old.pages)) return old;
+
+    return {
+        ...old,
+        pages: old.pages.map((page) => ({
+            ...page,
+            comments: Array.isArray(page?.comments)
+                ? page.comments.map((comment) => {
+                    if (comment?.id !== parentId) return comment;
+                    return {
+                        ...comment,
+                        reply_count: (comment?.reply_count || 0) + 1,
+                    };
+                })
+                : page?.comments,
+        })),
+    };
+};
+
 
 const CommentsCards = ({comments, postId}) =>{
     const {user, session} = useAuth();
@@ -53,22 +73,67 @@ const CommentsCards = ({comments, postId}) =>{
     }
 
     const submitReply = async(parent_id, receiver_id) => {
+        const trimmedReply = reply.trim();
+        if (!trimmedReply) return;
+
         setReplyLoaderId(parent_id)
+        queryClient.cancelQueries({ queryKey: ['getPostReplies', parent_id] });
+        queryClient.cancelQueries({ queryKey: ['postComments', postId] });
+
+        const previousReplies = queryClient.getQueryData(['getPostReplies', parent_id]);
+        const previousComments = queryClient.getQueryData(['postComments', postId]);
+
+        const optimisticReply = {
+            id: `optimistic-reply-${Date.now()}`,
+            post_id: postId,
+            parent_id: parent_id,
+            comment: trimmedReply,
+            created_at: new Date().toISOString(),
+            user_id: user?.userData?.[0]?.id,
+            users: {
+                id: user?.userData?.[0]?.id,
+                name: user?.userData?.[0]?.name,
+                image_url: user?.userData?.[0]?.image_url,
+                badge: user?.userData?.[0]?.badge,
+            },
+            reply_count: 0,
+        };
+
+        queryClient.setQueryData(['getPostReplies', parent_id], (old) => {
+            if (!old || !Array.isArray(old.pages)) {
+                return {
+                    pageParams: [null],
+                    pages: [{ data: [optimisticReply], hasMore: false }],
+                };
+            }
+
+            return {
+                ...old,
+                pages: old.pages.map((page, index) =>
+                    index === 0
+                        ? { ...page, data: [optimisticReply, ...(page?.data || [])] }
+                        : page
+                ),
+            };
+        });
+        queryClient.setQueryData(['postComments', postId], (old) => incrementReplyCount(old, parent_id));
 
         try {
             const formdata = new FormData();
-            formdata.append('reply', reply);
+            formdata.append('reply', trimmedReply);
 
             const message = await addReply(userId, postId, parent_id, formdata, receiver_id, session?.access_token);
             if(message){
                 console.log(message);
             }
-            queryClient.invalidateQueries(['postComments', postId]);
+            queryClient.invalidateQueries({ queryKey: ['getPostReplies', parent_id] });
+            queryClient.invalidateQueries({ queryKey: ['postComments', postId] });
             setReply('')
             setShowReplies(true)
         } catch (error) {
+            queryClient.setQueryData(['getPostReplies', parent_id], previousReplies);
+            queryClient.setQueryData(['postComments', postId], previousComments);
             setReply('')
-            queryClient.invalidateQueries(['postComments', postId]);
             throw new Error('error adding replies')
         } finally {
             setReplyLoaderId('')

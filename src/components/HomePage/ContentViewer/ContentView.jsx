@@ -70,10 +70,9 @@ const ContentView = () => {
     const handleClickLike = async (e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => {
         e.stopPropagation();
         mutationLike.mutate({ journalId, receiverId, senderImageUrl, sendername, senderEmail });
-        setIsliked(!isLiked);
-        setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
+        setLikesCount((prevCount) => (typeof prevCount === 'number' ? prevCount : 0) + (isLiked ? -1 : 1));
+        setIsliked((prev) => !prev);
     }
-    const debounceClickLike = debounce(handleClickLike, 200);
 
     const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
     const handleClickBookmark = async (e, journalId) => {
@@ -98,7 +97,7 @@ const ContentView = () => {
     }
     const debounceClickBookmark = debounce(handleClickBookmark, 100);
 
-    const mutationFollow = useFollowMutation();
+    const mutationFollow = useFollowMutation(session);
     const handleClickFollow = async (e, followingId, followerId) => {
         e.stopPropagation();
         mutationFollow.mutate({ followingId, followerId });
@@ -235,7 +234,7 @@ const ContentView = () => {
                     <div className="cv-actions">
                         <button
                             className="cv-action-btn"
-                            onClick={(e) => debounceClickLike(e, postData?.journalId, postData?.userId, user?.userData?.[0].image_url, user?.userData?.[0].name, user?.userData?.[0].user_email)}
+                            onClick={(e) => handleClickLike(e, postData?.journalId, postData?.userId, user?.userData?.[0].image_url, user?.userData?.[0].name, user?.userData?.[0].user_email)}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
                                 <path fillRule="evenodd" clipRule="evenodd" d="M15.9977 5.63891C16.2695 4.34931 15.433 3.00969 14.2102 2.59462C13.6171 2.37633 12.9892 2.4252 12.4662 2.60499C11.9449 2.78419 11.4461 3.12142 11.1369 3.58441L11.136 3.58573L7.49506 9.00272C8.05104 9.29585 8.43005 9.87954 8.43005 10.5518V21.3018H6.91003V21.3018H16.6801C18.2938 21.3018 19.2028 20.2977 19.8943 19.202C20.6524 18.0009 21.1453 16.7211 21.5116 15.5812C21.6808 15.0546 21.8252 14.5503 21.9547 14.0984L21.9863 13.9881C22.126 13.5007 22.2457 13.0904 22.366 12.7549C22.698 11.8292 22.5933 10.9072 22.067 10.2072C21.5476 9.5166 20.7005 9.15175 19.76 9.15175H15.76C15.6702 9.15175 15.6017 9.11544 15.5599 9.06803C15.5238 9.02716 15.4831 8.95058 15.502 8.81171L15.9977 5.63891Z" fill={isLiked ? 'rgb(235, 87, 87)' : "var(--icon-default)"} />

@@ -85,7 +85,7 @@ const PostCards = () => {
             ),
 
             className: 'like-button',
-            action: (e, journalId, receiverId) => debounceClickLike(e, journalId, receiverId),
+            action: (e, journalId, receiverId) => handleClickLike(e, journalId, receiverId),
             countLike: (count) => <p style={{padding:'0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -159,7 +159,6 @@ const PostCards = () => {
         console.log(journalId)
         mutationLike.mutate({journalId, receiverId}) //passing this into mutationFn {journalId: the id}
     }
-    const debounceClickLike = debounce(handleClickLike, 200);
 
 
     const mutationBookmark = useBookMarkMutation(session, userId);

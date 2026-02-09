@@ -25,6 +25,8 @@ const HomePage = () => {
     const {session, signOut, user, loading, isLoading, notifCount, openAuthModal} = useAuth();
     const isGuest = !session && !loading;
 
+    const userId = user?.userData?.[0]?.id || null;
+
     const isMobile = useMediaQuery({query: '(max-width: 480px)'});
 
     const navigate = useNavigate();
@@ -211,7 +213,7 @@ const HomePage = () => {
             setProfilePreview('')
             setUploadingUserData(false)
             setShowProfileEditor(false)
-            queryClient.invalidateQueries(['userData', session?.access_token]);
+            queryClient.invalidateQueries({ queryKey: ['userData', session?.user?.id] });
             
         }
         

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import supabase from '../../utils/supabaseClient';
 import Turnstile from 'react-turnstile'
 import { useAuth } from '../../Context/useAuth';
+import BASE_URL from '../../utils/apiBaseUrl';
+import apiRequest from '../../utils/apiRequest';
 
 const SITE_KEY = import.meta.env.VITE_SITE_KEY;
 
@@ -44,7 +46,7 @@ const SignUp = () => {
         }
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/verify-turnstile`, {
+            const res = await apiRequest(`${BASE_URL}/verify-turnstile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: captchaToken }),
@@ -202,3 +204,4 @@ const SignUp = () => {
     )
 }
 export default SignUp;
+

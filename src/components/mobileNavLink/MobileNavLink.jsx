@@ -3,6 +3,7 @@ import './mobilenavlink.css';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../Context/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { preloadProfileRoute } from '../../utils/preloadRoutes';
 
 const MobileNavlink = ({ clickOpenSidebar }) => {
     const [showNavlinks, setShowNavlinks] = useState(true);
@@ -28,6 +29,7 @@ const MobileNavlink = ({ clickOpenSidebar }) => {
             label: 'Me',
             action: () => {
                 if (!session) return openAuthModal();
+                preloadProfileRoute();
                 clickOpenSidebar();
             },
         },

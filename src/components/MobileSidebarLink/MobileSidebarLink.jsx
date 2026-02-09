@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../Context/useAuth';
 import { useTheme } from '../../Context/useTheme';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { preloadProfileRoute } from '../../utils/preloadRoutes';
 
 const MobileSidebarLink = ({onclose}) => {
     const {user, signOut} = useAuth();
@@ -13,8 +14,13 @@ const MobileSidebarLink = ({onclose}) => {
     const userData = user?.userData?.[0];
 
     const clickProfile = () =>{
+        preloadProfileRoute();
         navigate('/profile')
     }
+
+    useEffect(() => {
+        preloadProfileRoute();
+    }, []);
 
     const handleClose =(e) =>{
         e.stopPropagation();

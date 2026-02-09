@@ -32,7 +32,8 @@ const OpinionEditor = ({onClose}) =>{
                 console.log(message)
             }
             setIsSaving(false)
-            queryClient.invalidateQueries(['getOpinions']);
+            queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
+            queryClient.invalidateQueries({ queryKey: ['getMyOpinions'] });
         } catch (error) {
             setIsSaving(false)
             setOpinion('')

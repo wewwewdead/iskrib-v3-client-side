@@ -1,6 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
-import { data } from "react-router-dom";
+
+const updateInfiniteJournalsCache = (old, updater) => {
+    if (!old || !Array.isArray(old.pages)) return old;
+
+    return {
+        ...old,
+        pages: old.pages.map((page) => ({
+            ...page,
+            data: Array.isArray(page?.data) ? page.data.map(updater) : page?.data,
+        })),
+    };
+};
 
 export const useBookMarkMutation = (session, userId) => {
     const queryClient = useQueryClient();
@@ -8,39 +19,44 @@ export const useBookMarkMutation = (session, userId) => {
         mutationFn: (data) => addBookmark(session?.access_token, data),
 
         onMutate: async(data) =>{
-            await queryClient.cancelQueries(['journals', userId])
-            const previousData = queryClient.getQueryData(['journals', userId]);
+            queryClient.cancelQueries({ queryKey: ['journals'] });
+            queryClient.cancelQueries({ queryKey: ['userJournals'] });
+            queryClient.cancelQueries({ queryKey: ['visitedProfileJournals'] });
 
-            queryClient.setQueryData(['journals', userId], (old) => {
-                if(!old) return old;
-                
+            const previousData = [
+                ...queryClient.getQueriesData({ queryKey: ['journals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['userJournals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['visitedProfileJournals'] }),
+            ];
+
+            const updater = (journal) => {
+                if(journal.id !== data.journalId) return journal;
+
+                const isBookmarked = journal.has_bookmarked;
+                const count = journal.bookmark_count?.[0]?.count ?? 0;
+
                 return{
-                    ...old,
-                    pages: old.pages.map((page) => ({
-                        ...page,
-                        data: page.data.map((journal) =>{
-                            if(journal.id !== data.journalId) return journal;
+                    ...journal,
+                    has_bookmarked: !isBookmarked,
+                    bookmark_count: [{count: isBookmarked ? count - 1 : count + 1}]
+                };
+            };
 
-                            const isBookmarked = journal.has_bookmarked;
-                            const count = journal.bookmark_count?.[0]?.count ?? 0;
-
-                            return{
-                                ...journal,
-                                has_bookmarked: !isBookmarked,
-                                bookmark_count: [{count: isBookmarked ? count - 1 : count + 1}]
-                            }
-                        })
-                    }))
-                }
-            })
+            queryClient.setQueriesData({ queryKey: ['journals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['userJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['visitedProfileJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
 
             return {previousData};
         },
         onError: (err,data, context) =>{
-            queryClient.setQueryData(['journals', userId], context.previousData)
+            context?.previousData?.forEach(([key, value]) => {
+                queryClient.setQueryData(key, value);
+            });
         },
         onSettled: () =>{
-            queryClient.invalidateQueries(['journals', userId])
+            queryClient.invalidateQueries({ queryKey: ['journals'] });
+            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
+            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
         }
     })
 }
@@ -54,48 +70,53 @@ export const useLikeMutation = (session, userId) =>{
         mutationFn: (data) => clickLike(session?.access_token, data), //receiving the object data {journalId: the Id}
 
         onMutate: async(data) => {
-            await queryClient.cancelQueries(['journals', userId])
-            const previousData = queryClient.getQueryData(['journals', userId]);
+            queryClient.cancelQueries({ queryKey: ['journals'] });
+            queryClient.cancelQueries({ queryKey: ['userJournals'] });
+            queryClient.cancelQueries({ queryKey: ['visitedProfileJournals'] });
 
-            queryClient.setQueryData(['journals', userId], (old) => {
-                if(!old) return old;
+            const previousData = [
+                ...queryClient.getQueriesData({ queryKey: ['journals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['userJournals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['visitedProfileJournals'] }),
+            ];
+
+            const updater = (journal) => {
+                if(journal.id !== data.journalId) return journal;
+
+                const isLiked = journal.has_liked;
+                const count = journal.like_count?.[0]?.count ?? 0;
+
                 return{
-                    ...old, 
-                    pages: old.pages.map((page) =>({
-                        ...page,
-                        data: page.data.map((journal) => {
-                            //it is using data.journalId to destructure the data which is an plain object data = {journalId: the id}
-                            if(journal.id !== data.journalId) return journal;//find the journal using jounalId, explicitlty mutate the journal
+                    ...journal,
+                    has_liked: !isLiked,
+                    like_count: [{count: isLiked ? count - 1 : count + 1}]
+                };
+            };
 
-                            const isLiked = journal.has_liked;
-                            const count = journal.like_count?.[0]?.count ?? 0;
-
-                            return{
-                                ...journal,
-                                has_liked: !isLiked,
-                                like_count: [{count: isLiked ? count - 1 : count + 1}]
-                            }
-                        })
-                    }))
-                }
-        })
+            queryClient.setQueriesData({ queryKey: ['journals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['userJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['visitedProfileJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
 
         return {previousData};
     },
     onError: (err, data, context) => {
-      queryClient.setQueryData(['journals', userId], context.previousData);
+      context?.previousData?.forEach(([key, value]) => {
+          queryClient.setQueryData(key, value);
+      });
     },
     onSettled: () => {
-      queryClient.invalidateQueries(['journals', userId]);
+      queryClient.invalidateQueries({ queryKey: ['journals'] });
+      queryClient.invalidateQueries({ queryKey: ['userJournals'] });
+      queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
     },
 })
 }
 
-export const useFollowMutation = () =>{
+export const useFollowMutation = (session) =>{
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data) => addFollows(data),
+        mutationFn: (data) => addFollows(data, session?.access_token),
 
         onMutate: async(data) => {
             await queryClient.cancelQueries(['followsData']);

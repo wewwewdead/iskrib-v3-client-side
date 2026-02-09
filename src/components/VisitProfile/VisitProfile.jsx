@@ -84,7 +84,7 @@ const Visitprofile = () =>{
         }
     }
 
-    const mutationFollow = useFollowMutation();
+    const mutationFollow = useFollowMutation(session);
     const hadnleClickFollow = (e, followingId, followerId,) =>{
         mutationFollow.mutate({followingId, followerId})
     }

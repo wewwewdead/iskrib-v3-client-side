@@ -12,7 +12,7 @@ const OpinionViewer = () => {
     const queryClient = useQueryClient();
     const location = useLocation();
     const { opinionId, userId } = location.state;
-    const { user } = useAuth();
+    const { user, session } = useAuth();
     const textAreaRef = useRef(null);
 
     const [replyOpinion, setReplyOpinion] = useState('');
@@ -41,19 +41,23 @@ const OpinionViewer = () => {
         formData.append('opinion', replyOpinion);
 
         try {
-            await addReplyOpinion(formData, receiverId, senderId, parentId);
+            await addReplyOpinion(formData, receiverId, senderId, parentId, session?.access_token);
             setReplyOpinion('');
             if (textAreaRef.current) {
                 textAreaRef.current.innerText = '';
             }
-            queryClient.invalidateQueries(['getViewOpinion', opinionId, receiverId]);
+            queryClient.invalidateQueries({ queryKey: ['getViewOpinion', opinionId, userId] });
+            queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
+            queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
         } catch (error) {
             console.error(error);
             setReplyOpinion('');
             if (textAreaRef.current) {
                 textAreaRef.current.innerText = '';
             }
-            queryClient.invalidateQueries(['getViewOpinion', opinionId, receiverId]);
+            queryClient.invalidateQueries({ queryKey: ['getViewOpinion', opinionId, userId] });
+            queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
+            queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
         }
     };
 

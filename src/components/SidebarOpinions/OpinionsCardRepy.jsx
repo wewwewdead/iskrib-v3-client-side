@@ -10,7 +10,7 @@ const MAX_VISUAL_DEPTH = 4;
 
 const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
     const queryClient = useQueryClient();
-    const { user } = useAuth();
+    const { user, session } = useAuth();
 
     const [showReply, setShowReply] = useState(false);
     const [replyOpinion, setReplyOpinion] = useState('');
@@ -37,8 +37,10 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
         try {
             const formadata = new FormData();
             formadata.append('opinion', reply);
-            await addReplyOpinion(formadata, receiver_id, sender_id, parent_id);
-            queryClient.invalidateQueries(['getReplyOpinion', opinionId]);
+            await addReplyOpinion(formadata, receiver_id, sender_id, parent_id, session?.access_token);
+            queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
+            queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
+            queryClient.invalidateQueries({ queryKey: ['getViewOpinion'] });
             setReplyOpinion('');
             if (textAreaRef.current) {
                 textAreaRef.current.innerText = '';
@@ -49,7 +51,9 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
             if (textAreaRef.current) {
                 textAreaRef.current.innerText = '';
             }
-            queryClient.invalidateQueries(['getReplyOpinion', opinionId]);
+            queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
+            queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
+            queryClient.invalidateQueries({ queryKey: ['getViewOpinion'] });
         }
     };
 

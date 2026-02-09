@@ -167,6 +167,53 @@ const unwrapElementPreservingChildren = (element) => {
     return movedChildren;
 };
 
+const normalizeImageDimension = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        return null;
+    }
+    return Math.round(numericValue);
+};
+
+const normalizeImageOffset = (value) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 0;
+    }
+    return Math.round(numericValue);
+};
+
+const buildImageLayouts = ({
+    imageUrl,
+    imageUrls,
+    imageWidth,
+    imageHeight,
+    imageOffsetX,
+    imageOffsetY,
+    imageWidths,
+    imageHeights,
+    imageOffsetXs,
+    imageOffsetYs,
+}) => {
+    const safeImageUrls = Array.isArray(imageUrls) && imageUrls.length > 0
+        ? imageUrls.filter(Boolean)
+        : (imageUrl ? [imageUrl] : []);
+
+    const safeWidths = Array.isArray(imageWidths) ? imageWidths : null;
+    const safeHeights = Array.isArray(imageHeights) ? imageHeights : null;
+    const safeOffsetXs = Array.isArray(imageOffsetXs) ? imageOffsetXs : null;
+    const safeOffsetYs = Array.isArray(imageOffsetYs) ? imageOffsetYs : null;
+
+    const layouts = safeImageUrls.map((_, index) => ({
+        width: normalizeImageDimension(safeWidths ? safeWidths[index] : (index === 0 ? imageWidth : null)),
+        height: normalizeImageDimension(safeHeights ? safeHeights[index] : (index === 0 ? imageHeight : null)),
+        offsetX: normalizeImageOffset(safeOffsetXs ? safeOffsetXs[index] : (index === 0 ? imageOffsetX : 0)),
+        offsetY: normalizeImageOffset(safeOffsetYs ? safeOffsetYs[index] : (index === 0 ? imageOffsetY : 0)),
+    }));
+
+    return { safeImageUrls, layouts };
+};
+
 const ContainerComponent = ({
     nodeKey,
     bgColor,
@@ -184,10 +231,17 @@ const ContainerComponent = ({
     containerWidth,
     containerHeight,
     imageUrl,
+    imageUrls,
     imageWidth,
     imageHeight,
     imageOffsetX,
     imageOffsetY,
+    imageWidths,
+    imageHeights,
+    imageOffsetXs,
+    imageOffsetYs,
+    textOffsetX,
+    textOffsetY,
     offsetX,
     offsetY,
     isEditable,
@@ -198,11 +252,28 @@ const ContainerComponent = ({
     const [isDragging, setIsDragging] = useState(false);
     const [isResizingImage, setIsResizingImage] = useState(false);
     const [isDraggingImage, setIsDraggingImage] = useState(false);
+    const [isDraggingText, setIsDraggingText] = useState(false);
     const [isImageSelected, setIsImageSelected] = useState(false);
     const [showStylePopup, setShowStylePopup] = useState(false);
     const [showToolbar, setShowToolbar] = useState(false);
     const [text, setText] = useState(normalizeTextContent(textContent || ""));
-    const [imgSrc, setImgSrc] = useState(imageUrl || "");
+    const [{ safeImageUrls: initialImageUrls, layouts: initialImageLayouts }] = useState(() => (
+        buildImageLayouts({
+            imageUrl,
+            imageUrls,
+            imageWidth,
+            imageHeight,
+            imageOffsetX,
+            imageOffsetY,
+            imageWidths,
+            imageHeights,
+            imageOffsetXs,
+            imageOffsetYs,
+        })
+    ));
+    const [imgSrcList, setImgSrcList] = useState(initialImageUrls);
+    const [imageLayouts, setImageLayouts] = useState(initialImageLayouts);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [imgLoading, setImgLoading] = useState(false);
     const [viewportWidth, setViewportWidth] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1024));
     const [styles, setStyles] = useState({
@@ -223,22 +294,57 @@ const ContainerComponent = ({
         imageHeight,
         imageOffsetX,
         imageOffsetY,
+        textOffsetX,
+        textOffsetY,
         offsetX,
         offsetY,
     });
     const textEditorRef = useRef(null);
+    const textDisplayRef = useRef(null);
     const containerRef = useRef(null);
     const toolbarRef = useRef(null);
     const controlsRef = useRef(null);
-    const imgWrapRef = useRef(null);
+    const imageWrapRefs = useRef({});
     const dragRef = useRef(null);
     const imageResizeRef = useRef(null);
     const imageDragRef = useRef(null);
+    const textDragRef = useRef(null);
     const stylesRef = useRef(styles);
+    const imgSrcListRef = useRef(imgSrcList);
+    const imageLayoutsRef = useRef(imageLayouts);
 
     useEffect(() => {
         stylesRef.current = styles;
     }, [styles]);
+
+    useEffect(() => {
+        imgSrcListRef.current = imgSrcList;
+    }, [imgSrcList]);
+
+    useEffect(() => {
+        imageLayoutsRef.current = imageLayouts;
+    }, [imageLayouts]);
+
+    useEffect(() => {
+        const { safeImageUrls, layouts } = buildImageLayouts({
+            imageUrl,
+            imageUrls,
+            imageWidth,
+            imageHeight,
+            imageOffsetX,
+            imageOffsetY,
+            imageWidths,
+            imageHeights,
+            imageOffsetXs,
+            imageOffsetYs,
+        });
+
+        setImgSrcList(safeImageUrls);
+        setImageLayouts(layouts);
+        setActiveImageIndex((prev) => (
+            safeImageUrls.length === 0 ? 0 : Math.min(prev, safeImageUrls.length - 1)
+        ));
+    }, [imageHeight, imageHeights, imageOffsetX, imageOffsetXs, imageOffsetY, imageOffsetYs, imageUrl, imageUrls, imageWidth, imageWidths]);
 
     useEffect(() => {
         const handleResize = () => setViewportWidth(window.innerWidth);
@@ -248,9 +354,15 @@ const ContainerComponent = ({
 
     useEffect(() => {
         const handleOutsideImageClick = (e) => {
-            if (!imgWrapRef.current?.contains(e.target)) {
-                setIsImageSelected(false);
+            const target = e.target;
+            if (
+                target instanceof Element &&
+                containerRef.current?.contains(target) &&
+                target.closest(".inner-container-img-wrap")
+            ) {
+                return;
             }
+            setIsImageSelected(false);
         };
 
         document.addEventListener("pointerdown", handleOutsideImageClick);
@@ -280,9 +392,44 @@ const ContainerComponent = ({
         return () => document.removeEventListener("pointerdown", handleOutsideToolbarClick);
     }, [showToolbar]);
 
-    const dispatchUpdate = useCallback((updatedText, updatedStyles, updatedImgUrl) => {
+    const dispatchUpdate = useCallback((updatedText, updatedStyles, updatedImgUrlOrList, updatedImageLayouts) => {
+        const resolvedImageUrls = Array.isArray(updatedImgUrlOrList)
+            ? updatedImgUrlOrList.filter(Boolean)
+            : typeof updatedImgUrlOrList === "string"
+                ? (updatedImgUrlOrList ? [updatedImgUrlOrList] : [])
+                : imgSrcListRef.current;
+
+        const baseLayouts = Array.isArray(updatedImageLayouts)
+            ? updatedImageLayouts
+            : imageLayoutsRef.current;
+
+        const resolvedLayouts = resolvedImageUrls.map((_, index) => {
+            const currentLayout = baseLayouts[index] || {};
+            return {
+                width: normalizeImageDimension(currentLayout.width),
+                height: normalizeImageDimension(currentLayout.height),
+                offsetX: normalizeImageOffset(currentLayout.offsetX),
+                offsetY: normalizeImageOffset(currentLayout.offsetY),
+            };
+        });
+        const firstLayout = resolvedLayouts[0] || { width: null, height: null, offsetX: 0, offsetY: 0 };
+
         const event = new CustomEvent("container-update", {
-            detail: { nodeKey, text: updatedText, imageUrl: updatedImgUrl, ...updatedStyles },
+            detail: {
+                nodeKey,
+                text: updatedText,
+                ...updatedStyles,
+                imageUrl: resolvedImageUrls[0] || "",
+                imageUrls: resolvedImageUrls,
+                imageWidth: firstLayout.width,
+                imageHeight: firstLayout.height,
+                imageOffsetX: firstLayout.offsetX,
+                imageOffsetY: firstLayout.offsetY,
+                imageWidths: resolvedLayouts.map((layout) => layout.width),
+                imageHeights: resolvedLayouts.map((layout) => layout.height),
+                imageOffsetXs: resolvedLayouts.map((layout) => layout.offsetX),
+                imageOffsetYs: resolvedLayouts.map((layout) => layout.offsetY),
+            },
         });
         window.dispatchEvent(event);
     }, [nodeKey]);
@@ -295,15 +442,15 @@ const ContainerComponent = ({
                 textEditorRef.current.innerHTML = nextText;
             }
             setText(nextText);
-            dispatchUpdate(nextText, stylesRef.current, imgSrc);
+            dispatchUpdate(nextText, stylesRef.current, imgSrcList);
         }
         setIsEditing(false);
-    }, [dispatchUpdate, imgSrc, isEditing]);
+    }, [dispatchUpdate, imgSrcList, isEditing]);
 
     const handleStyleChange = (key, value) => {
         const newStyles = { ...styles, [key]: value };
         setStyles(newStyles);
-        dispatchUpdate(text, newStyles, imgSrc);
+        dispatchUpdate(text, newStyles, imgSrcList);
     };
 
     const syncTextFromEditor = useCallback(() => {
@@ -314,13 +461,8 @@ const ContainerComponent = ({
             textEditorRef.current.innerHTML = nextText;
         }
         setText(nextText);
-        dispatchUpdate(nextText, stylesRef.current, imgSrc);
-    }, [dispatchUpdate, imgSrc]);
-
-    const startTextEditing = useCallback((e) => {
-        e.stopPropagation();
-        setIsEditing(true);
-    }, []);
+        dispatchUpdate(nextText, stylesRef.current, imgSrcList);
+    }, [dispatchUpdate, imgSrcList]);
 
     useEffect(() => {
         if (!isEditing || !textEditorRef.current) return;
@@ -500,7 +642,7 @@ const ContainerComponent = ({
             }
             dragRef.current = null;
             setIsDragging(false);
-            dispatchUpdate(text, stylesRef.current, imgSrc);
+            dispatchUpdate(text, stylesRef.current, imgSrcList);
         };
 
         window.addEventListener("pointermove", handleDragMove);
@@ -512,23 +654,118 @@ const ContainerComponent = ({
             window.removeEventListener("pointerup", handleDragEnd);
             window.removeEventListener("pointercancel", handleDragEnd);
         };
-    }, [isDragging, dispatchUpdate, text, imgSrc, getClientPosition]);
+    }, [isDragging, dispatchUpdate, text, imgSrcList, getClientPosition]);
 
-    const handleImageResizeStart = useCallback((direction, e) => {
+    const handleTextDragStart = useCallback((e) => {
+        if (typeof e.button === "number" && e.button !== 0) return;
+        if (!textDisplayRef.current || isEditing) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const { clientX, clientY } = getClientPosition(e);
+        textDragRef.current = {
+            startClientX: clientX,
+            startClientY: clientY,
+            startOffsetX: Number(stylesRef.current.textOffsetX) || 0,
+            startOffsetY: Number(stylesRef.current.textOffsetY) || 0,
+            pointerId: typeof e.pointerId === "number" ? e.pointerId : null,
+            hasMoved: false,
+        };
+        setIsDraggingText(true);
+    }, [getClientPosition, isEditing]);
+
+    useEffect(() => {
+        if (!isDraggingText) return undefined;
+
+        const handleTextDragMove = (e) => {
+            const dragState = textDragRef.current;
+            const textEl = textDisplayRef.current;
+            if (!dragState || !textEl || !containerRef.current) return;
+            if (dragState.pointerId !== null && e.pointerId !== dragState.pointerId) return;
+
+            const { clientX, clientY } = getClientPosition(e);
+            const dx = clientX - dragState.startClientX;
+            const dy = clientY - dragState.startClientY;
+
+            if (!dragState.hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+                dragState.hasMoved = true;
+            }
+
+            let nextOffsetX = dragState.startOffsetX + dx;
+            let nextOffsetY = dragState.startOffsetY + dy;
+
+            const textRect = textEl.getBoundingClientRect();
+            const boundsRect = containerRef.current.getBoundingClientRect();
+            const currentOffsetX = Number(stylesRef.current.textOffsetX) || 0;
+            const currentOffsetY = Number(stylesRef.current.textOffsetY) || 0;
+            const baseLeft = textRect.left - currentOffsetX;
+            const baseTop = textRect.top - currentOffsetY;
+            const minOffsetX = boundsRect.left - baseLeft;
+            const maxOffsetX = boundsRect.right - (baseLeft + textRect.width);
+            const minOffsetY = boundsRect.top - baseTop;
+            const maxOffsetY = boundsRect.bottom - (baseTop + textRect.height);
+
+            nextOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, nextOffsetX));
+            nextOffsetY = Math.max(minOffsetY, Math.min(maxOffsetY, nextOffsetY));
+
+            setStyles((prev) => {
+                const updated = {
+                    ...prev,
+                    textOffsetX: Math.round(nextOffsetX),
+                    textOffsetY: Math.round(nextOffsetY),
+                };
+                stylesRef.current = updated;
+                return updated;
+            });
+        };
+
+        const handleTextDragEnd = (e) => {
+            const dragState = textDragRef.current;
+            if (!dragState) return;
+            if (dragState.pointerId !== null && e?.pointerId !== undefined && e.pointerId !== dragState.pointerId) {
+                return;
+            }
+
+            const shouldOpenEditor = !dragState.hasMoved;
+            textDragRef.current = null;
+            setIsDraggingText(false);
+            dispatchUpdate(text, stylesRef.current, imgSrcListRef.current, imageLayoutsRef.current);
+
+            if (shouldOpenEditor) {
+                setIsEditing(true);
+            }
+        };
+
+        window.addEventListener("pointermove", handleTextDragMove);
+        window.addEventListener("pointerup", handleTextDragEnd);
+        window.addEventListener("pointercancel", handleTextDragEnd);
+
+        return () => {
+            window.removeEventListener("pointermove", handleTextDragMove);
+            window.removeEventListener("pointerup", handleTextDragEnd);
+            window.removeEventListener("pointercancel", handleTextDragEnd);
+        };
+    }, [dispatchUpdate, getClientPosition, isDraggingText, text]);
+
+    const handleImageResizeStart = useCallback((direction, imageIndex, e) => {
         if (typeof e.button === "number" && e.button !== 0) return;
         e.preventDefault();
         e.stopPropagation();
-        if (!imgWrapRef.current) return;
+        const wrapEl = imageWrapRefs.current[imageIndex];
+        if (!wrapEl) return;
         setIsImageSelected(true);
+        setActiveImageIndex(imageIndex);
         const { clientX, clientY } = getClientPosition(e);
 
-        const rect = imgWrapRef.current.getBoundingClientRect();
+        const currentLayout = imageLayoutsRef.current[imageIndex] || {};
+        const rect = wrapEl.getBoundingClientRect();
         imageResizeRef.current = {
+            imageIndex,
             direction,
             startClientX: clientX,
             startClientY: clientY,
-            startWidth: Number(stylesRef.current.imageWidth) || rect.width,
-            startHeight: Number(stylesRef.current.imageHeight) || rect.height,
+            startWidth: normalizeImageDimension(currentLayout.width) || rect.width,
+            startHeight: normalizeImageDimension(currentLayout.height) || rect.height,
             pointerId: typeof e.pointerId === "number" ? e.pointerId : null,
         };
         setIsResizingImage(true);
@@ -541,6 +778,9 @@ const ContainerComponent = ({
             const resizeState = imageResizeRef.current;
             if (!resizeState || !containerRef.current) return;
             if (resizeState.pointerId !== null && e.pointerId !== resizeState.pointerId) return;
+            const imageIndex = resizeState.imageIndex;
+            const currentLayout = imageLayoutsRef.current[imageIndex];
+            if (!currentLayout) return;
             const { clientX, clientY } = getClientPosition(e);
 
             const dx = clientX - resizeState.startClientX;
@@ -548,8 +788,8 @@ const ContainerComponent = ({
             const editorEl = containerRef.current.closest(".inline-note-content-editable");
             const maxWidth = Math.max(80, containerRef.current.clientWidth - 24);
             const maxHeight = Math.max(120, editorEl ? editorEl.clientHeight * 2 : 800);
-            let nextWidth = Number(stylesRef.current.imageWidth) || resizeState.startWidth;
-            let nextHeight = Number(stylesRef.current.imageHeight) || resizeState.startHeight;
+            let nextWidth = normalizeImageDimension(currentLayout.width) || resizeState.startWidth;
+            let nextHeight = normalizeImageDimension(currentLayout.height) || resizeState.startHeight;
 
             if (resizeState.direction === "east") {
                 nextWidth = resizeState.startWidth + dx;
@@ -576,14 +816,15 @@ const ContainerComponent = ({
             nextWidth = Math.max(80, Math.min(maxWidth, nextWidth));
             nextHeight = Math.max(80, Math.min(maxHeight, nextHeight));
 
-            setStyles((prev) => {
-                const updated = {
-                    ...prev,
-                    imageWidth: Math.round(nextWidth),
-                    imageHeight: Math.round(nextHeight),
+            setImageLayouts((prev) => {
+                if (!prev[imageIndex]) return prev;
+                const updatedLayouts = [...prev];
+                updatedLayouts[imageIndex] = {
+                    ...updatedLayouts[imageIndex],
+                    width: Math.round(nextWidth),
+                    height: Math.round(nextHeight),
                 };
-                stylesRef.current = updated;
-                return updated;
+                return updatedLayouts;
             });
         };
 
@@ -594,7 +835,7 @@ const ContainerComponent = ({
             }
             imageResizeRef.current = null;
             setIsResizingImage(false);
-            dispatchUpdate(text, stylesRef.current, imgSrc);
+            dispatchUpdate(text, stylesRef.current, imgSrcListRef.current, imageLayoutsRef.current);
         };
 
         window.addEventListener("pointermove", handleImageResizeMove);
@@ -606,19 +847,22 @@ const ContainerComponent = ({
             window.removeEventListener("pointerup", handleImageResizeEnd);
             window.removeEventListener("pointercancel", handleImageResizeEnd);
         };
-    }, [isResizingImage, dispatchUpdate, text, imgSrc, getClientPosition]);
+    }, [isResizingImage, dispatchUpdate, text, getClientPosition]);
 
-    const handleImageMoveStart = useCallback((e) => {
+    const handleImageMoveStart = useCallback((e, imageIndex) => {
         if (typeof e.button === "number" && e.button !== 0) return;
         e.preventDefault();
         e.stopPropagation();
         setIsImageSelected(true);
+        setActiveImageIndex(imageIndex);
+        const currentLayout = imageLayoutsRef.current[imageIndex] || {};
         const { clientX, clientY } = getClientPosition(e);
         imageDragRef.current = {
+            imageIndex,
             startClientX: clientX,
             startClientY: clientY,
-            startOffsetX: Number(stylesRef.current.imageOffsetX) || 0,
-            startOffsetY: Number(stylesRef.current.imageOffsetY) || 0,
+            startOffsetX: normalizeImageOffset(currentLayout.offsetX),
+            startOffsetY: normalizeImageOffset(currentLayout.offsetY),
             pointerId: typeof e.pointerId === "number" ? e.pointerId : null,
         };
         setIsDraggingImage(true);
@@ -629,25 +873,44 @@ const ContainerComponent = ({
 
         const handleImageMove = (e) => {
             const dragState = imageDragRef.current;
-            if (!dragState || !containerRef.current || !imgWrapRef.current) return;
+            if (!dragState || !containerRef.current) return;
             if (dragState.pointerId !== null && e.pointerId !== dragState.pointerId) return;
+            const imageIndex = dragState.imageIndex;
+            const wrapEl = imageWrapRefs.current[imageIndex];
+            if (!wrapEl) return;
             const { clientX, clientY } = getClientPosition(e);
 
             const dx = clientX - dragState.startClientX;
             const dy = clientY - dragState.startClientY;
-            const maxX = Math.max(0, containerRef.current.clientWidth - imgWrapRef.current.offsetWidth);
-            const maxY = Math.max(0, containerRef.current.clientHeight - imgWrapRef.current.offsetHeight);
-            const nextOffsetX = Math.max(0, Math.min(maxX, dragState.startOffsetX + dx));
-            const nextOffsetY = Math.max(0, Math.min(maxY, dragState.startOffsetY + dy));
+            let nextOffsetX = dragState.startOffsetX + dx;
+            let nextOffsetY = dragState.startOffsetY + dy;
 
-            setStyles((prev) => {
-                const updated = {
-                    ...prev,
-                    imageOffsetX: Math.round(nextOffsetX),
-                    imageOffsetY: Math.round(nextOffsetY),
+            const wrapRect = wrapEl.getBoundingClientRect();
+            const boundsRect = containerRef.current.getBoundingClientRect();
+            const currentOffsetX = normalizeImageOffset((imageLayoutsRef.current[imageIndex] || {}).offsetX);
+            const currentOffsetY = normalizeImageOffset((imageLayoutsRef.current[imageIndex] || {}).offsetY);
+
+            // Clamp relative to the image's base (untranslated) position so it can move
+            // anywhere inside the container, including upward over previously added images.
+            const baseLeft = wrapRect.left - currentOffsetX;
+            const baseTop = wrapRect.top - currentOffsetY;
+            const minOffsetX = boundsRect.left - baseLeft;
+            const maxOffsetX = boundsRect.right - (baseLeft + wrapRect.width);
+            const minOffsetY = boundsRect.top - baseTop;
+            const maxOffsetY = boundsRect.bottom - (baseTop + wrapRect.height);
+
+            nextOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, nextOffsetX));
+            nextOffsetY = Math.max(minOffsetY, Math.min(maxOffsetY, nextOffsetY));
+
+            setImageLayouts((prev) => {
+                if (!prev[imageIndex]) return prev;
+                const updatedLayouts = [...prev];
+                updatedLayouts[imageIndex] = {
+                    ...updatedLayouts[imageIndex],
+                    offsetX: Math.round(nextOffsetX),
+                    offsetY: Math.round(nextOffsetY),
                 };
-                stylesRef.current = updated;
-                return updated;
+                return updatedLayouts;
             });
         };
 
@@ -658,7 +921,7 @@ const ContainerComponent = ({
             }
             imageDragRef.current = null;
             setIsDraggingImage(false);
-            dispatchUpdate(text, stylesRef.current, imgSrc);
+            dispatchUpdate(text, stylesRef.current, imgSrcListRef.current, imageLayoutsRef.current);
         };
 
         window.addEventListener("pointermove", handleImageMove);
@@ -670,7 +933,7 @@ const ContainerComponent = ({
             window.removeEventListener("pointerup", handleImageMoveEnd);
             window.removeEventListener("pointercancel", handleImageMoveEnd);
         };
-    }, [isDraggingImage, dispatchUpdate, text, imgSrc, getClientPosition]);
+    }, [isDraggingImage, dispatchUpdate, text, getClientPosition]);
 
     const handleRemove = (e) => {
         e.stopPropagation();
@@ -678,65 +941,141 @@ const ContainerComponent = ({
         window.dispatchEvent(event);
     };
 
+    const uploadImageForContainer = useCallback(async ({ file }) => {
+        const formdata = new FormData();
+        formdata.append("image", file);
+
+        try {
+            const data = await uploadNotesImage(session?.access_token, formdata);
+            if (!data?.img_url) {
+                return null;
+            }
+
+            const filePath = data.img_url.split("/profile-notes-images/").pop();
+            if (filePath && addUploadedImagePath) {
+                addUploadedImagePath(filePath);
+            }
+
+            return data.img_url;
+        } catch (err) {
+            console.error("Container image upload failed:", err);
+            return null;
+        }
+    }, [addUploadedImagePath, session]);
+
     const handleImageUpload = async () => {
         const input = document.createElement("input");
         input.type = "file";
         input.accept = "image/*";
+        input.multiple = true;
         input.onchange = async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
+            const selectedFiles = Array.from(e.target.files || []);
+            if (selectedFiles.length === 0) return;
 
-            const blobUrl = URL.createObjectURL(file);
-            const nextStyles = {
-                ...stylesRef.current,
-                imageWidth: null,
-                imageHeight: null,
-                imageOffsetX: 0,
-                imageOffsetY: 0,
-            };
-            setStyles(nextStyles);
-            stylesRef.current = nextStyles;
-            setImgSrc(blobUrl);
-            setImgLoading(true);
-            dispatchUpdate(text, nextStyles, blobUrl);
+            const hadNoImage = imgSrcListRef.current.length === 0;
+            const previewUrls = selectedFiles.map((file) => URL.createObjectURL(file));
+            const mergedPreviewList = [...imgSrcListRef.current, ...previewUrls];
+            const mergedLayouts = [
+                ...imageLayoutsRef.current,
+                ...previewUrls.map(() => ({ width: null, height: null, offsetX: 0, offsetY: 0 })),
+            ];
 
-            const formdata = new FormData();
-            formdata.append("image", file);
+            if (hadNoImage) {
+                const nextStyles = {
+                    ...stylesRef.current,
+                    imageWidth: null,
+                    imageHeight: null,
+                    imageOffsetX: 0,
+                    imageOffsetY: 0,
+                };
 
-            try {
-                const data = await uploadNotesImage(session?.access_token, formdata);
-                if (data?.img_url) {
-                    const filePath = data.img_url.split("/profile-notes-images/").pop();
-                    if (filePath && addUploadedImagePath) {
-                        addUploadedImagePath(filePath);
+                setStyles(nextStyles);
+                stylesRef.current = nextStyles;
+                setImgLoading(true);
+            }
+
+            setImgSrcList(mergedPreviewList);
+            setImageLayouts(mergedLayouts);
+            dispatchUpdate(text, stylesRef.current, mergedPreviewList, mergedLayouts);
+
+            let workingUrls = [...mergedPreviewList];
+            let workingLayouts = [...mergedLayouts];
+            for (let i = 0; i < selectedFiles.length; i += 1) {
+                const file = selectedFiles[i];
+                const previewUrl = previewUrls[i];
+                const uploadedUrl = await uploadImageForContainer({ file });
+                const previewIndex = workingUrls.indexOf(previewUrl);
+                if (previewIndex === -1) {
+                    if (previewUrl.startsWith("blob:")) {
+                        URL.revokeObjectURL(previewUrl);
                     }
-                    setImgSrc(data.img_url);
-                    dispatchUpdate(text, stylesRef.current, data.img_url);
-                    URL.revokeObjectURL(blobUrl);
+                    continue;
                 }
-            } catch (err) {
-                console.error("Container image upload failed:", err);
-            } finally {
+
+                if (uploadedUrl) {
+                    workingUrls[previewIndex] = uploadedUrl;
+                } else {
+                    workingUrls.splice(previewIndex, 1);
+                    workingLayouts.splice(previewIndex, 1);
+                }
+
+                setImgSrcList([...workingUrls]);
+                setImageLayouts([...workingLayouts]);
+                dispatchUpdate(text, stylesRef.current, workingUrls, workingLayouts);
+
+                if (previewUrl.startsWith("blob:")) {
+                    URL.revokeObjectURL(previewUrl);
+                }
+            }
+
+            setActiveImageIndex((prev) => (
+                workingUrls.length === 0 ? 0 : Math.min(prev, workingUrls.length - 1)
+            ));
+            if (hadNoImage) {
                 setImgLoading(false);
             }
         };
         input.click();
     };
 
-    const handleRemoveImage = (e) => {
+    const handleRemoveImage = (e, imageIndex = 0) => {
         e.stopPropagation();
         setIsImageSelected(false);
-        const resetStyles = {
-            ...stylesRef.current,
-            imageWidth: null,
-            imageHeight: null,
-            imageOffsetX: 0,
-            imageOffsetY: 0,
-        };
-        setStyles(resetStyles);
-        stylesRef.current = resetStyles;
-        setImgSrc("");
-        dispatchUpdate(text, resetStyles, "");
+        if (imageIndex < 0 || imageIndex >= imgSrcListRef.current.length) {
+            return;
+        }
+
+        const nextUrls = [...imgSrcListRef.current];
+        const nextLayouts = [...imageLayoutsRef.current];
+        const removedUrl = nextUrls[imageIndex];
+        if (typeof removedUrl === "string" && removedUrl.startsWith("blob:")) {
+            URL.revokeObjectURL(removedUrl);
+        }
+        nextUrls.splice(imageIndex, 1);
+        nextLayouts.splice(imageIndex, 1);
+
+        setImgSrcList(nextUrls);
+        setImageLayouts(nextLayouts);
+        setActiveImageIndex((prev) => (
+            nextUrls.length === 0 ? 0 : Math.min(prev, nextUrls.length - 1)
+        ));
+
+        if (nextUrls.length === 0) {
+            const resetStyles = {
+                ...stylesRef.current,
+                imageWidth: null,
+                imageHeight: null,
+                imageOffsetX: 0,
+                imageOffsetY: 0,
+            };
+            setStyles(resetStyles);
+            stylesRef.current = resetStyles;
+            setImgLoading(false);
+            dispatchUpdate(text, resetStyles, [], []);
+            return;
+        }
+
+        dispatchUpdate(text, stylesRef.current, nextUrls, nextLayouts);
     };
 
     const rawOffsetX = Number(styles.offsetX) || 0;
@@ -747,6 +1086,9 @@ const ContainerComponent = ({
     const resolvedMinHeight = Number(styles.containerHeight) > 0
         ? `${Number(styles.containerHeight)}px`
         : "28px";
+    const resolvedContainerHeight = Number(styles.containerHeight) > 0
+        ? `${Number(styles.containerHeight)}px`
+        : "auto";
 
     const containerStyle = {
         backgroundColor: styles.bgColor || "transparent",
@@ -761,8 +1103,9 @@ const ContainerComponent = ({
         fontStyle: styles.fontStyle || "normal",
         textDecoration: styles.textDecoration || "none",
         width: styles.containerWidth ? `${styles.containerWidth}%` : "100%",
-        height: "auto",
+        height: resolvedContainerHeight,
         minHeight: resolvedMinHeight,
+        overflow: "visible",
         padding: "0.5rem 0.75rem",
         marginTop: "6px",
         marginBottom: isMobileViewport ? "6px" : `${Math.max(0, 6 + rawOffsetY)}px`,
@@ -772,19 +1115,42 @@ const ContainerComponent = ({
         transition: isDragging ? "none" : "all 0.15s ease",
     };
 
-    const resolvedImageWidth = Number(styles.imageWidth) || null;
-    const resolvedImageHeight = Number(styles.imageHeight) || null;
-    const resolvedImageOffsetX = Number(styles.imageOffsetX) || 0;
-    const resolvedImageOffsetY = Number(styles.imageOffsetY) || 0;
-    const imageWrapStyle = {
-        width: resolvedImageWidth ? `${resolvedImageWidth}px` : "100%",
-        height: resolvedImageHeight ? `${resolvedImageHeight}px` : "auto",
-        maxWidth: "100%",
-        transform: `translate(${resolvedImageOffsetX}px, ${resolvedImageOffsetY}px)`,
+    const getImageWrapStyle = (imageIndex) => {
+        const layout = imageLayouts[imageIndex] || {};
+        const resolvedImageWidth = normalizeImageDimension(layout.width);
+        const resolvedImageHeight = normalizeImageDimension(layout.height);
+        const resolvedImageOffsetX = normalizeImageOffset(layout.offsetX);
+        const resolvedImageOffsetY = normalizeImageOffset(layout.offsetY);
+
+        return {
+            width: resolvedImageWidth ? `${resolvedImageWidth}px` : "100%",
+            height: resolvedImageHeight ? `${resolvedImageHeight}px` : "auto",
+            maxWidth: "100%",
+            minHeight: resolvedImageHeight ? `${resolvedImageHeight}px` : (imageIndex === 0 ? undefined : 0),
+            transform: `translate(${resolvedImageOffsetX}px, ${resolvedImageOffsetY}px)`,
+        };
     };
-    const imageStyle = {
-        width: "100%",
-        height: resolvedImageHeight ? "100%" : "auto",
+
+    const getImageStyle = (imageIndex) => {
+        const layout = imageLayouts[imageIndex] || {};
+        const resolvedImageHeight = normalizeImageDimension(layout.height);
+        return {
+            width: "100%",
+            height: resolvedImageHeight ? "100%" : "auto",
+            objectFit: resolvedImageHeight ? "fill" : "contain",
+        };
+    };
+
+    const getTextStyle = ({ editable = false, draggable = false } = {}) => {
+        const resolvedTextOffsetX = Number(styles.textOffsetX) || 0;
+        const resolvedTextOffsetY = Number(styles.textOffsetY) || 0;
+
+        return {
+            transform: `translate(${resolvedTextOffsetX}px, ${resolvedTextOffsetY}px)`,
+            cursor: editable ? "text" : (draggable ? (isDraggingText ? "grabbing" : "grab") : "inherit"),
+            touchAction: editable ? "auto" : (draggable ? "none" : "auto"),
+            userSelect: editable ? undefined : (draggable ? "none" : undefined),
+        };
     };
 
     const toggleBold = (e) => {
@@ -812,16 +1178,26 @@ const ContainerComponent = ({
     if (!isEditable) {
         return (
             <div ref={containerRef} style={containerStyle} className="note-inner-container">
-                {imgSrc && (
-                    <div className="inner-container-img-wrap" style={imageWrapStyle}>
-                        <img src={imgSrc} alt="" className="inner-container-img" style={imageStyle} />
+                {imgSrcList.map((src, index) => (
+                    <div
+                        key={`${src}-${index}`}
+                        className="inner-container-img-wrap"
+                        style={getImageWrapStyle(index)}
+                    >
+                        <img
+                            src={src}
+                            alt=""
+                            className="inner-container-img"
+                            style={getImageStyle(index)}
+                        />
                     </div>
-                )}
+                ))}
                 {isRichTextEmpty(text) ? (
-                    <div className="inner-container-text-display">&nbsp;</div>
+                    <div className="inner-container-text-display" style={getTextStyle()}>&nbsp;</div>
                 ) : (
                     <div
                         className="inner-container-text-display"
+                        style={getTextStyle()}
                         dangerouslySetInnerHTML={{ __html: text }}
                     />
                 )}
@@ -1021,73 +1397,91 @@ const ContainerComponent = ({
             )}
 
             {/* Image area */}
-            {imgSrc && (
-                <div
-                    ref={imgWrapRef}
-                    className={`inner-container-img-wrap${isResizingImage ? " resizing" : ""}${isDraggingImage ? " dragging" : ""}${isImageSelected ? " is-selected" : ""}`}
-                    style={imageWrapStyle}
-                >
-                    <img
-                        src={imgSrc}
-                        alt=""
-                        className={`inner-container-img draggable${imgLoading ? " loading" : ""}`}
-                        style={imageStyle}
-                        onPointerDown={handleImageMoveStart}
-                    />
-                    <button
-                        type="button"
-                        className="inner-container-img-resize-handle north north-side-handle"
-                        onPointerDown={(e) => handleImageResizeStart("north", e)}
-                        title="Resize image height"
-                    />
-                    <button
-                        type="button"
-                        className="inner-container-img-resize-handle south south-side-handle"
-                        onPointerDown={(e) => handleImageResizeStart("south", e)}
-                        title="Resize image height"
-                    />
-                    <button
-                        type="button"
-                        className="inner-container-img-resize-handle east east-side-handle"
-                        onPointerDown={(e) => handleImageResizeStart("east", e)}
-                        title="Resize image width"
-                    />
-                    <button
-                        type="button"
-                        className="inner-container-img-resize-handle west west-side-handle"
-                        onPointerDown={(e) => handleImageResizeStart("west", e)}
-                        title="Resize image width"
-                    />
-                    <button
-                        type="button"
-                        className="inner-container-img-resize-handle ne ne-side-handle northeast-side-handle"
-                        onPointerDown={(e) => handleImageResizeStart("ne", e)}
-                        title="Resize image"
-                    />
-                    <button
-                        type="button"
-                        className="inner-container-img-resize-handle nw nw-side-handle northwest-side-handle"
-                        onPointerDown={(e) => handleImageResizeStart("nw", e)}
-                        title="Resize image"
-                    />
-                    <button
-                        type="button"
-                        className="inner-container-img-resize-handle se se-side-handle southeast-side-handle"
-                        onPointerDown={(e) => handleImageResizeStart("se", e)}
-                        title="Resize image"
-                    />
-                    <button
-                        type="button"
-                        className="inner-container-img-resize-handle sw sw-side-handle southwest-side-handle"
-                        onPointerDown={(e) => handleImageResizeStart("sw", e)}
-                        title="Resize image"
-                    />
-                    <button className="inner-container-img-remove" onClick={handleRemoveImage} title="Remove image">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="10" viewBox="0 -960 960 960" width="10" fill="currentColor">
-                            <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
-                        </svg>
-                    </button>
-                </div>
+            {imgSrcList.length > 0 && (
+                <>
+                    {imgSrcList.map((src, index) => {
+                        const isActiveImage = isImageSelected && activeImageIndex === index;
+                        return (
+                            <div
+                                key={`${src}-${index}`}
+                                ref={(node) => {
+                                    if (node) {
+                                        imageWrapRefs.current[index] = node;
+                                    } else {
+                                        delete imageWrapRefs.current[index];
+                                    }
+                                }}
+                                className={`inner-container-img-wrap${isResizingImage && isActiveImage ? " resizing" : ""}${isDraggingImage && isActiveImage ? " dragging" : ""}${isActiveImage ? " is-selected" : ""}`}
+                                style={getImageWrapStyle(index)}
+                            >
+                                <img
+                                    src={src}
+                                    alt=""
+                                    className={`inner-container-img draggable${imgLoading && index === 0 ? " loading" : ""}`}
+                                    style={getImageStyle(index)}
+                                    onPointerDown={(e) => handleImageMoveStart(e, index)}
+                                />
+                                {isActiveImage && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="inner-container-img-resize-handle north north-side-handle"
+                                            onPointerDown={(e) => handleImageResizeStart("north", index, e)}
+                                            title="Resize image height"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="inner-container-img-resize-handle south south-side-handle"
+                                            onPointerDown={(e) => handleImageResizeStart("south", index, e)}
+                                            title="Resize image height"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="inner-container-img-resize-handle east east-side-handle"
+                                            onPointerDown={(e) => handleImageResizeStart("east", index, e)}
+                                            title="Resize image width"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="inner-container-img-resize-handle west west-side-handle"
+                                            onPointerDown={(e) => handleImageResizeStart("west", index, e)}
+                                            title="Resize image width"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="inner-container-img-resize-handle ne ne-side-handle northeast-side-handle"
+                                            onPointerDown={(e) => handleImageResizeStart("ne", index, e)}
+                                            title="Resize image"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="inner-container-img-resize-handle nw nw-side-handle northwest-side-handle"
+                                            onPointerDown={(e) => handleImageResizeStart("nw", index, e)}
+                                            title="Resize image"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="inner-container-img-resize-handle se se-side-handle southeast-side-handle"
+                                            onPointerDown={(e) => handleImageResizeStart("se", index, e)}
+                                            title="Resize image"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="inner-container-img-resize-handle sw sw-side-handle southwest-side-handle"
+                                            onPointerDown={(e) => handleImageResizeStart("sw", index, e)}
+                                            title="Resize image"
+                                        />
+                                    </>
+                                )}
+                                <button className="inner-container-img-remove" onClick={(e) => handleRemoveImage(e, index)} title="Remove image">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="10" viewBox="0 -960 960 960" width="10" fill="currentColor">
+                                        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        );
+                    })}
+                </>
             )}
 
             {/* Text area */}
@@ -1109,22 +1503,33 @@ const ContainerComponent = ({
                             textEditorRef.current?.blur();
                         }
                     }}
-                    style={!imgSrc ? { minHeight: "100%" } : undefined}
+                    style={{
+                        ...getTextStyle({ editable: true }),
+                        ...(imgSrcList.length === 0 ? { minHeight: "100%" } : {}),
+                    }}
                 />
             ) : (
                 isRichTextEmpty(text) ? (
                     <div
-                        onClick={startTextEditing}
+                        ref={textDisplayRef}
+                        onPointerDown={handleTextDragStart}
                         className="inner-container-text-display"
-                        style={!imgSrc ? { minHeight: "100%" } : undefined}
+                        style={{
+                            ...getTextStyle({ draggable: true }),
+                            ...(imgSrcList.length === 0 ? { minHeight: "100%" } : {}),
+                        }}
                     >
                         Click to add text...
                     </div>
                 ) : (
                     <div
-                        onClick={startTextEditing}
+                        ref={textDisplayRef}
+                        onPointerDown={handleTextDragStart}
                         className="inner-container-text-display"
-                        style={!imgSrc ? { minHeight: "100%" } : undefined}
+                        style={{
+                            ...getTextStyle({ draggable: true }),
+                            ...(imgSrcList.length === 0 ? { minHeight: "100%" } : {}),
+                        }}
                         dangerouslySetInnerHTML={{ __html: text }}
                     />
                 )
@@ -1144,11 +1549,11 @@ export default class ContainerNode extends DecoratorNode {
             node.__borderStyle, node.__borderRadius, node.__textContent,
             node.__textAlign, node.__fontWeight, node.__fontSize,
             node.__fontColor, node.__fontStyle, node.__textDecoration, node.__containerWidth, node.__containerHeight,
-            node.__imageUrl, node.__imageWidth, node.__imageHeight, node.__imageOffsetX, node.__imageOffsetY, node.__offsetX, node.__offsetY, node.__key
+            node.__imageUrl, node.__imageWidth, node.__imageHeight, node.__imageOffsetX, node.__imageOffsetY, node.__offsetX, node.__offsetY, node.__imageUrls, node.__imageWidths, node.__imageHeights, node.__imageOffsetXs, node.__imageOffsetYs, node.__textOffsetX, node.__textOffsetY, node.__key
         );
     }
 
-    constructor(bgColor = "#d4e8c2", borderColor = "#b5d49a", borderWidth = 1, borderStyle = "solid", borderRadius = 8, textContent = "", textAlign = "center", fontWeight = "700", fontSize = 14, fontColor = "#2d2d2d", fontStyle = "normal", textDecoration = "none", containerWidth = 100, containerHeight = 250, imageUrl = "", imageWidth = null, imageHeight = null, imageOffsetX = 0, imageOffsetY = 0, offsetX = 0, offsetY = 0, key) {
+    constructor(bgColor = "#d4e8c2", borderColor = "#b5d49a", borderWidth = 1, borderStyle = "solid", borderRadius = 8, textContent = "", textAlign = "center", fontWeight = "700", fontSize = 14, fontColor = "#2d2d2d", fontStyle = "normal", textDecoration = "none", containerWidth = 100, containerHeight = 250, imageUrl = "", imageWidth = null, imageHeight = null, imageOffsetX = 0, imageOffsetY = 0, offsetX = 0, offsetY = 0, imageUrls = null, imageWidths = null, imageHeights = null, imageOffsetXs = null, imageOffsetYs = null, textOffsetX = 0, textOffsetY = 0, key) {
         super(key);
         this.__bgColor = bgColor;
         this.__borderColor = borderColor;
@@ -1171,6 +1576,30 @@ export default class ContainerNode extends DecoratorNode {
         this.__imageOffsetY = imageOffsetY;
         this.__offsetX = offsetX;
         this.__offsetY = offsetY;
+        this.__textOffsetX = textOffsetX;
+        this.__textOffsetY = textOffsetY;
+        const { safeImageUrls, layouts } = buildImageLayouts({
+            imageUrl,
+            imageUrls,
+            imageWidth,
+            imageHeight,
+            imageOffsetX,
+            imageOffsetY,
+            imageWidths,
+            imageHeights,
+            imageOffsetXs,
+            imageOffsetYs,
+        });
+        this.__imageUrls = safeImageUrls;
+        this.__imageWidths = layouts.map((layout) => layout.width);
+        this.__imageHeights = layouts.map((layout) => layout.height);
+        this.__imageOffsetXs = layouts.map((layout) => layout.offsetX);
+        this.__imageOffsetYs = layouts.map((layout) => layout.offsetY);
+        this.__imageUrl = safeImageUrls[0] || "";
+        this.__imageWidth = this.__imageWidths[0] ?? null;
+        this.__imageHeight = this.__imageHeights[0] ?? null;
+        this.__imageOffsetX = this.__imageOffsetXs[0] ?? 0;
+        this.__imageOffsetY = this.__imageOffsetYs[0] ?? 0;
     }
 
     createDOM() {
@@ -1202,10 +1631,17 @@ export default class ContainerNode extends DecoratorNode {
             containerWidth: this.__containerWidth,
             containerHeight: this.__containerHeight,
             imageUrl: this.__imageUrl,
+            imageUrls: this.__imageUrls,
             imageWidth: this.__imageWidth,
             imageHeight: this.__imageHeight,
             imageOffsetX: this.__imageOffsetX,
             imageOffsetY: this.__imageOffsetY,
+            imageWidths: this.__imageWidths,
+            imageHeights: this.__imageHeights,
+            imageOffsetXs: this.__imageOffsetXs,
+            imageOffsetYs: this.__imageOffsetYs,
+            textOffsetX: this.__textOffsetX,
+            textOffsetY: this.__textOffsetY,
             offsetX: this.__offsetX,
             offsetY: this.__offsetY,
         };
@@ -1219,7 +1655,7 @@ export default class ContainerNode extends DecoratorNode {
             serializedNode.textAlign, serializedNode.fontWeight,
             serializedNode.fontSize, serializedNode.fontColor, serializedNode.fontStyle, serializedNode.textDecoration,
             serializedNode.containerWidth, serializedNode.containerHeight,
-            serializedNode.imageUrl, serializedNode.imageWidth, serializedNode.imageHeight, serializedNode.imageOffsetX, serializedNode.imageOffsetY, serializedNode.offsetX, serializedNode.offsetY
+            serializedNode.imageUrl, serializedNode.imageWidth, serializedNode.imageHeight, serializedNode.imageOffsetX, serializedNode.imageOffsetY, serializedNode.offsetX, serializedNode.offsetY, serializedNode.imageUrls, serializedNode.imageWidths, serializedNode.imageHeights, serializedNode.imageOffsetXs, serializedNode.imageOffsetYs, serializedNode.textOffsetX, serializedNode.textOffsetY
         );
     }
 
@@ -1248,10 +1684,17 @@ export default class ContainerNode extends DecoratorNode {
                 containerWidth={this.__containerWidth}
                 containerHeight={this.__containerHeight}
                 imageUrl={this.__imageUrl}
+                imageUrls={this.__imageUrls}
                 imageWidth={this.__imageWidth}
                 imageHeight={this.__imageHeight}
                 imageOffsetX={this.__imageOffsetX}
                 imageOffsetY={this.__imageOffsetY}
+                imageWidths={this.__imageWidths}
+                imageHeights={this.__imageHeights}
+                imageOffsetXs={this.__imageOffsetXs}
+                imageOffsetYs={this.__imageOffsetYs}
+                textOffsetX={this.__textOffsetX}
+                textOffsetY={this.__textOffsetY}
                 offsetX={this.__offsetX}
                 offsetY={this.__offsetY}
                 isEditable={isEditable}
@@ -1262,6 +1705,6 @@ export default class ContainerNode extends DecoratorNode {
     }
 }
 
-export function $createContainerNode(bgColor, borderColor, borderWidth, borderStyle, borderRadius, textContent, textAlign, fontWeight, fontSize, fontColor, fontStyle, textDecoration, containerWidth, containerHeight, imageUrl, imageWidth, imageHeight, imageOffsetX, imageOffsetY, offsetX, offsetY) {
-    return new ContainerNode(bgColor, borderColor, borderWidth, borderStyle, borderRadius, textContent, textAlign, fontWeight, fontSize, fontColor, fontStyle, textDecoration, containerWidth, containerHeight, imageUrl, imageWidth, imageHeight, imageOffsetX, imageOffsetY, offsetX, offsetY);
+export function $createContainerNode(bgColor, borderColor, borderWidth, borderStyle, borderRadius, textContent, textAlign, fontWeight, fontSize, fontColor, fontStyle, textDecoration, containerWidth, containerHeight, imageUrl, imageWidth, imageHeight, imageOffsetX, imageOffsetY, offsetX, offsetY, imageUrls, imageWidths, imageHeights, imageOffsetXs, imageOffsetYs, textOffsetX, textOffsetY) {
+    return new ContainerNode(bgColor, borderColor, borderWidth, borderStyle, borderRadius, textContent, textAlign, fontWeight, fontSize, fontColor, fontStyle, textDecoration, containerWidth, containerHeight, imageUrl, imageWidth, imageHeight, imageOffsetX, imageOffsetY, offsetX, offsetY, imageUrls, imageWidths, imageHeights, imageOffsetXs, imageOffsetYs, textOffsetX, textOffsetY);
 }

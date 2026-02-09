@@ -1,6 +1,7 @@
 // import sharp from 'sharp';
 import supabase from "./supabaseClient";
-const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+import BASE_URL from "./apiBaseUrl";
+import apiRequest from "./apiRequest";
 
 const getCroppedImage = async (imageSrc, crop, userId) => {
     if(!imageSrc || !crop){
@@ -50,7 +51,7 @@ const getCroppedImage = async (imageSrc, crop, userId) => {
         formdata.append('userId', userId)
 
         try {
-            const response = await fetch(`${BASE_URL}/uploadBackground`, {
+            const response = await apiRequest(`${BASE_URL}/uploadBackground`, {
                 method: 'POST',
                 body: formdata,
             })
@@ -76,3 +77,4 @@ const getCroppedImage = async (imageSrc, crop, userId) => {
 };
 
 export default getCroppedImage;
+
