@@ -10,6 +10,7 @@ const MobileSidebarLink = ({onclose}) => {
     const {theme, toggleTheme} = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
+    const userData = user?.userData?.[0];
 
     const clickProfile = () =>{
         navigate('/profile')
@@ -37,7 +38,7 @@ const MobileSidebarLink = ({onclose}) => {
                 <div className='sidebar-profile-container'>
                 
                     <div onClick={(e) => clickProfile()} className='sidebar-profile-avatar-container'>
-                        <img className='sidebar-profile-avatar' src={user?.userData?.[0].image_url || '/assets/profile.jpg'} alt="" />
+                        <img className='sidebar-profile-avatar' src={userData?.image_url || '/assets/profile.jpg'} alt="" />
                     </div>
 
                     <div onClick={signOut} className='sidebar-signout-bttn'>
@@ -46,8 +47,8 @@ const MobileSidebarLink = ({onclose}) => {
                     
                 </div>
                 <div onClick={(e) => clickProfile()} className='sidebar-profile-metadata'>
-                    <p>{user?.userData?.[0].name}</p>
-                    <p style={{fontWeight: 500, fontSize: '0.8rem'}}>{user?.userData?.[0].user_email}</p>
+                    <p>{userData?.name}</p>
+                    <p style={{fontWeight: 500, fontSize: '0.8rem'}}>{userData?.user_email}</p>
                 </div>
                 <div onClick={() => navigatePath('/home/collections')} className='sidebar-mycollection-container'>
                     <div className={location.pathname === '/home/collections' ? 'sidebar-my-collection-bttn-active' : 'sidebar-my-collection-bttn'}>
