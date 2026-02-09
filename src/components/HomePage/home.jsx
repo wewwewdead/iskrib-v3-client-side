@@ -219,7 +219,6 @@ const HomePage = () => {
 
     const handleClickMobileProfileLink = () =>{
         setShowMobileSideBar(true)
-        console.log('test')
     }
     const handleClickCloseSidebar = () =>{
         setShowMobileSideBar(false)
