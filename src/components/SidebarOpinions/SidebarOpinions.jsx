@@ -94,7 +94,7 @@ const SidebarOpinions = ({openEditor}) =>{
         return(
             <div className='side-bar-opinions-parent-container'>
                 <div className='opinions-loading-container'>
-                    <MoonLoader size={25} speedMultiplier={1} loading={isLoading}/>
+                    <MoonLoader size={25} color="var(--loader-color)" speedMultiplier={1} loading={isLoading}/>
                 </div>
             </div>
         )

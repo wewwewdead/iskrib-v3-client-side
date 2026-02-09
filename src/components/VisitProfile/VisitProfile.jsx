@@ -66,7 +66,7 @@ const Visitprofile = () =>{
 
     // open sidebar through boolean function
     const openSidebar = () =>{
-        setShowSidebar(!showSidebar)
+        setShowSidebar(true)
     }
 
     // close sidebar through boolean function

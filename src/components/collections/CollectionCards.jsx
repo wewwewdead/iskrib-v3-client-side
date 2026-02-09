@@ -294,7 +294,7 @@ const CollectionCards = () =>{
             })}
         <div ref={ref} className='collection-cards-inview-container'>
             {isFetchingNextPage && (
-                <MoonLoader loading={isFetchingNextPage} size={15}/>
+                <MoonLoader loading={isFetchingNextPage} color="var(--loader-color)" size={15}/>
             )}
         </div>
 

@@ -121,7 +121,7 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
         return(
             <div className="notCollectedJournalList">
                 <div className="notCollectedJournalList-loading-container">
-                    <MoonLoader loading={isLoading} size={25}/>
+                    <MoonLoader loading={isLoading} color="var(--loader-color)" size={25}/>
                 </div>
             </div>
         )

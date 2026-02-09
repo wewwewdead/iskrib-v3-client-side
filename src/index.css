@@ -63,6 +63,8 @@
   --bg-selection: rgba(94, 66, 255, 0.06);
   --bg-selection-active: rgba(94, 66, 255, 0.12);
 
+  --loader-color: #2D2D2D;
+
   /* global */
   color-scheme: light;
   color: var(--text-primary);
@@ -121,6 +123,8 @@
 
   --bg-selection: rgba(140, 120, 255, 0.1);
   --bg-selection-active: rgba(140, 120, 255, 0.18);
+
+  --loader-color: #4995c7;
 
   color-scheme: dark;
   color: var(--text-primary);

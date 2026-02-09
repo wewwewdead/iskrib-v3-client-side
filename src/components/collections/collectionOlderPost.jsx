@@ -73,7 +73,7 @@ const OlderPost = ({onSave, onClose}) =>{
     if(isLoading){
         return(
             <div className="older-loading-container">
-                <MoonLoader loading={isLoading} size={25}/>
+                <MoonLoader loading={isLoading} color="var(--loader-color)" size={25}/>
             </div>
 
         )

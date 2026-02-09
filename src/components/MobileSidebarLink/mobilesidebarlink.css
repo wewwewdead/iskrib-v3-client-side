@@ -4,11 +4,14 @@
 
 @media (max-width: 428px){
     .mobile-sidebar-bg{
-        position: absolute;
+        position: fixed;
+        inset: 0;
         display: flex;
         align-items: flex-end;
+        justify-content: flex-start;
         width: 100%;
         height: 100vh;
+        height: 100dvh;
         background-color: var(--bg-overlay);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(5px);
@@ -16,17 +19,18 @@
         overflow: hidden;
     }
     .mobile-sidebar-link-container{
-        position: fixed;
+        position: relative;
         display: flex;
         flex-direction: column;
         padding: 1rem 0 0.5rem 0;
         width: fit-content;
-        height: 35%;
+        max-height: calc(100dvh - 6rem);
         background-color: var(--bg-elevated);
         box-shadow: var(--shadow-card);
-        z-index: 10;
+        z-index: 1;
         border-radius: 10px;
-        bottom: 5rem;
+        margin: 0 0.5rem 5rem;
+        overflow-y: auto;
     }
     .sidebar-profile-container{
         display: flex;
@@ -93,11 +97,14 @@
 
 @media (max-width: 480px){
     .mobile-sidebar-bg{
-        position: absolute;
+        position: fixed;
+        inset: 0;
         display: flex;
         align-items: flex-end;
+        justify-content: flex-start;
         width: 100%;
         height: 100vh;
+        height: 100dvh;
         background-color: var(--bg-overlay);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(5px);
@@ -105,17 +112,18 @@
         overflow: hidden;
     }
     .mobile-sidebar-link-container{
-        position: fixed;
+        position: relative;
         display: flex;
         flex-direction: column;
         padding: 1rem 0 0.5rem 0;
         width: fit-content;
-        height: 35%;
+        max-height: calc(100dvh - 6rem);
         background-color: var(--bg-elevated);
         box-shadow: var(--shadow-card);
-        z-index: 10;
+        z-index: 1;
         border-radius: 10px;
-        bottom: 5rem;
+        margin: 0 0.5rem 5rem;
+        overflow-y: auto;
     }
     .sidebar-profile-container{
         display: flex;

@@ -1,32 +1,66 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import './bgloader.css';
 
- const Loader = ({isloading}) => {
-    return(
-        <>
-        <div className="homepage-loading-container">
-            <svg
-                width="200px"
-                height="200px"
-                viewBox="0 0 360 100"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <style>
-                    {`
-                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-                        text {
-                            ont-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-                            font-weight: 700;        /* ultra bold like the X logo */
-                            letter-spacing: -0.02em;
-                            fill: rgba(255, 255, 255, 1);      /* inherits text color → black in light mode, white in dark */
-                        }
-                    `}
-                </style>
-                <text x="60" y="60" fontSize="88">
-                    iSkrib
-                </text>
-                </svg>
-        </div>
-        </>
-        )
- }
- export default Loader;
+const Loader = ({ isLoading }) => {
+    const [show, setShow] = useState(true);
+
+    useEffect(() => {
+        if (!isLoading) {
+            // small delay before starting exit animation
+            const timer = setTimeout(() => setShow(false), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isLoading]);
+
+    return (
+        <AnimatePresence>
+            {show && (
+                <motion.div
+                    className="splash-screen"
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                >
+                    <motion.div
+                        className="splash-logo"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, ease: [0, 0, 0.2, 1] }}
+                    >
+                        <svg
+                            width="120"
+                            height="120"
+                            viewBox="0 0 120 120"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <text
+                                x="50%"
+                                y="50%"
+                                dominantBaseline="central"
+                                textAnchor="middle"
+                                className="splash-text"
+                            >
+                                iSkrib
+                            </text>
+                        </svg>
+                    </motion.div>
+
+                    {/* subtle bottom progress bar like X */}
+                    {isLoading && (
+                        <div className="splash-progress-track">
+                            <motion.div
+                                className="splash-progress-bar"
+                                initial={{ width: '0%' }}
+                                animate={{ width: '70%' }}
+                                transition={{ duration: 2, ease: 'easeOut' }}
+                            />
+                        </div>
+                    )}
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+
+export default Loader;

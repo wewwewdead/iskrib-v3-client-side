@@ -71,7 +71,7 @@ const VisitedProfileOpinions = () =>{
         return(
             <div className="visited-profile-opinions-container">
                 <div className="opinions-loading-container">
-                    <MoonLoader size={25} speedMultiplier={1} loading={isLoading}/>
+                    <MoonLoader size={25} color="var(--loader-color)" speedMultiplier={1} loading={isLoading}/>
                 </div>
             </div>
         )

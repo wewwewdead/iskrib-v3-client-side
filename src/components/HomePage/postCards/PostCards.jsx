@@ -246,7 +246,7 @@ const PostCards = () => {
         return(
             <>
             <div className="postcards-parent-loading-container">
-                <MoonLoader loading={isLoading} color="#2D2D2D" speedMultiplier={1} size={20}/>
+                <MoonLoader loading={isLoading} color="var(--loader-color)" speedMultiplier={1} size={20}/>
             </div>
             </>
         )

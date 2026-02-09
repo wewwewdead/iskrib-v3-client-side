@@ -178,7 +178,7 @@ const NotificationCards = () =>{
     if(isLoading){
         return(
             <div className="notification-loading-container">
-                <MoonLoader size={25} loading={isLoading}/>
+                <MoonLoader size={25} color="var(--loader-color)" loading={isLoading}/>
             </div>
         )
     }
@@ -295,7 +295,7 @@ const NotificationCards = () =>{
             })}
             <div className="notification-inview-container" ref={ref}>
                 {isFetchingNextPage && (
-                    <MoonLoader size={20}/>
+                    <MoonLoader size={20} color="var(--loader-color)"/>
                 )}
                 
             </div>

@@ -153,7 +153,7 @@ const ContentView = () => {
     if (isLoading) {
         return (
             <div className="cv-loading">
-                <MoonLoader loading={isLoading} size={25} />
+                <MoonLoader loading={isLoading} color="var(--loader-color)" size={25} />
             </div>
         )
     }

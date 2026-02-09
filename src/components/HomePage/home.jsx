@@ -25,7 +25,7 @@ const HomePage = () => {
     const {session, signOut, user, loading, isLoading, notifCount, openAuthModal} = useAuth();
     const isGuest = !session && !loading;
 
-    const isMobile = useMediaQuery({query: '(max-width: 480px'});
+    const isMobile = useMediaQuery({query: '(max-width: 480px)'});
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -218,8 +218,7 @@ const HomePage = () => {
     }
 
     const handleClickMobileProfileLink = () =>{
-        console.log('click')
-        setShowMobileSideBar(!showMobileSideBar)
+        setShowMobileSideBar(true)
     }
     const handleClickCloseSidebar = () =>{
         setShowMobileSideBar(false)

@@ -5,6 +5,7 @@ import { useAuth } from './Context/useAuth.js';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
+import Loader from './components/loadingComponent/BgLoader.jsx';
 
 const AuthModal = lazy(() => import('./components/AuthModal/AuthModal.jsx'));
 const HomePage = lazy(() => import('./components/HomePage/home.jsx'));
@@ -32,6 +33,11 @@ const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionVie
 const AppAuthModal = () => {
   const {showAuthModal, closeAuthModal} = useAuth();
   return <AuthModal isOpen={showAuthModal} onClose={closeAuthModal}/>;
+}
+
+const AppSplash = () => {
+  const { loading } = useAuth();
+  return <Loader isLoading={loading} />;
 }
 
 const App = () => {
@@ -65,6 +71,7 @@ const App = () => {
     <>
     <LexicalComposer initialConfig={initaConfig}>
       <HashRouter>
+        <AppSplash />
         <Suspense fallback={null}>
           <AppAuthModal/>
           <Routes>

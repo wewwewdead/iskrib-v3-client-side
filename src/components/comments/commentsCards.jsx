@@ -137,7 +137,7 @@ const CommentsCards = ({comments, postId}) =>{
 
                 {replyLoaderId === comments.id && (
                     <div className="cm-reply-loading">
-                        <MoonLoader size={16} speedMultiplier={0.8}/>
+                        <MoonLoader size={16} color="var(--loader-color)" speedMultiplier={0.8}/>
                     </div>
                 )}
 

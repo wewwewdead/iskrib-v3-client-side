@@ -62,7 +62,7 @@ const CollectionViewer = () =>{
             <>
             <div key={1} className="collection-container">
                 <div className="collection-profile-loading-container">
-                    <MoonLoader loading={isLoading} size={25}/>
+                    <MoonLoader loading={isLoading} color="var(--loader-color)" size={25}/>
                 </div>
             </div>
             </>

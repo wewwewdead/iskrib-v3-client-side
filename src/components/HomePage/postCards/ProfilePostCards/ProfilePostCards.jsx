@@ -218,7 +218,7 @@ const ProfilePostCards = () =>{
         return(
             <>
             <div className='profile-postcards-loading-container'>
-                <MoonLoader loading={isLoading} size={20} speedMultiplier={0.5}/>
+                <MoonLoader loading={isLoading} color="var(--loader-color)" size={20} speedMultiplier={0.5}/>
             </div>
             </>
         )
@@ -416,7 +416,7 @@ const ProfilePostCards = () =>{
 
             <div ref={ref} className='in-view-container'>
                 {isFetchingNextPage && (
-                    <MoonLoader loading={isFetchingNextPage} size={20}/>
+                    <MoonLoader loading={isFetchingNextPage} color="var(--loader-color)" size={20}/>
                 )}
                 
             </div>

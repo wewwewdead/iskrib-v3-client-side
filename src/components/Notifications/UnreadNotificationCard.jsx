@@ -164,7 +164,7 @@ const UnreadNotification = () =>{
     if(isLoading) {
         return(
             <div className="notification-loading-container">
-                <MoonLoader size={25} loading={isLoading}/>
+                <MoonLoader size={25} color="var(--loader-color)" loading={isLoading}/>
             </div>
         )
     }
@@ -273,7 +273,7 @@ const UnreadNotification = () =>{
             })}
             <div ref={inviewRef} className="notification-inview-container">
                 {isFetchinNextPage && (
-                    <MoonLoader loading={isFetchinNextPage} size={20}/>
+                    <MoonLoader loading={isFetchinNextPage} color="var(--loader-color)" size={20}/>
                 )}
             </div>
         </div>

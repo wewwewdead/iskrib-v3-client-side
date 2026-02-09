@@ -91,7 +91,7 @@ const MyProfile = () => {
     };
 
     const handleClickOpenSidebar = () => {
-        setShowMobileSideBar(!showMobileSideBar);
+        setShowMobileSideBar(true);
     };
 
     const handleCloseSidebar = () => {
