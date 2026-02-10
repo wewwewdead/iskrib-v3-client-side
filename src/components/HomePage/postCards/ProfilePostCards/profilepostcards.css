@@ -92,7 +92,7 @@
 .postcards-grid-item {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
     cursor: pointer;
     background: var(--bg-primary);
     border: 1px solid var(--border-card);
@@ -116,6 +116,8 @@
     aspect-ratio: 4 / 3;
     overflow: hidden;
     flex-shrink: 0;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
 }
 
 .postcards-grid-thumb {
@@ -165,6 +167,43 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════
+   Grid Item — Footer & Settings
+   ═══════════════════════════════════════════════════ */
+.postcards-grid-item {
+    position: relative;
+}
+
+.postcards-grid-body-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 0.3rem;
+}
+
+.postcards-grid-item .user-post-settings svg {
+    width: 20px;
+    height: 20px;
+}
+
+.postcards-grid-item .user-post-privacy {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+}
+
+.postcards-grid-item .post-settings-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 20;
+}
+
+.postcards-grid-item .confirmation-delete-bg {
+    bottom: 0;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -996,6 +1035,11 @@
         font-size: 0.7rem;
         color: rgb(255, 68, 68);
         text-align: center;
+    }
+    .postcards-grid-item .post-settings-container {
+        top: 50%;
+        left: 50%;
+        width: 200px;
     }
     .edit-journal-container {
         display: flex;
