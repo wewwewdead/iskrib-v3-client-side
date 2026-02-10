@@ -123,7 +123,7 @@ const SidebarOpinions = ({openEditor}) =>{
                                         <div className="so-user-row">
                                             <div className="so-user-meta">
                                                 <div className={`so-avatar-outer ${opinionsData.users.badge === 'legend' ? 'avatar-ring-legend' : opinionsData.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                                    <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt="" />
+                                                    <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt={`${opinionsData?.users?.name || "User"} profile picture`} />
                                                 </div>
                                                 <div className="so-name-block">
                                                     <div className="so-name-line">

@@ -1,7 +1,7 @@
 import {useLocation, useNavigate } from 'react-router-dom';
 import './profilepostcards.css';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MoonLoader } from 'react-spinners';
 import { motion } from 'framer-motion';
 import ParseContent from '../parseData';
@@ -52,11 +52,17 @@ const VisitedProfilePostCards = () =>{
         console.log(userId)
     },[userId])
 
+    const [viewMode, setViewMode] = useState('grid');
+
     useEffect(() =>{
         if(!isFetchingNextPage && hasNextPage && inView){
             fetchNextPage();
         }
-    }, [inView, fetchNextPage, isFetchingNextPage, hasNextPage,])
+    }, [inView, fetchNextPage, isFetchingNextPage, hasNextPage])
+
+    const handleToggleView = useCallback(() => {
+        setViewMode((prev) => (prev === 'list' ? 'grid' : 'list'));
+    }, []);
 
     const journals = journalData?.pages.flatMap((page) => page.data) || [];
 
@@ -83,6 +89,56 @@ const VisitedProfilePostCards = () =>{
     return(
         <>
         <div className='profile-postcards-parent-container'>
+            <div className="postcards-header-row">
+                <h2 className="postcards-heading">
+                    Posts <span className="postcards-count">({journals.length})</span>
+                </h2>
+                <div className="postcards-header-actions">
+                    <button
+                        className={`postcards-view-toggle-btn ${viewMode === 'grid' ? 'is-active' : ''}`}
+                        onClick={handleToggleView}
+                        title={viewMode === 'grid' ? 'Switch to list' : 'Switch to grid'}
+                    >
+                        {viewMode === 'grid' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor"><path d="M120-520v-320h320v320H120Zm0 400v-320h320v320H120Zm400-400v-320h320v320H520Zm0 400v-320h320v320H520Z"/></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor"><path d="M120-200v-560h720v560H120Z"/></svg>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {viewMode === 'grid' ? (
+                <div className="postcards-grid-view">
+                    {journals.map((journal) => {
+                        const parsedContent = ParseContent(journal.content);
+                        const thumbnail = parsedContent?.firstImage?.src;
+                        return (
+                            <motion.div
+                                key={journal.id}
+                                className="postcards-grid-item"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.25, ease: 'easeOut' }}
+                                onClick={(e) => viewContent(e, journal?.content, parsedContent?.wholeText, journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge)}
+                            >
+                                {thumbnail && (
+                                    <div className="postcards-grid-img-wrap">
+                                        <img className="postcards-grid-thumb" src={thumbnail} alt={journal?.title ? `${journal.title} cover image` : "Post cover image"} loading="lazy" />
+                                    </div>
+                                )}
+                                <div className="postcards-grid-body">
+                                    <h3 className="postcards-grid-title">{journal.title.length > 32 ? `${journal.title.substring(0, 32)}...` : journal.title}</h3>
+                                    {parsedContent?.slicedText && (
+                                        <p className="postcards-grid-snippet">{parsedContent.slicedText.length > 50 ? `${parsedContent.slicedText.substring(0, 50)}...` : parsedContent.slicedText}</p>
+                                    )}
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </div>
+            ) : (
+            <div className="postcards-list-view">
             {journals.map((journal, index) => {
                 const parsedContent = ParseContent(journal.content);
 
@@ -98,7 +154,7 @@ const VisitedProfilePostCards = () =>{
                             <img
                                 className="card-image-banner"
                                 src={parsedContent.firstImage.src}
-                                alt=""
+                                alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                 loading="lazy"
                                 onClick={(e) => viewContent(
                                     e,
@@ -169,6 +225,8 @@ const VisitedProfilePostCards = () =>{
                     </motion.div>
                 )
             })}
+            </div>
+            )}
 
             <div ref={ref} className='in-view-container'>
                 {isFetchingNextPage && (

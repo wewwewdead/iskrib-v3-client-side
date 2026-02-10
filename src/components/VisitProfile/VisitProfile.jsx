@@ -247,7 +247,7 @@ const Visitprofile = () =>{
 
                         <div className='visited-profile-top-row'>
                             <div className={`profile-avatar-ring ${userData?.badge === 'legend' ? 'badge-ring-legend' : userData?.badge === 'og' ? 'badge-ring-og' : ''}`}>
-                                <img className='visited-profile-image' src={userData?.image_url || '/assets/profile.jpg'} alt="" />
+                                <img className='visited-profile-image' src={userData?.image_url || '/assets/profile.jpg'} alt={`${userData?.name || "User"} profile picture`} />
                             </div>
                         </div>
 

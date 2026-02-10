@@ -91,6 +91,8 @@ const App = () => {
             <Route path='/home' element={<HomePage/>}>
               <Route index element={<PostCards/>}/>
               <Route path='contentViewer' element={<ContentView/>}/>
+              <Route path='post/:journalId' element={<ContentView/>}/>
+              <Route path='post/:journalId/:slug' element={<ContentView/>}/>
               <Route path='bookmark' element={<Bookmarks/>}/>
               <Route path='userCollections' element={<ViewUserCollection/>}/>
               <Route path='opinions'element={<OpinionsPage/>}/>

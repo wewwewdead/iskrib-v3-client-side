@@ -93,7 +93,7 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
                                         <img
                                             className="so-avatar"
                                             src={opinion.users?.image_url || '../assets/profile.jpg'}
-                                            alt=""
+                                            alt={`${opinion?.users?.name || "User"} profile picture`}
                                         />
                                     </div>
                                     <div className="so-name-block">

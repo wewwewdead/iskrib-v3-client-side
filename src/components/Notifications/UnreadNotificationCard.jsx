@@ -260,7 +260,7 @@ const UnreadNotification = () =>{
                                             <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
                                         </div>
                                         <div className="notif-content-image-container">
-                                            <img className="notif-content-image" loading="lazy" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="" />
+                                            <img className="notif-content-image" loading="lazy" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt={unreadNotification?.journals?.title ? `${unreadNotification.journals.title} cover image` : "Notification post cover image"} />
                                         </div>
                                         </>
                                     )}

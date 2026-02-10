@@ -237,6 +237,29 @@ export const getJournals = async(cursor = null, limit = 5, userId) =>{
         throw error;
     }
 }
+
+export const getJournalById = async(journalId, userId) => {
+    if (!journalId) {
+        throw new Error('journalId is required');
+    }
+
+    let url = `${BASE_URL}/journal/${encodeURIComponent(journalId)}`;
+    if (userId) {
+        url += `?userId=${encodeURIComponent(userId)}`;
+    }
+
+    const response = await apiRequest(url, {
+        method: 'GET'
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch journal');
+    }
+
+    const data = await response.json();
+    return data;
+}
 export const getUserJournals = async(cursor = null, limit = 5, userId) =>{
     try {
         const url = cursor ? `${BASE_URL}/userJournals?limit=${limit}&before=${cursor}&userId=${userId}` : `${BASE_URL}/userJournals?limit=${limit}&userId=${userId}`;

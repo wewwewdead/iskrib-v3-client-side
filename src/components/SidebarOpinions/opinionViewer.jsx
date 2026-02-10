@@ -83,7 +83,7 @@ const OpinionViewer = () => {
                                         <img
                                             className="so-avatar"
                                             src={opinion.users.image_url || '../assets/profile.jpg'}
-                                            alt=""
+                                            alt={`${opinion?.users?.name || "User"} profile picture`}
                                         />
                                     </div>
                                     <div className="so-name-block">
@@ -120,7 +120,7 @@ const OpinionViewer = () => {
                                 <img
                                     className="ov-reply-avatar"
                                     src={user?.userData[0].image_url || '../assets/profile.jpg'}
-                                    alt=""
+                                    alt={`${user?.userData?.[0]?.name || "User"} profile picture`}
                                 />
                                 <div
                                     className="ov-reply-input"

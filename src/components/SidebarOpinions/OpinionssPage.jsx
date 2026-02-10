@@ -239,7 +239,7 @@ const OpinionsPage = () =>{
                                 <div className="so-user-row">
                                     <div className="so-user-meta">
                                         <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                            <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt="" />
+                                            <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
                                         </div>
                                         <div className="so-name-block">
                                             <div className="so-name-line">

@@ -160,7 +160,7 @@ const Bookmarks = () =>{
                             <img
                                 className="bookmark-card-image-banner"
                                 src={parsedContent.firstImage.src}
-                                alt=""
+                                alt={journal?.journals?.title ? `${journal.journals.title} cover image` : "Bookmarked post cover image"}
                                 loading="lazy"
                                 onClick={(e) => handleClick(
                                     e,
@@ -214,7 +214,7 @@ const Bookmarks = () =>{
                         <div className="bookmark-card-footer">
                             <div className='user-info-child-container'>
                                 <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className={`user-avatar-container ${journal?.journals?.users?.badge === 'legend' ? 'avatar-ring-legend' : journal?.journals?.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                    <img loading='lazy' src={journal?.journals?.users?.image_url || '/assets/profile.jpg'} className="user-info-avatar" alt="" />
+                                    <img loading='lazy' src={journal?.journals?.users?.image_url || '/assets/profile.jpg'} className="user-info-avatar" alt={`${journal?.journals?.users?.name || "User"} profile picture`} />
                                 </div>
                                 <div onClick={(e) => handleclickUserProfile(e, user?.userData?.[0].id, journal.journals.user_id)} className="user-name-container">
                                     <p className="user-newsfeed-name">{journal?.journals?.users?.name}</p>

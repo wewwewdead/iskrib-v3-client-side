@@ -281,7 +281,7 @@ const NotificationCards = () =>{
                                         <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
                                     </div>
                                     <div className="notif-content-image-container">
-                                        <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt="" />
+                                        <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt={notification?.journals?.title ? `${notification.journals.title} cover image` : "Notification post cover image"} />
                                     </div>
                                     </>
                                 )}

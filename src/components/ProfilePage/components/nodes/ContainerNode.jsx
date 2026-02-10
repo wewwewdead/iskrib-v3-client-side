@@ -1186,7 +1186,7 @@ const ContainerComponent = ({
                     >
                         <img
                             src={src}
-                            alt=""
+                            alt="Note image"
                             className="inner-container-img"
                             style={getImageStyle(index)}
                         />
@@ -1416,7 +1416,7 @@ const ContainerComponent = ({
                             >
                                 <img
                                     src={src}
-                                    alt=""
+                                    alt="Note image"
                                     className={`inner-container-img draggable${imgLoading && index === 0 ? " loading" : ""}`}
                                     style={getImageStyle(index)}
                                     onPointerDown={(e) => handleImageMoveStart(e, index)}

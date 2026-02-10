@@ -21,7 +21,7 @@ const ProfileHeroSection = ({
                         className="my-profile-image"
                         loading="lazy"
                         src={userData?.image_url || "/assets/profile.jpg"}
-                        alt=""
+                        alt={`${userData?.name || "User"} profile picture`}
                     />
                 </div>
                 <div className="profile-stats-container">

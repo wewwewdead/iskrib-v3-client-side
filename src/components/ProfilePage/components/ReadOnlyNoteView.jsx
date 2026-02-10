@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -43,6 +43,7 @@ const theme = {
 
 const ReadOnlyNoteView = ({ content, expandInnerContainerOnClick = false }) => {
     const contentEditableRef = useRef(null);
+    const [expandedImageSrc, setExpandedImageSrc] = useState(null);
 
     const initialConfig = {
         namespace: "ReadOnlyNote",
@@ -59,6 +60,20 @@ const ReadOnlyNoteView = ({ content, expandInnerContainerOnClick = false }) => {
         document.body.classList.remove("visit-note-fullview-active");
     }, []);
 
+    const openExpandedImage = useCallback((imageSrc) => {
+        if (!imageSrc) return;
+        setExpandedImageSrc(imageSrc);
+        document.body.classList.add("visit-note-fullview-active");
+    }, []);
+
+    const closeExpandedImage = useCallback(() => {
+        setExpandedImageSrc(null);
+        const hasExpandedContainer = !!document.querySelector(".note-inner-container.is-visit-full-view");
+        if (!hasExpandedContainer) {
+            document.body.classList.remove("visit-note-fullview-active");
+        }
+    }, []);
+
     const handleInnerContainerClick = useCallback(
         (event) => {
             if (!expandInnerContainerOnClick) return;
@@ -67,6 +82,13 @@ const ReadOnlyNoteView = ({ content, expandInnerContainerOnClick = false }) => {
             const targetElement =
                 rawTarget instanceof Element ? rawTarget : rawTarget?.parentElement || null;
             if (!targetElement) return;
+
+            const targetImage = targetElement.closest(".inner-container-img");
+            const clickedImageSrc = targetImage?.getAttribute("src");
+            if (clickedImageSrc) {
+                openExpandedImage(clickedImageSrc);
+                return;
+            }
 
             const targetContainer = targetElement.closest(".note-inner-container");
             if (!targetContainer) return;
@@ -79,7 +101,7 @@ const ReadOnlyNoteView = ({ content, expandInnerContainerOnClick = false }) => {
                 document.body.classList.add("visit-note-fullview-active");
             }
         },
-        [collapseExpandedInnerContainers, expandInnerContainerOnClick]
+        [collapseExpandedInnerContainers, expandInnerContainerOnClick, openExpandedImage]
     );
 
     useEffect(() => {
@@ -99,6 +121,10 @@ const ReadOnlyNoteView = ({ content, expandInnerContainerOnClick = false }) => {
 
         const handleKeyDown = (event) => {
             if (event.key === "Escape") {
+                if (expandedImageSrc) {
+                    closeExpandedImage();
+                    return;
+                }
                 collapseExpandedInnerContainers();
             }
         };
@@ -107,27 +133,52 @@ const ReadOnlyNoteView = ({ content, expandInnerContainerOnClick = false }) => {
         return () => {
             document.removeEventListener("keydown", handleKeyDown);
             collapseExpandedInnerContainers();
+            document.body.classList.remove("visit-note-fullview-active");
         };
-    }, [collapseExpandedInnerContainers, expandInnerContainerOnClick]);
+    }, [closeExpandedImage, collapseExpandedInnerContainers, expandInnerContainerOnClick, expandedImageSrc]);
 
     if (!content) {
         return <div className="readonly-note-placeholder">Empty note</div>;
     }
 
     return (
-        <LexicalComposer initialConfig={initialConfig}>
-            <RichTextPlugin
-                contentEditable={
-                    <ContentEditable
-                        ref={contentEditableRef}
-                        className={`readonly-note-content${expandInnerContainerOnClick ? " visit-inner-expand-enabled" : ""}`}
+        <>
+            <LexicalComposer initialConfig={initialConfig}>
+                <RichTextPlugin
+                    contentEditable={
+                        <ContentEditable
+                            ref={contentEditableRef}
+                            className={`readonly-note-content${expandInnerContainerOnClick ? " visit-inner-expand-enabled" : ""}`}
+                        />
+                    }
+                    placeholder={null}
+                    ErrorBoundary={LexicalErrorBoundary}
+                />
+                <LoadContentPlugin content={content} />
+            </LexicalComposer>
+
+            {expandedImageSrc && (
+                <div className="visit-image-fullview-overlay" onClick={closeExpandedImage} role="dialog" aria-modal="true">
+                    <button
+                        type="button"
+                        className="visit-image-fullview-close"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            closeExpandedImage();
+                        }}
+                        aria-label="Close image preview"
+                    >
+                        Close
+                    </button>
+                    <img
+                        src={expandedImageSrc}
+                        alt="Expanded note content"
+                        className="visit-image-fullview-img"
+                        onClick={(event) => event.stopPropagation()}
                     />
-                }
-                placeholder={null}
-                ErrorBoundary={LexicalErrorBoundary}
-            />
-            <LoadContentPlugin content={content} />
-        </LexicalComposer>
+                </div>
+            )}
+        </>
     );
 };
 

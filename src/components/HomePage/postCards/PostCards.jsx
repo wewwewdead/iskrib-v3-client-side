@@ -303,7 +303,7 @@ const PostCards = () => {
                             <img
                                 className="card-image-banner"
                                 src={parsedContent.firstImage.src}
-                                alt=""
+                                alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                 loading="lazy"
                                 onClick={(e) => viewContent(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge)}
                             />
@@ -323,7 +323,7 @@ const PostCards = () => {
                         <div className="card-icons-container">
                             <div className="user-info-child-container">
                                 <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className={`user-avatar-container ${journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                    <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '/assets/profile.jpg'} alt="" />
+                                    <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '/assets/profile.jpg'} alt={`${journal?.users?.name || "User"} profile picture`} />
                                 </div>
                                 <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-name-container">
                                     <p className="user-newsfeed-name">{journal.users.name}</p>

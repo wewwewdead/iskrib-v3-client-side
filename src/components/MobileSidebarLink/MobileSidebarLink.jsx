@@ -44,7 +44,7 @@ const MobileSidebarLink = ({onclose}) => {
                 <div className='sidebar-profile-container'>
                 
                     <div onClick={(e) => clickProfile()} className='sidebar-profile-avatar-container'>
-                        <img className='sidebar-profile-avatar' src={userData?.image_url || '/assets/profile.jpg'} alt="" />
+                        <img className='sidebar-profile-avatar' src={userData?.image_url || '/assets/profile.jpg'} alt={`${userData?.name || "User"} profile picture`} />
                     </div>
 
                     <div onClick={signOut} className='sidebar-signout-bttn'>

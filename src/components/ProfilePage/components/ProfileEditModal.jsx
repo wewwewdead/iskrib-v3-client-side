@@ -74,7 +74,7 @@ const ProfileEditModal = ({
                             <img
                                 className="my-profile-image-editable"
                                 src={editImagePreview || userData?.image_url || "/assets/profile.jpg"}
-                                alt=""
+                                alt={`${userData?.name || "User"} profile picture preview`}
                             />
                         </div>
 

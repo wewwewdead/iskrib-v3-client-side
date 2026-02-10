@@ -1,10 +1,24 @@
-
+const slugifyTitle = (value = "") => {
+    return String(value)
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+}
 
 export const handleCLickContent = (navigate) => {
     return (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge) => {
     e.stopPropagation()
 
-    navigate('/home/contentViewer', {
+    const encodedJournalId = journalId ? encodeURIComponent(journalId) : '';
+    const postSlug = slugifyTitle(title);
+    const nextPath = journalId
+        ? `/home/post/${encodedJournalId}${postSlug ? `/${postSlug}` : ''}`
+        : '/home/contentViewer';
+
+    navigate(nextPath, {
         state: {
             content: jsonbContent,
             wholeText: wholeText,

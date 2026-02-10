@@ -50,7 +50,7 @@ const Sidebar = ({links}) =>{
                 {userData && (
                     <>
                     <div className='sidebar-avatar-container'>
-                        <img loading='lazy' className='sidebar-avatar' src={userData.image_url || '/assets/profile.jpg'} alt="" />
+                        <img loading='lazy' className='sidebar-avatar' src={userData.image_url || '/assets/profile.jpg'} alt={`${userData?.name || "User"} profile picture`} />
 
                         <div className='sidebar-metadata-container'>
                             <span className='sidebar-name'>{userData.name}<VerifiedBadge badge={userData.badge} size={14} /></span>

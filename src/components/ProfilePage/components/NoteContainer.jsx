@@ -14,6 +14,7 @@ const NoteContainer = ({
     onSaveNotes,
     hasUnsavedChanges,
     isSaving,
+    showHeading,
 }) => {
     const [showStyleEditor, setShowStyleEditor] = useState(false);
 
@@ -35,6 +36,8 @@ const NoteContainer = ({
     return (
         <>
             <div className="profile-note-container" style={containerStyles}>
+                {showHeading && <h2 className="notes-section-heading">Notes</h2>}
+
                 {isOwner && (
                     <div className="note-controls">
                         <button

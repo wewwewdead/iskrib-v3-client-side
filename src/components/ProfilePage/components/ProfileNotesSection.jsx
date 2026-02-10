@@ -152,11 +152,12 @@ const ProfileNotesSection = ({ notes: initialNotes, isOwner, userData, expandInn
 
             {sortedNotes.length > 0 && (
                 <div className="notes-list">
-                    {sortedNotes.map((note) => (
+                    {sortedNotes.map((note, index) => (
                         <NoteContainer
                             key={note.id}
                             note={note}
                             isOwner={isOwner}
+                            showHeading={index === 0}
                             expandInnerContainerOnClick={expandInnerContainerOnClick}
                             onUpdateContent={(content) => handleUpdateContent(note.id, content)}
                             onUpdateStyle={(styleData) => handleUpdateStyle(note.id, styleData)}

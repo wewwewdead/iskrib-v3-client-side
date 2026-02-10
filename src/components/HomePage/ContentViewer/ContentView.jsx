@@ -4,19 +4,20 @@ import ImageNode from "../Editor/nodes/ImageNode";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import './contentviewer.css'
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MoonLoader } from "react-spinners";
 import CalculateText from "../postCards/calculateReadingTime";
+import ParseContent from "../postCards/parseData";
 import { useBookMarkMutation, useFollowMutation, useLikeMutation } from "../../../utils/useMutation";
 import { useAuth } from "../../../Context/useAuth";
 import CommentSection from "../../comments/comments";
 import debounce from "../../../../helpers/debounce";
 import formatCounts from "../../../../helpers/fomatCounts";
 import { handleClickProfile } from "../../../../helpers/handleClicks";
-import { getFollowsData } from "../../../../API/Api";
+import { getFollowsData, getJournalById } from "../../../../API/Api";
 import { useQuery } from "@tanstack/react-query";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 
@@ -54,14 +55,47 @@ const ContentView = () => {
     }
 
     const location = useLocation();
-    const postData = location.state;
+    const { journalId } = useParams();
+    const statePostData = location.state;
 
-    const { data: followsData, isLoading } = useQuery({
-        queryKey: ['followsData', user?.userData?.[0].id, postData?.userId],
+    const { data: fetchedJournalData, isLoading: isLoadingJournalById } = useQuery({
+        queryKey: ['journalById', journalId, user?.userData?.[0]?.id],
+        queryFn: ({ queryKey }) => getJournalById(queryKey[1], queryKey[2]),
+        enabled: !statePostData && !!journalId,
+        staleTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
+    });
+
+    const postData = statePostData || (() => {
+        const journal = fetchedJournalData?.journal;
+        if (!journal) return null;
+
+        const parsedContent = ParseContent(journal?.content);
+
+        return {
+            content: journal?.content,
+            wholeText: parsedContent?.wholeText || '',
+            title: journal?.title,
+            userId: journal?.users?.id || journal?.user_id,
+            name: journal?.users?.name,
+            avatar: journal?.users?.image_url,
+            created_at: journal?.created_at,
+            journalId: journal?.id,
+            isLiked: journal?.has_liked,
+            commentsCount: journal?.comment_count?.[0]?.count || 0,
+            isBookmarked: journal?.has_bookmarked,
+            likesCount: journal?.like_count?.[0]?.count || 0,
+            bookmarksCount: journal?.bookmark_count?.[0]?.count || 0,
+            badge: journal?.users?.badge
+        };
+    })();
+
+    const { data: followsData, isLoading: isLoadingFollows } = useQuery({
+        queryKey: ['followsData', user?.userData?.[0]?.id, postData?.userId],
         queryFn: ({ queryKey }) => getFollowsData(queryKey[1], queryKey[2]),
         staleTime: 1000 * 60 * 60,
         cacheTime: 1000 * 60 * 60,
-        enabled: !!user?.userData?.[0].id && !!postData?.userId,
+        enabled: !!user?.userData?.[0]?.id && !!postData?.userId,
     });
 
     const handleclickUserProfile = handleClickProfile(navigate);
@@ -119,11 +153,23 @@ const ContentView = () => {
     }
 
     useEffect(() => {
+        if (!postData) return;
         setLikesCount(postData?.likesCount);
         setBookmarkCounts(postData?.bookmarksCount);
         setIsliked(postData?.isLiked);
         setIsBookmarked(postData?.isBookmarked);
     }, [postData]);
+
+    useEffect(() => {
+        if (postData?.title) {
+            document.title = `${postData.title} | Iskrib`;
+            return () => {
+                document.title = 'Iskrib';
+            };
+        }
+
+        document.title = 'Iskrib';
+    }, [postData?.title]);
 
     useEffect(() => {
         const hideBackBttn = () => {
@@ -145,18 +191,24 @@ const ContentView = () => {
         }
     }, []);
 
-    useEffect(() =>{
-         console.log(postData)
-    }, [postData])
-
-    if (isLoading) {
+    if (isLoadingJournalById || isLoadingFollows) {
         return (
             <div className="cv-loading">
-                <MoonLoader loading={isLoading} color="var(--loader-color)" size={25} />
+                <MoonLoader loading={isLoadingJournalById || isLoadingFollows} color="var(--loader-color)" size={25} />
             </div>
         )
     }
-    
+
+    if (!postData) {
+        return (
+            <div className="cv-loading">
+                <p>Post is unavailable.</p>
+                <button onClick={handleBackLocation} className="cv-back-btn" style={{ marginTop: "12px" }}>
+                    Go back
+                </button>
+            </div>
+        )
+    }
 
     return (
         <>

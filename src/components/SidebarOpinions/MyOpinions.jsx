@@ -74,7 +74,7 @@ const MyOpinions = () =>{
                 >
                     <div className="ov-user-row">
                         <div className={`ov-avatar-container ${user?.userData[0]?.badge === 'legend' ? 'avatar-ring-legend' : user?.userData[0]?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                            <img className="ov-avatar" src={user?.userData[0].image_url || "../../assets/profile.jpg"} alt="" />
+                            <img className="ov-avatar" src={user?.userData[0].image_url || "../../assets/profile.jpg"} alt={`${user?.userData?.[0]?.name || "User"} profile picture`} />
                         </div>
                         <span className="ov-username">{user?.userData[0].name}</span>
                         <VerifiedBadge badge={user?.userData[0]?.badge} size={14} />

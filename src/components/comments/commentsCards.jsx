@@ -166,7 +166,7 @@ const CommentsCards = ({comments, postId}) =>{
                         onClick={(e) => clickProfile(e, user?.userData[0].id, comments?.user_id)}
                         className={`cm-avatar-container ${comments?.users?.badge === 'legend' ? 'cm-ring-legend' : comments?.users?.badge === 'og' ? 'cm-ring-og' : ''}`}
                     >
-                        <img className="cm-avatar" src={comments?.users?.image_url || '/assets/profile.jpg'} alt="" />
+                        <img className="cm-avatar" src={comments?.users?.image_url || '/assets/profile.jpg'} alt={`${comments?.users?.name || "User"} profile picture`} />
                     </div>
                     <span
                         onClick={(e) => clickProfile(e, user?.userData[0].id, comments?.user_id)}
