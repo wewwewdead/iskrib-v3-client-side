@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "prebuild": "npm run seo:sitemap",
+    "build": "vite build && npm run seo:prerender",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seo:sitemap": "node ./scripts/generate-sitemap.mjs",
+    "seo:prerender": "node ./scripts/prerender-routes.mjs"
   },
   "dependencies": {
     "@lexical/react": "^0.17.0",

@@ -1,0 +1,6 @@
+/home/* /index.html 200
+/profile/* /index.html 200
+/visitProfile/* /index.html 200
+/login /index.html 200
+/signUp /index.html 200
+/* /index.html 200

@@ -1,11 +1,12 @@
 import { lazy, Suspense } from 'react'
 import './App.css'
-import { Routes, Route, HashRouter, Navigate} from 'react-router-dom'
+import { Routes, Route, BrowserRouter, Navigate} from 'react-router-dom'
 import { useAuth } from './Context/useAuth.js';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
 import Loader from './components/loadingComponent/BgLoader.jsx';
+import SeoManager from './seo/SeoManager.jsx';
 
 const AuthModal = lazy(() => import('./components/AuthModal/AuthModal.jsx'));
 const HomePage = lazy(() => import('./components/HomePage/home.jsx'));
@@ -70,7 +71,8 @@ const App = () => {
   return (
     <>
     <LexicalComposer initialConfig={initaConfig}>
-      <HashRouter>
+      <BrowserRouter>
+        <SeoManager />
         <AppSplash />
         <Suspense fallback={null}>
           <AppAuthModal/>
@@ -112,7 +114,7 @@ const App = () => {
             <Route path='/signUp' element={<SignUp/>}/>
           </Routes>
         </Suspense>
-      </HashRouter>
+      </BrowserRouter>
     </LexicalComposer>
     </>
   )
