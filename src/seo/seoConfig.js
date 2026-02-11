@@ -42,6 +42,16 @@ export const SEO_ROUTES = [
     sitemap: { changefreq: "daily", priority: "0.8" },
   },
   {
+    path: "/home/explore",
+    title: `${SITE_NAME} Explore`,
+    description:
+      "Discover the hottest posts and search across community journals on Iskryb.",
+    canonicalPath: "/home/explore",
+    robots: "index,follow",
+    prerender: true,
+    sitemap: { changefreq: "daily", priority: "0.8" },
+  },
+  {
     path: "/login",
     title: `Log In | ${SITE_NAME}`,
     description: `Log in to ${SITE_NAME} to continue writing and engaging with the community.`,

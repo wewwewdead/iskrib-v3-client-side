@@ -3,7 +3,7 @@ import supabase from "./supabaseClient";
 import BASE_URL from "./apiBaseUrl";
 import apiRequest from "./apiRequest";
 
-const getCroppedImage = async (imageSrc, crop, userId) => {
+const getCroppedImage = async (imageSrc, crop, userId, token) => {
     if(!imageSrc || !crop){
         console.warn('getCroppedImage called without valid image source or crop data')
         return null
@@ -49,11 +49,14 @@ const getCroppedImage = async (imageSrc, crop, userId) => {
         const formdata = new FormData();
         formdata.append('image', blob);
         formdata.append('userId', userId)
+        const headers = {};
+        if(token) headers['Authorization'] = `Bearer ${token}`;
 
         try {
             const response = await apiRequest(`${BASE_URL}/uploadBackground`, {
                 method: 'POST',
                 body: formdata,
+                headers: headers,
             })
             if(!response.ok){
                 throw new Error('Upload failed');

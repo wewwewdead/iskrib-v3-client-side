@@ -238,6 +238,30 @@ export const getJournals = async(cursor = null, limit = 5, userId) =>{
     }
 }
 
+export const searchJournals = async(query, limit = 10, userId) => {
+    const normalizedQuery = typeof query === 'string' ? query.trim() : '';
+    if(!normalizedQuery){
+        return {data: [], hasMore: false, mode: 'keyword'};
+    }
+
+    let url = `${BASE_URL}/journals/search?query=${encodeURIComponent(normalizedQuery)}&limit=${limit}`;
+    if(userId){
+        url += `&userId=${encodeURIComponent(userId)}`;
+    }
+
+    const response = await apiRequest(url, {
+        method: 'GET'
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to search journals');
+    }
+
+    const data = await response.json();
+    return data;
+}
+
 export const getJournalById = async(journalId, userId) => {
     if (!journalId) {
         throw new Error('journalId is required');
@@ -260,12 +284,15 @@ export const getJournalById = async(journalId, userId) => {
     const data = await response.json();
     return data;
 }
-export const getUserJournals = async(cursor = null, limit = 5, userId) =>{
+export const getUserJournals = async(cursor = null, limit = 5, userId, token) =>{
     try {
+        const headers = {};
+        if(token) headers['Authorization'] = `Bearer ${token}`;
         const url = cursor ? `${BASE_URL}/userJournals?limit=${limit}&before=${cursor}&userId=${userId}` : `${BASE_URL}/userJournals?limit=${limit}&userId=${userId}`;
 
         const response = await apiRequest(url, {
-            method: 'GET'
+            method: 'GET',
+            headers: headers
         })
         
         if(!response.ok){
@@ -390,10 +417,13 @@ export const addBookmark = async(token, journalId) =>{
     return message;
 }
 
-export const getBookmarks = async(cursor= null, limit= 5, userId) =>{
+export const getBookmarks = async(cursor= null, limit= 5, userId, token) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
     const url = cursor ? `${BASE_URL}/getBookmarks?limit=${limit}&before=${cursor}&userId=${userId}` : `${BASE_URL}/getBookmarks?limit=${limit}&userId=${userId}`;
     const response = await apiRequest(url, {
         method: 'GET',
+        headers: headers,
     })
 
     if(!response.ok){
@@ -437,8 +467,10 @@ export const getFollowsData = async(loggedInUserId, userIdToFollow) =>{
     return data;
 }
 
-export const getNotificationsCount = async(userId) => {
-    const response = await apiRequest(`${BASE_URL}/getCountNotifications?userId=${userId}`);
+export const getNotificationsCount = async(userId, token) => {
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await apiRequest(`${BASE_URL}/getCountNotifications?userId=${userId}`, { headers: headers });
     if(!response.ok){
         const error = await response.json();
         throw new Error(error);
@@ -581,11 +613,14 @@ export const addCollections = async(token, body) => {
     return message;
 }
 
-export const getCollections = async(userId, cursor, limit) =>{
+export const getCollections = async(userId, cursor, limit, token) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
     const url = cursor ? `${BASE_URL}/getCollections?userId=${userId}&before=${cursor}&limit=${limit}` : `${BASE_URL}/getCollections?userId=${userId}&limit=${limit}`
 
     const response = await apiRequest(url, {
-        method: 'GET',  
+        method: 'GET',
+        headers: headers,
     })
 
     if(!response.ok){
@@ -617,11 +652,14 @@ export const getCollectionJournals = async(collectionId, cursor, limit, token) =
     return data
 }
 
-export const getNotCollectedJournals = async(cursor, limit, userId, collectionId) =>{
+export const getNotCollectedJournals = async(cursor, limit, userId, collectionId, token) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
     const url = cursor ? `${BASE_URL}/getNotCollectedPost?before=${cursor}&limit=${limit}&userId=${userId}&collectionId=${collectionId}` :  `${BASE_URL}/getNotCollectedPost?limit=${limit}&userId=${userId}&collectionId=${collectionId}`;
 
     const response = await apiRequest(url, {
-        method: 'GET'
+        method: 'GET',
+        headers: headers,
     })
     if(!response.ok){
         const error = await response.json();
@@ -670,10 +708,13 @@ export const deleteCollection = async(token, collectionId) =>{
     return message;
 }
 
-export const updateCollectionPrivacy = async(body) =>{
+export const updateCollectionPrivacy = async(body, token) =>{
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
     const response = await apiRequest(`${BASE_URL}/updatePrivacyCollection`, {
         method: 'post',
-        body: body
+        body: body,
+        headers: headers,
     })
 
     if(!response.ok){

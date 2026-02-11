@@ -2,15 +2,17 @@ import { useInfiniteQuery } from "@tanstack/react-query"
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom"
 import { getCollections } from "../../../API/Api";
-import { MoonLoader } from "react-spinners";
+import { useAuth } from "../../Context/useAuth";
+import './collection.css';
 import formatPostDate from "../../../helpers/formatDateString";
 import { useInView } from "react-intersection-observer";
-import ViewUserCollection from "./ViewUserCollections";
+
 
 const CollectionViewer = () =>{
     const location = useLocation();
     const userId = location.state?.userId || new URLSearchParams(location.search).get('userId');
     const navigate = useNavigate();
+    const { session } = useAuth();
 
     const {ref, inView} = useInView({
         threshold: 0,
@@ -18,7 +20,7 @@ const CollectionViewer = () =>{
 
     const {data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['visitedProfileCollections', userId],
-        queryFn: ({queryKey, pageParam = null}) => getCollections(queryKey[1], pageParam, 5),
+        queryFn: ({queryKey, pageParam = null}) => getCollections(queryKey[1], pageParam, 5, session?.access_token),
         getNextPageParam: (lastPage) =>{
             if(lastPage?.hasMore){
                 const lastJournal = lastPage?.data[lastPage?.data?.length - 1]
@@ -59,69 +61,97 @@ const CollectionViewer = () =>{
 
     if(isLoading){
         return(
-            <>
             <div key={1} className="collection-container">
-                <div className="collection-profile-loading-container">
-                    <MoonLoader loading={isLoading} color="var(--loader-color)" size={25}/>
+                <div className="collection-container-header">
+                    <h3 className="collection-container-title">Collections</h3>
+                </div>
+                <div className="cv-grid">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="cv-skeleton" />
+                    ))}
                 </div>
             </div>
-            </>
         )
     }
 
     if(collections.length === 0 && !isLoading){
         return(
-            <>
             <div key={2} className="collection-container">
+                <div className="collection-container-header">
+                    <h3 className="collection-container-title">Collections</h3>
+                </div>
                 <div className="no-collections-container">
-                    <svg className="empty-state-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                    </svg>
+                    <div className="empty-state-icon-ring">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 -960 960 960" width="28px" fill="currentColor">
+                            <path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h480q33 0 56.5 23.5T800-800v640q0 33-23.5 56.5T720-80H240Zm0-80h480v-640H240v640Zm240-40q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6Zm-120-80h240v-80H360v80Zm0-120h240v-80H360v80Z"/>
+                        </svg>
+                    </div>
                     <h3 className="empty-state-title">No collections yet</h3>
                     <p className="empty-state-description">This user hasn't created any collections.</p>
                 </div>
             </div>
-            </>
         )
     }
 
     return(
         <>
         <div className="collection-container">
-            {collections?.map((collection) => {
-                const accentIndex = collection.id ? collection.id.toString().charCodeAt(0) % 4 : 0;
-                return (
-                <div key={collection.id} className="collection-cards-profile-container">
-                <div onClick={(e) => handleClickCards(e, collection.id, collection.name, collection.description, collection.is_public)} key={collection.id} className="collection-cards-profile">
+            <div className="collection-container-header">
+                <h3 className="collection-container-title">Collections</h3>
+                <span className="collection-container-count">{collections.length}</span>
+            </div>
+            <div className="cv-grid">
+                {collections?.map((collection) => {
+                    const accentIndex = collection.id ? collection.id.toString().charCodeAt(0) % 4 : 0;
+                    return (
+                    <div key={collection.id} onClick={(e) => handleClickCards(e, collection.id, collection.name, collection.description, collection.is_public)} className="cv-card">
 
-                    {collection.is_public === 'private' && (
-                        <div className="collection-private-blocker">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="50px" height="50px" viewBox="0 0 24 24" fill="none">
-                                <path fillRule="evenodd" clipRule="evenodd" d="M15.9202 12.7988C15.9725 12.5407 16 12.2736 16 12C16 9.79086 14.2091 8 12 8C11.7264 8 11.4593 8.02746 11.2012 8.07977L12.1239 9.00251C13.6822 9.06583 14.9342 10.3178 14.9975 11.8761L15.9202 12.7988ZM9.39311 10.5143C9.14295 10.9523 9 11.4595 9 12C9 13.6569 10.3431 15 12 15C12.5405 15 13.0477 14.857 13.4857 14.6069L14.212 15.3332C13.5784 15.7545 12.8179 16 12 16C9.79086 16 8 14.2091 8 12C8 11.1821 8.24547 10.4216 8.66676 9.78799L9.39311 10.5143Z" fill="#bdbdbdff"/>
-                                <path fillRule="evenodd" clipRule="evenodd" d="M16.1537 17.2751L15.4193 16.5406C14.3553 17.1196 13.1987 17.5 12 17.5C10.3282 17.5 8.73816 16.7599 7.36714 15.7735C6.00006 14.79 4.89306 13.5918 4.19792 12.7478C3.77356 12.2326 3.72974 12.1435 3.72974 12C3.72974 11.8565 3.77356 11.7674 4.19792 11.2522C4.86721 10.4396 5.9183 9.29863 7.21572 8.33704L6.50139 7.62271C5.16991 8.63072 4.10383 9.79349 3.42604 10.6164L3.36723 10.6876C3.03671 11.087 2.72974 11.4579 2.72974 12C2.72974 12.5421 3.0367 12.913 3.36723 13.3124L3.42604 13.3836C4.15099 14.2638 5.32014 15.5327 6.78312 16.5853C8.24216 17.635 10.0361 18.5 12 18.5C13.5101 18.5 14.9196 17.9886 16.1537 17.2751ZM9.18993 6.06861C10.0698 5.71828 11.0135 5.5 12 5.5C13.9639 5.5 15.7579 6.365 17.2169 7.41472C18.6799 8.46727 19.849 9.73623 20.574 10.6164L20.6328 10.6876C20.9633 11.087 21.2703 11.4579 21.2703 12C21.2703 12.5421 20.9633 12.913 20.6328 13.3124L20.574 13.3836C20.0935 13.9669 19.418 14.721 18.5911 15.4697L17.883 14.7617C18.6787 14.0456 19.3338 13.3164 19.8021 12.7478C20.2265 12.2326 20.2703 12.1435 20.2703 12C20.2703 11.8565 20.2265 11.7674 19.8021 11.2522C19.107 10.4082 18 9.21001 16.6329 8.22646C15.2619 7.24007 13.6718 6.5 12 6.5C11.3056 6.5 10.6253 6.62768 9.96897 6.84765L9.18993 6.06861Z" fill="#bdbdbdff"/>
-                                <path d="M5 2L21 18" stroke="#bdbdbdff"/>
+                        {collection.is_public === 'private' && (
+                            <div className="collection-private-blocker">
+                                <div className="private-blocker-content">
+                                    <div className="private-blocker-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="currentColor">
+                                            <path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"/>
+                                        </svg>
+                                    </div>
+                                    <span className="private-blocker-label">Private</span>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="cv-gradient-header" data-accent={accentIndex}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18,2 C19.3807,2 20.5,3.11929 20.5,4.5 L20.5,18.75 C20.5,19.1642 20.1642,19.5 19.75,19.5 L5.5,19.5 C5.5,20.0523 5.94772,20.5 6.5,20.5 L19.75,20.5 C20.1642,20.5 20.5,20.8358 20.5,21.25 C20.5,21.6642 20.1642,22 19.75,22 L6.5,22 C5.11929,22 4,20.8807 4,19.5 L4,4.5 C4,3.11929 5.11929,2 6.5,2 L18,2 Z"/>
                             </svg>
+                            {collection.is_public === 'public' ? (
+                                <span className="cv-badge cv-badge--public">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 -960 960 960" fill="currentColor"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/></svg>
+                                    Public
+                                </span>
+                            ) : (
+                                <span className="cv-badge cv-badge--private">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 -960 960 960" fill="currentColor"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Z"/></svg>
+                                    Private
+                                </span>
+                            )}
                         </div>
-                    )}
-
-                    <div className="collection-gradient-header" data-accent={accentIndex}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ffffff', opacity: 0.2 }}>
-                            <path d="M18,2 C19.3807,2 20.5,3.11929 20.5,4.5 L20.5,18.75 C20.5,19.1642 20.1642,19.5 19.75,19.5 L5.5,19.5 C5.5,20.0523 5.94772,20.5 6.5,20.5 L19.75,20.5 C20.1642,20.5 20.5,20.8358 20.5,21.25 C20.5,21.6642 20.1642,22 19.75,22 L6.5,22 C5.11929,22 4,20.8807 4,19.5 L4,4.5 C4,3.11929 5.11929,2 6.5,2 L18,2 Z"/>
-                        </svg>
+                        <div className="cv-card-body">
+                            <div className="cv-card-name text-truncate">
+                                {collection.name}
+                            </div>
+                            <div className="cv-card-date">
+                                {formatPostDate(collection.created_at)}
+                            </div>
+                            {collection.description && (
+                                <div className="cv-card-description text-truncate-2">
+                                    {collection.description}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <div className="collection-name-container text-truncate">
-                        {collection.name}
-                    </div>
-                    <div className="collection-date-created">
-                        Created {formatPostDate(collection.created_at)}
-
-                    </div>
-                </div>
-                </div>
-                )
-            })}
-
+                    )
+                })}
+            </div>
         </div>
         <div ref={ref} className="viewer">
         </div>

@@ -249,7 +249,7 @@ export const useUpdateJournalPrivacyMutation = (session) =>{
 export const useUpdateCollectionPrivacyMutation = (session) => {
     const queryClient= useQueryClient();
     return useMutation({
-        mutationFn: (data) => updateCollectionPrivacy(data),
+        mutationFn: (data) => updateCollectionPrivacy(data, session?.access_token),
         onMutate: async(data) =>{
             const userId = data.get('userId')
             const collectionId = data.get('collectionId')

@@ -30,6 +30,7 @@ const OpinionsPage = lazy(() => import('./components/SidebarOpinions/OpinionssPa
 const VisitedProfileOpinions = lazy(() => import('./components/SidebarOpinions/visitedProfileOpinions.jsx'));
 const MyOpinions = lazy(() => import('./components/SidebarOpinions/MyOpinions.jsx'));
 const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionViewer.jsx'));
+const ExplorePage = lazy(() => import('./components/HomePage/explore/ExplorePage.jsx'));
 
 const AppAuthModal = () => {
   const {showAuthModal, closeAuthModal} = useAuth();
@@ -92,6 +93,7 @@ const App = () => {
 
             <Route path='/home' element={<HomePage/>}>
               <Route index element={<PostCards/>}/>
+              <Route path='explore' element={<ExplorePage/>}/>
               <Route path='contentViewer' element={<ContentView/>}/>
               <Route path='post/:journalId' element={<ContentView/>}/>
               <Route path='post/:journalId/:slug' element={<ContentView/>}/>

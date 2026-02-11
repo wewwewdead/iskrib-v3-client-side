@@ -72,7 +72,7 @@ const CollectionCards = () =>{
         isLoading
     } = useInfiniteQuery({
         queryKey: ['getCollections', user?.userData?.[0].id],
-        queryFn: ({pageParam, queryKey}) => getCollections(queryKey[1], pageParam, 5),
+        queryFn: ({pageParam, queryKey}) => getCollections(queryKey[1], pageParam, 5, session?.access_token),
         getNextPageParam: (lastPage) => {
             if(lastPage?.hasMore){
                 const lastJournal = lastPage.data[lastPage?.data?.length - 1];

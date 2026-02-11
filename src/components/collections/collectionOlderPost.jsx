@@ -7,7 +7,7 @@ import { MoonLoader } from "react-spinners";
 import { useInView } from 'react-intersection-observer';
 
 const OlderPost = ({onSave, onClose}) =>{
-    const {user} = useAuth();
+    const {user, session} = useAuth();
     const [selectedPostMap, setSelectedPostMap] = useState(new Map());
     const {ref, inView} = useInView({threshold: 0.2})
 
@@ -44,7 +44,7 @@ const OlderPost = ({onSave, onClose}) =>{
         isLoading,
     } = useInfiniteQuery({
         queryKey: ['userJournals', user?.userData?.[0].id],
-        queryFn: ({queryKey, pageParam}) => getUserJournals(pageParam, 5, queryKey[1]),
+        queryFn: ({queryKey, pageParam}) => getUserJournals(pageParam, 5, queryKey[1], session?.access_token),
         getNextPageParam: (lastPage) =>{
             if(lastPage.hasMore){
                 const lastJournal = lastPage?.data[lastPage?.data.length - 1];

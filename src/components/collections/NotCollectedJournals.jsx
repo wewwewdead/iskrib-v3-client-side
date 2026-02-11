@@ -18,7 +18,7 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
 
     const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['getNotCollected', user?.userData[0].id, collectionId],
-        queryFn: ({queryKey, pageParam}) => getNotCollectedJournals(pageParam, 5, queryKey[1], queryKey[2]),
+        queryFn: ({queryKey, pageParam}) => getNotCollectedJournals(pageParam, 5, queryKey[1], queryKey[2], session?.access_token),
         getNextPageParam: (lastPage) => {
             if(lastPage.hasMore){
                 const lastNotCollected = lastPage?.data[lastPage?.data?.length - 1];

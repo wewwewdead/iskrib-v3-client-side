@@ -196,7 +196,7 @@ const MyProfile = () => {
         try {
             setIsUpdatingProfileConfig(true);
             if (imageSrc) {
-                const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels, userData.id);
+                const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels, userData.id, session?.access_token);
                 if (croppedImageUrl) {
                     setCroppedImage({
                         backgroundImage: `url(${croppedImageUrl?.url})`,

@@ -62,7 +62,7 @@ export const AuthProvider = ({children}) => {
 
     const {data: notifCount, isLoading: isLoadingNotifCount} = useQuery({
         queryKey: ['notifcounts', authData?.user?.id],
-        queryFn: ({queryKey}) => getNotificationsCount(queryKey[1]),
+        queryFn: ({queryKey}) => getNotificationsCount(queryKey[1], authData?.access_token),
         enabled: !!authData?.access_token,
         staleTime: 1000 * 60 * 60,
         cacheTime: 1000 * 60 * 60,

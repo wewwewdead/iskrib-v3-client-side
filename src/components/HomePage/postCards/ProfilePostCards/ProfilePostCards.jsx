@@ -86,7 +86,7 @@ const ProfilePostCards = () =>{
         isLoading,
     } = useInfiniteQuery({
         queryKey: ['userJournals', user?.userData?.[0].id],
-        queryFn: ({queryKey, pageParam}) => getUserJournals(pageParam, 5, queryKey[1]),
+        queryFn: ({queryKey, pageParam}) => getUserJournals(pageParam, 5, queryKey[1], session?.access_token),
         getNextPageParam: (lastPage) =>{
             if(lastPage.hasMore){
                 const lastJournal = lastPage?.data[lastPage?.data.length - 1];

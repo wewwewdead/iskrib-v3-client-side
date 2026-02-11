@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef, use } from "react";
-import { MoonLoader, BeatLoader } from "react-spinners";
+import React, { useEffect, useState, useRef } from "react";
+import { MoonLoader } from "react-spinners";
 import { motion, AnimatePresence,} from "framer-motion";
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import './postcards.css';
-import {getJournals,} from "../../../../API/Api";
+import { getJournals, searchJournals } from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
@@ -20,11 +20,11 @@ import formatPostDate from "../../../../helpers/formatDateString";
 
 const PostCards = () => {
     const {session, user, openAuthModal} = useAuth();
-    const queryClient = useQueryClient();
     const location = useLocation();
 
     const navigate = useNavigate();
     const modalRef = useRef(null);
+    const searchShellRef = useRef(null);
     const timeOutRef = useRef();
     const {ref, inView} = useInView({
         threshold: 0,
@@ -35,6 +35,10 @@ const PostCards = () => {
 
     const [bookmarkedMessage, setBookmarkedMessage] = useState('');
     const [showBookmarkedMessage, setShowBookmarkedMessage] = useState(null);
+    const [searchInput, setSearchInput] = useState('');
+    const [debouncedSearchInput, setDebouncedSearchInput] = useState('');
+    const [committedSearchQuery, setCommittedSearchQuery] = useState('');
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
 
     const handleClickUserProfileOriginal = handleClickProfile(navigate);
     const clickContent = handleCLickContent(navigate);
@@ -126,13 +130,22 @@ const PostCards = () => {
     ]
 
     const userId = user?.userData?.[0]?.id || null;
+    const isSearchMode = committedSearchQuery.length >= 2;
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchInput(searchInput.trim());
+        }, 350);
+
+        return () => clearTimeout(timer);
+    }, [searchInput]);
 
     const {
         data,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
-        isLoading,
+        isLoading: isFeedLoading,
     } = useInfiniteQuery({
         queryKey: ['journals', userId],
         queryFn: ({pageParam = null}) => getJournals(pageParam, 5, userId),
@@ -145,6 +158,30 @@ const PostCards = () => {
         } ,
         refetchOnWindowFocus: false
     })
+
+    const {
+        data: searchData,
+        isLoading: isSearchLoading,
+        isFetching: isSearchFetching,
+        error: searchError,
+    } = useQuery({
+        queryKey: ['journals-search', userId, committedSearchQuery],
+        queryFn: () => searchJournals(committedSearchQuery, 10, userId),
+        enabled: isSearchMode,
+        refetchOnWindowFocus: false,
+        staleTime: 15 * 1000,
+    });
+
+    const {
+        data: suggestionData,
+        isLoading: isSuggestionsLoading,
+    } = useQuery({
+        queryKey: ['journals-suggestions', userId, debouncedSearchInput],
+        queryFn: () => searchJournals(debouncedSearchInput, 6, userId),
+        enabled: debouncedSearchInput.length >= 2 && isSearchFocused,
+        refetchOnWindowFocus: false,
+        staleTime: 10 * 1000,
+    });
 
     const handleClickSettings = (e, postId) =>{
         e.stopPropagation();
@@ -193,13 +230,64 @@ const PostCards = () => {
 
     const debounceClickBookmark = debounce(handleClickBookmark, 100);
 
+    const handleSubmitSearch = (rawQuery) => {
+        const normalizedQuery = typeof rawQuery === 'string' ? rawQuery.trim() : '';
+        if(normalizedQuery.length < 2){
+            setCommittedSearchQuery('');
+            return;
+        }
 
-    const isLoadingMore = isFetchingNextPage || !hasNextPage;
+        setCommittedSearchQuery(normalizedQuery);
+        setSearchInput(normalizedQuery);
+        setIsSearchFocused(false);
+    };
+
+    const handleClearSearch = () => {
+        setSearchInput('');
+        setDebouncedSearchInput('');
+        setCommittedSearchQuery('');
+        setIsSearchFocused(false);
+    };
+
+    const handleSearchInputKeyDown = (e) => {
+        if(e.key === 'Enter'){
+            e.preventDefault();
+            handleSubmitSearch(searchInput);
+        }
+
+        if(e.key === 'Escape'){
+            setIsSearchFocused(false);
+        }
+    };
+
+    const handleClickSuggestion = (journal) => {
+        if(!journal?.id){
+            return;
+        }
+        setIsSearchFocused(false);
+        if(journal?.title){
+            setSearchInput(journal.title);
+            setDebouncedSearchInput(journal.title);
+        }
+        navigate(`/home/post/${journal.id}`);
+    };
+
+    useEffect(() => {
+        const handleOutsideSearchClick = (e) => {
+            if(searchShellRef.current && !searchShellRef.current.contains(e.target)){
+                setIsSearchFocused(false);
+            }
+        };
+
+        window.addEventListener('mousedown', handleOutsideSearchClick);
+        return () => window.removeEventListener('mousedown', handleOutsideSearchClick);
+    }, []);
+
     useEffect(() =>{
-        if(inView && !isLoadingMore) {
+        if(!isSearchMode && inView && hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
-    }, [inView, fetchNextPage, isLoadingMore])
+    }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage, isSearchMode])
 
 
     useEffect(() => {
@@ -235,11 +323,12 @@ const PostCards = () => {
         }
     }, [])
 
-    useEffect(() =>{
-        console.log(data)
-    }, [data])
-
-    const journals = data?.pages?.flatMap((page) => page.data || []) || [];
+    const feedJournals = data?.pages?.flatMap((page) => page.data || []) || [];
+    const searchedJournals = searchData?.data || [];
+    const suggestionItems = suggestionData?.data || [];
+    const journals = isSearchMode ? searchedJournals : feedJournals;
+    const isLoading = isSearchMode ? isSearchLoading : isFeedLoading;
+    const showSuggestions = isSearchFocused && debouncedSearchInput.length >= 2;
 
     if(isLoading) {
         return(
@@ -251,17 +340,61 @@ const PostCards = () => {
         )
     }
 
-    if(journals?.length === 0 && !isLoading) {
-        return(
-            <div className="postcards-parent-container">
-                <div>No post availabe...</div>
-            </div>
-        )
-    }
     return(
         <>
+        <div className="search-shell feed-search-shell" ref={searchShellRef}>
+        <div className="search-top-bar">
+            <div className="search-input-wrap">
+                <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M10 2a8 8 0 1 0 4.906 14.32l4.387 4.387a1 1 0 0 0 1.414-1.414L16.32 14.906A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12a6 6 0 0 1 0-12Z"/>
+                </svg>
+                <input
+                    type="search"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onKeyDown={handleSearchInputKeyDown}
+                    placeholder="Search writings by meaning or title..."
+                    className="search-input"
+                    aria-label="Search journals"
+                />
+            </div>
+            {searchInput ? (
+                <button type="button" className="search-clear-btn" onClick={handleClearSearch}>
+                    Clear
+                </button>
+            ) : null}
+            {isSearchMode ? (
+                <span className="search-mode-pill">
+                    {isSearchFetching ? 'Searching...' : 'Matched'}
+                </span>
+            ) : null}
+        </div>
+        {showSuggestions && (
+            <div className="search-suggestions-dropdown">
+                {isSuggestionsLoading ? (
+                    <div className="search-suggestion-item search-suggestion-muted">Searching...</div>
+                ) : suggestionItems.length > 0 ? (
+                    suggestionItems.map((item) => (
+                        <button
+                            key={item.id}
+                            type="button"
+                            className="search-suggestion-item"
+                            onClick={() => handleClickSuggestion(item)}
+                        >
+                            <span className="search-suggestion-title">{item.title || 'Untitled'}</span>
+                            <span className="search-suggestion-meta">{item?.users?.name || 'Unknown author'}</span>
+                        </button>
+                    ))
+                ) : (
+                    <div className="search-suggestion-item search-suggestion-muted">No suggestions</div>
+                )}
+            </div>
+        )}
+        </div>
+
         <AnimatePresence>
-            {showHeaders && (
+            {!isSearchMode && showHeaders && (
                 <motion.div
                 className="newsfeed-header"
                 initial={{opacity: 0}}
@@ -289,6 +422,15 @@ const PostCards = () => {
 
         <AnimatePresence>
         <div className="postcards-parent-container">
+            {journals.length === 0 && !isLoading && (
+                <div className="search-empty-state">
+                    {searchError
+                        ? 'Search failed. Please try again.'
+                        : isSearchMode
+                            ? 'No matching posts found.'
+                            : 'No post available...'}
+                </div>
+            )}
             {journals.map((journal, index) => {
                 const parsedContent = ParseContent(journal.content)
                 const isLiked = journal?.has_liked;
@@ -401,9 +543,11 @@ const PostCards = () => {
                 )
             })}
 
-             <div className="inview" ref={ref}>
-                <MoonLoader loading={isFetchingNextPage} color="rgba(255, 255, 255, 0.64)" speedMultiplier={1} size={20}/>
-            </div>
+            {!isSearchMode && (
+                <div className="inview" ref={ref}>
+                    <MoonLoader loading={isFetchingNextPage} color="rgba(255, 255, 255, 0.64)" speedMultiplier={1} size={20}/>
+                </div>
+            )}
         </div>
        </AnimatePresence>
         </>

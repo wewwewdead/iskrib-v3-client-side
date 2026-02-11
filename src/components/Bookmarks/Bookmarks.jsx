@@ -46,7 +46,7 @@ const Bookmarks = () =>{
     const queryClient = useQueryClient();
     const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} = useInfiniteQuery({
         queryKey: ['getBookmarks', userId],
-        queryFn: ({queryKey, pageParam = null}) => getBookmarks(pageParam, 5, queryKey[1]),
+        queryFn: ({queryKey, pageParam = null}) => getBookmarks(pageParam, 5, queryKey[1], session?.access_token),
         getNextPageParam: (lastPage) => {
             if(lastPage?.hasMore){
                 const lastBookmark = lastPage.bookmarks[lastPage?.bookmarks?.length - 1];
