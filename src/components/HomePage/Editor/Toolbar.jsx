@@ -6,19 +6,26 @@ import {
   $getSelection,
   $isRangeSelection,
   $createParagraphNode,
-  $getRoot,
-  $createRangeSelection,
-  $setSelection,
 } from "lexical";
 
 import { $createHeadingNode, $isHeadingNode, $createQuoteNode, $isQuoteNode } from "@lexical/rich-text";
 import { $getSelectionStyleValueForProperty, $patchStyleText, $setBlocksType } from "@lexical/selection";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $insertNodeToNearestRoot } from '@lexical/utils';
 
-import ImageNode, {$createImageNode, INSERT_IMAGE_COMMAND} from "./nodes/ImageNode";
+import { INSERT_IMAGE_COMMAND } from "./nodes/ImageNode";
 import { saveJournalImage } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
+
+const DEFAULT_ACTIVE_STATES = {
+    bold: false,
+    italic: false,
+    underline: false,
+    heading: null,
+    quote: false,
+    alignment: 'left',
+    textColor: '',
+    highlightColor: '',
+};
 
 const ToolBar = ({addUploadedImagePath}) =>{
     const [editor] = useLexicalComposerContext();
@@ -26,16 +33,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
     const colorPickerRef = useRef(null);
 
     // Active state tracking
-    const [activeStates, setActiveStates] = useState({
-        bold: false,
-        italic: false,
-        underline: false,
-        heading: null,   // 'h1' | 'h2' | 'h3' | null
-        quote: false,
-        alignment: 'left',
-        textColor: '',
-        highlightColor: '',
-    });
+    const [activeStates, setActiveStates] = useState(DEFAULT_ACTIVE_STATES);
 
     const [showTextColorPicker, setShowTextColorPicker] = useState(false);
     const [showHighlightColorPicker, setShowHighlightColorPicker] = useState(false);
@@ -66,12 +64,50 @@ const ToolBar = ({addUploadedImagePath}) =>{
         { label: 'Blue Gray', value: '#607d8b' },
     ];
 
+    const toCompactRgb = (value) => {
+        if (!value) return '';
+        return value.toLowerCase().replace(/\s+/g, '');
+    };
+
+    const normalizeColor = (value) => {
+        if (!value) return '';
+        const trimmed = value.trim().toLowerCase();
+        if (!trimmed.startsWith('#')) {
+            return toCompactRgb(trimmed);
+        }
+
+        let hex = trimmed.slice(1);
+        if (hex.length === 3) {
+            hex = hex.split('').map((char) => `${char}${char}`).join('');
+        }
+        if (hex.length !== 6) {
+            return trimmed;
+        }
+
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+
+        return `rgb(${r},${g},${b})`;
+    };
+
+    const isPaletteColorActive = (activeValue, paletteValue) => {
+        const normalizedActive = normalizeColor(activeValue);
+        if (!paletteValue) {
+            return !normalizedActive;
+        }
+        return normalizedActive === normalizeColor(paletteValue);
+    };
+
     // Register update listener for active state detection
     useEffect(() => {
         return editor.registerUpdateListener(({ editorState }) => {
             editorState.read(() => {
                 const selection = $getSelection();
-                if (!$isRangeSelection(selection)) return;
+                if (!$isRangeSelection(selection)) {
+                    setActiveStates(DEFAULT_ACTIVE_STATES);
+                    return;
+                }
 
                 const bold = selection.hasFormat('bold');
                 const italic = selection.hasFormat('italic');
@@ -83,7 +119,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
                     element = anchorNode.getKey() === 'root'
                         ? anchorNode
                         : anchorNode.getTopLevelElement() || anchorNode.getTopLevelElementOrThrow();
-                } catch (e) {
+                } catch {
                     element = null;
                 }
 
@@ -139,10 +175,13 @@ const ToolBar = ({addUploadedImagePath}) =>{
     }
 
     const applyTextStyle = useCallback((styles) => {
+        const sanitizedStyles = Object.fromEntries(
+            Object.entries(styles).map(([key, value]) => [key, value ?? ''])
+        );
         editor.update(() => {
             const selection = $getSelection();
             if ($isRangeSelection(selection)) {
-                $patchStyleText(selection, styles);
+                $patchStyleText(selection, sanitizedStyles);
             }
         });
     }, [editor]);
@@ -168,7 +207,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
 
                 const type = typeof element.getType === 'function' ? element.getType() : null;
 
-                if (type && type !== "paragraph" && type !== "heading") {
+                if (type && type !== "paragraph" && type !== "heading" && type !== "root") {
                     return;
                 }
 
@@ -206,7 +245,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
                 if (!element) return;
 
                 const type = typeof element.getType === 'function' ? element.getType() : null;
-                if (type && type !== "paragraph" && type !== "heading" && type !== "quote") {
+                if (type && type !== "paragraph" && type !== "heading" && type !== "quote" && type !== "root") {
                     return;
                 }
 
@@ -345,9 +384,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
                     {showTextColorPicker && (
                         <div className="color-popover" onMouseDown={(e) => e.preventDefault()}>
                             {COLOR_PALETTE.map((color) => {
-                                const isActive = color.value
-                                    ? activeStates.textColor?.toLowerCase() === color.value.toLowerCase()
-                                    : !activeStates.textColor;
+                                const isActive = isPaletteColorActive(activeStates.textColor, color.value);
                                 const swatchClass = color.value
                                     ? 'color-swatch'
                                     : 'color-swatch is-default';
@@ -393,9 +430,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
                     {showHighlightColorPicker && (
                         <div className="color-popover" onMouseDown={(e) => e.preventDefault()}>
                             {COLOR_PALETTE.map((color) => {
-                                const isActive = color.value
-                                    ? activeStates.highlightColor?.toLowerCase() === color.value.toLowerCase()
-                                    : !activeStates.highlightColor;
+                                const isActive = isPaletteColorActive(activeStates.highlightColor, color.value);
                                 const swatchClass = color.value
                                     ? 'color-swatch'
                                     : 'color-swatch is-default';

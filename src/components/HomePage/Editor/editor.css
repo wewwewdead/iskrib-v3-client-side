@@ -277,6 +277,27 @@
 .editor-paragraph {
     margin: 0;
 }
+.editor-heading-h1 {
+    margin: 0.9rem 0 0.45rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text-heading);
+}
+.editor-heading-h2 {
+    margin: 0.8rem 0 0.4rem;
+    font-size: 1.4rem;
+    font-weight: 650;
+    line-height: 1.3;
+    color: var(--text-heading);
+}
+.editor-heading-h3 {
+    margin: 0.7rem 0 0.35rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--text-heading);
+}
 .editor-quote {
     margin: 0.5rem 0;
     padding: 0.3rem 0.65rem;
