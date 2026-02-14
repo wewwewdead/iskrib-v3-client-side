@@ -999,6 +999,268 @@
     font-weight: 600;
 }
 
+.profile-media-section{
+    width: 90%;
+    margin: 1rem 0 1.4rem;
+    padding: 0.9rem;
+    border-radius: 18px;
+    border: 0.7px solid var(--border-light);
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+}
+.profile-media-header-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.65rem;
+}
+.profile-media-heading{
+    margin: 0;
+    padding: 0;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+.profile-media-count{
+    font-family: var(--font-ui);
+    font-size: 1.2rem;
+    font-weight: 600;
+    opacity: 0.7;
+}
+.profile-media-warning{
+    margin: 0 0 0.5rem;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    opacity: 0.78;
+}
+.profile-media-empty-state{
+    margin: 0;
+    padding: 1rem 0.25rem 0.25rem;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    opacity: 0.75;
+}
+.profile-media-grid{
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
+}
+.profile-media-grid-item{
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.07);
+}
+.profile-media-grid-image-button{
+    width: 100%;
+    height: 100%;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    background: transparent;
+}
+.profile-media-image{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+.profile-media-grid-item:hover .profile-media-image{
+    transform: scale(1.03);
+    filter: saturate(1.04);
+}
+.profile-media-item-actions{
+    position: absolute;
+    top: 0.35rem;
+    right: 0.35rem;
+    z-index: 4;
+}
+.profile-media-item-settings-btn{
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #ffffff;
+    background-color: rgba(0, 0, 0, 0.46);
+    transition: background-color 0.15s ease;
+}
+.profile-media-item-settings-btn:hover{
+    background-color: rgba(0, 0, 0, 0.72);
+}
+.profile-media-item-settings-menu{
+    margin-top: 0.28rem;
+    min-width: 116px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 0.7px solid rgba(255, 255, 255, 0.18);
+    background-color: rgba(14, 14, 14, 0.95);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+.profile-media-item-delete-btn{
+    width: 100%;
+    border: none;
+    padding: 0.52rem 0.65rem;
+    text-align: left;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: #ffb4b4;
+    background-color: transparent;
+}
+.profile-media-item-delete-btn:hover{
+    background-color: rgba(255, 77, 77, 0.18);
+}
+.profile-media-grid-loading-item{
+    cursor: default;
+    animation: mediaPulse 1.1s ease-in-out infinite;
+}
+@keyframes mediaPulse{
+    0%{ opacity: 0.45; }
+    50%{ opacity: 0.95; }
+    100%{ opacity: 0.45; }
+}
+.profile-media-lightbox-overlay{
+    position: absolute;
+    inset: 0;
+    z-index: 180;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    padding: 1rem;
+}
+.profile-media-lightbox-dialog{
+    position: relative;
+    width: min(94vw, 1100px);
+    max-height: 92vh;
+    border-radius: 14px;
+    overflow: hidden;
+    background-color: rgba(12, 12, 12, 0.92);
+    border: 0.7px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+}
+.profile-media-lightbox-image{
+    width: 100%;
+    max-height: 92vh;
+    object-fit: contain;
+    display: block;
+}
+.profile-media-lightbox-close{
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.48);
+    transition: background-color 0.15s ease;
+}
+.profile-media-lightbox-close:hover{
+    background-color: rgba(0, 0, 0, 0.72);
+}
+.profile-media-infinite-sentinel{
+    width: 100%;
+    height: 1px;
+}
+.profile-media-delete-confirm-overlay{
+    position: absolute;
+    inset: 0;
+    z-index: 190;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: 1rem;
+}
+.profile-media-delete-confirm-dialog{
+    width: min(92vw, 360px);
+    border-radius: 14px;
+    padding: 1rem;
+    border: 0.7px solid rgba(255, 255, 255, 0.16);
+    background-color: var(--bg-elevated);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+}
+.profile-media-delete-confirm-title{
+    margin: 0;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.profile-media-delete-confirm-copy{
+    margin: 0.55rem 0 0;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+.profile-media-delete-confirm-copy span{
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.profile-media-delete-confirm-error{
+    margin: 0.5rem 0 0;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    color: #ff5f5f;
+}
+.profile-media-delete-confirm-actions{
+    margin-top: 0.95rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+.profile-media-delete-cancel-btn,
+.profile-media-delete-confirm-btn{
+    border: none;
+    border-radius: 8px;
+    padding: 0.48rem 0.78rem;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+.profile-media-delete-cancel-btn{
+    color: var(--text-primary);
+    background-color: var(--bg-hover);
+}
+.profile-media-delete-cancel-btn:hover{
+    background-color: var(--bg-secondary);
+}
+.profile-media-delete-confirm-btn{
+    color: #fff;
+    background-color: #d73a3a;
+}
+.profile-media-delete-confirm-btn:hover{
+    background-color: #b92929;
+}
+.profile-media-delete-cancel-btn:disabled,
+.profile-media-delete-confirm-btn:disabled{
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 /* mobile responsive */
 @media(max-width: 768px){
     .profile-sidebar-right-holder-container {
@@ -1014,6 +1276,12 @@
         width: 550px;
         height: 100vh;
         overflow-y: auto;
+    }
+    .profile-media-heading{
+        font-size: 1.45rem;
+    }
+    .profile-media-count{
+        font-size: 1rem;
     }
 }
 
@@ -1052,6 +1320,15 @@
     }
     .profile-name {
         font-size: 1.35rem;
+    }
+    .profile-media-section{
+        padding: 0.7rem;
+    }
+    .profile-media-heading{
+        font-size: 1.35rem;
+    }
+    .profile-media-count{
+        font-size: 0.95rem;
     }
     .profile-editor-bg {
         position: absolute;
@@ -1148,6 +1425,15 @@
     }
     .profile-name {
         font-size: 1.35rem;
+    }
+    .profile-media-section{
+        padding: 0.7rem;
+    }
+    .profile-media-heading{
+        font-size: 1.35rem;
+    }
+    .profile-media-count{
+        font-size: 0.95rem;
     }
     .profile-editor-bg {
         position: absolute;

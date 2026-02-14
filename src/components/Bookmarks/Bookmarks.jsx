@@ -13,6 +13,7 @@ import { useInView } from 'react-intersection-observer';
 import { useRef } from 'react';
 import VerifiedBadge from '../Badge/VerifiedBadge';
 import formatPostDate from '../../../helpers/formatDateString';
+import { handleImageFallback } from '../../utils/handleImageFallback';
 
 const Bookmarks = () =>{
     const {user, session} = useAuth();
@@ -162,6 +163,7 @@ const Bookmarks = () =>{
                                 src={parsedContent.firstImage.src}
                                 alt={journal?.journals?.title ? `${journal.journals.title} cover image` : "Bookmarked post cover image"}
                                 loading="lazy"
+                                onError={handleImageFallback}
                                 onClick={(e) => handleClick(
                                     e,
                                     journal.journals.content,

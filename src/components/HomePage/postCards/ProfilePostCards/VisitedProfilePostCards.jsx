@@ -11,6 +11,7 @@ import { useAuth } from '../../../../Context/useAuth';
 import { getVisitedUserJournals } from '../../../../../API/Api';
 import { useAddViewsMutation } from '../../../../utils/useMutation';
 import VerifiedBadge from '../../../Badge/VerifiedBadge';
+import { handleImageFallback } from '../../../../utils/handleImageFallback';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
@@ -124,7 +125,7 @@ const VisitedProfilePostCards = () =>{
                             >
                                 {thumbnail && (
                                     <div className="postcards-grid-img-wrap">
-                                        <img className="postcards-grid-thumb" src={thumbnail} alt={journal?.title ? `${journal.title} cover image` : "Post cover image"} loading="lazy" />
+                                        <img className="postcards-grid-thumb" src={thumbnail} alt={journal?.title ? `${journal.title} cover image` : "Post cover image"} loading="lazy" onError={handleImageFallback} />
                                     </div>
                                 )}
                                 <div className="postcards-grid-body">
@@ -156,6 +157,7 @@ const VisitedProfilePostCards = () =>{
                                 src={parsedContent.firstImage.src}
                                 alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                 loading="lazy"
+                                onError={handleImageFallback}
                                 onClick={(e) => viewContent(
                                     e,
                                     journal?.content,

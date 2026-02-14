@@ -8,6 +8,7 @@ import { useInView } from "react-intersection-observer";
 import { handleCLickContent } from "../../../helpers/handleClicks";
 import { MoonLoader } from "react-spinners";
 import './collection.css';
+import { handleImageFallback } from "../../utils/handleImageFallback";
 
 const ViewUserCollection = () =>{
     const {session} = useAuth();
@@ -118,7 +119,7 @@ const ViewUserCollection = () =>{
                     return(
                         <div onClick={(e) => handleClickCard(e, journal.journals.content, parseContent?.wholeText, journal.journals.title, journal.journals.users.id, journal.journals.users.name, journal.journals.users.image_url, journal.journals.created_at, journal.journals.id, journal.hasLiked, journal.journals.comments[0].count, journal.hasBookMarked, journal.journals.likes[0].count, journal.journals.bookmarks[0].count)} className="view-collection-card" key={journal.id}>
                             <div className="view-card-image-wrapper">
-                                <img className="view-card-image" src={parseContent?.firstImage?.src || "/assets/no-image.png"} alt={journal.journals.title ? `${journal.journals.title} cover` : "Journal cover"} />
+                                <img className="view-card-image" src={parseContent?.firstImage?.src || "/assets/no-image.png"} alt={journal.journals.title ? `${journal.journals.title} cover` : "Journal cover"} onError={handleImageFallback} />
                                 <div className="view-card-image-overlay" />
                             </div>
                             <div className="view-card-content">

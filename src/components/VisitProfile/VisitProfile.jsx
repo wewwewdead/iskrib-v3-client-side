@@ -17,9 +17,6 @@ import { useState } from 'react';
 import WriteJournalButton from '../WriteJournalButton/WriteJournalButton';
 import Editor from '../HomePage/Editor/Editor';
 import Loader from '../loadingComponent/BgLoader';
-import { PROFILE_SECTION_SIZES } from '../../utils/profileLayout/constants';
-import { normalizeProfileLayout } from '../../utils/profileLayout/normalizeProfileLayout';
-import ProfileNotesSection from '../ProfilePage/components/ProfileNotesSection';
 
 const Visitprofile = () =>{
     const location = useLocation();
@@ -35,8 +32,10 @@ const Visitprofile = () =>{
 
     const navigate = useNavigate();
     const visitedProfileNavState = { userId: visitedUserId };
+    const visibleProfileSections = [{id: 'stats'}, {id: 'bio'}, {id: 'joined_date'}];
     const tablists =[
         {label: 'Writings', path: '/visitProfile', action: () => navigate(`/visitProfile?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
+        {label: 'Media', path: '/visitProfile/media', action: () => navigate(`/visitProfile/media?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
         {label: 'Collections', path: '/visitProfile/visitedCollections', action: () => navigate(`/visitProfile/visitedCollections?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
         {label: 'Opinions', path:'/visitProfile/visitedOpinions', action: () => navigate(`/visitProfile/visitedOpinions?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})}
     ]
@@ -174,30 +173,7 @@ const Visitprofile = () =>{
     })
 
     const userData = data?.userData?.[0]
-    const profileLayout = normalizeProfileLayout(userData?.profile_layout);
-    const visitedNotes = (() => {
-        const rawLayout = userData?.profile_layout;
-        if (Array.isArray(rawLayout?.notes)) {
-            return rawLayout.notes;
-        }
-        if (typeof rawLayout === "string") {
-            try {
-                const parsedLayout = JSON.parse(rawLayout);
-                if (Array.isArray(parsedLayout?.notes)) {
-                    return parsedLayout.notes;
-                }
-            } catch (err) {
-                console.error("Failed to parse visited profile_layout:", err);
-            }
-        }
-        return profileLayout?.notes || [];
-    })();
-    const profileSections = profileLayout.sections;
-    const visibleProfileSections = profileSections.filter((section) => section.visible !== false);
-    const getProfileSectionSize = (sectionId) => {
-        const section = profileSections.find((item) => item?.id === sectionId);
-        return PROFILE_SECTION_SIZES.includes(section?.size) ? section.size : 'md';
-    };
+    const getProfileSectionSize = () => 'md';
 
     const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
         queryKey: ['followsData', user?.userData?.[0].id, visitedUserId],
@@ -324,13 +300,6 @@ const Visitprofile = () =>{
 
                     )
                 }
-
-                <ProfileNotesSection
-                    notes={visitedNotes}
-                    isOwner={false}
-                    userData={userData}
-                    expandInnerContainerOnClick
-                />
 
                 <div className='my-profile-tablist'>
                     {tablists.map((tab, index) => (

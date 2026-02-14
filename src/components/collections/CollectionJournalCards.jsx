@@ -10,6 +10,7 @@ import { useState } from "react";
 import NotCollectedJournalList from "./NotCollectedJournals";
 import { useInView } from "react-intersection-observer";
 import { useAddViewsMutation} from "../../utils/useMutation";
+import { handleImageFallback } from "../../utils/handleImageFallback";
 
 
 const CollectionJournals = () =>{
@@ -229,7 +230,7 @@ const CollectionJournals = () =>{
                 return(
                     <div onClick={(e) => viewContent(e, journal?.journals.content, parseContent?.wholeText, journal?.journals.title, journal?.journals?.users?.id, journal?.journals?.users?.name, journal?.journals?.users?.image_url, journal?.journals.created_at, journal?.journals.id, journal.hasLiked, journal?.journals?.comments[0]?.count, journal?.hasBookMarked, journal?.journals.likes[0]?.count, journal?.journals?.bookmarks[0]?.count)} key={journal.journals?.id} className="collections">
                         <div className="journal-collection-image-container">
-                            <img className="journal-collection-image" src={parseContent?.firstImage?.src || "/assets/no-image.png"} alt={journal?.journals?.title ? `${journal.journals.title} cover image` : "Collection post cover image"} />
+                            <img className="journal-collection-image" src={parseContent?.firstImage?.src || "/assets/no-image.png"} alt={journal?.journals?.title ? `${journal.journals.title} cover image` : "Collection post cover image"} onError={handleImageFallback} />
                         </div>
                         <div className="collections-title text-truncate">
                             {journal.journals?.title}

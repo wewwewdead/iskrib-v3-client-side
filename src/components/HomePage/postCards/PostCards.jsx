@@ -16,6 +16,7 @@ import formatCounts from "../../../../helpers/fomatCounts";
 import debounce from "../../../../helpers/debounce";
 import { handleClickProfile, handleCLickContent } from "../../../../helpers/handleClicks";
 import formatPostDate from "../../../../helpers/formatDateString";
+import { handleImageFallback } from "../../../utils/handleImageFallback";
 
 
 const PostCards = () => {
@@ -447,6 +448,7 @@ const PostCards = () => {
                                 src={parsedContent.firstImage.src}
                                 alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                 loading="lazy"
+                                onError={handleImageFallback}
                                 onClick={(e) => viewContent(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge)}
                             />
                         )}

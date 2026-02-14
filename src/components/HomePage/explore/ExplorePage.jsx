@@ -1,18 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MoonLoader } from "react-spinners";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { getJournals, searchJournals } from "../../../../API/Api";
+import { getMonthlyHottestJournals, searchJournals } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
 import ParseContent from "../postCards/parseData";
 import CalculateText from "../postCards/calculateReadingTime";
 import formatPostDate from "../../../../helpers/formatDateString";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
+import { handleImageFallback } from "../../../utils/handleImageFallback";
 import "../postCards/postcards.css";
 import "./explore.css";
 
 const getHotScore = (journal) => {
+    if(typeof journal?.hot_score === "number"){
+        return journal.hot_score;
+    }
+
     const likes = journal?.like_count?.[0]?.count || 0;
     const comments = journal?.comment_count?.[0]?.count || 0;
     const bookmarks = journal?.bookmark_count?.[0]?.count || 0;
@@ -56,6 +61,7 @@ const HeroCard = ({ journal, parsedContent, hotScore, onClick }) => (
                     src={parsedContent.firstImage.src}
                     alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                     loading="eager"
+                    onError={handleImageFallback}
                 />
                 <div className="explore-hero-image-overlay" />
             </div>
@@ -167,6 +173,7 @@ const RunnerCard = ({ journal, index, parsedContent, hotScore, onClick }) => (
                     src={parsedContent.firstImage.src}
                     alt=""
                     loading="lazy"
+                    onError={handleImageFallback}
                 />
             </div>
         )}
@@ -183,6 +190,7 @@ const ExplorePage = () => {
     const [debouncedSearchInput, setDebouncedSearchInput] = useState("");
     const [committedSearchQuery, setCommittedSearchQuery] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const currentUtcMonthKey = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -195,8 +203,8 @@ const ExplorePage = () => {
     const isSearchMode = committedSearchQuery.length >= 2;
 
     const { data: feedData, isLoading: isLoadingFeed } = useQuery({
-        queryKey: ["explore-hottest-feed", userId],
-        queryFn: () => getJournals(null, 20, userId),
+        queryKey: ["explore-hottest-monthly-feed", userId, currentUtcMonthKey],
+        queryFn: () => getMonthlyHottestJournals(userId, 10),
         refetchOnWindowFocus: false,
         staleTime: 15 * 1000,
     });
@@ -225,21 +233,7 @@ const ExplorePage = () => {
         staleTime: 10 * 1000,
     });
 
-    const hottestPosts = useMemo(() => {
-        const source = feedData?.data || [];
-
-        return [...source]
-            .sort((a, b) => {
-                const scoreDiff = getHotScore(b) - getHotScore(a);
-                if(scoreDiff !== 0){
-                    return scoreDiff;
-                }
-                return new Date(b.created_at) - new Date(a.created_at);
-            })
-            .slice(0, 5);
-    }, [feedData]);
-
-    const journals = isSearchMode ? (searchData?.data || []) : hottestPosts;
+    const journals = isSearchMode ? (searchData?.data || []) : (feedData?.data || []);
     const isLoading = isSearchMode ? isLoadingSearch : isLoadingFeed;
     const suggestionItems = suggestionData?.data || [];
     const showSuggestions = isSearchFocused && debouncedSearchInput.length >= 2;
@@ -439,6 +433,7 @@ const ExplorePage = () => {
                                             src={parsedContent.firstImage.src}
                                             alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                             loading="lazy"
+                                            onError={handleImageFallback}
                                         />
                                     )}
 

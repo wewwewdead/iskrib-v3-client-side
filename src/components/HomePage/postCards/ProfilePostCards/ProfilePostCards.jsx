@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import EditJournal from './editJournal';
 import { useAddViewsMutation, useUpdateJournalPrivacyMutation } from '../../../../utils/useMutation';
 import VerifiedBadge from '../../../Badge/VerifiedBadge';
+import { handleImageFallback } from '../../../../utils/handleImageFallback';
 
 const ProfilePostCards = () =>{
     const queryClient = useQueryClient();
@@ -345,7 +346,7 @@ const ProfilePostCards = () =>{
 
                                 {thumbnail && (
                                     <div className="postcards-grid-img-wrap">
-                                        <img className="postcards-grid-thumb" src={thumbnail} alt={journal?.title ? `${journal.title} cover image` : "Post cover image"} loading="lazy" />
+                                        <img className="postcards-grid-thumb" src={thumbnail} alt={journal?.title ? `${journal.title} cover image` : "Post cover image"} loading="lazy" onError={handleImageFallback} />
                                     </div>
                                 )}
                                 <div className="postcards-grid-body">
@@ -479,6 +480,7 @@ const ProfilePostCards = () =>{
                                     src={parsedContent.firstImage.src}
                                     alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                     loading="lazy"
+                                    onError={handleImageFallback}
                                     onClick={(e) => viewContent(e, journal.content, parsedContent.wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge)}
                                 />
                             )}

@@ -18,7 +18,9 @@ const ContentView = lazy(() => import('./components/HomePage/ContentViewer/Conte
 const Bookmarks = lazy(() => import('./components/Bookmarks/Bookmarks.jsx'));
 const Visitprofile = lazy(() => import('./components/VisitProfile/VisitProfile.jsx'));
 const ProfilePostCards = lazy(() => import('./components/HomePage/postCards/ProfilePostCards/ProfilePostCards.jsx'));
+const ProfileMediaSection = lazy(() => import('./components/ProfilePage/components/ProfileMediaSection.jsx'));
 const VisitedProfilePostCards = lazy(() => import('./components/HomePage/postCards/ProfilePostCards/VisitedProfilePostCards.jsx'));
+const VisitedProfileMediaSection = lazy(() => import('./components/VisitProfile/components/VisitedProfileMediaSection.jsx'));
 const Notifications = lazy(() => import('./components/Notifications/Notifications.jsx'));
 const NotificationCards = lazy(() => import('./components/Notifications/notificationsCards.jsx'));
 const UnreadNotification = lazy(() => import('./components/Notifications/UnreadNotificationCard.jsx'));
@@ -81,12 +83,13 @@ const App = () => {
             <Route path='/' element={<Navigate to='/home' replace/>}/>
             <Route path='/profile' element={<MyProfile/>}>
               <Route index element={<ProfilePostCards/>} />
+              <Route path='media' element={<ProfileMediaSection/>} />
               <Route path='myOpinions' element={<MyOpinions/>}/>         
             </Route>
 
             <Route path='/visitProfile' element={<Visitprofile/>}> 
               <Route index element={<VisitedProfilePostCards/>}/>
-              <Route path='media'/>
+              <Route path='media' element={<VisitedProfileMediaSection/>}/>
               <Route path='visitedCollections' element={<CollectionViewer/>}/>
               <Route path='visitedOpinions' element={<VisitedProfileOpinions/>}/>
             </Route>  

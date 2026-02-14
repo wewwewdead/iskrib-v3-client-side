@@ -17,7 +17,6 @@ import ProfileBackgroundPicker from "./components/ProfileBackgroundPicker";
 import ProfileEditModal from "./components/ProfileEditModal";
 import ProfileFontColorSelector from "./components/ProfileFontColorSelector";
 import ProfileHeroSection from "./components/ProfileHeroSection";
-import ProfileNotesSection from "./components/ProfileNotesSection";
 import ProfileTabList from "./components/ProfileTabList";
 import { PROFILE_GRADIENTS } from "./constants/profileGradients";
 import { createProfileSidebarLinks } from "./constants/profileSidebarLinks";
@@ -79,12 +78,9 @@ const MyProfile = () => {
     const tablists = PROFILE_TABS;
 
     useEffect(() => {
-        if (userData?.background) {
-            const backgroundImage = userData?.background;
-            setCroppedImage(backgroundImage);
-            setFontColor(userData?.profile_font_color);
-        }
-    }, [user, userData]);
+        setCroppedImage(userData?.background || null);
+        setFontColor(userData?.profile_font_color || "");
+    }, [userData?.background, userData?.profile_font_color]);
 
     const opendRichTextEditor = () => {
         setShowEditor(true);
@@ -335,6 +331,7 @@ const MyProfile = () => {
             />
             <AnimatePresence>
                 <ProfileEditModal
+                    key={"profile-edit-modal"}
                     showProfileEditor={showProfileEditor}
                     closeEditor={closeEditor}
                     croppedImage={croppedImage}
@@ -356,6 +353,7 @@ const MyProfile = () => {
                 {showEditor && <Editor key={"main-editor"} onClose={handleCloseRichTextEditor} />}
 
                 <div
+                    key={"profile-page-layout"}
                     className="profile-parent-container"
                     style={croppedImage ? { background: `linear-gradient(135deg, ${dominantColors}0%, ${secondaryColors} 100%)` } : gradientPicked}
                 >
@@ -378,12 +376,6 @@ const MyProfile = () => {
                             gradientPicked={gradientPicked}
                         />
 
-                        <ProfileNotesSection
-                            notes={userData?.profile_layout?.notes}
-                            isOwner={true}
-                            userData={userData}
-                        />
-
                         <ProfileTabList tablists={tablists} navigate={navigate} location={location} />
 
                         <Outlet />
@@ -402,3 +394,4 @@ const MyProfile = () => {
 };
 
 export default MyProfile;
+

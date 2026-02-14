@@ -63,38 +63,6 @@ export const getUserData = async(userId) =>{
      const data = await response.json();
      return data;
 }
-export const updateProfileLayout = async(token, profileLayout) => {
-    const headers = {'Content-Type': 'application/json'};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/updateProfileLayout`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ profileLayout })
-    })
-    if(!response.ok){
-        const error = await response.json();
-        throw new Error(error?.error || 'failed to update profile layout');
-    }
-    const data = await response.json();
-    return data;
-}
-
-export const uploadNotesImage = async(token, body) => {
-    const headers = {};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-    const response = await apiRequest(`${BASE_URL}/uploadNotesImage`, {
-        method: 'POST',
-        body: body,
-        headers: headers
-    })
-    if(!response.ok){
-        const error = await response.json();
-        throw new Error(error?.error || 'error uploading notes image');
-    }
-    const data = await response.json();
-    return data;
-}
 
 export const updateFontColor = async(token, fontColor) => {
     const headers = {};
@@ -238,6 +206,30 @@ export const getJournals = async(cursor = null, limit = 5, userId) =>{
     }
 }
 
+export const getMonthlyHottestJournals = async(userId, limit = 10) => {
+    const parsedLimit = Number(limit);
+    if(Number.isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 10){
+        throw new Error('limit should be an integer between 1 and 10');
+    }
+
+    let url = `${BASE_URL}/journals/hottest-monthly?limit=${parsedLimit}`;
+    if(userId){
+        url += `&userId=${encodeURIComponent(userId)}`;
+    }
+
+    const response = await apiRequest(url, {
+        method: 'GET'
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch monthly hottest journals');
+    }
+
+    const data = await response.json();
+    return data;
+}
+
 export const searchJournals = async(query, limit = 10, userId) => {
     const normalizedQuery = typeof query === 'string' ? query.trim() : '';
     if(!normalizedQuery){
@@ -305,6 +297,74 @@ export const getUserJournals = async(cursor = null, limit = 5, userId, token) =>
         console.error('Error fetching user journals:', error);
         throw error;
     }
+}
+
+export const getProfileMedia = async(token, cursor = null, limit = 5) => {
+    const headers = {};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+    const params = new URLSearchParams();
+    params.set('limit', String(limit));
+    if(cursor){
+        params.set('cursor', cursor);
+    }
+
+    const response = await apiRequest(`${BASE_URL}/profileMedia?${params.toString()}`, {
+        method: 'GET',
+        headers: headers
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch profile media');
+    }
+
+    return await response.json();
+}
+
+export const getVisitedProfileMedia = async(token, userId, cursor = null, limit = 5) => {
+    if(!userId){
+        throw new Error("userId is required");
+    }
+
+    const headers = {};
+    if(token) headers["Authorization"] = `Bearer ${token}`;
+
+    const params = new URLSearchParams();
+    params.set("userId", String(userId));
+    params.set("limit", String(limit));
+    if(cursor){
+        params.set("cursor", cursor);
+    }
+
+    const response = await apiRequest(`${BASE_URL}/visitedProfileMedia?${params.toString()}`, {
+        method: "GET",
+        headers: headers
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to fetch visited profile media");
+    }
+
+    return await response.json();
+}
+
+export const deleteProfileMediaImage = async(token, payload) => {
+    const headers = {"Content-Type": "application/json"};
+    if(token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/media/image`, {
+        method: "DELETE",
+        headers: headers,
+        body: JSON.stringify(payload || {})
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to delete profile media image");
+    }
+
+    return await response.json();
 }
 
 export const getVisitedUserJournals = async(cursor = null, limit = 5, userId, loggedInUserId) =>{

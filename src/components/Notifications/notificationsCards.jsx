@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { userDeleteNotificationMutation, useReadNotificationMutation } from "../../utils/useMutation";
 import { AnimatePresence, motion} from "framer-motion";
 import VerifiedBadge from "../Badge/VerifiedBadge";
+import { handleImageFallback } from "../../utils/handleImageFallback";
 
 const NotificationCards = () =>{
     const {user, session} = useAuth();
@@ -281,7 +282,7 @@ const NotificationCards = () =>{
                                         <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
                                     </div>
                                     <div className="notif-content-image-container">
-                                        <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt={notification?.journals?.title ? `${notification.journals.title} cover image` : "Notification post cover image"} />
+                                        <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt={notification?.journals?.title ? `${notification.journals.title} cover image` : "Notification post cover image"} onError={handleImageFallback} />
                                     </div>
                                     </>
                                 )}
