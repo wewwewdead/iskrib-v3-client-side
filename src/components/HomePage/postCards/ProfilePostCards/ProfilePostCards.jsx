@@ -15,6 +15,7 @@ import { useAddViewsMutation, useUpdateJournalPrivacyMutation } from '../../../.
 import VerifiedBadge from '../../../Badge/VerifiedBadge';
 import { handleImageFallback } from '../../../../utils/handleImageFallback';
 import { getCanvasPreview } from '../../../../utils/canvasDoc';
+import CanvasPreview from '../CanvasPreview/CanvasPreview';
 
 const ProfilePostCards = () =>{
     const queryClient = useQueryClient();
@@ -299,7 +300,7 @@ const ProfilePostCards = () =>{
                         return (
                             <motion.div
                                 key={journal.id}
-                                className="postcards-grid-item"
+                                className={`postcards-grid-item${isCanvasPost ? ' is-canvas-card' : ''}`}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -349,11 +350,15 @@ const ProfilePostCards = () =>{
                                     </AnimatePresence>
                                 )}
 
-                                {thumbnail && (
+                                {isCanvasPost ? (
+                                    <div className="postcards-grid-img-wrap">
+                                        <CanvasPreview canvasDoc={journal?.canvas_doc} />
+                                    </div>
+                                ) : thumbnail ? (
                                     <div className="postcards-grid-img-wrap">
                                         <img className="postcards-grid-thumb" src={thumbnail} alt={journal?.title ? `${journal.title} cover image` : "Post cover image"} loading="lazy" onError={handleImageFallback} />
                                     </div>
-                                )}
+                                ) : null}
                                 <div className="postcards-grid-body">
                                     <h3 className="postcards-grid-title">{journal.title.length > 32 ? `${journal.title.substring(0, 32)}...` : journal.title}</h3>
                                     {previewText && (
@@ -437,9 +442,13 @@ const ProfilePostCards = () =>{
                         transition={{duration: 0.3, ease: 'easeOut'}}
                     >
                         
-                        <div className={`profile-postcards ${showEditor === journal.id ? 'is-editing' : ''}`}>
+                        <div className={`profile-postcards ${showEditor === journal.id ? 'is-editing' : ''}${isCanvasPost ? ' is-canvas-card' : ''}`}>
                             {showEditor === journal.id && (
                                 <EditJournal key={index} journalData={journalData ? journalData : {}} onClose={handleClickCloseEditor}/>
+                            )}
+
+                            {isCanvasPost && (
+                                <CanvasPreview canvasDoc={journal?.canvas_doc} />
                             )}
 
                             {showConfirmationBttn === journal.id && (

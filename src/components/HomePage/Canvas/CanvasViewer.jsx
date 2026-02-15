@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Stage, Text } from "react-konva";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addCanvasMargin, addCanvasStamp, deleteCanvasMargin, deleteCanvasStamp, getCanvasMargins, getCanvasStamps } from "../../../../API/Api";
@@ -30,8 +30,55 @@ const PROFILE_SIZE = 13;
 const STICKY_WIDTH = 172;
 const STICKY_HEIGHT = 118;
 const REALTIME_CHANNEL_SUFFIX_LENGTH = 8;
+const OPTIMISTIC_STAMP_PREFIX = "optimistic-stamp";
+const OPTIMISTIC_MARGIN_PREFIX = "optimistic-margin";
+const DOODLE_COLOR_PRESETS = [
+    "#5f92ff",
+    "#ff4d6d",
+    "#ff7f11",
+    "#ffd23f",
+    "#22c55e",
+    "#14b8a6",
+    "#8b5cf6",
+    "#111827",
+    "#ffffff"
+];
+const LIVE_DOODLE_BROADCAST_EVENT = "doodle-progress";
+const LIVE_DOODLE_END_EVENT = "doodle-end";
+const LIVE_DOODLE_BROADCAST_INTERVAL_MS = 40;
+const LIVE_DOODLE_STALE_MS = 2200;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const createOptimisticId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+const toTimestamp = (value) => {
+    const parsed = Date.parse(value || "");
+    return Number.isNaN(parsed) ? 0 : parsed;
+};
+const sortByCreatedAt = (a, b) => {
+    const byDate = toTimestamp(a?.created_at) - toTimestamp(b?.created_at);
+    if(byDate !== 0){
+        return byDate;
+    }
+    return String(a?.id || "").localeCompare(String(b?.id || ""));
+};
+const sanitizeNormalizedPoints = (rawPoints) => {
+    if(!Array.isArray(rawPoints)){
+        return [];
+    }
+
+    const numericPoints = rawPoints
+        .map((point) => Number(point))
+        .filter((point) => !Number.isNaN(point))
+        .map((point) => clamp(point, 0, 1));
+
+    if(numericPoints.length < 2){
+        return [];
+    }
+
+    return numericPoints.length % 2 === 0
+        ? numericPoints
+        : numericPoints.slice(0, -1);
+};
 const getNameInitial = (name) => {
     const normalizedName = typeof name === "string" ? name.trim() : "";
     return normalizedName ? normalizedName.slice(0, 1).toUpperCase() : "?";
@@ -249,6 +296,12 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     const queryClient = useQueryClient();
     const shellRef = useRef(null);
     const stageRef = useRef(null);
+    const viewerClientIdRef = useRef(createOptimisticId("canvas-client"));
+    const realtimeChannelRef = useRef(null);
+    const currentDoodlePointsRef = useRef([]);
+    const pendingDoodlePayloadRef = useRef(null);
+    const doodleBroadcastTimerRef = useRef(null);
+    const lastDoodleBroadcastAtRef = useRef(0);
 
     const [shellWidth, setShellWidth] = useState(CANVAS_MAX_WIDTH);
     const [activeStampType, setActiveStampType] = useState("heart");
@@ -259,8 +312,7 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     const [doodleSize, setDoodleSize] = useState(2.8);
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentDoodlePoints, setCurrentDoodlePoints] = useState([]);
-    const [stickyText, setStickyText] = useState("");
-    const [stickyColor, setStickyColor] = useState("#fff4a8");
+    const [liveDoodlesByClient, setLiveDoodlesByClient] = useState({});
 
     const parsedCanvasDoc = useMemo(() => parseCanvasDoc(canvasDoc), [canvasDoc]);
     const sortedObjects = useMemo(() => {
@@ -309,111 +361,502 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
         refetchOnWindowFocus: false
     });
 
+    const stampsQueryKey = useMemo(() => ["canvasStamps", journalId], [journalId]);
+    const marginsQueryKey = useMemo(() => ["canvasMargins", journalId], [journalId]);
+    const currentUserProfile = user?.userData?.[0] || null;
+
+    const getKnownUserProfile = useCallback((targetUserId) => {
+        if(!targetUserId){
+            return {user_name: null, user_image_url: null};
+        }
+
+        if(currentUserProfile?.id === targetUserId){
+            return {
+                user_name: currentUserProfile?.name || null,
+                user_image_url: currentUserProfile?.image_url || null
+            };
+        }
+
+        const knownStamps = queryClient.getQueryData(stampsQueryKey)?.stamps || [];
+        const knownMargins = queryClient.getQueryData(marginsQueryKey)?.items || [];
+        const match = [...knownStamps, ...knownMargins].find((item) => (
+            item?.user_id === targetUserId && (item?.user_name || item?.user_image_url)
+        ));
+
+        return {
+            user_name: match?.user_name || null,
+            user_image_url: match?.user_image_url || null
+        };
+    }, [currentUserProfile?.id, currentUserProfile?.image_url, currentUserProfile?.name, marginsQueryKey, queryClient, stampsQueryKey]);
+
+    const normalizeStampRow = useCallback((row) => {
+        if(!row?.id){
+            return null;
+        }
+        const knownProfile = getKnownUserProfile(row.user_id);
+        return {
+            id: row.id,
+            journal_id: row.journal_id,
+            user_id: row.user_id,
+            snippet_id: row.snippet_id,
+            word_key: row.word_key,
+            stamp_type: row.stamp_type,
+            x: row.x,
+            y: row.y,
+            created_at: row.created_at,
+            user_name: row.user_name ?? knownProfile.user_name ?? null,
+            user_image_url: row.user_image_url ?? knownProfile.user_image_url ?? null
+        };
+    }, [getKnownUserProfile]);
+
+    const normalizeMarginRow = useCallback((row) => {
+        if(!row?.id){
+            return null;
+        }
+        const knownProfile = getKnownUserProfile(row.user_id);
+        return {
+            id: row.id,
+            journal_id: row.journal_id,
+            user_id: row.user_id,
+            item_type: row.item_type,
+            payload: row.payload || null,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+            user_name: row.user_name ?? knownProfile.user_name ?? null,
+            user_image_url: row.user_image_url ?? knownProfile.user_image_url ?? null
+        };
+    }, [getKnownUserProfile]);
+
+    const upsertStampCache = useCallback((stamp) => {
+        if(!stamp?.id){
+            return;
+        }
+
+        queryClient.setQueryData(stampsQueryKey, (old) => {
+            const previous = Array.isArray(old?.stamps) ? old.stamps : [];
+            const existingIndex = previous.findIndex((item) => String(item?.id) === String(stamp.id));
+            let nextStamps = previous;
+
+            if(existingIndex === -1){
+                nextStamps = [...previous, stamp];
+            } else {
+                nextStamps = [...previous];
+                nextStamps[existingIndex] = {...nextStamps[existingIndex], ...stamp};
+            }
+
+            nextStamps.sort(sortByCreatedAt);
+            return {...(old || {}), stamps: nextStamps};
+        });
+    }, [queryClient, stampsQueryKey]);
+
+    const upsertMarginCache = useCallback((item) => {
+        if(!item?.id){
+            return;
+        }
+
+        queryClient.setQueryData(marginsQueryKey, (old) => {
+            const previous = Array.isArray(old?.items) ? old.items : [];
+            const existingIndex = previous.findIndex((entry) => String(entry?.id) === String(item.id));
+            let nextItems = previous;
+
+            if(existingIndex === -1){
+                nextItems = [...previous, item];
+            } else {
+                nextItems = [...previous];
+                nextItems[existingIndex] = {...nextItems[existingIndex], ...item};
+            }
+
+            nextItems.sort(sortByCreatedAt);
+            return {...(old || {}), items: nextItems};
+        });
+    }, [marginsQueryKey, queryClient]);
+
+    const removeStampFromCache = useCallback((stampId) => {
+        if(!stampId){
+            return null;
+        }
+
+        let removedStamp = null;
+        queryClient.setQueryData(stampsQueryKey, (old) => {
+            const previous = Array.isArray(old?.stamps) ? old.stamps : [];
+            removedStamp = previous.find((item) => String(item?.id) === String(stampId)) || null;
+            const nextStamps = previous.filter((item) => String(item?.id) !== String(stampId));
+            return {...(old || {}), stamps: nextStamps};
+        });
+        return removedStamp;
+    }, [queryClient, stampsQueryKey]);
+
+    const removeMarginFromCache = useCallback((marginId) => {
+        if(!marginId){
+            return null;
+        }
+
+        let removedItem = null;
+        queryClient.setQueryData(marginsQueryKey, (old) => {
+            const previous = Array.isArray(old?.items) ? old.items : [];
+            removedItem = previous.find((entry) => String(entry?.id) === String(marginId)) || null;
+            const nextItems = previous.filter((entry) => String(entry?.id) !== String(marginId));
+            return {...(old || {}), items: nextItems};
+        });
+        return removedItem;
+    }, [marginsQueryKey, queryClient]);
+
+    const eventBelongsToJournal = useCallback((payload) => {
+        const journalIdAsString = String(journalId);
+        const newJournalId = payload?.new?.journal_id;
+        const oldJournalId = payload?.old?.journal_id;
+
+        if(newJournalId !== undefined){
+            return String(newJournalId) === journalIdAsString;
+        }
+        if(oldJournalId !== undefined){
+            return String(oldJournalId) === journalIdAsString;
+        }
+        return null;
+    }, [journalId]);
+
+    const clearQueuedDoodleBroadcast = useCallback(() => {
+        if(doodleBroadcastTimerRef.current){
+            clearTimeout(doodleBroadcastTimerRef.current);
+            doodleBroadcastTimerRef.current = null;
+        }
+    }, []);
+
+    const sendBroadcastEvent = useCallback((eventName, payload) => {
+        const channel = realtimeChannelRef.current;
+        if(!channel){
+            return;
+        }
+
+        channel.send({
+            type: "broadcast",
+            event: eventName,
+            payload: payload
+        }).catch((error) => {
+            console.error("Failed to send canvas broadcast event:", error);
+        });
+    }, []);
+
+    const flushQueuedDoodleBroadcast = useCallback(() => {
+        if(!pendingDoodlePayloadRef.current){
+            return;
+        }
+
+        const nextPayload = pendingDoodlePayloadRef.current;
+        pendingDoodlePayloadRef.current = null;
+        lastDoodleBroadcastAtRef.current = Date.now();
+        sendBroadcastEvent(LIVE_DOODLE_BROADCAST_EVENT, nextPayload);
+    }, [sendBroadcastEvent]);
+
+    const queueDoodleBroadcast = useCallback((payload, immediate = false) => {
+        pendingDoodlePayloadRef.current = payload;
+        if(immediate){
+            clearQueuedDoodleBroadcast();
+            flushQueuedDoodleBroadcast();
+            return;
+        }
+
+        const elapsed = Date.now() - lastDoodleBroadcastAtRef.current;
+        const delay = Math.max(0, LIVE_DOODLE_BROADCAST_INTERVAL_MS - elapsed);
+        if(doodleBroadcastTimerRef.current){
+            return;
+        }
+
+        doodleBroadcastTimerRef.current = setTimeout(() => {
+            doodleBroadcastTimerRef.current = null;
+            flushQueuedDoodleBroadcast();
+        }, delay);
+    }, [clearQueuedDoodleBroadcast, flushQueuedDoodleBroadcast]);
+
+    const broadcastDoodleEnd = useCallback((points = []) => {
+        clearQueuedDoodleBroadcast();
+        pendingDoodlePayloadRef.current = null;
+        sendBroadcastEvent(LIVE_DOODLE_END_EVENT, {
+            journalId: String(journalId),
+            clientId: viewerClientIdRef.current,
+            userId: currentUserProfile?.id || null,
+            points: sanitizeNormalizedPoints(points),
+            endedAt: Date.now()
+        });
+    }, [clearQueuedDoodleBroadcast, currentUserProfile?.id, journalId, sendBroadcastEvent]);
+
     useEffect(() => {
         if(!journalId){
             return;
         }
 
-        const stampsQueryKey = ["canvasStamps", journalId];
-        const marginsQueryKey = ["canvasMargins", journalId];
         const journalIdAsString = String(journalId);
         const realtimeChannelName = `canvas-live-${journalIdAsString}-${Math.random().toString(36).slice(2, REALTIME_CHANNEL_SUFFIX_LENGTH + 2)}`;
-
-        const shouldRefreshForJournal = (payload) => {
-            const newJournalId = payload?.new?.journal_id;
-            const oldJournalId = payload?.old?.journal_id;
-            if(newJournalId !== undefined && String(newJournalId) === journalIdAsString){
-                return true;
-            }
-            if(oldJournalId !== undefined && String(oldJournalId) === journalIdAsString){
-                return true;
-            }
-
-            // DELETE events can omit non-primary columns depending on Postgres replica identity.
-            return payload?.eventType === "DELETE";
-        };
-
-        const invalidateStamps = () => {
-            queryClient.invalidateQueries({queryKey: stampsQueryKey});
-        };
-        const invalidateMargins = () => {
-            queryClient.invalidateQueries({queryKey: marginsQueryKey});
-        };
 
         const channel = supabase
         .channel(realtimeChannelName)
         .on(
             "postgres_changes",
             {event: "*", schema: "public", table: "canvas_stamps", filter: `journal_id=eq.${journalIdAsString}`},
-            invalidateStamps
+            (payload) => {
+                if(payload?.eventType === "DELETE"){
+                    if(payload?.old?.id){
+                        removeStampFromCache(payload.old.id);
+                    }
+                    return;
+                }
+
+                const nextStamp = normalizeStampRow(payload?.new);
+                if(nextStamp){
+                    upsertStampCache(nextStamp);
+                }
+            }
         )
         .on(
             "postgres_changes",
             {event: "DELETE", schema: "public", table: "canvas_stamps"},
             (payload) => {
-                if(shouldRefreshForJournal(payload)){
-                    invalidateStamps();
+                const match = eventBelongsToJournal(payload);
+                if(match === true && payload?.old?.id){
+                    removeStampFromCache(payload.old.id);
+                    return;
+                }
+
+                // Fallback for environments where DELETE payload omits journal_id.
+                if(match === null){
+                    queryClient.invalidateQueries({queryKey: stampsQueryKey});
                 }
             }
         )
         .on(
             "postgres_changes",
             {event: "*", schema: "public", table: "canvas_margin_items", filter: `journal_id=eq.${journalIdAsString}`},
-            invalidateMargins
+            (payload) => {
+                if(payload?.eventType === "DELETE"){
+                    if(payload?.old?.id){
+                        removeMarginFromCache(payload.old.id);
+                    }
+                    return;
+                }
+
+                const nextMargin = normalizeMarginRow(payload?.new);
+                if(nextMargin){
+                    upsertMarginCache(nextMargin);
+                }
+            }
         )
         .on(
             "postgres_changes",
             {event: "DELETE", schema: "public", table: "canvas_margin_items"},
             (payload) => {
-                if(shouldRefreshForJournal(payload)){
-                    invalidateMargins();
+                const match = eventBelongsToJournal(payload);
+                if(match === true && payload?.old?.id){
+                    removeMarginFromCache(payload.old.id);
+                    return;
                 }
+
+                // Fallback for environments where DELETE payload omits journal_id.
+                if(match === null){
+                    queryClient.invalidateQueries({queryKey: marginsQueryKey});
+                }
+            }
+        )
+        .on(
+            "broadcast",
+            {event: LIVE_DOODLE_BROADCAST_EVENT},
+            ({payload}) => {
+                if(!payload || String(payload?.journalId) !== journalIdAsString){
+                    return;
+                }
+                const remoteClientId = typeof payload?.clientId === "string" ? payload.clientId : "";
+                if(!remoteClientId || remoteClientId === viewerClientIdRef.current){
+                    return;
+                }
+
+                const points = sanitizeNormalizedPoints(payload?.points);
+                if(points.length < 2){
+                    return;
+                }
+
+                setLiveDoodlesByClient((prev) => ({
+                    ...prev,
+                    [remoteClientId]: {
+                        clientId: remoteClientId,
+                        points: points,
+                        color: typeof payload?.color === "string" ? payload.color : "#5f92ff",
+                        size: Number(payload?.size) || 2.8,
+                        updatedAt: Date.now()
+                    }
+                }));
+            }
+        )
+        .on(
+            "broadcast",
+            {event: LIVE_DOODLE_END_EVENT},
+            ({payload}) => {
+                if(!payload || String(payload?.journalId) !== journalIdAsString){
+                    return;
+                }
+                const remoteClientId = typeof payload?.clientId === "string" ? payload.clientId : "";
+                if(!remoteClientId || remoteClientId === viewerClientIdRef.current){
+                    return;
+                }
+
+                setLiveDoodlesByClient((prev) => {
+                    const next = {...prev};
+                    delete next[remoteClientId];
+                    return next;
+                });
             }
         )
         .subscribe();
 
+        realtimeChannelRef.current = channel;
+
         return () => {
+            if(realtimeChannelRef.current === channel){
+                realtimeChannelRef.current = null;
+            }
             supabase.removeChannel(channel);
         };
-    }, [journalId, queryClient]);
+    }, [eventBelongsToJournal, journalId, marginsQueryKey, normalizeMarginRow, normalizeStampRow, queryClient, removeMarginFromCache, removeStampFromCache, stampsQueryKey, upsertMarginCache, upsertStampCache]);
+
+    useEffect(() => {
+        setLiveDoodlesByClient({});
+    }, [journalId]);
+
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            const now = Date.now();
+            setLiveDoodlesByClient((prev) => {
+                const next = {};
+                let hasChanged = false;
+
+                Object.entries(prev).forEach(([clientId, value]) => {
+                    if(now - (value?.updatedAt || 0) <= LIVE_DOODLE_STALE_MS){
+                        next[clientId] = value;
+                    } else {
+                        hasChanged = true;
+                    }
+                });
+
+                return hasChanged ? next : prev;
+            });
+        }, Math.max(500, Math.round(LIVE_DOODLE_STALE_MS / 2)));
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            clearQueuedDoodleBroadcast();
+            pendingDoodlePayloadRef.current = null;
+            if(currentDoodlePointsRef.current.length >= 2 && realtimeChannelRef.current){
+                broadcastDoodleEnd(currentDoodlePointsRef.current);
+            }
+        };
+    }, [broadcastDoodleEnd, clearQueuedDoodleBroadcast]);
 
     const addStampMutation = useMutation({
         mutationFn: (payload) => addCanvasStamp(session?.access_token, payload),
-        onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: ["canvasStamps", journalId]});
+        onMutate: async(payload) => {
+            const tempId = createOptimisticId(OPTIMISTIC_STAMP_PREFIX);
+            upsertStampCache(normalizeStampRow({
+                id: tempId,
+                journal_id: journalId,
+                user_id: currentUserProfile?.id || null,
+                snippet_id: payload?.snippetId,
+                word_key: payload?.wordKey || null,
+                stamp_type: payload?.stampType,
+                x: payload?.x,
+                y: payload?.y,
+                created_at: new Date().toISOString(),
+                user_name: currentUserProfile?.name || null,
+                user_image_url: currentUserProfile?.image_url || null
+            }));
+            return {tempId: tempId};
         },
-        onError: (error) => {
+        onSuccess: (response, _payload, context) => {
+            if(context?.tempId){
+                removeStampFromCache(context.tempId);
+            }
+
+            const savedStamp = normalizeStampRow(response?.stamp);
+            if(savedStamp){
+                upsertStampCache(savedStamp);
+            }
+        },
+        onError: (error, _payload, context) => {
+            if(context?.tempId){
+                removeStampFromCache(context.tempId);
+            }
             console.error("Failed to add stamp:", error);
         }
     });
 
     const deleteStampMutation = useMutation({
         mutationFn: (stampId) => deleteCanvasStamp(session?.access_token, stampId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: ["canvasStamps", journalId]});
+        onMutate: async(stampId) => {
+            const removedStamp = removeStampFromCache(stampId);
+            return {removedStamp: removedStamp};
         },
-        onError: (error) => {
+        onError: (error, _stampId, context) => {
+            if(context?.removedStamp){
+                upsertStampCache(context.removedStamp);
+            }
             console.error("Failed to delete stamp:", error);
+        },
+        onSuccess: (_response, stampId) => {
+            removeStampFromCache(stampId);
         }
     });
 
     const addMarginMutation = useMutation({
         mutationFn: (payload) => addCanvasMargin(session?.access_token, payload),
-        onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: ["canvasMargins", journalId]});
+        onMutate: async(payload) => {
+            const tempId = createOptimisticId(OPTIMISTIC_MARGIN_PREFIX);
+            upsertMarginCache(normalizeMarginRow({
+                id: tempId,
+                journal_id: journalId,
+                user_id: currentUserProfile?.id || null,
+                item_type: payload?.itemType,
+                payload: payload?.payload || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                user_name: currentUserProfile?.name || null,
+                user_image_url: currentUserProfile?.image_url || null
+            }));
+            return {tempId: tempId};
         },
-        onError: (error) => {
+        onSuccess: (response, _payload, context) => {
+            if(context?.tempId){
+                removeMarginFromCache(context.tempId);
+            }
+
+            const savedItem = normalizeMarginRow(response?.item);
+            if(savedItem){
+                upsertMarginCache(savedItem);
+            }
+        },
+        onError: (error, _payload, context) => {
+            if(context?.tempId){
+                removeMarginFromCache(context.tempId);
+            }
             console.error("Failed to add canvas margin item:", error);
         }
     });
 
     const deleteMarginMutation = useMutation({
         mutationFn: (marginId) => deleteCanvasMargin(session?.access_token, marginId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({queryKey: ["canvasMargins", journalId]});
+        onMutate: async(marginId) => {
+            const removedItem = removeMarginFromCache(marginId);
+            return {removedItem: removedItem};
         },
-        onError: (error) => {
+        onError: (error, _marginId, context) => {
+            if(context?.removedItem){
+                upsertMarginCache(context.removedItem);
+            }
             console.error("Failed to delete canvas margin item:", error);
+        },
+        onSuccess: (_response, marginId) => {
+            removeMarginFromCache(marginId);
         }
     });
 
@@ -447,6 +890,10 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
             if(openAuthModal){
                 openAuthModal();
             }
+            return;
+        }
+
+        if(itemType !== "doodle"){
             return;
         }
 
@@ -516,6 +963,11 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     };
 
     const handleCanvasPointerDown = (evt) => {
+        const nativeEvent = evt?.evt;
+        if(activeTool === "doodle" && nativeEvent?.cancelable){
+            nativeEvent.preventDefault();
+        }
+
         if(activeTool !== "doodle"){
             return;
         }
@@ -533,11 +985,27 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
             return;
         }
 
+        const startingPoints = [pointer.x, pointer.y];
+        currentDoodlePointsRef.current = startingPoints;
         setIsDrawing(true);
-        setCurrentDoodlePoints([pointer.x, pointer.y]);
+        setCurrentDoodlePoints(startingPoints);
+        queueDoodleBroadcast({
+            journalId: String(journalId),
+            clientId: viewerClientIdRef.current,
+            userId: currentUserProfile?.id || null,
+            points: startingPoints,
+            color: doodleColor,
+            size: doodleSize,
+            startedAt: Date.now()
+        }, true);
     };
 
     const handleCanvasPointerMove = (evt) => {
+        const nativeEvent = evt?.evt;
+        if(activeTool === "doodle" && nativeEvent?.cancelable){
+            nativeEvent.preventDefault();
+        }
+
         if(activeTool !== "doodle" || !isDrawing){
             return;
         }
@@ -548,7 +1016,18 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
             return;
         }
 
-        setCurrentDoodlePoints((prev) => [...prev, pointer.x, pointer.y]);
+        const nextPoints = [...currentDoodlePointsRef.current, pointer.x, pointer.y];
+        currentDoodlePointsRef.current = nextPoints;
+        setCurrentDoodlePoints(nextPoints);
+        queueDoodleBroadcast({
+            journalId: String(journalId),
+            clientId: viewerClientIdRef.current,
+            userId: currentUserProfile?.id || null,
+            points: nextPoints,
+            color: doodleColor,
+            size: doodleSize,
+            updatedAt: Date.now()
+        });
     };
 
     const handleCanvasPointerUp = () => {
@@ -556,63 +1035,30 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
             return;
         }
 
-        if(isDrawing && currentDoodlePoints.length >= 4){
+        const finishedPoints = currentDoodlePointsRef.current;
+        if(isDrawing && finishedPoints.length >= 4){
             addMarginItem({
                 itemType: "doodle",
                 payload: {
-                    points: currentDoodlePoints,
+                    points: finishedPoints,
                     color: doodleColor,
                     size: doodleSize
                 }
             });
         }
 
+        if(finishedPoints.length >= 2){
+            broadcastDoodleEnd(finishedPoints);
+        }
+
         setIsDrawing(false);
         setCurrentDoodlePoints([]);
-    };
-
-    const handlePlaceStickyOnCanvas = (evt) => {
-        if(activeTool !== "sticky"){
-            return;
-        }
-
-        if(!session){
-            if(openAuthModal){
-                openAuthModal();
-            }
-            return;
-        }
-
-        const stage = evt.target.getStage();
-        if(!stage || evt.target !== stage){
-            return;
-        }
-
-        const pointer = getNormalizedPointer(stage);
-        if(!pointer){
-            return;
-        }
-
-        addMarginItem({
-            itemType: "sticky",
-            payload: {
-                text: stickyText.trim() || "Sticky note",
-                x: pointer.x,
-                y: pointer.y,
-                color: stickyColor
-            }
-        });
-        setStickyText("");
+        currentDoodlePointsRef.current = [];
     };
 
     const handleStageClick = (evt) => {
         if(activeTool === "stamp"){
             handlePlaceStampOnCanvas(evt);
-            return;
-        }
-
-        if(activeTool === "sticky"){
-            handlePlaceStickyOnCanvas(evt);
         }
     };
 
@@ -697,7 +1143,9 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
 
     const stamps = stampData?.stamps || [];
     const marginItems = marginData?.items || [];
+    const docDoodles = parsedCanvasDoc?.doodles || [];
     const doodleItems = marginItems.filter((item) => item?.item_type === "doodle");
+    const liveDoodleItems = Object.values(liveDoodlesByClient);
     const stickyItems = marginItems.filter((item) => item?.item_type === "sticky");
     const currentUserId = user?.userData?.[0]?.id;
 
@@ -719,13 +1167,6 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                 >
                     Doodle
                 </button>
-                <button
-                    type="button"
-                    className={`canvas-tool-btn ${activeTool === "sticky" ? "is-active" : ""}`}
-                    onClick={() => setActiveTool("sticky")}
-                >
-                    Sticky
-                </button>
 
                 {activeTool === "stamp" && Object.entries(STAMP_ICONS).map(([stampType, icon]) => (
                     <button
@@ -744,6 +1185,19 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
 
                 {activeTool === "doodle" && (
                     <div className="canvas-tool-controls">
+                        <div className="canvas-color-swatches">
+                            {DOODLE_COLOR_PRESETS.map((color) => (
+                                <button
+                                    key={color}
+                                    type="button"
+                                    className={`canvas-color-swatch ${doodleColor.toLowerCase() === color.toLowerCase() ? "is-active" : ""}`}
+                                    onClick={() => setDoodleColor(color)}
+                                    title={`Use ${color} doodle color`}
+                                    aria-label={`Select doodle color ${color}`}
+                                    style={{backgroundColor: color}}
+                                />
+                            ))}
+                        </div>
                         <input
                             type="color"
                             value={doodleColor}
@@ -764,30 +1218,11 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                     </div>
                 )}
 
-                {activeTool === "sticky" && (
-                    <div className="canvas-tool-controls">
-                        <input
-                            value={stickyText}
-                            onChange={(event) => setStickyText(event.target.value)}
-                            className="canvas-sticky-input"
-                            maxLength={280}
-                            placeholder="Sticky text..."
-                        />
-                        <input
-                            type="color"
-                            value={stickyColor}
-                            onChange={(event) => setStickyColor(event.target.value)}
-                            className="canvas-color-input"
-                            title="Sticky color"
-                        />
-                        <span className="canvas-tool-hint">Tap canvas to place note</span>
-                    </div>
-                )}
             </div>
 
             <div
                 ref={shellRef}
-                className={`canvas-stage-shell ${parsedCanvasDoc?.meta?.theme === "dark" ? "is-dark" : ""} ${isDropActive ? "is-drop-active" : ""}`}
+                className={`canvas-stage-shell ${parsedCanvasDoc?.meta?.theme === "dark" ? "is-dark" : ""} ${isDropActive ? "is-drop-active" : ""} ${activeTool === "doodle" ? "is-doodle-active" : ""}`}
                 onDragOver={handleStageDragOver}
                 onDragLeave={handleStageDragLeave}
                 onDrop={handleStageDrop}
@@ -826,6 +1261,31 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                             ))}
                         </Layer>
                     )}
+
+                    <Layer listening={false}>
+                        {docDoodles.map((doodle) => {
+                            const points = Array.isArray(doodle?.points)
+                                ? doodle.points.map((point) => Number(point)).filter((point) => !Number.isNaN(point))
+                                : [];
+                            if(points.length < 4){
+                                return null;
+                            }
+
+                            return (
+                                <Line
+                                    key={`doc-doodle-${doodle.id}`}
+                                    points={points.map((point, index) => (
+                                        index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                    ))}
+                                    stroke={doodle?.color || "#5f92ff"}
+                                    strokeWidth={Number(doodle?.size) || 2.8}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                    tension={0.1}
+                                />
+                            );
+                        })}
+                    </Layer>
 
                     <Layer>
                         {sortedObjects.map((object) => {
@@ -922,6 +1382,22 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                                 />
                             );
                         })}
+
+                        {liveDoodleItems.map((doodle) => (
+                            <Line
+                                key={`live-doodle-${doodle.clientId}`}
+                                points={doodle.points.map((point, index) => (
+                                    index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                ))}
+                                stroke={doodle.color || "#5f92ff"}
+                                strokeWidth={Number(doodle.size) || 2.8}
+                                lineCap="round"
+                                lineJoin="round"
+                                tension={0.1}
+                                opacity={0.86}
+                                listening={false}
+                            />
+                        ))}
 
                         {isDrawing && currentDoodlePoints.length >= 2 && (
                             <Line

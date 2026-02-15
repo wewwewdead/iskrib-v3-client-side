@@ -30,6 +30,23 @@
     border-color: var(--accent-purple);
 }
 
+.canvas-snippet-popover {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    padding: 0.55rem;
+}
+
+.canvas-snippet-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
 .canvas-control-btn,
 .canvas-brush-btn,
 .canvas-select,
@@ -84,6 +101,12 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-purple) 26%, transparent);
 }
 
+.canvas-stage-shell.is-doodle-active {
+    touch-action: none;
+    overscroll-behavior: contain;
+    overflow: hidden;
+}
+
 .canvas-stamp-label {
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -111,6 +134,26 @@
     align-items: center;
     gap: 0.4rem;
     margin-left: 0.25rem;
+}
+
+.canvas-color-swatches {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+}
+
+.canvas-color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 1px solid var(--border-light);
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.canvas-color-swatch.is-active {
+    outline: 2px solid var(--accent-purple);
+    outline-offset: 1px;
 }
 
 .canvas-color-input {

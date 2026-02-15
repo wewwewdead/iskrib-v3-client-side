@@ -62,7 +62,9 @@ const GalleryPage = () => {
         staleTime: 1000 * 45
     });
 
-    const journals = data?.data || [];
+    const journals = useMemo(() => (
+        (data?.data || []).filter((journal) => journal?.post_type === "canvas")
+    ), [data?.data]);
 
     if(isLoading){
         return (

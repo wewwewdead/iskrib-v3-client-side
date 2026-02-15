@@ -6,7 +6,8 @@ const DEFAULT_CANVAS_DOC = {
         theme: 'light'
     },
     snippets: [],
-    images: []
+    images: [],
+    doodles: []
 };
 
 const isPlainObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
@@ -63,6 +64,35 @@ const normalizeImage = (image, index) => {
     };
 };
 
+const normalizeDoodle = (doodle, index) => {
+    if(!isPlainObject(doodle)){
+        return null;
+    }
+
+    const rawPoints = Array.isArray(doodle.points) ? doodle.points : [];
+    const points = rawPoints
+        .map((point) => Number(point))
+        .filter((point) => Number.isFinite(point))
+        .map((point) => Math.min(Math.max(point, 0), 1));
+
+    if(points.length < 4){
+        return null;
+    }
+
+    const normalizedPoints = points.length % 2 === 0 ? points : points.slice(0, -1);
+    if(normalizedPoints.length < 4){
+        return null;
+    }
+
+    const parsedSize = Number(doodle.size);
+    return {
+        id: typeof doodle.id === 'string' && doodle.id ? doodle.id : `doodle-${index + 1}`,
+        points: normalizedPoints,
+        color: typeof doodle.color === 'string' && doodle.color.trim() ? doodle.color.trim().slice(0, 32) : '#5f92ff',
+        size: Number.isFinite(parsedSize) ? Math.min(Math.max(parsedSize, 1), 14) : 2.8
+    };
+};
+
 export const parseCanvasDoc = (rawCanvasDoc) => {
     if(!rawCanvasDoc){
         return {...DEFAULT_CANVAS_DOC};
@@ -84,6 +114,11 @@ export const parseCanvasDoc = (rawCanvasDoc) => {
                 .map((image, index) => normalizeImage(image, index))
                 .filter(Boolean)
             : [];
+        const doodles = Array.isArray(parsed.doodles)
+            ? parsed.doodles
+                .map((doodle, index) => normalizeDoodle(doodle, index))
+                .filter(Boolean)
+            : [];
 
         return {
             version: 1,
@@ -93,7 +128,8 @@ export const parseCanvasDoc = (rawCanvasDoc) => {
                 theme: parsed?.meta?.theme === 'dark' ? 'dark' : 'light'
             },
             snippets: snippets,
-            images: images
+            images: images,
+            doodles: doodles
         };
     } catch (error) {
         console.error('Error parsing canvas doc:', error);

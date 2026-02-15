@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Image as KonvaImage, Layer, Rect, Stage, Text } from "react-konva";
+import { Image as KonvaImage, Layer, Line, Rect, Stage, Text } from "react-konva";
 import { BarLoader } from "react-spinners";
 import { useQueryClient } from "@tanstack/react-query";
 import { saveJournal, saveJournalImage } from "../../../../API/Api";
@@ -16,9 +16,38 @@ const FONT_BRUSHES = {
 
 const GRID_SIZE = 24;
 const CANVAS_MAX_WIDTH = 560;
+const DOODLE_COLOR_PRESETS = [
+    "#5f92ff",
+    "#ff4d6d",
+    "#ff7f11",
+    "#ffd23f",
+    "#22c55e",
+    "#14b8a6",
+    "#8b5cf6",
+    "#111827",
+    "#ffffff"
+];
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const createId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const sanitizeNormalizedPoints = (rawPoints) => {
+    if(!Array.isArray(rawPoints)){
+        return [];
+    }
+
+    const numericPoints = rawPoints
+        .map((point) => Number(point))
+        .filter((point) => !Number.isNaN(point))
+        .map((point) => clamp(point, 0, 1));
+
+    if(numericPoints.length < 2){
+        return [];
+    }
+
+    return numericPoints.length % 2 === 0
+        ? numericPoints
+        : numericPoints.slice(0, -1);
+};
 
 const getStageHeight = (width, aspectRatio) => {
     if(aspectRatio === "4:5"){
@@ -63,7 +92,7 @@ const useLoadedImage = (src) => {
     return image;
 };
 
-const CanvasImageNode = ({canvasImage, stageWidth, stageHeight, isSelected, onSelect, onDragEnd}) => {
+const CanvasImageNode = ({canvasImage, stageWidth, stageHeight, isSelected, onSelect, onDragEnd, canInteract}) => {
     const loadedImage = useLoadedImage(canvasImage?.src);
     const objectWidth = clamp((canvasImage?.width || 0.3) * stageWidth, 56, stageWidth * 0.95);
     const objectHeight = clamp((canvasImage?.height || 0.3) * stageHeight, 56, stageHeight * 0.95);
@@ -78,14 +107,14 @@ const CanvasImageNode = ({canvasImage, stageWidth, stageHeight, isSelected, onSe
                 width={objectWidth}
                 height={objectHeight}
                 image={loadedImage}
-                draggable
+                draggable={canInteract}
                 rotation={canvasImage?.rotation || 0}
                 scaleX={canvasImage?.scaleX === -1 ? -1 : 1}
                 shadowColor="rgba(0,0,0,0.24)"
                 shadowBlur={8}
                 shadowOffsetY={3}
-                onClick={onSelect}
-                onTap={onSelect}
+                onClick={canInteract ? onSelect : undefined}
+                onTap={canInteract ? onSelect : undefined}
                 onDragEnd={onDragEnd}
             />
             {isSelected && (
@@ -110,12 +139,20 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     const queryClient = useQueryClient();
     const shellRef = useRef(null);
     const hasHydratedInitialDocRef = useRef(false);
+    const snippetInputRef = useRef(null);
+    const doodlePointsRef = useRef([]);
     const [shellWidth, setShellWidth] = useState(CANVAS_MAX_WIDTH);
 
+    const [activeTool, setActiveTool] = useState("select");
+    const [isSnippetComposerOpen, setIsSnippetComposerOpen] = useState(false);
     const [snippetInput, setSnippetInput] = useState("");
     const [selectedObject, setSelectedObject] = useState(null); // {kind: 'snippet'|'image', id}
     const [isSending, setIsSending] = useState(false);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [doodleColor, setDoodleColor] = useState("#5f92ff");
+    const [doodleSize, setDoodleSize] = useState(2.8);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [currentDoodlePoints, setCurrentDoodlePoints] = useState([]);
     const [canvasMeta, setCanvasMeta] = useState({
         aspectRatio: "1:1",
         gridEnabled: true,
@@ -124,6 +161,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     });
     const [snippets, setSnippets] = useState([]);
     const [images, setImages] = useState([]);
+    const [doodles, setDoodles] = useState([]);
 
     useEffect(() => {
         if(hasHydratedInitialDocRef.current || !initialCanvasDoc){
@@ -146,6 +184,11 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             ...image,
             id: image.id || createId('image'),
             zIndex: Number.isFinite(image?.zIndex) ? image.zIndex : 0
+        })));
+        setDoodles((parsedDoc?.doodles || []).map((doodle) => ({
+            ...doodle,
+            id: doodle.id || createId('doodle'),
+            points: sanitizeNormalizedPoints(doodle.points)
         })));
         hasHydratedInitialDocRef.current = true;
     }, [initialCanvasDoc]);
@@ -173,6 +216,26 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         };
     }, []);
 
+    useEffect(() => {
+        if(!isSnippetComposerOpen){
+            return;
+        }
+
+        const frame = window.requestAnimationFrame(() => {
+            snippetInputRef.current?.focus();
+        });
+
+        return () => window.cancelAnimationFrame(frame);
+    }, [isSnippetComposerOpen]);
+
+    useEffect(() => {
+        if(activeTool !== "doodle"){
+            doodlePointsRef.current = [];
+            setCurrentDoodlePoints([]);
+            setIsDrawing(false);
+        }
+    }, [activeTool]);
+
     const stageWidth = useMemo(() => Math.max(280, Math.min(CANVAS_MAX_WIDTH, shellWidth - 24)), [shellWidth]);
     const stageHeight = getStageHeight(stageWidth, canvasMeta.aspectRatio);
 
@@ -196,6 +259,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     const selectedImage = selectedObject?.kind === "image"
         ? images.find((image) => image.id === selectedObject.id) || null
         : null;
+    const canEditObjects = activeTool === "select";
 
     const updateSnippet = (snippetId, updater) => {
         setSnippets((prev) => prev.map((snippet) => {
@@ -237,6 +301,8 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         setSnippets((prev) => [...prev, snippet]);
         setSelectedObject({kind: "snippet", id: snippet.id});
         setSnippetInput("");
+        setIsSnippetComposerOpen(false);
+        setActiveTool("select");
     };
 
     const addImageFromFile = () => {
@@ -298,6 +364,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
 
                 setImages((prev) => [...prev, imageObject]);
                 setSelectedObject({kind: "image", id: imageObject.id});
+                setActiveTool("select");
             } catch (error) {
                 console.error("Canvas image upload failed:", error);
             } finally {
@@ -388,6 +455,100 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         }
     };
 
+    const getNormalizedPointer = (stage) => {
+        const pointer = stage?.getPointerPosition();
+        if(!pointer){
+            return null;
+        }
+
+        return {
+            x: clamp(pointer.x / stageWidth, 0, 1),
+            y: clamp(pointer.y / stageHeight, 0, 1)
+        };
+    };
+
+    const handleCanvasPointerDown = (event) => {
+        const nativeEvent = event?.evt;
+        if(activeTool === "doodle" && nativeEvent?.cancelable){
+            nativeEvent.preventDefault();
+        }
+
+        const stage = event.target.getStage();
+        if(!stage){
+            return;
+        }
+
+        if(activeTool === "doodle"){
+            const pointer = getNormalizedPointer(stage);
+            if(!pointer){
+                return;
+            }
+
+            setSelectedObject(null);
+            const initialPoints = [pointer.x, pointer.y];
+            doodlePointsRef.current = initialPoints;
+            setCurrentDoodlePoints(initialPoints);
+            setIsDrawing(true);
+            return;
+        }
+
+        if(event.target === stage){
+            setSelectedObject(null);
+        }
+    };
+
+    const handleCanvasPointerMove = (event) => {
+        const nativeEvent = event?.evt;
+        if(activeTool === "doodle" && nativeEvent?.cancelable){
+            nativeEvent.preventDefault();
+        }
+
+        if(activeTool !== "doodle" || !isDrawing){
+            return;
+        }
+
+        const stage = event.target.getStage();
+        const pointer = getNormalizedPointer(stage);
+        if(!pointer){
+            return;
+        }
+
+        const nextPoints = [...doodlePointsRef.current, pointer.x, pointer.y];
+        doodlePointsRef.current = nextPoints;
+        setCurrentDoodlePoints(nextPoints);
+    };
+
+    const handleCanvasPointerUp = () => {
+        if(activeTool !== "doodle"){
+            return;
+        }
+
+        const points = sanitizeNormalizedPoints(doodlePointsRef.current);
+        if(points.length >= 4){
+            setDoodles((prev) => [...prev, {
+                id: createId("doodle"),
+                points: points,
+                color: doodleColor,
+                size: doodleSize
+            }]);
+        }
+
+        doodlePointsRef.current = [];
+        setCurrentDoodlePoints([]);
+        setIsDrawing(false);
+    };
+
+    const undoLastDoodle = () => {
+        setDoodles((prev) => prev.slice(0, -1));
+    };
+
+    const clearDoodles = () => {
+        setDoodles([]);
+        doodlePointsRef.current = [];
+        setCurrentDoodlePoints([]);
+        setIsDrawing(false);
+    };
+
     const handleDragEndSnippet = (snippet, evt) => {
         const metrics = getSnippetMetrics(snippet, stageWidth);
         const maxX = Math.max(0, stageWidth - metrics.width);
@@ -428,7 +589,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     };
 
     const saveCanvas = async() => {
-        if(!title || (snippets.length === 0 && images.length === 0)){
+        if(!title || (snippets.length === 0 && images.length === 0 && doodles.length === 0)){
             return;
         }
 
@@ -460,6 +621,12 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 rotation: Number((image.rotation || 0).toFixed(2)),
                 scaleX: image.scaleX === -1 ? -1 : 1,
                 zIndex: image.zIndex || 0
+            })),
+            doodles: doodles.map((doodle) => ({
+                id: doodle.id,
+                points: sanitizeNormalizedPoints(doodle.points).map((point) => Number(point.toFixed(5))),
+                color: doodle.color || "#5f92ff",
+                size: Number((doodle.size || 2.8).toFixed(3))
             }))
         };
 
@@ -493,14 +660,14 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 </div>
             )}
             <div className="canvas-editor-controls">
-                <input
-                    value={snippetInput}
-                    onChange={(event) => setSnippetInput(event.target.value)}
-                    className="canvas-snippet-input"
-                    placeholder="Type snippet and add magnet..."
-                    maxLength={220}
-                />
-                <button type="button" className="canvas-control-btn" onClick={addSnippet}>
+                <button
+                    type="button"
+                    className={`canvas-control-btn ${isSnippetComposerOpen ? "is-active" : ""}`}
+                    onClick={() => {
+                        setActiveTool("select");
+                        setIsSnippetComposerOpen((prev) => !prev);
+                    }}
+                >
                     Add Text
                 </button>
                 <button
@@ -511,6 +678,63 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 >
                     {isUploadingImage ? "Uploading..." : "Add Image"}
                 </button>
+                <button
+                    type="button"
+                    className={`canvas-tool-btn ${activeTool === "select" ? "is-active" : ""}`}
+                    onClick={() => setActiveTool("select")}
+                >
+                    Select
+                </button>
+                <button
+                    type="button"
+                    className={`canvas-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`}
+                    onClick={() => {
+                        setIsSnippetComposerOpen(false);
+                        setActiveTool("doodle");
+                    }}
+                >
+                    Doodle
+                </button>
+                {activeTool === "doodle" && (
+                    <div className="canvas-tool-controls">
+                        <div className="canvas-color-swatches">
+                            {DOODLE_COLOR_PRESETS.map((color) => (
+                                <button
+                                    key={color}
+                                    type="button"
+                                    className={`canvas-color-swatch ${doodleColor.toLowerCase() === color.toLowerCase() ? "is-active" : ""}`}
+                                    onClick={() => setDoodleColor(color)}
+                                    title={`Use ${color} doodle color`}
+                                    aria-label={`Select doodle color ${color}`}
+                                    style={{backgroundColor: color}}
+                                />
+                            ))}
+                        </div>
+                        <input
+                            type="color"
+                            value={doodleColor}
+                            onChange={(event) => setDoodleColor(event.target.value)}
+                            className="canvas-color-input"
+                            title="Doodle color"
+                        />
+                        <input
+                            type="range"
+                            min={1}
+                            max={10}
+                            step={0.2}
+                            value={doodleSize}
+                            onChange={(event) => setDoodleSize(Number(event.target.value))}
+                            className="canvas-size-range"
+                        />
+                        <button type="button" className="canvas-control-btn" onClick={undoLastDoodle} disabled={doodles.length === 0}>
+                            Undo Doodle
+                        </button>
+                        <button type="button" className="canvas-control-btn" onClick={clearDoodles} disabled={doodles.length === 0 && !isDrawing}>
+                            Clear Doodles
+                        </button>
+                        <span className="canvas-tool-hint">Drag on canvas</span>
+                    </div>
+                )}
                 <select
                     value={canvasMeta.aspectRatio}
                     onChange={(event) => setCanvasMeta((prev) => ({...prev, aspectRatio: event.target.value === "4:5" ? "4:5" : "1:1"}))}
@@ -542,7 +766,37 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 </button>
             </div>
 
-            {selectedObject && (
+            {isSnippetComposerOpen && (
+                <div className="canvas-snippet-popover">
+                    <input
+                        ref={snippetInputRef}
+                        value={snippetInput}
+                        onChange={(event) => setSnippetInput(event.target.value)}
+                        onKeyDown={(event) => {
+                            if(event.key === "Enter"){
+                                event.preventDefault();
+                                addSnippet();
+                            }
+                            if(event.key === "Escape"){
+                                setIsSnippetComposerOpen(false);
+                            }
+                        }}
+                        className="canvas-snippet-input"
+                        placeholder="Type text to place on canvas..."
+                        maxLength={220}
+                    />
+                    <div className="canvas-snippet-actions">
+                        <button type="button" className="canvas-control-btn" onClick={addSnippet} disabled={!snippetInput.trim()}>
+                            Add
+                        </button>
+                        <button type="button" className="canvas-control-btn" onClick={() => setIsSnippetComposerOpen(false)}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {activeTool === "select" && selectedObject && (
                 <div className="canvas-editor-selection-bar">
                     {selectedSnippet && Object.entries(FONT_BRUSHES).map(([styleKey, styleValue]) => (
                         <button
@@ -581,15 +835,17 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 </div>
             )}
 
-            <div ref={shellRef} className={`canvas-stage-shell ${canvasMeta.theme === "dark" ? "is-dark" : ""}`}>
+            <div ref={shellRef} className={`canvas-stage-shell ${canvasMeta.theme === "dark" ? "is-dark" : ""} ${activeTool === "doodle" ? "is-doodle-active" : ""}`}>
                 <Stage
                     width={stageWidth}
                     height={stageHeight}
-                    onMouseDown={(event) => {
-                        if(event.target === event.target.getStage()){
-                            setSelectedObject(null);
-                        }
-                    }}
+                    onMouseDown={handleCanvasPointerDown}
+                    onTouchStart={handleCanvasPointerDown}
+                    onMouseMove={handleCanvasPointerMove}
+                    onTouchMove={handleCanvasPointerMove}
+                    onMouseUp={handleCanvasPointerUp}
+                    onTouchEnd={handleCanvasPointerUp}
+                    onMouseLeave={handleCanvasPointerUp}
                 >
                     {canvasMeta.gridEnabled && (
                         <Layer listening={false}>
@@ -615,6 +871,34 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                             ))}
                         </Layer>
                     )}
+
+                    <Layer listening={false}>
+                        {doodles.map((doodle) => (
+                            <Line
+                                key={doodle.id}
+                                points={(doodle.points || []).map((point, index) => (
+                                    index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                ))}
+                                stroke={doodle.color || "#5f92ff"}
+                                strokeWidth={Number(doodle.size) || 2.8}
+                                lineCap="round"
+                                lineJoin="round"
+                                tension={0.1}
+                            />
+                        ))}
+                        {isDrawing && currentDoodlePoints.length >= 2 && (
+                            <Line
+                                points={currentDoodlePoints.map((point, index) => (
+                                    index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                ))}
+                                stroke={doodleColor}
+                                strokeWidth={doodleSize}
+                                lineCap="round"
+                                lineJoin="round"
+                                tension={0.1}
+                            />
+                        )}
+                    </Layer>
 
                     <Layer>
                         {sortedObjects.map((object) => {
@@ -642,7 +926,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                                         verticalAlign="middle"
                                         padding={8}
                                         wrap="word"
-                                        draggable
+                                        draggable={canEditObjects}
                                         rotation={snippet.rotation || 0}
                                         scaleX={snippet.scaleX === -1 ? -1 : 1}
                                         stroke={isSelected ? "#2f80ed" : "transparent"}
@@ -650,9 +934,9 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                                         shadowColor={canvasMeta.theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.15)"}
                                         shadowBlur={6}
                                         shadowOffsetY={2}
-                                        onClick={() => setSelectedObject({kind: "snippet", id: snippet.id})}
-                                        onTap={() => setSelectedObject({kind: "snippet", id: snippet.id})}
-                                        onDragEnd={(event) => handleDragEndSnippet(snippet, event)}
+                                        onClick={canEditObjects ? (() => setSelectedObject({kind: "snippet", id: snippet.id})) : undefined}
+                                        onTap={canEditObjects ? (() => setSelectedObject({kind: "snippet", id: snippet.id})) : undefined}
+                                        onDragEnd={canEditObjects ? ((event) => handleDragEndSnippet(snippet, event)) : undefined}
                                     />
                                 );
                             }
@@ -666,8 +950,9 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                                     stageWidth={stageWidth}
                                     stageHeight={stageHeight}
                                     isSelected={isSelected}
-                                    onSelect={() => setSelectedObject({kind: "image", id: image.id})}
-                                    onDragEnd={(event) => handleDragEndImage(image, event)}
+                                    canInteract={canEditObjects}
+                                    onSelect={canEditObjects ? (() => setSelectedObject({kind: "image", id: image.id})) : undefined}
+                                    onDragEnd={canEditObjects ? ((event) => handleDragEndImage(image, event)) : undefined}
                                 />
                             );
                         })}
@@ -683,13 +968,13 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
 
             <div className="editor-footer">
                 <span className="editor-word-count">
-                    {snippets.length} {snippets.length === 1 ? "text block" : "text blocks"} · {images.length} {images.length === 1 ? "image" : "images"}
+                    {snippets.length} {snippets.length === 1 ? "text block" : "text blocks"} · {images.length} {images.length === 1 ? "image" : "images"} · {doodles.length} {doodles.length === 1 ? "doodle" : "doodles"}
                 </span>
                 <button
                     type="button"
-                    disabled={!title || (snippets.length === 0 && images.length === 0) || isSending}
+                    disabled={!title || (snippets.length === 0 && images.length === 0 && doodles.length === 0) || isSending}
                     onClick={saveCanvas}
-                    className={title && (snippets.length > 0 || images.length > 0) ? "editor-save-bttn" : "editor-save-bttn-disabled"}
+                    className={title && (snippets.length > 0 || images.length > 0 || doodles.length > 0) ? "editor-save-bttn" : "editor-save-bttn-disabled"}
                 >
                     Share
                 </button>

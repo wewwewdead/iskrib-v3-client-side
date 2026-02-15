@@ -18,6 +18,7 @@ import { handleClickProfile, handleCLickContent } from "../../../../helpers/hand
 import formatPostDate from "../../../../helpers/formatDateString";
 import { handleImageFallback } from "../../../utils/handleImageFallback";
 import { getCanvasPreview } from "../../../utils/canvasDoc";
+import CanvasPreview from "./CanvasPreview/CanvasPreview";
 
 
 const PostCards = () => {
@@ -374,10 +375,17 @@ const PostCards = () => {
         }
     }, [])
 
-    const feedJournals = data?.pages?.flatMap((page) => page.data || []) || [];
-    const searchedJournals = searchData?.data || [];
+    const feedJournals = (data?.pages?.flatMap((page) => page.data || []) || [])
+        .filter((journal) => journal?.post_type !== 'canvas');
+    const rawSearchedJournals = searchData?.data || [];
+    const searchedJournals = rawSearchedJournals
+        .filter((journal) => journal?.post_type !== 'canvas');
     const suggestionItems = suggestionData?.data || [];
     const journals = isSearchMode ? searchedJournals : feedJournals;
+    const hasOnlyCanvasSearchMatches = isSearchMode
+        && rawSearchedJournals.length > 0
+        && searchedJournals.length === 0
+        && rawSearchedJournals.every((journal) => journal?.post_type === 'canvas');
     const isLoading = isSearchMode ? isSearchLoading : isFeedLoading;
     const showSuggestions = isSearchFocused && debouncedSearchInput.length >= 2;
 
@@ -421,6 +429,15 @@ const PostCards = () => {
                 </span>
             ) : null}
         </div>
+        {hasOnlyCanvasSearchMatches && !isSearchFetching && (
+            <button
+                type="button"
+                className="search-gallery-hint"
+                onClick={() => navigate('/home/gallery')}
+            >
+                Canvas matches found in Gallery
+            </button>
+        )}
         {showSuggestions && (
             <div className="search-suggestions-dropdown">
                 {isSuggestionsLoading ? (
@@ -474,12 +491,25 @@ const PostCards = () => {
         <AnimatePresence>
         <div className="postcards-parent-container">
             {journals.length === 0 && !isLoading && (
-                <div className="search-empty-state">
-                    {searchError
-                        ? 'Search failed. Please try again.'
-                        : isSearchMode
-                            ? 'No matching posts found.'
-                            : 'No post available...'}
+                <div className={`search-empty-state ${hasOnlyCanvasSearchMatches ? 'is-canvas-only' : ''}`}>
+                    {searchError ? (
+                        'Search failed. Please try again.'
+                    ) : hasOnlyCanvasSearchMatches ? (
+                        <>
+                            No writing posts matched.{" "}
+                            <button
+                                type="button"
+                                className="search-empty-link"
+                                onClick={() => navigate('/home/gallery')}
+                            >
+                                View canvas matches in Gallery
+                            </button>
+                        </>
+                    ) : isSearchMode ? (
+                        'No matching posts found.'
+                    ) : (
+                        'No post available...'
+                    )}
                 </div>
             )}
             {journals.map((journal, index) => {
@@ -493,9 +523,13 @@ const PostCards = () => {
                 const isBookmarked = journal?.has_bookmarked;
                 return(
                     <motion.div
-                        className="cards"
+                        className={`cards${isCanvasPost ? ' is-canvas-card' : ''}`}
                         key={journal.id}
                     >
+
+                        {isCanvasPost && (
+                            <CanvasPreview canvasDoc={journal?.canvas_doc} />
+                        )}
 
                         {thumbnail && (
                             <img
