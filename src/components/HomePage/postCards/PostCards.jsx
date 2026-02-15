@@ -49,16 +49,16 @@ const PostCards = () => {
     const mutateViews = useAddViewsMutation(session)
 
     const handleClickUserProfile = (e, loggedInUserId, clickedUserId) => {
+        e.stopPropagation();
         if(!session){
-            e.stopPropagation();
             return openAuthModal();
         }
         handleClickUserProfileOriginal(e, loggedInUserId, clickedUserId);
     }
 
     const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType = null, canvasDoc = null) =>{
+        e.stopPropagation();
         if(!session){
-            e.stopPropagation();
             return openAuthModal();
         }
         const formadata = new FormData();
@@ -79,6 +79,7 @@ const PostCards = () => {
     }
 
     const handleExpandCanvas = (e, journal) => {
+        e.stopPropagation();
         viewContent(
             e,
             journal.content,
@@ -493,6 +494,15 @@ const PostCards = () => {
                     <motion.div
                         className={`cards${isCanvasPost ? ' is-canvas-card' : ''}`}
                         key={journal.id}
+                        onClick={isCanvasPost ? (e) => handleExpandCanvas(e, journal) : undefined}
+                        role={isCanvasPost ? 'button' : undefined}
+                        tabIndex={isCanvasPost ? 0 : undefined}
+                        onKeyDown={isCanvasPost ? (e) => {
+                            if(e.key === 'Enter' || e.key === ' '){
+                                e.preventDefault();
+                                handleExpandCanvas(e, journal);
+                            }
+                        } : undefined}
                     >
 
                         {isCanvasPost && (
@@ -511,7 +521,7 @@ const PostCards = () => {
                         )}
 
                         <div className="card-content">
-                            <div onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)} className="content-container">
+                            <div onClick={isCanvasPost ? undefined : (e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)} className="content-container">
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">
                                         {isCanvasPost && (
@@ -534,13 +544,6 @@ const PostCards = () => {
 
                             {isCanvasPost && (
                                 <div className="canvas-card-actions">
-                                    <button
-                                        type="button"
-                                        className="canvas-card-action-btn"
-                                        onClick={(e) => handleExpandCanvas(e, journal)}
-                                    >
-                                        Expand to Doodle
-                                    </button>
                                     <button
                                         type="button"
                                         className="canvas-card-action-btn is-remix"

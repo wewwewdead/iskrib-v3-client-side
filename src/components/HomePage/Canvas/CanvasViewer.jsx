@@ -322,9 +322,19 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     }, [parsedCanvasDoc.images, parsedCanvasDoc.snippets]);
 
     useEffect(() => {
+        const getContentWidth = () => {
+            const el = shellRef.current;
+            if(!el){
+                return CANVAS_MAX_WIDTH;
+            }
+            const style = getComputedStyle(el);
+            const paddingLeft = parseFloat(style.paddingLeft) || 0;
+            const paddingRight = parseFloat(style.paddingRight) || 0;
+            return el.clientWidth - paddingLeft - paddingRight;
+        };
+
         const updateShellWidth = () => {
-            const nextWidth = shellRef.current?.clientWidth || CANVAS_MAX_WIDTH;
-            setShellWidth(nextWidth);
+            setShellWidth(getContentWidth());
         };
 
         updateShellWidth();
@@ -344,7 +354,7 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
         };
     }, []);
 
-    const stageWidth = useMemo(() => Math.max(280, Math.min(CANVAS_MAX_WIDTH, shellWidth - 24)), [shellWidth]);
+    const stageWidth = useMemo(() => Math.max(240, Math.min(CANVAS_MAX_WIDTH, shellWidth)), [shellWidth]);
     const stageHeight = getStageHeight(stageWidth, parsedCanvasDoc?.meta?.aspectRatio);
 
     const {data: stampData} = useQuery({
@@ -364,6 +374,17 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     const stampsQueryKey = useMemo(() => ["canvasStamps", journalId], [journalId]);
     const marginsQueryKey = useMemo(() => ["canvasMargins", journalId], [journalId]);
     const currentUserProfile = user?.userData?.[0] || null;
+    const currentUserId = currentUserProfile?.id || null;
+    const canUseDoodle = Boolean(currentUserId && String(currentUserId) === String(authorId));
+
+    useEffect(() => {
+        if(!canUseDoodle && activeTool === "doodle"){
+            setActiveTool("stamp");
+            setIsDrawing(false);
+            setCurrentDoodlePoints([]);
+            currentDoodlePointsRef.current = [];
+        }
+    }, [activeTool, canUseDoodle]);
 
     const getKnownUserProfile = useCallback((targetUserId) => {
         if(!targetUserId){
@@ -896,6 +917,9 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
         if(itemType !== "doodle"){
             return;
         }
+        if(!canUseDoodle){
+            return;
+        }
 
         addMarginMutation.mutate({
             journalId: journalId,
@@ -963,6 +987,11 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     };
 
     const handleCanvasPointerDown = (evt) => {
+        if(activeTool === "doodle" && !canUseDoodle){
+            setActiveTool("stamp");
+            return;
+        }
+
         const nativeEvent = evt?.evt;
         if(activeTool === "doodle" && nativeEvent?.cancelable){
             nativeEvent.preventDefault();
@@ -1001,6 +1030,10 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     };
 
     const handleCanvasPointerMove = (evt) => {
+        if(activeTool === "doodle" && !canUseDoodle){
+            return;
+        }
+
         const nativeEvent = evt?.evt;
         if(activeTool === "doodle" && nativeEvent?.cancelable){
             nativeEvent.preventDefault();
@@ -1031,6 +1064,13 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     };
 
     const handleCanvasPointerUp = () => {
+        if(activeTool === "doodle" && !canUseDoodle){
+            setIsDrawing(false);
+            setCurrentDoodlePoints([]);
+            currentDoodlePointsRef.current = [];
+            return;
+        }
+
         if(activeTool !== "doodle"){
             return;
         }
@@ -1147,7 +1187,6 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     const doodleItems = marginItems.filter((item) => item?.item_type === "doodle");
     const liveDoodleItems = Object.values(liveDoodlesByClient);
     const stickyItems = marginItems.filter((item) => item?.item_type === "sticky");
-    const currentUserId = user?.userData?.[0]?.id;
 
     return (
         <div className="canvas-viewer-root">
@@ -1160,13 +1199,15 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                 >
                     Stamps
                 </button>
-                <button
-                    type="button"
-                    className={`canvas-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`}
-                    onClick={() => setActiveTool("doodle")}
-                >
-                    Doodle
-                </button>
+                {canUseDoodle && (
+                    <button
+                        type="button"
+                        className={`canvas-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`}
+                        onClick={() => setActiveTool("doodle")}
+                    >
+                        Doodle
+                    </button>
+                )}
 
                 {activeTool === "stamp" && Object.entries(STAMP_ICONS).map(([stampType, icon]) => (
                     <button
@@ -1183,7 +1224,7 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                     </button>
                 ))}
 
-                {activeTool === "doodle" && (
+                {activeTool === "doodle" && canUseDoodle && (
                     <div className="canvas-tool-controls">
                         <div className="canvas-color-swatches">
                             {DOODLE_COLOR_PRESETS.map((color) => (
@@ -1222,7 +1263,7 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
 
             <div
                 ref={shellRef}
-                className={`canvas-stage-shell ${parsedCanvasDoc?.meta?.theme === "dark" ? "is-dark" : ""} ${isDropActive ? "is-drop-active" : ""} ${activeTool === "doodle" ? "is-doodle-active" : ""}`}
+                className={`canvas-stage-shell ${parsedCanvasDoc?.meta?.theme === "dark" ? "is-dark" : ""} ${isDropActive ? "is-drop-active" : ""} ${activeTool === "doodle" && canUseDoodle ? "is-doodle-active" : ""}`}
                 onDragOver={handleStageDragOver}
                 onDragLeave={handleStageDragLeave}
                 onDrop={handleStageDrop}

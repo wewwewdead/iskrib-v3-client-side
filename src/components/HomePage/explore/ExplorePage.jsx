@@ -182,7 +182,7 @@ const RunnerCard = ({ journal, index, parsedContent, hotScore, onClick }) => (
 
 const ExplorePage = () => {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { session, user, openAuthModal } = useAuth();
     const userId = user?.userData?.[0]?.id || null;
     const searchShellRef = useRef(null);
 
@@ -272,6 +272,10 @@ const ExplorePage = () => {
         if(!journal?.id){
             return;
         }
+        if(!session){
+            openAuthModal();
+            return;
+        }
         setIsSearchFocused(false);
         if(journal?.title){
             setSearchInput(journal.title);
@@ -282,6 +286,10 @@ const ExplorePage = () => {
 
     const handleClickPost = (journalId) => {
         if(!journalId){
+            return;
+        }
+        if(!session){
+            openAuthModal();
             return;
         }
         navigate(`/home/post/${journalId}`);

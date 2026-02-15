@@ -4,6 +4,8 @@
     flex-direction: column;
     gap: 0.65rem;
     min-height: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .canvas-editor-controls,
@@ -81,6 +83,8 @@
 .canvas-stage-shell {
     position: relative;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -88,7 +92,7 @@
     border-radius: 12px;
     padding: 0.7rem;
     background: #fefefe;
-    overflow: auto;
+    overflow: hidden;
     min-height: 220px;
 }
 
@@ -200,6 +204,20 @@
 }
 
 @media (max-width: 520px) {
+    .canvas-stage-shell {
+        padding: 0.35rem;
+        border-radius: 8px;
+    }
+
+    .canvas-stamp-toolbar {
+        gap: 0.3rem;
+    }
+
+    .canvas-stamp-label {
+        font-size: 0.72rem;
+        margin-right: 0.15rem;
+    }
+
     .canvas-tool-controls {
         margin-left: 0;
         width: 100%;
