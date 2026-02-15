@@ -324,6 +324,10 @@ const PostCards = () => {
         navigate(`/home/post/${journal.id}`);
     };
 
+    const handleVisitFreedomWall = () => {
+        navigate('/home/freedom-wall');
+    };
+
     useEffect(() => {
         const handleOutsideSearchClick = (e) => {
             if(searchShellRef.current && !searchShellRef.current.contains(e.target)){
@@ -416,6 +420,9 @@ const PostCards = () => {
                     Clear
                 </button>
             ) : null}
+            <button type="button" className="search-freedom-wall-btn" onClick={handleVisitFreedomWall}>
+                Visit Freedom Wall
+            </button>
             {isSearchMode ? (
                 <span className="search-mode-pill">
                     {isSearchFetching ? 'Searching...' : 'Matched'}

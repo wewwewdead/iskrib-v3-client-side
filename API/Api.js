@@ -1118,6 +1118,145 @@ export const getOpinionReply = async(parentId, limit, cursor) =>{
 
 }
 
+export const getCurrentFreedomWallWeek = async(token = null) => {
+    const headers = {};
+    if(token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/current`, {
+        method: "GET",
+        headers: headers
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to fetch freedom wall week");
+    }
+
+    return await response.json();
+}
+
+export const getFreedomWallStickers = async(token = null) => {
+    const headers = {};
+    if(token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/stickers`, {
+        method: "GET",
+        headers: headers
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to fetch freedom wall stickers");
+    }
+
+    return await response.json();
+}
+
+export const getFreedomWallItems = async(weekId, options = {}, token = null) => {
+    if(!weekId){
+        throw new Error("weekId is required");
+    }
+
+    const headers = {};
+    if(token) headers["Authorization"] = `Bearer ${token}`;
+
+    const parsedLimit = Number(options?.limit ?? 200);
+    const params = new URLSearchParams();
+    params.set("limit", String(Number.isNaN(parsedLimit) ? 200 : parsedLimit));
+
+    if(options?.cursor){
+        params.set("cursor", String(options.cursor));
+    }
+
+    if(Array.isArray(options?.types) && options.types.length > 0){
+        params.set("types", options.types.join(","));
+    } else if(typeof options?.types === "string" && options.types.trim()){
+        params.set("types", options.types.trim());
+    }
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/${encodeURIComponent(weekId)}/items?${params.toString()}`, {
+        method: "GET",
+        headers: headers
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to fetch freedom wall items");
+    }
+
+    return await response.json();
+}
+
+export const createFreedomWallItem = async(token, payload) => {
+    if(!token){
+        throw new Error("not authorized");
+    }
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/items`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload || {})
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to create freedom wall item");
+    }
+
+    return await response.json();
+}
+
+export const updateFreedomWallItem = async(token, itemId, payload) => {
+    if(!token){
+        throw new Error("not authorized");
+    }
+    if(!itemId){
+        throw new Error("itemId is required");
+    }
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/items/${encodeURIComponent(itemId)}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload || {})
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to update freedom wall item");
+    }
+
+    return await response.json();
+}
+
+export const deleteFreedomWallItem = async(token, itemId) => {
+    if(!token){
+        throw new Error("not authorized");
+    }
+    if(!itemId){
+        throw new Error("itemId is required");
+    }
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/items/${encodeURIComponent(itemId)}`, {
+        method: "DELETE",
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to delete freedom wall item");
+    }
+
+    return await response.json();
+}
+
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

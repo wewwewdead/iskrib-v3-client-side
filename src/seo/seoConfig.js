@@ -62,6 +62,16 @@ export const SEO_ROUTES = [
     sitemap: { changefreq: "daily", priority: "0.8" },
   },
   {
+    path: "/home/freedom-wall",
+    title: `${SITE_NAME} Freedom Wall`,
+    description:
+      "Join the live weekly Freedom Wall to doodle, drop stickers and stamps, and leave colorful notes with the community.",
+    canonicalPath: "/home/freedom-wall",
+    robots: "index,follow",
+    prerender: true,
+    sitemap: { changefreq: "daily", priority: "0.8" },
+  },
+  {
     path: "/login",
     title: `Log In | ${SITE_NAME}`,
     description: `Log in to ${SITE_NAME} to continue writing and engaging with the community.`,

@@ -34,6 +34,7 @@ const MyOpinions = lazy(() => import('./components/SidebarOpinions/MyOpinions.js
 const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionViewer.jsx'));
 const ExplorePage = lazy(() => import('./components/HomePage/explore/ExplorePage.jsx'));
 const GalleryPage = lazy(() => import('./components/HomePage/gallery/GalleryPage.jsx'));
+const FreedomWallPage = lazy(() => import('./components/HomePage/freedomWall/FreedomWallPage.jsx'));
 
 const AppAuthModal = () => {
   const {showAuthModal, closeAuthModal} = useAuth();
@@ -99,6 +100,7 @@ const App = () => {
               <Route index element={<PostCards/>}/>
               <Route path='explore' element={<ExplorePage/>}/>
               <Route path='gallery' element={<GalleryPage/>}/>
+              <Route path='freedom-wall' element={<FreedomWallPage/>}/>
               <Route path='contentViewer' element={<ContentView/>}/>
               <Route path='post/:journalId' element={<ContentView/>}/>
               <Route path='post/:journalId/:slug' element={<ContentView/>}/>
