@@ -9,7 +9,25 @@ const slugifyTitle = (value = "") => {
 }
 
 export const handleCLickContent = (navigate) => {
-    return (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge) => {
+    return (
+        e,
+        jsonbContent,
+        wholeText,
+        title,
+        userId,
+        name,
+        avatar,
+        created_at,
+        journalId,
+        isLiked,
+        commentsCount,
+        isBookmarked,
+        likesCount,
+        bookmarksCount,
+        badge,
+        postType = null,
+        canvasDoc = null
+    ) => {
     e.stopPropagation()
 
     const encodedJournalId = journalId ? encodeURIComponent(journalId) : '';
@@ -33,7 +51,9 @@ export const handleCLickContent = (navigate) => {
             isBookmarked: isBookmarked,
             likesCount: likesCount,
             bookmarksCount: bookmarksCount,
-            badge: badge
+            badge: badge,
+            postType: postType,
+            canvasDoc: canvasDoc
         }
     })
     }

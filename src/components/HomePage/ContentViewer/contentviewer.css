@@ -274,6 +274,28 @@
     border-radius: 4px;
 }
 
+.cv-canvas-actions{
+    margin: -34px 0 56px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.cv-remix-btn{
+    border: 1px solid color-mix(in srgb, var(--accent-purple) 42%, var(--border-card));
+    background: var(--bg-secondary);
+    color: var(--accent-purple);
+    border-radius: 999px;
+    padding: 0.4rem 0.82rem;
+    font-size: 0.75rem;
+    font-weight: 640;
+    cursor: pointer;
+}
+
+.cv-remix-btn:disabled{
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 /* ── Toast ── */
 .cv-toast {
     position: fixed;
@@ -335,6 +357,9 @@
         font-size: 1rem;
         line-height: 1.7;
         margin-bottom: 60px;
+    }
+    .cv-canvas-actions{
+        margin: -24px 0 44px;
     }
     .cv-toast {
         bottom: 160px;

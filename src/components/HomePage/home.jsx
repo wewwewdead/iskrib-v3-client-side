@@ -21,6 +21,13 @@ import SidebarOpinions from "../SidebarOpinions/SidebarOpinions";
 import OpinionEditor from "../SidebarOpinions/OpinionsEditor";
 import { useMediaQuery } from 'react-responsive';
 
+const DEFAULT_EDITOR_LAUNCH_CONFIG = {
+    initialMode: 'text',
+    initialTitle: '',
+    initialCanvasDoc: null,
+    remixSource: null
+};
+
 const HomePage = () => {
     const {session, signOut, user, loading, isLoading, notifCount, openAuthModal} = useAuth();
     const isGuest = !session && !loading;
@@ -68,6 +75,18 @@ const HomePage = () => {
         icon:
         <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill="#000000">
             <path fillRule="evenodd" d="M12,2 C17.5228475,2 22,6.4771525 22,12 C22,17.5228475 17.5228475,22 12,22 C6.4771525,22 2,17.5228475 2,12 C2,6.4771525 6.4771525,2 12,2 Z M17.9842695,7.39078625 C18.1985588,6.64477525 17.4973604,5.9435768 16.7513494,6.1578661 L16.6494246,6.19284365 L9.57835679,9.02127078 L9.47282273,9.07079854 C9.30957453,9.15937167 9.17428758,9.29167162 9.08209683,9.45256344 L9.02127078,9.57835679 L6.19284365,16.6494246 L6.1578661,16.7513494 C5.9435768,17.4973604 6.64477525,18.1985588 7.39078625,17.9842695 L7.49271102,17.949292 L14.5637788,15.1208648 L14.6693129,15.0713371 C14.8325611,14.982764 14.967848,14.850464 15.0600388,14.6895722 L15.1208648,14.5637788 L17.949292,7.49271102 L17.9842695,7.39078625 Z M12,10 C13.1045695,10 14,10.8954305 14,12 C14,13.1045695 13.1045695,14 12,14 C10.8954305,14 10,13.1045695 10,12 C10,10.8954305 10.8954305,10 12,10 Z" fill={location.pathname === '/home/explore' ? "#5f92ffff" : "#b6b6b6ff"} />
+        </svg>
+    };
+
+    const galleryLink = {
+        path: '/home/gallery',
+        label: 'Gallery',
+        action: () => navigatePath('/home/gallery'),
+        icon:
+        <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill="none">
+            <path d="M3 6.2C3 4.985 3.985 4 5.2 4H18.8C20.015 4 21 4.985 21 6.2V17.8C21 19.015 20.015 20 18.8 20H5.2C3.985 20 3 19.015 3 17.8V6.2Z" fill={location.pathname === '/home/gallery' ? "#5f92ffff" : "#b6b6b6ff"} />
+            <path d="M7.25 15.5L10.3 11.8C10.52 11.53 10.92 11.51 11.17 11.76L13.45 14.04L15.98 10.73C16.23 10.41 16.71 10.39 16.98 10.7L19.25 13.3V17H4.75V15.96L6.46 14.16C6.69 13.91 7.09 13.9 7.34 14.13L7.25 15.5Z" fill={location.pathname === '/home/gallery' ? "#eaf2ff" : "#d6d6d6"} />
+            <circle cx="8.75" cy="8.75" r="1.35" fill={location.pathname === '/home/gallery' ? "#eaf2ff" : "#d6d6d6"} />
         </svg>
     };
 
@@ -147,17 +166,13 @@ const HomePage = () => {
     ];
 
     const links = isGuest
-        ? [homeLink, exploreLink, ...guestLinks]
-        : [homeLink, exploreLink, ...authLinks];
-
-    const header_links = [
-        {label: 'Feed'},
-        {label: 'Opiions'},
-    ]
+        ? [homeLink, exploreLink, galleryLink, ...guestLinks]
+        : [homeLink, exploreLink, galleryLink, ...authLinks];
 
     const imgRef = useRef(null)
     const [showProfileEditor, setShowProfileEditor] = useState(false);
     const [showEditor, setShowEditor] = useState(false);
+    const [editorLaunchConfig, setEditorLaunchConfig] = useState(DEFAULT_EDITOR_LAUNCH_CONFIG);
     const [profilePreview, setProfilePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
 
@@ -188,12 +203,17 @@ const HomePage = () => {
         }
     }
 
-    const handleOpenTextEditor = () => {
+    const handleOpenTextEditor = useCallback((config = {}) => {
         editor.setEditable(true)
+        setEditorLaunchConfig({
+            ...DEFAULT_EDITOR_LAUNCH_CONFIG,
+            ...config
+        });
         setShowEditor(true)
-    }
+    }, [editor])
     const handleCloseEditor = useCallback(() => {
         setShowEditor(false)
+        setEditorLaunchConfig(DEFAULT_EDITOR_LAUNCH_CONFIG);
     }, [])
 
     const handleSubmit = async(e) =>{
@@ -247,6 +267,22 @@ const HomePage = () => {
     const handleCloseOpiniionTextEditor = () =>{
         setShowOpinionEditor(false);
     }
+
+    useEffect(() => {
+        const launchState = location.state;
+        if(!launchState?.openEditor){
+            return;
+        }
+
+        handleOpenTextEditor({
+            initialMode: launchState?.editorMode === 'canvas' ? 'canvas' : 'text',
+            initialTitle: launchState?.initialTitle || '',
+            initialCanvasDoc: launchState?.initialCanvasDoc || null,
+            remixSource: launchState?.remixSource || null
+        });
+
+        navigate(location.pathname, {replace: true, state: null});
+    }, [location.state, location.pathname, navigate, handleOpenTextEditor]);
 
     //handle show links header when stop scrolling and hides header when scrolling
     // useEffect(() =>{
@@ -304,7 +340,14 @@ const HomePage = () => {
 
         <AnimatePresence>
         {!isGuest && showEditor && (
-            <Editor key={'main-editor'} onClose={handleCloseEditor}/>
+            <Editor
+                key={'main-editor'}
+                onClose={handleCloseEditor}
+                initialMode={editorLaunchConfig.initialMode}
+                initialTitle={editorLaunchConfig.initialTitle}
+                initialCanvasDoc={editorLaunchConfig.initialCanvasDoc}
+                remixSource={editorLaunchConfig.remixSource}
+            />
         )}
 
         {!isGuest && showOpinionEditor && (

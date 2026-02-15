@@ -45,7 +45,7 @@ const extractDominantColors = (imgElement) =>{
 
         return { primary: '#ffffffff', secondary: '#ffffffff' };
     } catch (error) {
-        console.error('Error extracting color:', e);
+        console.error('Error extracting color:', error);
         return { primary: '#ffffffff' , secondary: '#ffffffff'  };
     }
 }

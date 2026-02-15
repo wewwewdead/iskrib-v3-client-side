@@ -103,6 +103,16 @@ const Visitprofile = () =>{
             </svg>
         },
         {
+            path: '/home/gallery',
+            label: 'Gallery', action: ()=> navigatePath('/home/gallery'),
+            icon:
+            <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6.2C3 4.985 3.985 4 5.2 4H18.8C20.015 4 21 4.985 21 6.2V17.8C21 19.015 20.015 20 18.8 20H5.2C3.985 20 3 19.015 3 17.8V6.2Z" fill={location.pathname === '/home/gallery' ? "var(--accent-dark)" : "var(--text-muted)"} />
+                <path d="M6.8 14.8L8.7 12.7C8.93 12.45 9.32 12.44 9.56 12.67L11.24 14.35L13.72 11.4C13.95 11.12 14.38 11.1 14.64 11.35L17.2 13.85V16.7H4.8V15.8L6.8 14.8Z" fill={location.pathname === '/home/gallery' ? "#eaf2ff" : "#d8d8d8"} />
+                <circle cx="8.5" cy="8.8" r="1.2" fill={location.pathname === '/home/gallery' ? "#eaf2ff" : "#d8d8d8"} />
+            </svg>
+        },
+        {
             path: '/profile', 
             label: 'Profile', action: ()=> navigatePath('/profile'), 
             icon: 

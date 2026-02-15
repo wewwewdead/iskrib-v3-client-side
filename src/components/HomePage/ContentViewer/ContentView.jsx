@@ -14,12 +14,14 @@ import ParseContent from "../postCards/parseData";
 import { useBookMarkMutation, useFollowMutation, useLikeMutation } from "../../../utils/useMutation";
 import { useAuth } from "../../../Context/useAuth";
 import CommentSection from "../../comments/comments";
+import CanvasViewer from "../Canvas/CanvasViewer";
 import debounce from "../../../../helpers/debounce";
 import formatCounts from "../../../../helpers/fomatCounts";
 import { handleClickProfile } from "../../../../helpers/handleClicks";
 import { getFollowsData, getJournalById } from "../../../../API/Api";
 import { useQuery } from "@tanstack/react-query";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
+import { getCanvasWholeText, parseCanvasDoc } from "../../../utils/canvasDoc";
 
 const ContentView = () => {
     const navigate = useNavigate();
@@ -57,36 +59,73 @@ const ContentView = () => {
     const location = useLocation();
     const { journalId } = useParams();
     const statePostData = location.state;
+    const shouldFetchPost = !!journalId && (!statePostData || !statePostData?.postType);
 
     const { data: fetchedJournalData, isLoading: isLoadingJournalById } = useQuery({
         queryKey: ['journalById', journalId, user?.userData?.[0]?.id],
         queryFn: ({ queryKey }) => getJournalById(queryKey[1], queryKey[2]),
-        enabled: !statePostData && !!journalId,
+        enabled: shouldFetchPost,
         staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
 
-    const postData = statePostData || (() => {
+    const postData = (() => {
         const journal = fetchedJournalData?.journal;
-        if (!journal) return null;
+        if(journal){
+            const postType = journal?.post_type || 'text';
+            const parsedContent = ParseContent(journal?.content);
+            const canvasDoc = postType === 'canvas' ? parseCanvasDoc(journal?.canvas_doc) : null;
+            const wholeText = postType === 'canvas'
+                ? getCanvasWholeText(canvasDoc)
+                : (parsedContent?.wholeText || '');
 
-        const parsedContent = ParseContent(journal?.content);
+            return {
+                postType: postType,
+                content: journal?.content,
+                canvasDoc: canvasDoc,
+                wholeText: wholeText,
+                title: journal?.title,
+                userId: journal?.users?.id || journal?.user_id,
+                name: journal?.users?.name,
+                avatar: journal?.users?.image_url,
+                created_at: journal?.created_at,
+                journalId: journal?.id,
+                isLiked: journal?.has_liked,
+                commentsCount: journal?.comment_count?.[0]?.count || 0,
+                isBookmarked: journal?.has_bookmarked,
+                likesCount: journal?.like_count?.[0]?.count || 0,
+                bookmarksCount: journal?.bookmark_count?.[0]?.count || 0,
+                badge: journal?.users?.badge
+            };
+        }
+
+        if(!statePostData){
+            return null;
+        }
+
+        const inferredPostType = statePostData?.postType || (statePostData?.canvasDoc ? 'canvas' : 'text');
+        const parsedContent = ParseContent(statePostData?.content);
+        const canvasDoc = inferredPostType === 'canvas' ? parseCanvasDoc(statePostData?.canvasDoc) : null;
 
         return {
-            content: journal?.content,
-            wholeText: parsedContent?.wholeText || '',
-            title: journal?.title,
-            userId: journal?.users?.id || journal?.user_id,
-            name: journal?.users?.name,
-            avatar: journal?.users?.image_url,
-            created_at: journal?.created_at,
-            journalId: journal?.id,
-            isLiked: journal?.has_liked,
-            commentsCount: journal?.comment_count?.[0]?.count || 0,
-            isBookmarked: journal?.has_bookmarked,
-            likesCount: journal?.like_count?.[0]?.count || 0,
-            bookmarksCount: journal?.bookmark_count?.[0]?.count || 0,
-            badge: journal?.users?.badge
+            postType: inferredPostType,
+            content: statePostData?.content,
+            canvasDoc: canvasDoc,
+            wholeText: inferredPostType === 'canvas'
+                ? (statePostData?.wholeText || getCanvasWholeText(canvasDoc))
+                : (statePostData?.wholeText || parsedContent?.wholeText || ''),
+            title: statePostData?.title,
+            userId: statePostData?.userId,
+            name: statePostData?.name,
+            avatar: statePostData?.avatar,
+            created_at: statePostData?.created_at,
+            journalId: statePostData?.journalId,
+            isLiked: statePostData?.isLiked,
+            commentsCount: statePostData?.commentsCount || 0,
+            isBookmarked: statePostData?.isBookmarked,
+            likesCount: statePostData?.likesCount || 0,
+            bookmarksCount: statePostData?.bookmarksCount || 0,
+            badge: statePostData?.badge
         };
     })();
 
@@ -146,6 +185,31 @@ const ContentView = () => {
     const hanldeClickComments = (e) => {
         e.stopPropagation();
         setShowCommentsContainer(true);
+    }
+
+    const handleRemixCanvas = (e) => {
+        e.stopPropagation();
+        if(!session){
+            return;
+        }
+
+        const sourceTitle = typeof postData?.title === 'string' ? postData.title.trim() : '';
+        const remixTitle = sourceTitle.toLowerCase().startsWith('remix:')
+            ? sourceTitle
+            : `Remix: ${sourceTitle || 'Canvas'}`;
+
+        navigate('/home', {
+            state: {
+                openEditor: true,
+                editorMode: 'canvas',
+                initialTitle: remixTitle,
+                initialCanvasDoc: postData?.canvasDoc || null,
+                remixSource: {
+                    journalId: postData?.journalId,
+                    authorName: postData?.name || 'Unknown'
+                }
+            }
+        });
     }
 
     const handleCLoseComments = () => {
@@ -318,22 +382,44 @@ const ContentView = () => {
 
                     {/* Body content */}
                     <div className="cv-body">
-                        <LexicalComposer initialConfig={{
-                            namespace: "ContentViewer",
-                            theme: theme,
-                            editable: false,
-                            editorState: postData?.content,
-                            nodes: [HeadingNode, ImageNode, QuoteNode],
-                            onError(error) {
-                                throw error;
-                            },
-                        }}>
-                            <RichTextPlugin
-                                contentEditable={<ContentEditable />}
-                                ErrorBoundary={LexicalErrorBoundary}
+                        {postData?.postType === 'canvas' ? (
+                            <CanvasViewer
+                                journalId={postData?.journalId}
+                                canvasDoc={postData?.canvasDoc}
+                                authorId={postData?.userId}
                             />
-                        </LexicalComposer>
+                        ) : (
+                            <LexicalComposer initialConfig={{
+                                namespace: "ContentViewer",
+                                theme: theme,
+                                editable: false,
+                                editorState: postData?.content,
+                                nodes: [HeadingNode, ImageNode, QuoteNode],
+                                onError(error) {
+                                    throw error;
+                                },
+                            }}>
+                                <RichTextPlugin
+                                    contentEditable={<ContentEditable />}
+                                    ErrorBoundary={LexicalErrorBoundary}
+                                />
+                            </LexicalComposer>
+                        )}
                     </div>
+
+                    {postData?.postType === 'canvas' && (
+                        <div className="cv-canvas-actions">
+                            <button
+                                type="button"
+                                className="cv-remix-btn"
+                                onClick={handleRemixCanvas}
+                                disabled={!session}
+                                title={session ? "Remix this canvas" : "Sign in to remix"}
+                            >
+                                Remix this Canvas
+                            </button>
+                        </div>
+                    )}
                 </article>
 
                 {/* Toast notification */}

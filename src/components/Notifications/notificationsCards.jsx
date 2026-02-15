@@ -9,7 +9,7 @@ import ParseContent from "../HomePage/postCards/parseData";
 import formatPostDate from "../../../helpers/formatDateString";
 import { handleCLickContent, handleClickOpinion } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
-import { userDeleteNotificationMutation, useReadNotificationMutation } from "../../utils/useMutation";
+import { useReadNotificationMutation, useUserDeleteNotificationMutation } from "../../utils/useMutation";
 import { AnimatePresence, motion} from "framer-motion";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import { handleImageFallback } from "../../utils/handleImageFallback";
@@ -154,7 +154,7 @@ const NotificationCards = () =>{
         setSettingsId(settingsId === notifId ? null : notifId);
     }
 
-    const mutationDeleteNotif  = userDeleteNotificationMutation(session);
+    const mutationDeleteNotif  = useUserDeleteNotificationMutation(session);
 
     const handleClickDeleteNotification = async(e, notifId, source) =>{
         e.stopPropagation();

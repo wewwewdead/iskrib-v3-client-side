@@ -10,7 +10,7 @@ import formatPostDate from "../../../helpers/formatDateString";
 import { MoonLoader } from "react-spinners";
 
 const MyOpinions = () =>{
-    const {session, user} = useAuth();
+    const {session, user, openAuthModal} = useAuth();
 
     const navigate = useNavigate();
     const {ref, inView} = useInView({threshold: 0, rootMargin: '200px'})

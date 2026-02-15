@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import ParseContent from "../HomePage/postCards/parseData";
 import FormatNotificationType from "../../../helpers/formatNoficationType";
 import formatPostDate from "../../../helpers/formatDateString";
-import { userDeleteNotificationMutation, useReadNotificationMutation } from "../../utils/useMutation";
+import { useReadNotificationMutation, useUserDeleteNotificationMutation } from "../../utils/useMutation";
 import { MoonLoader } from "react-spinners";
 import { handleCLickContent, handleClickOpinion } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
@@ -29,7 +29,7 @@ const UnreadNotification = () =>{
         setSettingsId(settingsId === notifId ? null : notifId);
     }
 
-    const deleteNotifMutation = userDeleteNotificationMutation(session);
+    const deleteNotifMutation = useUserDeleteNotificationMutation(session);
     const handleClickDeleteNotification = (e, notifId, source) =>{
         e.stopPropagation();
         try {

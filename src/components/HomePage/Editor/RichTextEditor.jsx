@@ -37,7 +37,7 @@ const theme = {
     heading: 'editor-heading',
 }
 
-const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWordCount, wordCount}) => {
+const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWordCount, wordCount, onSwitchToCanvas}) => {
     const [editor] = useLexicalComposerContext();
     const [editorState, setEditorState] = useState(null);
     const [hasContent, setHasContent] = useState(false);
@@ -102,7 +102,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
         <>
         {/* Toolbar above content */}
         <div className="toolbar-wrapper">
-            <ToolBar addUploadedImagePath={addUploadImagesPath}/>
+            <ToolBar addUploadedImagePath={addUploadImagesPath} onSwitchToCanvas={onSwitchToCanvas}/>
         </div>
 
         {/* Bar loader directly under toolbar */}

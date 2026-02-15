@@ -164,7 +164,7 @@ export const useReadNotificationMutation = (session) =>{
     })
 }
 
-export const userDeleteNotificationMutation = (session) =>{
+export const useUserDeleteNotificationMutation = (session) =>{
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data) => deleteNotification(session?.access_token, data?.notifId, data?.source),

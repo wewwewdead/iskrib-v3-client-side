@@ -486,6 +486,36 @@
     letter-spacing: 0.005rem;
 }
 
+.canvas-card-actions{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.42rem;
+    width: 100%;
+    margin-top: -0.1rem;
+}
+
+.canvas-card-action-btn{
+    border: 1px solid var(--border-card);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.68rem;
+    font-weight: 620;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.canvas-card-action-btn:hover{
+    border-color: var(--accent-sage);
+    color: var(--accent-sage);
+}
+
+.canvas-card-action-btn.is-remix{
+    border-color: color-mix(in srgb, var(--accent-purple) 42%, var(--border-card));
+    color: var(--accent-purple);
+}
+
 /* ── Icon bar ── */
 .card-icons-container{
     display: flex;
@@ -685,6 +715,13 @@
         font-size: 0.78rem;
         color: var(--text-body);
         line-height: 1.5;
+    }
+    .canvas-card-actions{
+        gap: 0.34rem;
+    }
+    .canvas-card-action-btn{
+        font-size: 0.64rem;
+        padding: 0.26rem 0.55rem;
     }
 
     /* Footer: two explicit rows — author top, actions bottom */

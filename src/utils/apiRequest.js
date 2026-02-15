@@ -54,7 +54,7 @@ const apiRequest = async (input, init = {}) => {
             return response;
         } catch (error) {
             if (timedOut) {
-                error = new Error("Request timed out");
+                throw new Error("Request timed out");
             }
 
             if (attempt < retries && isRetryableNetworkError(error)) {

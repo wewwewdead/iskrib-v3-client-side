@@ -45,6 +45,11 @@
     box-shadow: var(--shadow-modal);
 }
 
+.editor-container.is-canvas-mode{
+    max-width: 980px;
+    height: 92%;
+}
+
 /* ── Close button row ── */
 .editor-close-bttn-container {
     display: flex;
@@ -367,6 +372,13 @@
 }
 .editor-save-bttn-disabled:focus {
     outline: none;
+}
+
+.composer-mode-btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
 }
 
 /* ── Image upload icon (inside toolbar) ── */

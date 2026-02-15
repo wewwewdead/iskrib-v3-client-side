@@ -12,6 +12,7 @@ import { getVisitedUserJournals } from '../../../../../API/Api';
 import { useAddViewsMutation } from '../../../../utils/useMutation';
 import VerifiedBadge from '../../../Badge/VerifiedBadge';
 import { handleImageFallback } from '../../../../utils/handleImageFallback';
+import { getCanvasPreview } from '../../../../utils/canvasDoc';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
@@ -41,12 +42,12 @@ const VisitedProfilePostCards = () =>{
 
     const clickContent = handleCLickContent(navigate);
     const mutateViews = useAddViewsMutation(session);
-    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge) =>{
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType = null, canvasDoc = null) =>{
         const formadata = new FormData();
         formadata.append('journalId', journalId)
         mutateViews.mutate(formadata);
 
-        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge);
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType, canvasDoc);
     }
 
     useEffect(() =>{
@@ -112,8 +113,12 @@ const VisitedProfilePostCards = () =>{
             {viewMode === 'grid' ? (
                 <div className="postcards-grid-view">
                     {journals.map((journal) => {
+                        const isCanvasPost = journal?.post_type === 'canvas';
                         const parsedContent = ParseContent(journal.content);
-                        const thumbnail = parsedContent?.firstImage?.src;
+                        const canvasPreview = isCanvasPost ? getCanvasPreview(journal?.canvas_doc) : null;
+                        const wholeText = isCanvasPost ? canvasPreview?.wholeText || '' : parsedContent?.wholeText || '';
+                        const previewText = isCanvasPost ? canvasPreview?.slicedText || '' : parsedContent?.slicedText || '';
+                        const thumbnail = isCanvasPost ? null : parsedContent?.firstImage?.src;
                         return (
                             <motion.div
                                 key={journal.id}
@@ -121,7 +126,7 @@ const VisitedProfilePostCards = () =>{
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.25, ease: 'easeOut' }}
-                                onClick={(e) => viewContent(e, journal?.content, parsedContent?.wholeText, journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge)}
+                                onClick={(e) => viewContent(e, journal?.content, wholeText, journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.canvas_doc)}
                             >
                                 {thumbnail && (
                                     <div className="postcards-grid-img-wrap">
@@ -130,8 +135,8 @@ const VisitedProfilePostCards = () =>{
                                 )}
                                 <div className="postcards-grid-body">
                                     <h3 className="postcards-grid-title">{journal.title.length > 32 ? `${journal.title.substring(0, 32)}...` : journal.title}</h3>
-                                    {parsedContent?.slicedText && (
-                                        <p className="postcards-grid-snippet">{parsedContent.slicedText.length > 50 ? `${parsedContent.slicedText.substring(0, 50)}...` : parsedContent.slicedText}</p>
+                                    {previewText && (
+                                        <p className="postcards-grid-snippet">{previewText.length > 50 ? `${previewText.substring(0, 50)}...` : previewText}</p>
                                     )}
                                 </div>
                             </motion.div>
@@ -141,7 +146,12 @@ const VisitedProfilePostCards = () =>{
             ) : (
             <div className="postcards-list-view">
             {journals.map((journal, index) => {
+                const isCanvasPost = journal?.post_type === 'canvas';
                 const parsedContent = ParseContent(journal.content);
+                const canvasPreview = isCanvasPost ? getCanvasPreview(journal?.canvas_doc) : null;
+                const wholeText = isCanvasPost ? canvasPreview?.wholeText || '' : parsedContent?.wholeText || '';
+                const previewText = isCanvasPost ? canvasPreview?.slicedText || '' : parsedContent?.slicedText || '';
+                const thumbnail = isCanvasPost ? null : parsedContent?.firstImage?.src;
 
                 return(
                     <motion.div
@@ -151,17 +161,17 @@ const VisitedProfilePostCards = () =>{
                         animate={{opacity: 1, y: 0}}
                         transition={{duration: 0.3, ease: 'easeOut'}}
                     >
-                        {parsedContent?.firstImage && (
+                        {thumbnail && (
                             <img
                                 className="card-image-banner"
-                                src={parsedContent.firstImage.src}
+                                src={thumbnail}
                                 alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                 loading="lazy"
                                 onError={handleImageFallback}
                                 onClick={(e) => viewContent(
                                     e,
                                     journal?.content,
-                                    parsedContent?.wholeText,
+                                    wholeText,
                                     journal?.title,
                                     userId,
                                     journal?.users?.name,
@@ -172,7 +182,10 @@ const VisitedProfilePostCards = () =>{
                                     journal?.comment_count?.[0].count,
                                     journal?.has_bookmarked,
                                     journal?.like_count?.[0].count,
-                                    journal?.bookmark_count?.[0].count )}
+                                    journal?.bookmark_count?.[0].count,
+                                    journal?.users?.badge,
+                                    journal?.post_type,
+                                    journal?.canvas_doc )}
                             />
                         )}
 
@@ -180,7 +193,7 @@ const VisitedProfilePostCards = () =>{
                             <div onClick={(e) => viewContent(
                                 e,
                                 journal?.content,
-                                 parsedContent?.wholeText,
+                                 wholeText,
                                  journal?.title,
                                  userId,
                                  journal?.users?.name,
@@ -192,13 +205,15 @@ const VisitedProfilePostCards = () =>{
                                  journal?.has_bookmarked,
                                  journal?.like_count?.[0].count,
                                  journal?.bookmark_count?.[0].count,
-                                 journal?.users.badge )} className="content-container">
+                                 journal?.users.badge,
+                                 journal?.post_type,
+                                 journal?.canvas_doc )} className="content-container">
 
                                 <div className='feed-text-content-container'>
                                     <div className='feed-title-content'>
                                         <h2 className="feed-title-profile-page">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
                                     </div>
-                                    <p className="feed-text-content-profile-page">{parsedContent?.slicedText}</p>
+                                    <p className="feed-text-content-profile-page">{previewText}</p>
                                 </div>
                             </div>
 

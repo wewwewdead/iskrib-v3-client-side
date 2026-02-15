@@ -1,5 +1,13 @@
 const ParseContent = (contentString) => {
-
+    if(typeof contentString !== 'string' || !contentString.trim()){
+        return {
+            text: [],
+            slicedText: '',
+            images: [],
+            firstImage: null,
+            wholeText: '',
+        };
+    }
     //sample json data to be passed here..
 
     // {'root': {
@@ -73,7 +81,13 @@ const ParseContent = (contentString) => {
         return parsedData; //return the parsedData
         } catch (error) {
             console.error('Error parsing content:', error);
-            return { text: [], images: [] };
+            return {
+                text: [],
+                slicedText: '',
+                images: [],
+                firstImage: null,
+                wholeText: '',
+            };
         }
 }
 export default ParseContent;
