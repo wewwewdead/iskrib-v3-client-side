@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MoonLoader } from "react-spinners";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useInView } from "react-intersection-observer";
 import { getCanvasGallery } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
 import formatPostDate from "../../../../helpers/formatDateString";
@@ -11,6 +12,7 @@ import { handleImageFallback } from "../../../utils/handleImageFallback";
 import "./gallery.css";
 
 const getAspectRatioValue = (aspectRatio) => (aspectRatio === "4:5" ? "4 / 5" : "1 / 1");
+const CANVAS_GALLERY_PAGE_SIZE = 5;
 
 const CanvasPreview = ({canvasDoc}) => {
     const parsedCanvasDoc = useMemo(() => parseCanvasDoc(canvasDoc), [canvasDoc]);
@@ -54,17 +56,35 @@ const GalleryPage = () => {
     const {user} = useAuth();
     const userId = user?.userData?.[0]?.id || null;
     const [sortMode, setSortMode] = useState('hottest');
+    const {ref: inViewRef, inView} = useInView({threshold: 0.1});
 
-    const {data, isLoading, isFetching} = useQuery({
+    const {
+        data,
+        isLoading,
+        isFetching,
+        isFetchingNextPage,
+        fetchNextPage,
+        hasNextPage
+    } = useInfiniteQuery({
         queryKey: ['canvasGallery', userId, sortMode],
-        queryFn: () => getCanvasGallery(userId, 60, sortMode),
+        queryFn: ({pageParam = null}) => getCanvasGallery(userId, CANVAS_GALLERY_PAGE_SIZE, sortMode, pageParam),
+        initialPageParam: null,
+        getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage?.nextCursor : undefined),
         refetchOnWindowFocus: false,
         staleTime: 1000 * 45
     });
 
+    useEffect(() => {
+        if(inView && hasNextPage && !isFetchingNextPage){
+            fetchNextPage();
+        }
+    }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
     const journals = useMemo(() => (
-        (data?.data || []).filter((journal) => journal?.post_type === "canvas")
-    ), [data?.data]);
+        (data?.pages || [])
+            .flatMap((page) => page?.data || [])
+            .filter((journal) => journal?.post_type === "canvas")
+    ), [data?.pages]);
 
     if(isLoading){
         return (
@@ -100,45 +120,55 @@ const GalleryPage = () => {
                 </div>
             </div>
 
-            {isFetching && (
+            {isFetching && !isFetchingNextPage && (
                 <div className="gallery-refresh-pill">Refreshing...</div>
             )}
 
             {journals.length === 0 ? (
                 <div className="gallery-empty-state">No public canvases yet.</div>
             ) : (
-                <div className="gallery-masonry">
-                    {journals.map((journal) => (
-                        <article
-                            key={journal.id}
-                            className="gallery-card"
-                            onClick={() => navigate(`/home/post/${journal.id}`)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(event) => {
-                                if(event.key === 'Enter' || event.key === ' '){
-                                    event.preventDefault();
-                                    navigate(`/home/post/${journal.id}`);
-                                }
-                            }}
-                        >
-                            <CanvasPreview canvasDoc={journal?.canvas_doc} />
-                            <div className="gallery-card-body">
-                                <h3 className="gallery-card-title">{journal?.title || 'Untitled Canvas'}</h3>
-                                <div className="gallery-card-meta">
-                                    <span className="gallery-author">{journal?.users?.name || 'Unknown'}</span>
-                                    <VerifiedBadge badge={journal?.users?.badge} size={13} />
-                                    <span className="gallery-meta-dot">•</span>
-                                    <span>{formatPostDate(journal?.created_at)}</span>
+                <>
+                    <div className="gallery-masonry">
+                        {journals.map((journal) => (
+                            <article
+                                key={journal.id}
+                                className="gallery-card"
+                                onClick={() => navigate(`/home/post/${journal.id}`)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(event) => {
+                                    if(event.key === 'Enter' || event.key === ' '){
+                                        event.preventDefault();
+                                        navigate(`/home/post/${journal.id}`);
+                                    }
+                                }}
+                            >
+                                <CanvasPreview canvasDoc={journal?.canvas_doc} />
+                                <div className="gallery-card-body">
+                                    <h3 className="gallery-card-title">{journal?.title || 'Untitled Canvas'}</h3>
+                                    <div className="gallery-card-meta">
+                                        <span className="gallery-author">{journal?.users?.name || 'Unknown'}</span>
+                                        <VerifiedBadge badge={journal?.users?.badge} size={13} />
+                                        <span className="gallery-meta-dot">•</span>
+                                        <span>{formatPostDate(journal?.created_at)}</span>
+                                    </div>
+                                    <div className="gallery-card-score">
+                                        <span>Hot score</span>
+                                        <span>{journal?.hot_score || 0}</span>
+                                    </div>
                                 </div>
-                                <div className="gallery-card-score">
-                                    <span>Hot score</span>
-                                    <span>{journal?.hot_score || 0}</span>
-                                </div>
-                            </div>
-                        </article>
-                    ))}
-                </div>
+                            </article>
+                        ))}
+                    </div>
+
+                    {isFetchingNextPage && (
+                        <div className="gallery-next-loading">
+                            <MoonLoader loading={isFetchingNextPage} color="var(--loader-color)" size={16} />
+                        </div>
+                    )}
+
+                    {hasNextPage && <div ref={inViewRef} className="gallery-infinite-sentinel" />}
+                </>
             )}
         </div>
     );

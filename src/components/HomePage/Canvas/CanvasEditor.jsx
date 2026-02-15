@@ -644,6 +644,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
 
             queryClient.invalidateQueries({queryKey: ["journals"]});
             queryClient.invalidateQueries({queryKey: ["userJournals", user?.userData?.[0]?.id]});
+            queryClient.invalidateQueries({queryKey: ["canvasGallery"]});
             onCloseOnSave();
         } catch (error) {
             console.error("Error saving canvas journal:", error);

@@ -205,6 +205,19 @@
     gap: 0.32rem;
 }
 
+.gallery-next-loading{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 0.65rem;
+}
+
+.gallery-infinite-sentinel{
+    width: 100%;
+    height: 2px;
+}
+
 @media (max-width: 900px){
     .gallery-masonry{
         column-count: 2;

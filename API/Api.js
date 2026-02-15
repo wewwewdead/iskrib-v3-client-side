@@ -230,7 +230,7 @@ export const getMonthlyHottestJournals = async(userId, limit = 10) => {
     return data;
 }
 
-export const getCanvasGallery = async(userId, limit = 36, sort = 'hottest') => {
+export const getCanvasGallery = async(userId, limit = 36, sort = 'hottest', cursor = null) => {
     const parsedLimit = Number(limit);
     if(Number.isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 72){
         throw new Error('limit should be an integer between 1 and 72');
@@ -243,6 +243,9 @@ export const getCanvasGallery = async(userId, limit = 36, sort = 'hottest') => {
     let url = `${BASE_URL}/journals/canvas/gallery?limit=${parsedLimit}&sort=${encodeURIComponent(normalizedSort)}`;
     if(userId){
         url += `&userId=${encodeURIComponent(userId)}`;
+    }
+    if(cursor){
+        url += `&cursor=${encodeURIComponent(cursor)}`;
     }
 
     const response = await apiRequest(url, {

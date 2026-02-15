@@ -130,7 +130,8 @@
 }
 
 .canvas-tool-controls {
-    display: inline-flex;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.4rem;
     margin-left: 0.25rem;
@@ -138,6 +139,7 @@
 
 .canvas-color-swatches {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.32rem;
 }
@@ -195,4 +197,20 @@
     padding: 0.28rem 0.62rem;
     font-size: 0.72rem;
     color: var(--text-secondary);
+}
+
+@media (max-width: 520px) {
+    .canvas-tool-controls {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .canvas-size-range {
+        width: 72px;
+    }
+
+    .canvas-color-swatch {
+        width: 20px;
+        height: 20px;
+    }
 }

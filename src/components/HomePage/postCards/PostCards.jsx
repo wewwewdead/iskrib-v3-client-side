@@ -71,7 +71,6 @@ const PostCards = () => {
 
     const header_links = [
         {label: 'Writings', path: '/home'},
-        {label: 'Gallery', path: '/home/gallery'},
         {label: 'Opinions', path: '/home/opinions'},
     ]
 
