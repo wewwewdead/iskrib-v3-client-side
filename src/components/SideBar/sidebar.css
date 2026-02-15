@@ -185,7 +185,7 @@
     flex-shrink: 0;
 }
 .theme-toggle-track.active{
-    background-color: rgb(94, 66, 255);
+    background-color: #5f92ff;
 }
 .theme-toggle-thumb{
     position: absolute;

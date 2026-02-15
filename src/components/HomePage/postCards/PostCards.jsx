@@ -375,17 +375,10 @@ const PostCards = () => {
         }
     }, [])
 
-    const feedJournals = (data?.pages?.flatMap((page) => page.data || []) || [])
-        .filter((journal) => journal?.post_type !== 'canvas');
-    const rawSearchedJournals = searchData?.data || [];
-    const searchedJournals = rawSearchedJournals
-        .filter((journal) => journal?.post_type !== 'canvas');
+    const feedJournals = data?.pages?.flatMap((page) => page.data || []) || [];
+    const searchedJournals = searchData?.data || [];
     const suggestionItems = suggestionData?.data || [];
     const journals = isSearchMode ? searchedJournals : feedJournals;
-    const hasOnlyCanvasSearchMatches = isSearchMode
-        && rawSearchedJournals.length > 0
-        && searchedJournals.length === 0
-        && rawSearchedJournals.every((journal) => journal?.post_type === 'canvas');
     const isLoading = isSearchMode ? isSearchLoading : isFeedLoading;
     const showSuggestions = isSearchFocused && debouncedSearchInput.length >= 2;
 
@@ -429,15 +422,6 @@ const PostCards = () => {
                 </span>
             ) : null}
         </div>
-        {hasOnlyCanvasSearchMatches && !isSearchFetching && (
-            <button
-                type="button"
-                className="search-gallery-hint"
-                onClick={() => navigate('/home/gallery')}
-            >
-                Canvas matches found in Gallery
-            </button>
-        )}
         {showSuggestions && (
             <div className="search-suggestions-dropdown">
                 {isSuggestionsLoading ? (
@@ -491,25 +475,10 @@ const PostCards = () => {
         <AnimatePresence>
         <div className="postcards-parent-container">
             {journals.length === 0 && !isLoading && (
-                <div className={`search-empty-state ${hasOnlyCanvasSearchMatches ? 'is-canvas-only' : ''}`}>
-                    {searchError ? (
-                        'Search failed. Please try again.'
-                    ) : hasOnlyCanvasSearchMatches ? (
-                        <>
-                            No writing posts matched.{" "}
-                            <button
-                                type="button"
-                                className="search-empty-link"
-                                onClick={() => navigate('/home/gallery')}
-                            >
-                                View canvas matches in Gallery
-                            </button>
-                        </>
-                    ) : isSearchMode ? (
-                        'No matching posts found.'
-                    ) : (
-                        'No post available...'
-                    )}
+                <div className="search-empty-state">
+                    {searchError ? 'Search failed. Please try again.'
+                     : isSearchMode ? 'No matching posts found.'
+                     : 'No post available...'}
                 </div>
             )}
             {journals.map((journal, index) => {
@@ -546,6 +515,18 @@ const PostCards = () => {
                             <div onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)} className="content-container">
                                 <div className="feed-text-content-container">
                                     <div className="feed-title-content">
+                                        {isCanvasPost && (
+                                            <span className="canvas-type-badge">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                     strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                                                    <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                                                    <path d="M2 2l7.586 7.586"/>
+                                                    <circle cx="11" cy="11" r="2"/>
+                                                </svg>
+                                                Canvas
+                                            </span>
+                                        )}
                                         <h2 className="feed-title">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
                                     </div>
                                     <p className="feed-text-content">{previewText}</p>

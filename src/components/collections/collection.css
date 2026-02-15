@@ -301,7 +301,7 @@ p {
 .input-name-collection:focus {
     outline: none;
     border-color: var(--accent-purple);
-    box-shadow: 0 0 0 3px rgba(94, 66, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(95, 146, 255, 0.1);
 }
 .collection-input-description {
     display: flex;
@@ -336,7 +336,7 @@ p {
 .collection-description:focus {
     outline: none;
     border-color: var(--accent-purple);
-    box-shadow: 0 0 0 3px rgba(94, 66, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(95, 146, 255, 0.1);
 }
 .create-or-add-container {
     display: flex;
@@ -601,7 +601,7 @@ p {
     background: linear-gradient(135deg, #6B8F71, #4a7a52);
 }
 .collection-gradient-header[data-accent="1"] {
-    background: linear-gradient(135deg, #7c6aef, #5e42ff);
+    background: linear-gradient(135deg, #5f92ff, #4a7de6);
 }
 .collection-gradient-header[data-accent="2"] {
     background: linear-gradient(135deg, #e6a040, #d4880a);
@@ -663,7 +663,7 @@ p {
     background: linear-gradient(135deg, #6B8F71, #4a7a52);
 }
 .cv-gradient-header[data-accent="1"] {
-    background: linear-gradient(135deg, #7c6aef, #5e42ff);
+    background: linear-gradient(135deg, #5f92ff, #4a7de6);
 }
 .cv-gradient-header[data-accent="2"] {
     background: linear-gradient(135deg, #e6a040, #d4880a);
