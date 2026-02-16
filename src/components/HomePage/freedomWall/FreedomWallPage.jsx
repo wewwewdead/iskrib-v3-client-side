@@ -40,8 +40,8 @@ const NOTE_FONT_OPTIONS = [
 
 const NOTE_STYLE_OPTIONS = ["normal", "bold", "italic"];
 const WALL_MAX_WIDTH = 1080;
-const WALL_MIN_HEIGHT = 420;
 const WALL_MAX_HEIGHT = 900;
+const WALL_ASPECT_RATIO = 0.64;
 const GRID_SIZE = 36;
 const REPORTABLE_ITEM_TYPES = new Set(["doodle"]);
 const ERASER_RADIUS_PX = 18;
@@ -49,6 +49,7 @@ const ERASER_MOVE_THROTTLE_MS = 16;
 const MINIMAP_WIDTH = 100;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const getWallSizeScale = (stageWidth) => clamp(stageWidth / WALL_MAX_WIDTH, 0.25, 1);
 
 const snapToGrid = (px, gridSize = GRID_SIZE) => Math.round(px / gridSize) * gridSize;
 
@@ -169,8 +170,9 @@ const useEmojiImage = (emoji, resolution = 128) => {
 const StickerNode = ({item, stageWidth, stageHeight, isSelected, canEdit, onSelect, onDragEnd, isDraft}) => {
     const emoji = STICKER_OPTIONS[item?.payload?.sticker] || "🐶";
     const image = useEmojiImage(emoji);
+    const wallSizeScale = getWallSizeScale(stageWidth);
     const scale = clamp(Number(item?.payload?.scale) || 1, 0.25, 6);
-    const size = clamp(64 * scale, 20, 420);
+    const size = clamp(64 * scale * wallSizeScale, 20 * wallSizeScale, 420 * wallSizeScale);
     const x = clamp((Number(item?.payload?.x) || 0.5) * stageWidth, 0, Math.max(0, stageWidth - size));
     const y = clamp((Number(item?.payload?.y) || 0.5) * stageHeight, 0, Math.max(0, stageHeight - size));
     const showBorder = isDraft || isSelected;
@@ -212,8 +214,9 @@ const StickerNode = ({item, stageWidth, stageHeight, isSelected, canEdit, onSele
 const StampNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd, isSelected, isDraft}) => {
     const stamp = STAMP_ICONS[item?.payload?.stamp] || "✨";
     const image = useEmojiImage(stamp, 64);
+    const wallSizeScale = getWallSizeScale(stageWidth);
     const scale = clamp(Number(item?.payload?.scale) || 1, 0.35, 5);
-    const size = clamp(34 * scale, 14, 220);
+    const size = clamp(34 * scale * wallSizeScale, 14 * wallSizeScale, 220 * wallSizeScale);
     const x = clamp((Number(item?.payload?.x) || 0.5) * stageWidth, 0, Math.max(0, stageWidth - size));
     const y = clamp((Number(item?.payload?.y) || 0.5) * stageHeight, 0, Math.max(0, stageHeight - size));
     const showBorder = isDraft || isSelected;
@@ -272,8 +275,9 @@ const NoteNode = ({
     isDraft
 }) => {
     const payload = item?.payload || {};
-    const width = clamp((Number(payload?.width) || 0.26) * stageWidth, 110, stageWidth * 0.9);
-    const height = clamp((Number(payload?.height) || 0.2) * stageHeight, 60, stageHeight * 0.8);
+    const wallSizeScale = getWallSizeScale(stageWidth);
+    const width = clamp((Number(payload?.width) || 0.26) * stageWidth, 110 * wallSizeScale, stageWidth * 0.9);
+    const height = clamp((Number(payload?.height) || 0.2) * stageHeight, 60 * wallSizeScale, stageHeight * 0.8);
     const x = clamp((Number(payload?.x) || 0.45) * stageWidth, 0, Math.max(0, stageWidth - width));
     const y = clamp((Number(payload?.y) || 0.45) * stageHeight, 0, Math.max(0, stageHeight - height));
     const fontStyle = NOTE_STYLE_OPTIONS.includes(payload?.fontStyle) ? payload.fontStyle : "normal";
@@ -365,7 +369,7 @@ const NoteNode = ({
                 text={payload?.text || ""}
                 fontFamily={payload?.fontFamily || "Arial"}
                 fontStyle={fontStyle}
-                fontSize={clamp(Number(payload?.fontSize) || 16, 10, 64)}
+                fontSize={clamp((Number(payload?.fontSize) || 16) * wallSizeScale, 10 * wallSizeScale, 64 * wallSizeScale)}
                 fill={payload?.fontColor || "#1f2937"}
                 wrap="word"
                 lineHeight={1.3}
@@ -690,7 +694,10 @@ const FreedomWallPage = () => {
     }, []);
 
     const stageWidth = useMemo(() => clamp(shellWidth - 12, 280, WALL_MAX_WIDTH), [shellWidth]);
-    const stageHeight = useMemo(() => clamp(Math.round(stageWidth * 0.64), WALL_MIN_HEIGHT, WALL_MAX_HEIGHT), [stageWidth]);
+    const stageHeight = useMemo(() => (
+        Math.min(Math.round(stageWidth * WALL_ASPECT_RATIO), WALL_MAX_HEIGHT)
+    ), [stageWidth]);
+    const wallSizeScale = useMemo(() => getWallSizeScale(stageWidth), [stageWidth]);
     const minimapHeight = useMemo(() => Math.round(MINIMAP_WIDTH * (stageHeight / stageWidth)), [stageHeight, stageWidth]);
     const minimapViewport = useMemo(() => {
         const width = clamp((1 / stageScale) * MINIMAP_WIDTH, 4, MINIMAP_WIDTH);
@@ -719,14 +726,14 @@ const FreedomWallPage = () => {
 
                 return {
                     id: item.id,
-                    strokeWidth: Number(item?.payload?.size) || 3,
+                    strokeWidth: (Number(item?.payload?.size) || 3) * wallSizeScale,
                     points: points.map((point, pointIndex) => (
                         pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
                     ))
                 };
             })
             .filter(Boolean)
-    ), [sortedItems, stageHeight, stageWidth]);
+    ), [sortedItems, stageHeight, stageWidth, wallSizeScale]);
 
     const maxZIndex = useMemo(() => {
         if(!sortedItems.length){
@@ -1132,14 +1139,14 @@ const FreedomWallPage = () => {
                 continue;
             }
 
-            if(!isPointerNearDoodle(pointerX, pointerY, doodle)){
+            if(!isPointerNearDoodle(pointerX, pointerY, doodle, ERASER_RADIUS_PX * wallSizeScale)){
                 continue;
             }
 
             erasedThisStrokeRef.current.add(doodleId);
             reportItemMutation.mutate({itemId: doodle.id});
         }
-    }, [activeTool, canWrite, doodleEraseTargets, isTimeCapsuleMode, reportItemMutation]);
+    }, [activeTool, canWrite, doodleEraseTargets, isTimeCapsuleMode, reportItemMutation, wallSizeScale]);
 
     const handleClearMyDoodles = useCallback(() => {
         if(!activeWeekId || !ensureCanWrite()){
@@ -1915,7 +1922,7 @@ const FreedomWallPage = () => {
                         pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
                     ))}
                     stroke={item?.payload?.color || "#5f92ff"}
-                    strokeWidth={Number(item?.payload?.size) || 3}
+                    strokeWidth={(Number(item?.payload?.size) || 3) * wallSizeScale}
                     lineCap="round"
                     lineJoin="round"
                     tension={0.12}
@@ -1971,7 +1978,7 @@ const FreedomWallPage = () => {
         }
 
         return null;
-    }), [sortedItems, currentUserId, activeTool, selectedItemId, stageWidth, stageHeight, moveItemFromDrag]);
+    }), [sortedItems, currentUserId, activeTool, selectedItemId, stageWidth, stageHeight, moveItemFromDrag, wallSizeScale]);
 
     if(weekError){
         return (
@@ -2418,7 +2425,7 @@ const FreedomWallPage = () => {
                                         pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
                                     ))}
                                     stroke={doodleColor}
-                                    strokeWidth={doodleSize}
+                                    strokeWidth={doodleSize * wallSizeScale}
                                     lineCap="round"
                                     lineJoin="round"
                                     tension={0.12}
