@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Konva from "konva";
 import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Shape, Stage, Text } from "react-konva";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,14 +32,68 @@ const STICKER_OPTIONS = {
 };
 
 const NOTE_FONT_OPTIONS = [
-    "Arial",
-    "Georgia",
-    "Courier New",
-    "Trebuchet MS",
-    "Times New Roman"
+    { name: "Arial", label: "Arial" },
+    { name: "Georgia", label: "Georgia" },
+    { name: "Courier New", label: "Courier" },
+    { name: "Trebuchet MS", label: "Trebuchet" },
+    { name: "Times New Roman", label: "Times" }
 ];
 
 const NOTE_STYLE_OPTIONS = ["normal", "bold", "italic"];
+
+const COLOR_PALETTES = {
+    Pastels: ["#f8b4c8", "#f5d6a8", "#f5f0a0", "#b8e6b0", "#a8d8f0", "#d0b8f0"],
+    "Earth Tones": ["#8b6f47", "#a0826d", "#c4a882", "#7a8b5c", "#5e7a6a", "#6b5b4f"],
+    Neon: ["#ff1493", "#ff6600", "#ffee00", "#00ff66", "#00ccff", "#cc00ff"],
+    Classic: ["#1f2937", "#dc2626", "#2563eb", "#16a34a", "#f59e0b", "#7c3aed"]
+};
+
+const TOOL_EMOJIS = { doodle: "\u270F\uFE0F", sticker: "\u2B50", stamp: "\u2764\uFE0F", note: "\uD83D\uDCDD", eraser: "\uD83E\uDDF9" };
+
+const ColorSwatchPicker = ({ value, onChange, label }) => {
+    const [activePalette, setActivePalette] = useState("Pastels");
+    const [showCustom, setShowCustom] = useState(false);
+    const paletteColors = COLOR_PALETTES[activePalette] || COLOR_PALETTES.Pastels;
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+            {label && <span className="fw-label">{label}</span>}
+            <div className="fw-palette-tabs">
+                {Object.keys(COLOR_PALETTES).map((paletteName) => (
+                    <button
+                        key={paletteName}
+                        type="button"
+                        className={`fw-palette-label ${activePalette === paletteName ? "is-active" : ""}`}
+                        onClick={() => setActivePalette(paletteName)}
+                    >
+                        {paletteName}
+                    </button>
+                ))}
+            </div>
+            <div className="fw-palette-group">
+                {paletteColors.map((color) => (
+                    <button
+                        key={color}
+                        type="button"
+                        className={`fw-swatch ${value === color ? "is-active" : ""}`}
+                        style={{ background: color }}
+                        onClick={() => onChange(color)}
+                        title={color}
+                    />
+                ))}
+            </div>
+            <div className="fw-custom-color-toggle">
+                <label onClick={() => setShowCustom((p) => !p)}>
+                    {showCustom ? "Hide custom" : "Custom"}
+                </label>
+                {showCustom && (
+                    <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
+                )}
+            </div>
+        </div>
+    );
+};
+
 const WALL_MAX_WIDTH = 1080;
 const WALL_MAX_HEIGHT = 900;
 const WALL_ASPECT_RATIO = 0.64;
@@ -167,6 +222,15 @@ const useEmojiImage = (emoji, resolution = 128) => {
     return image;
 };
 
+const springBounce = (node) => {
+    if (!node) return;
+    node.to({ scaleX: 1.08, scaleY: 0.94, duration: 0.1, easing: Konva.Easings.EaseOut, onFinish: () => {
+        node.to({ scaleX: 0.96, scaleY: 1.06, duration: 0.1, easing: Konva.Easings.EaseOut, onFinish: () => {
+            node.to({ scaleX: 1, scaleY: 1, duration: 0.12, easing: Konva.Easings.EaseOut });
+        }});
+    }});
+};
+
 const StickerNode = ({item, stageWidth, stageHeight, isSelected, canEdit, onSelect, onDragEnd, isDraft}) => {
     const emoji = STICKER_OPTIONS[item?.payload?.sticker] || "🐶";
     const image = useEmojiImage(emoji);
@@ -192,8 +256,13 @@ const StickerNode = ({item, stageWidth, stageHeight, isSelected, canEdit, onSele
                 draggable={canEdit}
                 onClick={onSelect}
                 onTap={onSelect}
-                onDragEnd={onDragEnd}
+                onDragEnd={(e) => { springBounce(e.target); onDragEnd(e); }}
                 rotation={Number(item?.payload?.rotation) || 0}
+                scaleX={isSelected ? 1.08 : 1}
+                scaleY={isSelected ? 1.08 : 1}
+                shadowBlur={isSelected ? 12 : 0}
+                shadowOffsetY={isSelected ? 4 : 0}
+                shadowColor="rgba(0,0,0,0.3)"
             />
             {showBorder && (
                 <Rect
@@ -236,8 +305,13 @@ const StampNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd,
                 draggable={canEdit}
                 onClick={onSelect}
                 onTap={onSelect}
-                onDragEnd={onDragEnd}
+                onDragEnd={(e) => { springBounce(e.target); onDragEnd(e); }}
                 rotation={Number(item?.payload?.rotation) || 0}
+                scaleX={isSelected ? 1.08 : 1}
+                scaleY={isSelected ? 1.08 : 1}
+                shadowBlur={isSelected ? 12 : 0}
+                shadowOffsetY={isSelected ? 4 : 0}
+                shadowColor="rgba(0,0,0,0.3)"
             />
             {showBorder && (
                 <Rect
@@ -407,16 +481,25 @@ const PuffEffect = ({x, y, id, onComplete}) => {
     const particlesRef = useRef(null);
 
     if(!particlesRef.current){
-        const count = 6 + Math.floor(Math.random() * 3);
-        particlesRef.current = Array.from({length: count}, () => ({
+        const innerCount = 8 + Math.floor(Math.random() * 3);
+        const outerCount = 5 + Math.floor(Math.random() * 3);
+        const inner = Array.from({length: innerCount}, () => ({
             angle: Math.random() * Math.PI * 2,
             distance: 30 + Math.random() * 20,
-            color: Math.random() > 0.5 ? "#a21caf" : "#e879f9"
+            color: Math.random() > 0.5 ? "#a21caf" : "#e879f9",
+            ring: 1
         }));
+        const outer = Array.from({length: outerCount}, () => ({
+            angle: Math.random() * Math.PI * 2,
+            distance: 50 + Math.random() * 25,
+            color: Math.random() > 0.5 ? "#f5e6a3" : "#f5c896",
+            ring: 2
+        }));
+        particlesRef.current = [...inner, ...outer];
     }
 
     useEffect(() => {
-        const duration = 500;
+        const duration = 600;
         let animId;
 
         const animate = (timestamp) => {
@@ -447,12 +530,18 @@ const PuffEffect = ({x, y, id, onComplete}) => {
                 strokeWidth={Math.max(0.5, 2 * (1 - progress))}
                 opacity={1 - progress}
             />
+            <Circle
+                radius={eased * 42}
+                stroke="#f5e6a3"
+                strokeWidth={Math.max(0.3, 1.2 * (1 - progress))}
+                opacity={(1 - progress) * 0.5}
+            />
             {particles.map((p, i) => (
                 <Circle
                     key={i}
                     x={Math.cos(p.angle) * p.distance * eased}
                     y={Math.sin(p.angle) * p.distance * eased}
-                    radius={Math.max(0.5, 3.5 * (1 - progress))}
+                    radius={Math.max(0.5, (p.ring === 1 ? 3.5 : 2.5) * (1 - progress))}
                     fill={p.color}
                     opacity={1 - progress}
                 />
@@ -572,6 +661,9 @@ const FreedomWallPage = () => {
     const [isErasing, setIsErasing] = useState(false);
     const [timeCapsuleWeekId, setTimeCapsuleWeekId] = useState(null);
     const [nowMs, setNowMs] = useState(() => Date.now());
+    const [isFocusMode, setIsFocusMode] = useState(false);
+    const [isMobileToolbarOpen, setIsMobileToolbarOpen] = useState(false);
+    const [isDockPopoverOpen, setIsDockPopoverOpen] = useState(true);
     const stageRef = useRef(null);
     const isPinchingRef = useRef(false);
     const lastPinchDistRef = useRef(null);
@@ -693,6 +785,13 @@ const FreedomWallPage = () => {
         };
     }, []);
 
+    const [windowWidth, setWindowWidth] = useState(() => window.innerWidth);
+    useEffect(() => {
+        const onResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+    const isMobileView = windowWidth <= 480;
     const stageWidth = useMemo(() => clamp(shellWidth - 12, 280, WALL_MAX_WIDTH), [shellWidth]);
     const stageHeight = useMemo(() => (
         Math.min(Math.round(stageWidth * WALL_ASPECT_RATIO), WALL_MAX_HEIGHT)
@@ -1989,8 +2088,8 @@ const FreedomWallPage = () => {
     }
 
     return (
-        <div className="freedom-wall-page">
-            <div className="freedom-wall-header">
+        <div className={`freedom-wall-page ${isFocusMode ? "fw-focus-mode" : ""}`}>
+            {!isFocusMode && <div className="freedom-wall-header">
                 <div className="freedom-wall-title-shell">
                     <h2 className="freedom-wall-title">Freedom Wall</h2>
                     <p className="freedom-wall-subtitle">
@@ -2019,21 +2118,37 @@ const FreedomWallPage = () => {
                         <span className="fw-label">Time Capsule unavailable</span>
                     )}
                 </div>
-            </div>
+            </div>}
 
+            {!isFocusMode && (isMobileView && !isMobileToolbarOpen ? (
+                <button type="button" className="fw-fab-orb" onClick={() => setIsMobileToolbarOpen(true)}>
+                    {TOOL_EMOJIS[activeTool] || "\u270F\uFE0F"}
+                </button>
+            ) : (
             <div className="freedom-wall-toolbar">
+                {isMobileView && <button type="button" className="fw-fab-close" onClick={() => setIsMobileToolbarOpen(false)}>&times;</button>}
                 <div className="freedom-wall-tool-group">
                     <button type="button" className={`fw-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`} onClick={() => setActiveTool("doodle")} disabled={isTimeCapsuleMode}>Doodle</button>
                     <button type="button" className={`fw-tool-btn ${activeTool === "sticker" ? "is-active" : ""}`} onClick={() => setActiveTool("sticker")} disabled={isTimeCapsuleMode}>Sticker</button>
                     <button type="button" className={`fw-tool-btn ${activeTool === "stamp" ? "is-active" : ""}`} onClick={() => setActiveTool("stamp")} disabled={isTimeCapsuleMode}>Stamp</button>
                     <button type="button" className={`fw-tool-btn ${activeTool === "note" ? "is-active" : ""}`} onClick={() => setActiveTool("note")} disabled={isTimeCapsuleMode}>Note</button>
                     <button type="button" className={`fw-tool-btn ${activeTool === "eraser" ? "is-active" : ""}`} onClick={() => setActiveTool("eraser")} disabled={isTimeCapsuleMode}>Eraser</button>
+                    {!isMobileView && (
+                        <button
+                            type="button"
+                            className={`fw-tool-btn fw-popover-toggle ${isDockPopoverOpen ? "is-active" : ""}`}
+                            onClick={() => setIsDockPopoverOpen((p) => !p)}
+                            title={isDockPopoverOpen ? "Hide controls" : "Show controls"}
+                        >
+                            {isDockPopoverOpen ? "\u2715" : "\u2699"}
+                        </button>
+                    )}
                 </div>
 
+                {(isMobileView || isDockPopoverOpen) && <div className="fw-dock-controls-popover">
                 {!isTimeCapsuleMode && activeTool === "doodle" && (
                     <div className="freedom-wall-tool-controls">
-                        <label className="fw-label">Color</label>
-                        <input type="color" value={doodleColor} onChange={(event) => setDoodleColor(event.target.value)} />
+                        <ColorSwatchPicker label="Color" value={doodleColor} onChange={setDoodleColor} />
                         <label className="fw-label">Size</label>
                         <input type="range" min={1} max={12} step={0.2} value={doodleSize} onChange={(event) => setDoodleSize(Number(event.target.value))} />
                     </div>
@@ -2114,9 +2229,11 @@ const FreedomWallPage = () => {
                         <span className="fw-label">{myDoodleCount} yours</span>
                     </div>
                 )}
+                </div>}{/* end popover / controls wrapper */}
             </div>
+            ))}
 
-            {!isTimeCapsuleMode && draftNote && (
+            {!isFocusMode && !isTimeCapsuleMode && draftNote && (
                 <div className="fw-draft-note-panel">
                     <div className="fw-draft-note-header">
                         <h4>Design Your Note</h4>
@@ -2135,11 +2252,19 @@ const FreedomWallPage = () => {
                     <div className="fw-draft-note-controls">
                         <div className="fw-draft-note-row">
                             <label>Font</label>
-                            <select value={draftNote.fontFamily} onChange={(e) => setDraftNote((prev) => ({...prev, fontFamily: e.target.value}))}>
-                                {NOTE_FONT_OPTIONS.map((fontName) => (
-                                    <option key={fontName} value={fontName}>{fontName}</option>
+                            <div className="fw-font-carousel">
+                                {NOTE_FONT_OPTIONS.map((font) => (
+                                    <button
+                                        key={font.name}
+                                        type="button"
+                                        className={`fw-font-chip ${draftNote.fontFamily === font.name ? "is-active" : ""}`}
+                                        style={{ fontFamily: font.name }}
+                                        onClick={() => setDraftNote((prev) => ({...prev, fontFamily: font.name}))}
+                                    >
+                                        {font.label}
+                                    </button>
                                 ))}
-                            </select>
+                            </div>
                         </div>
 
                         <div className="fw-draft-note-row">
@@ -2151,15 +2276,8 @@ const FreedomWallPage = () => {
                             </select>
                         </div>
 
-                        <div className="fw-draft-note-row">
-                            <label>Font color</label>
-                            <input type="color" value={draftNote.fontColor} onChange={(e) => setDraftNote((prev) => ({...prev, fontColor: e.target.value}))} />
-                        </div>
-
-                        <div className="fw-draft-note-row">
-                            <label>Note color</label>
-                            <input type="color" value={draftNote.bgColor} onChange={(e) => setDraftNote((prev) => ({...prev, bgColor: e.target.value}))} />
-                        </div>
+                        <ColorSwatchPicker label="Font color" value={draftNote.fontColor} onChange={(c) => setDraftNote((prev) => ({...prev, fontColor: c}))} />
+                        <ColorSwatchPicker label="Note color" value={draftNote.bgColor} onChange={(c) => setDraftNote((prev) => ({...prev, bgColor: c}))} />
 
                         <div className="fw-draft-note-row">
                             <label>Size ({draftNote.fontSize}px)</label>
@@ -2184,7 +2302,7 @@ const FreedomWallPage = () => {
                 </div>
             )}
 
-            {!isTimeCapsuleMode && draftSticker && (
+            {!isFocusMode && !isTimeCapsuleMode && draftSticker && (
                 <div className="fw-draft-note-panel">
                     <div className="fw-draft-note-header">
                         <h4>Place Your Sticker</h4>
@@ -2221,7 +2339,7 @@ const FreedomWallPage = () => {
                 </div>
             )}
 
-            {!isTimeCapsuleMode && draftStamp && (
+            {!isFocusMode && !isTimeCapsuleMode && draftStamp && (
                 <div className="fw-draft-note-panel">
                     <div className="fw-draft-note-header">
                         <h4>Place Your Stamp</h4>
@@ -2258,7 +2376,7 @@ const FreedomWallPage = () => {
                 </div>
             )}
 
-            {selectedNote && selectedItemCanEdit && activeTool !== "eraser" && !isTimeCapsuleMode && (
+            {!isFocusMode && selectedNote && selectedItemCanEdit && activeTool !== "eraser" && !isTimeCapsuleMode && (
                 <div className="freedom-wall-note-editor">
                     <h4>Note Editor</h4>
                     <textarea
@@ -2268,11 +2386,19 @@ const FreedomWallPage = () => {
                     />
                     <div className="fw-note-controls">
                         <label>Font</label>
-                        <select value={noteEditor.fontFamily} onChange={(event) => setNoteEditor((prev) => ({...prev, fontFamily: event.target.value}))}>
-                            {NOTE_FONT_OPTIONS.map((fontName) => (
-                                <option key={fontName} value={fontName}>{fontName}</option>
+                        <div className="fw-font-carousel">
+                            {NOTE_FONT_OPTIONS.map((font) => (
+                                <button
+                                    key={font.name}
+                                    type="button"
+                                    className={`fw-font-chip ${noteEditor.fontFamily === font.name ? "is-active" : ""}`}
+                                    style={{ fontFamily: font.name }}
+                                    onClick={() => setNoteEditor((prev) => ({...prev, fontFamily: font.name}))}
+                                >
+                                    {font.label}
+                                </button>
                             ))}
-                        </select>
+                        </div>
 
                         <label>Style</label>
                         <select value={noteEditor.fontStyle} onChange={(event) => setNoteEditor((prev) => ({...prev, fontStyle: event.target.value}))}>
@@ -2281,11 +2407,8 @@ const FreedomWallPage = () => {
                             ))}
                         </select>
 
-                        <label>Font color</label>
-                        <input type="color" value={noteEditor.fontColor} onChange={(event) => setNoteEditor((prev) => ({...prev, fontColor: event.target.value}))} />
-
-                        <label>Note color</label>
-                        <input type="color" value={noteEditor.bgColor} onChange={(event) => setNoteEditor((prev) => ({...prev, bgColor: event.target.value}))} />
+                        <ColorSwatchPicker label="Font color" value={noteEditor.fontColor} onChange={(c) => setNoteEditor((prev) => ({...prev, fontColor: c}))} />
+                        <ColorSwatchPicker label="Note color" value={noteEditor.bgColor} onChange={(c) => setNoteEditor((prev) => ({...prev, bgColor: c}))} />
 
                         <label>Size</label>
                         <input type="range" min={10} max={64} step={1} value={noteEditor.fontSize} onChange={(event) => setNoteEditor((prev) => ({...prev, fontSize: Number(event.target.value)}))} />
@@ -2304,7 +2427,7 @@ const FreedomWallPage = () => {
                 </div>
             )}
 
-            {selectedItem && selectedItemCanEdit && selectedItem.item_type !== "note" && activeTool !== "eraser" && !isTimeCapsuleMode && (
+            {!isFocusMode && selectedItem && selectedItemCanEdit && selectedItem.item_type !== "note" && activeTool !== "eraser" && !isTimeCapsuleMode && (
                 <div className="freedom-wall-selected-actions">
                     <button type="button" className="fw-apply-btn" onClick={bringSelectedItemToFront}>Bring front</button>
                     <button type="button" className="fw-delete-btn" onClick={handleDeleteSelectedItem}>Delete selected</button>
@@ -2319,6 +2442,7 @@ const FreedomWallPage = () => {
                         ref={stageRef}
                         width={stageWidth}
                         height={stageHeight}
+                        pixelRatio={window.devicePixelRatio || 1}
                         scaleX={stageScale}
                         scaleY={stageScale}
                         x={stagePosition.x}
@@ -2333,13 +2457,13 @@ const FreedomWallPage = () => {
                         onWheel={handleWheel}
                     >
                         <Layer listening={false}>
-                            <Rect width={stageWidth} height={stageHeight} fill="#2a3a2e" />
-                            <Rect width={stageWidth} height={stageHeight} fill="rgba(50, 80, 55, 0.15)" />
+                            <Rect width={stageWidth} height={stageHeight} fill="#3a3836" />
+                            <Rect width={stageWidth} height={stageHeight} fill="rgba(80, 75, 68, 0.12)" />
                             {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
                                 <Line
                                     key={`fw-grid-v-${index}`}
                                     points={[index * GRID_SIZE, 0, index * GRID_SIZE, stageHeight]}
-                                    stroke="rgba(200, 210, 200, 0.04)"
+                                    stroke="rgba(200, 195, 185, 0.04)"
                                     strokeWidth={1}
                                 />
                             ))}
@@ -2347,7 +2471,7 @@ const FreedomWallPage = () => {
                                 <Line
                                     key={`fw-grid-h-${index}`}
                                     points={[0, index * GRID_SIZE, stageWidth, index * GRID_SIZE]}
-                                    stroke="rgba(200, 210, 200, 0.04)"
+                                    stroke="rgba(200, 195, 185, 0.04)"
                                     strokeWidth={1}
                                 />
                             ))}
@@ -2451,6 +2575,14 @@ const FreedomWallPage = () => {
                         <span className="fw-zoom-level">{Math.round(stageScale * 100)}%</span>
                     )}
                     <button type="button" onClick={handleZoomOut}>&minus;</button>
+                    <button
+                        type="button"
+                        className={`fw-focus-btn ${isFocusMode ? "is-active" : ""}`}
+                        onClick={() => setIsFocusMode((p) => !p)}
+                        title={isFocusMode ? "Exit focus mode" : "Focus mode"}
+                    >
+                        {isFocusMode ? "\u25A3" : "\u26F6"}
+                    </button>
                 </div>
 
                 {stageScale !== 1 && (
@@ -2519,7 +2651,7 @@ const FreedomWallPage = () => {
                 </div>
             )}
 
-            <div className="freedom-wall-footer">
+            {!isFocusMode && <div className="freedom-wall-footer">
                 <span>{sortedItems.length} {isTimeCapsuleMode ? "items in time capsule" : "items this week"}</span>
                 <span>
                     {createItemMutation.isPending || updateItemMutation.isPending || deleteItemMutation.isPending
@@ -2528,7 +2660,7 @@ const FreedomWallPage = () => {
                         ? "Syncing..."
                         : "Synced"}
                 </span>
-            </div>
+            </div>}
         </div>
     );
 };
