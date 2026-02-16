@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Konva from "konva";
 import { Image as KonvaImage, Layer, Line, Rect, Stage, Text } from "react-konva";
 import { BarLoader } from "react-spinners";
@@ -219,11 +219,96 @@ const CanvasImageNode = ({
     );
 };
 
+const MINIMAP_WIDTH = 110;
+
+const CanvasMinimap = ({viewport, stageWidth, stageHeight, viewportWidth, viewportHeight, fitScale, isDark, updateViewport}) => {
+    const containerRef = useRef(null);
+    const dragRef = useRef(null);
+
+    const miniH = Math.round(MINIMAP_WIDTH * stageHeight / stageWidth);
+    const rectW = MINIMAP_WIDTH / viewport.scale;
+    const rectH = miniH / viewport.scale;
+    const rectX = -viewport.x * MINIMAP_WIDTH / (viewportWidth * viewport.scale);
+    const rectY = -viewport.y * miniH / (viewportHeight * viewport.scale);
+
+    const minimapToViewport = useCallback((mx, my) => {
+        const cx = mx * stageWidth / MINIMAP_WIDTH;
+        const cy = my * stageHeight / miniH;
+        return {
+            scale: viewport.scale,
+            x: viewportWidth / 2 - cx * fitScale * viewport.scale,
+            y: viewportHeight / 2 - cy * fitScale * viewport.scale
+        };
+    }, [viewport.scale, stageWidth, stageHeight, miniH, viewportWidth, viewportHeight, fitScale]);
+
+    const handleBackgroundClick = (e) => {
+        if(dragRef.current?.didDrag) return;
+        const rect = containerRef.current?.getBoundingClientRect();
+        if(!rect) return;
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        updateViewport(minimapToViewport(mx, my));
+    };
+
+    const handleRectMouseDown = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const startClientX = e.clientX;
+        const startClientY = e.clientY;
+        const startRectX = rectX;
+        const startRectY = rectY;
+        dragRef.current = {didDrag: false};
+
+        const onMove = (moveEvent) => {
+            dragRef.current.didDrag = true;
+            const dx = moveEvent.clientX - startClientX;
+            const dy = moveEvent.clientY - startClientY;
+            const newRectX = startRectX + dx;
+            const newRectY = startRectY + dy;
+            updateViewport({
+                scale: viewport.scale,
+                x: -newRectX * viewportWidth * viewport.scale / MINIMAP_WIDTH,
+                y: -newRectY * viewportHeight * viewport.scale / miniH
+            });
+        };
+
+        const onUp = () => {
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+            setTimeout(() => { dragRef.current = null; }, 0);
+        };
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+    };
+
+    return (
+        <div
+            ref={containerRef}
+            className={`${styles.minimapContainer} ${isDark ? styles.minimapDark : ""}`}
+            style={{width: MINIMAP_WIDTH, height: miniH}}
+            onClick={handleBackgroundClick}
+        >
+            <div
+                className={styles.minimapViewport}
+                style={{
+                    left: clamp(rectX, 0, MINIMAP_WIDTH - Math.max(rectW, 4)),
+                    top: clamp(rectY, 0, miniH - Math.max(rectH, 4)),
+                    width: Math.max(rectW, 4),
+                    height: Math.max(rectH, 4)
+                }}
+                onMouseDown={handleRectMouseDown}
+            />
+        </div>
+    );
+};
+
 const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvasDoc = null, remixSource = null}) => {
     const {session, user} = useAuth();
     const queryClient = useQueryClient();
     const shellRef = useRef(null);
     const ambientLightRef = useRef(null);
+    const stageFrameRef = useRef(null);
     const stageRef = useRef(null);
     const hasHydratedInitialDocRef = useRef(false);
     const snippetInputRef = useRef(null);
@@ -255,7 +340,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     const [viewport, setViewport] = useState({scale: 1, x: 0, y: 0});
     const [isMobileViewport, setIsMobileViewport] = useState(false);
     const [isMobileDockOpen, setIsMobileDockOpen] = useState(false);
-    const [isDoodleDockMinimized, setIsDoodleDockMinimized] = useState(false);
+    const [mobileDoodlePanelDismissed, setMobileDoodlePanelDismissed] = useState(false);
     const [animatingRemovalId, setAnimatingRemovalId] = useState(null);
     const [doodleRedoStack, setDoodleRedoStack] = useState([]);
     const multiTapRef = useRef({fingerCount: 0, timestamp: 0});
@@ -381,7 +466,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             doodlePointsRef.current = [];
             setCurrentDoodlePoints([]);
             setIsDrawing(false);
-            setIsDoodleDockMinimized(false);
+            setMobileDoodlePanelDismissed(false);
         }
     }, [activeTool]);
 
@@ -449,11 +534,11 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         ? snippets.find((snippet) => snippet.id === selectedObject.id) || null
         : null;
     const canEditObjects = activeTool === "select";
-    const isDockVisible = !isMobileViewport || isMobileDockOpen;
     const isDoodleMode = activeTool === "doodle";
     const shouldPreventTouchDefault = isDoodleMode;
-    const showMinimizedDoodleDock = isDockVisible && isDoodleMode && isDoodleDockMinimized;
     const hasCanvasContent = snippets.length > 0 || images.length > 0 || doodles.length > 0;
+    const showDoodlePanel = isDoodleMode && !(isMobileViewport && mobileDoodlePanelDismissed);
+    const showContextPanel = isSnippetComposerOpen || showDoodlePanel || (selectedObject && activeTool === "select");
 
     const addSnippet = () => {
         const trimmed = snippetInput.trim();
@@ -881,6 +966,9 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 return;
             }
             setSelectedObject(null);
+            if(isMobileViewport){
+                setMobileDoodlePanelDismissed(true);
+            }
             const initialPoints = [pointer.x, pointer.y];
             doodlePointsRef.current = initialPoints;
             setCurrentDoodlePoints(initialPoints);
@@ -1037,28 +1125,46 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         animateDropNode(event.target, baseScaleX * OBJECT_LIFT_MULTIPLIER, OBJECT_LIFT_MULTIPLIER, true);
     };
 
-    const zoomByStep = (direction) => {
+    const zoomAtPoint = useCallback((anchor, delta) => {
         const currentViewport = viewportRef.current;
-        const step = direction === "in" ? 0.14 : -0.14;
-        const nextScale = clamp(currentViewport.scale + step, MIN_VIEWPORT_SCALE, MAX_VIEWPORT_SCALE);
-        const center = {x: viewportWidth / 2, y: viewportHeight / 2};
+        const nextScale = clamp(currentViewport.scale + delta, MIN_VIEWPORT_SCALE, MAX_VIEWPORT_SCALE);
         const currentTotalScale = fitScale * currentViewport.scale;
         const currentTotalX = fitOffsetX + currentViewport.x;
         const currentTotalY = fitOffsetY + currentViewport.y;
         const nextTotalScale = fitScale * nextScale;
         const worldPoint = {
-            x: (center.x - currentTotalX) / currentTotalScale,
-            y: (center.y - currentTotalY) / currentTotalScale
+            x: (anchor.x - currentTotalX) / currentTotalScale,
+            y: (anchor.y - currentTotalY) / currentTotalScale
         };
-
         updateViewport({
             scale: nextScale,
-            x: center.x - worldPoint.x * nextTotalScale - fitOffsetX,
-            y: center.y - worldPoint.y * nextTotalScale - fitOffsetY
+            x: anchor.x - worldPoint.x * nextTotalScale - fitOffsetX,
+            y: anchor.y - worldPoint.y * nextTotalScale - fitOffsetY
         });
+    }, [fitScale, fitOffsetX, fitOffsetY, updateViewport]);
+
+    const zoomByStep = (direction) => {
+        const center = {x: viewportWidth / 2, y: viewportHeight / 2};
+        zoomAtPoint(center, direction === "in" ? 0.14 : -0.14);
     };
 
     const resetViewport = () => updateViewport({scale: 1, x: 0, y: 0});
+
+    useEffect(() => {
+        const frame = stageFrameRef.current;
+        if(!frame) return;
+
+        const onWheel = (e) => {
+            e.preventDefault();
+            const rect = frame.getBoundingClientRect();
+            const anchor = {x: e.clientX - rect.left, y: e.clientY - rect.top};
+            const delta = e.deltaY < 0 ? 0.1 : -0.1;
+            zoomAtPoint(anchor, delta);
+        };
+
+        frame.addEventListener("wheel", onWheel, {passive: false});
+        return () => frame.removeEventListener("wheel", onWheel);
+    }, [zoomAtPoint]);
 
     const saveCanvas = async() => {
         if(!title || !hasCanvasContent){
@@ -1157,6 +1263,150 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         if(el) el.style.setProperty("--cursor-opacity", "0");
     };
 
+    const contextPanelContent = (() => {
+        if(isSnippetComposerOpen){
+            return (
+                <>
+                    <span className={styles.contextPanelHeader}>Add Text</span>
+                    <div className={styles.snippetComposer}>
+                        <input
+                            ref={snippetInputRef}
+                            value={snippetInput}
+                            onChange={(event) => setSnippetInput(event.target.value)}
+                            onKeyDown={(event) => {
+                                if(event.key === "Enter"){
+                                    event.preventDefault();
+                                    addSnippet();
+                                }
+                                if(event.key === "Escape"){
+                                    setIsSnippetComposerOpen(false);
+                                }
+                            }}
+                            className={styles.snippetInput}
+                            placeholder="Type text to place on canvas..."
+                            maxLength={220}
+                        />
+                        <div className={styles.snippetActions}>
+                            <button type="button" className={styles.secondaryButton} onClick={addSnippet} disabled={!snippetInput.trim()}>
+                                Add
+                            </button>
+                            <button type="button" className={styles.secondaryButton} onClick={() => setIsSnippetComposerOpen(false)}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </>
+            );
+        }
+        if(isDoodleMode){
+            return (
+                <>
+                    <span className={styles.contextPanelHeader}>Doodle</span>
+                    <div className={styles.paletteWrap}>
+                        {COLOR_PALETTES.map((group) => (
+                            <div key={group.label} className={styles.paletteGroup}>
+                                <span className={styles.paletteLabel}>{group.label}</span>
+                                <div className={styles.colorSwatches}>
+                                    {group.colors.map((color) => (
+                                        <button
+                                            key={color}
+                                            type="button"
+                                            className={`${styles.colorSwatch} ${doodleColor.toLowerCase() === color.toLowerCase() ? styles.colorSwatchActive : ""}`}
+                                            onClick={() => setDoodleColor(color)}
+                                            title={`Use ${color} doodle color`}
+                                            aria-label={`Select doodle color ${color}`}
+                                            style={{backgroundColor: color}}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                        <label className={styles.customColorLabel}>
+                            Custom
+                            <input
+                                type="color"
+                                value={doodleColor}
+                                onChange={(event) => setDoodleColor(event.target.value)}
+                                className={styles.colorInput}
+                                title="Custom doodle color"
+                            />
+                        </label>
+                    </div>
+                    <input
+                        type="range"
+                        min={1}
+                        max={10}
+                        step={0.2}
+                        value={doodleSize}
+                        onChange={(event) => setDoodleSize(Number(event.target.value))}
+                        className={styles.sizeRange}
+                        aria-label="Doodle size"
+                    />
+                    <div className={styles.toolbarRow}>
+                        <button type="button" className={styles.secondaryButton} onClick={undoLastDoodle} disabled={doodles.length === 0}>
+                            Undo
+                        </button>
+                        <button type="button" className={styles.secondaryButton} onClick={redoLastDoodle} disabled={doodleRedoStack.length === 0}>
+                            Redo
+                        </button>
+                        <button type="button" className={styles.secondaryButton} onClick={clearDoodles} disabled={doodles.length === 0 && !isDrawing}>
+                            Clear
+                        </button>
+                    </div>
+                    <span className={styles.toolHint}>Draw directly on wall</span>
+                </>
+            );
+        }
+        if(selectedObject && activeTool === "select"){
+            return (
+                <>
+                    <span className={styles.contextPanelHeader}>Selection</span>
+                    <div className={styles.selectionPanel}>
+                        {selectedSnippet && (
+                            <div className={styles.styleCarousel}>
+                                {Object.entries(FONT_BRUSHES).map(([styleKey, styleValue]) => {
+                                    const isActive = selectedSnippet.fontStyle === styleKey;
+                                    return (
+                                        <button
+                                            key={styleKey}
+                                            type="button"
+                                            className={`${styles.fontChip} ${isActive ? styles.fontChipActive : ""}`}
+                                            onClick={() => updateSnippet(selectedSnippet.id, {fontStyle: styleKey})}
+                                        >
+                                            <span className={styles.fontChipLabel}>{styleValue.label}</span>
+                                            <span
+                                                className={styles.fontChipPreview}
+                                                style={{
+                                                    fontFamily: styleValue.fontFamily,
+                                                    fontStyle: styleValue.fontStyle
+                                                }}
+                                            >
+                                                {styleValue.preview}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        <div className={styles.toolbarRow}>
+                            <button type="button" className={styles.secondaryButton} onClick={() => resizeSelectedObject("down")}>A−</button>
+                            <button type="button" className={styles.secondaryButton} onClick={() => resizeSelectedObject("up")}>A+</button>
+                            <button type="button" className={styles.secondaryButton} onClick={() => rotateSelectedObject(-8)}>↺</button>
+                            <button type="button" className={styles.secondaryButton} onClick={() => rotateSelectedObject(8)}>↻</button>
+                        </div>
+                        <div className={styles.toolbarRow}>
+                            <button type="button" className={styles.secondaryButton} onClick={flipSelectedObject}>Flip</button>
+                            <button type="button" className={styles.secondaryButton} onClick={bringToFront}>Front</button>
+                            <button type="button" className={styles.secondaryButton} onClick={sendToBack}>Back</button>
+                            <button type="button" className={styles.secondaryButton} onClick={removeSelectedObject}>Remove</button>
+                        </div>
+                    </div>
+                </>
+            );
+        }
+        return null;
+    })();
+
     return (
         <div className={styles.editorRoot}>
             {remixSource?.journalId && (
@@ -1165,442 +1415,312 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 </div>
             )}
 
-            <div
-                ref={shellRef}
-                className={`${styles.stageShell} ${canvasMeta.theme === "dark" ? styles.isDark : ""} ${activeTool === "doodle" ? styles.isDoodleActive : ""}`}
-                onMouseMove={handleAmbientMove}
-                onTouchMove={handleAmbientMove}
-                onMouseLeave={handleAmbientLeave}
-                onTouchEnd={handleAmbientLeave}
-            >
-                <div ref={ambientLightRef} className={styles.ambientLight} />
-                <div
-                    className={styles.stageFrame}
-                    onContextMenu={(e) => {
-                        e.preventDefault();
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        openPieMenu(e.clientX - rect.left, e.clientY - rect.top);
-                    }}
-                >
-                    <Stage
-                        ref={stageRef}
-                        width={viewportWidth}
-                        height={viewportHeight}
-                        preventDefault={activeTool === "doodle"}
-                        style={{touchAction: activeTool === "doodle" ? "none" : "pan-y"}}
-                        onMouseDown={handleCanvasPointerDown}
-                        onTouchStart={handleCanvasPointerDown}
-                        onMouseMove={handleCanvasPointerMove}
-                        onTouchMove={handleCanvasPointerMove}
-                        onMouseUp={handleCanvasPointerUp}
-                        onTouchEnd={handleCanvasPointerUp}
-                        onTouchCancel={handleCanvasPointerUp}
-                        onMouseLeave={handleCanvasPointerUp}
-                        className={`${styles.stage} ${styles.stageEditor}`}
+            <div className={styles.editorLayout}>
+                {/* ── Left sidebar toolbar ── */}
+                <div className={`${styles.sideToolbar} ${isMobileViewport && isMobileDockOpen ? styles.sideToolbarOpen : ""}`}>
+                    <button
+                        type="button"
+                        className={`${styles.sideToolButton} ${activeTool === "select" && !isSnippetComposerOpen ? styles.toolButtonActive : ""}`}
+                        onClick={() => { setActiveTool("select"); setIsSnippetComposerOpen(false); }}
+                        title="Select"
                     >
-                        {canvasMeta.gridEnabled && (
-                            <Layer listening={false} {...layerTransform} opacity={clamp((viewport.scale - 0.8) / 0.5, 0.15, 1)}>
-                                {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
-                                    <Rect
-                                        key={`grid-v-${index}`}
-                                        x={index * GRID_SIZE}
-                                        y={0}
-                                        width={1}
-                                        height={stageHeight}
-                                        fill={canvasMeta.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
-                                    />
-                                ))}
-                                {Array.from({length: Math.floor(stageHeight / GRID_SIZE) + 1}).map((_, index) => (
-                                    <Rect
-                                        key={`grid-h-${index}`}
-                                        x={0}
-                                        y={index * GRID_SIZE}
-                                        width={stageWidth}
-                                        height={1}
-                                        fill={canvasMeta.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
-                                    />
-                                ))}
-                            </Layer>
-                        )}
+                        ⇲
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.sideToolButton} ${isSnippetComposerOpen ? styles.toolButtonActive : ""}`}
+                        onClick={openSnippetComposer}
+                        title="Add Text"
+                    >
+                        Aa
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.sideToolButton} ${isUploadingImage ? styles.toolButtonActive : ""}`}
+                        onClick={addImageFromFile}
+                        disabled={isUploadingImage}
+                        title="Add Image"
+                    >
+                        ▦
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.sideToolButton} ${activeTool === "doodle" ? styles.toolButtonActive : ""}`}
+                        onClick={() => { setIsSnippetComposerOpen(false); setActiveTool("doodle"); setMobileDoodlePanelDismissed(false); }}
+                        title="Doodle"
+                    >
+                        ✎
+                    </button>
 
-                        <Layer listening={false} {...layerTransform}>
-                            {doodles.map((doodle) => (
-                                <Line
-                                    key={doodle.id}
-                                    points={(doodle.points || []).map((point, index) => (
-                                        index % 2 === 0 ? point * stageWidth : point * stageHeight
-                                    ))}
-                                    stroke={doodle.color || DEFAULT_DOODLE_COLOR}
-                                    strokeWidth={Number(doodle.size) || 2.8}
-                                    lineCap="round"
-                                    lineJoin="round"
-                                    tension={0.35}
-                                />
-                            ))}
-                            {isDrawing && currentDoodlePoints.length >= 2 && (
-                                <Line
-                                    points={currentDoodlePoints.map((point, index) => (
-                                        index % 2 === 0 ? point * stageWidth : point * stageHeight
-                                    ))}
-                                    stroke={doodleColor}
-                                    strokeWidth={doodleSize}
-                                    lineCap="round"
-                                    lineJoin="round"
-                                    tension={0.35}
-                                />
-                            )}
-                        </Layer>
+                    <div className={styles.sideToolSeparator} />
 
-                        <Layer {...layerTransform}>
-                            {sortedObjects.map((object) => {
-                                if(object.kind === "snippet"){
-                                    const snippet = object.payload;
-                                    const metrics = getSnippetMetrics(snippet, stageWidth);
-                                    const styleKey = FONT_STYLE_MAP[snippet.fontStyle] || "serif";
-                                    const brush = FONT_BRUSHES[styleKey] || FONT_BRUSHES.serif;
-                                    const snippetX = clamp(snippet.x * stageWidth, 0, Math.max(0, stageWidth - metrics.width));
-                                    const snippetY = clamp(snippet.y * stageHeight, 0, Math.max(0, stageHeight - metrics.height));
-                                    const isSelected = selectedObject?.kind === "snippet" && selectedObject?.id === snippet.id;
-                                    const isDragging = draggingObject?.kind === "snippet" && draggingObject?.id === snippet.id;
-                                    const liftMultiplier = isDragging ? OBJECT_LIFT_MULTIPLIER + 0.02 : isSelected ? OBJECT_LIFT_MULTIPLIER : 1;
-                                    const baseScaleX = snippet.scaleX === -1 ? -1 : 1;
-
-                                    return (
-                                        <Text
-                                            key={snippet.id}
-                                            name={snippet.id}
-                                            x={snippetX}
-                                            y={snippetY}
-                                            width={metrics.width}
-                                            height={metrics.height}
-                                            text={snippet.text}
-                                            fontFamily={brush.fontFamily}
-                                            fontStyle={brush.fontStyle}
-                                            fontSize={metrics.fontSize}
-                                            fill={canvasMeta.theme === "dark" ? "#f8f7f1" : "#151513"}
-                                            align="center"
-                                            verticalAlign="middle"
-                                            padding={8}
-                                            wrap="word"
-                                            draggable={canEditObjects}
-                                            rotation={snippet.rotation || 0}
-                                            scaleX={baseScaleX * liftMultiplier}
-                                            scaleY={liftMultiplier}
-                                            stroke={isSelected ? "#68d391" : "transparent"}
-                                            strokeWidth={isSelected ? 1.2 : 0}
-                                            preventDefault={shouldPreventTouchDefault}
-                                            shadowColor={canvasMeta.theme === "dark" ? "rgba(0,0,0,0.58)" : "rgba(0,0,0,0.22)"}
-                                            shadowBlur={isSelected || isDragging ? 16 : 6}
-                                            shadowOffsetY={isSelected || isDragging ? 6 : 2}
-                                            onClick={canEditObjects ? (() => {
-                                                setSelectedObject({kind: "snippet", id: snippet.id});
-                                                setIsSnippetComposerOpen(false);
-                                            }) : undefined}
-                                            onTap={canEditObjects ? (() => {
-                                                setSelectedObject({kind: "snippet", id: snippet.id});
-                                                setIsSnippetComposerOpen(false);
-                                            }) : undefined}
-                                            onDragStart={canEditObjects ? ((event) => handleDragStartSnippet(snippet, event)) : undefined}
-                                            onDragEnd={canEditObjects ? ((event) => handleDragEndSnippet(snippet, event)) : undefined}
-                                        />
-                                    );
-                                }
-
-                                const image = object.payload;
-                                const isSelected = selectedObject?.kind === "image" && selectedObject?.id === image.id;
-                                const isDragging = draggingObject?.kind === "image" && draggingObject?.id === image.id;
-                                return (
-                                    <CanvasImageNode
-                                        key={image.id}
-                                        canvasImage={image}
-                                        stageWidth={stageWidth}
-                                        stageHeight={stageHeight}
-                                        isSelected={isSelected}
-                                        isDragging={isDragging}
-                                        isBeingRemoved={animatingRemovalId === image.id}
-                                        canInteract={canEditObjects}
-                                        preventTouchDefault={shouldPreventTouchDefault}
-                                        onSelect={canEditObjects ? (() => {
-                                            setSelectedObject({kind: "image", id: image.id});
-                                            setIsSnippetComposerOpen(false);
-                                        }) : undefined}
-                                        onDragStart={canEditObjects ? ((event) => handleDragStartImage(image, event)) : undefined}
-                                        onDragEnd={canEditObjects ? ((event) => handleDragEndImage(image, event)) : undefined}
-                                    />
-                                );
-                            })}
-                        </Layer>
-                    </Stage>
+                    <button
+                        type="button"
+                        className={`${styles.sideToolButton} ${canvasMeta.aspectRatio === "4:5" ? styles.toolButtonActive : ""}`}
+                        onClick={() => setCanvasMeta((prev) => ({...prev, aspectRatio: prev.aspectRatio === "1:1" ? "4:5" : "1:1"}))}
+                        title={`Aspect: ${canvasMeta.aspectRatio}`}
+                    >
+                        {canvasMeta.aspectRatio === "1:1" ? "⬜" : "▯"}
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.sideToolButton} ${canvasMeta.gridEnabled ? styles.toolButtonActive : ""}`}
+                        onClick={() => setCanvasMeta((prev) => ({...prev, gridEnabled: !prev.gridEnabled}))}
+                        title="Grid"
+                    >
+                        ⊞
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.sideToolButton} ${canvasMeta.snapEnabled ? styles.toolButtonActive : ""}`}
+                        onClick={() => setCanvasMeta((prev) => ({...prev, snapEnabled: !prev.snapEnabled}))}
+                        title="Snap"
+                    >
+                        ⊡
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.sideToolButton} ${canvasMeta.theme === "dark" ? styles.toolButtonActive : ""}`}
+                        onClick={() => setCanvasMeta((prev) => ({...prev, theme: prev.theme === "dark" ? "light" : "dark"}))}
+                        title={canvasMeta.theme === "dark" ? "Dark theme" : "Light theme"}
+                    >
+                        ◐
+                    </button>
                 </div>
-                <PieMenu
-                    isOpen={pieMenu.isOpen}
-                    position={pieMenu.position}
-                    items={pieMenu.items}
-                    onClose={closePieMenu}
-                    isDark={canvasMeta.theme === "dark"}
-                />
-                <div className={styles.stageHud}>
-                    <span className={styles.zoomBadge}>{Math.round(viewport.scale * 100)}%</span>
-                    {isMobileViewport && <span className={styles.gestureHint}>Pinch to zoom, two fingers to pan</span>}
-                </div>
-            </div>
 
-            <div className={styles.loaderWrapper}>
-                {(isSending || isUploadingImage) && <BarLoader loading width={"100%"} height={3} color="#ff6b3d" speedMultiplier={0.7} />}
-            </div>
-
-            <div className={styles.editorFooter}>
-                <span className={styles.wordCount}>
-                    {snippets.length} {snippets.length === 1 ? "text block" : "text blocks"} · {images.length} {images.length === 1 ? "image" : "images"} · {doodles.length} {doodles.length === 1 ? "doodle" : "doodles"}
-                </span>
-                <button
-                    type="button"
-                    disabled={!title || !hasCanvasContent || isSending}
-                    onClick={saveCanvas}
-                    className={`${styles.shareButton} ${(!title || !hasCanvasContent || isSending) ? styles.shareButtonDisabled : ""}`}
-                >
-                    Share
-                </button>
-            </div>
-
-            <div className={`${styles.toolbarDock} ${isMobileViewport ? styles.mobileDock : ""} ${showMinimizedDoodleDock ? styles.toolbarDockMinimized : ""}`}>
+                {/* ── Mobile sidebar toggle tab ── */}
                 {isMobileViewport && (
                     <button
                         type="button"
-                        aria-label={isDockVisible ? "Close tool dock" : "Open tool dock"}
-                        className={`${styles.toolbarOrb} ${isDockVisible ? styles.toolbarOrbOpen : ""}`}
+                        className={styles.sideToolbarToggle}
                         onClick={() => setIsMobileDockOpen((prev) => !prev)}
+                        aria-label={isMobileDockOpen ? "Close toolbar" : "Open toolbar"}
                     >
-                        {isDockVisible ? "Close" : "Tools"}
+                        {isMobileDockOpen ? "✕" : "≡"}
                     </button>
                 )}
 
-                {showMinimizedDoodleDock && (
-                    <div className={styles.doodleMiniBar}>
-                        <span className={styles.doodleMiniLabel}>Doodle mode</span>
-                        <span className={styles.doodleMiniColor} style={{backgroundColor: doodleColor}} />
-                        <span className={styles.doodleMiniSize}>{doodleSize.toFixed(1)} px</span>
-                        <button type="button" className={styles.secondaryButton} onClick={() => setIsDoodleDockMinimized(false)}>
-                            Controls
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.secondaryButton}
-                            onClick={() => {
-                                setActiveTool("select");
-                                setIsDoodleDockMinimized(false);
+                {/* ── Canvas column (stage + loader + footer) ── */}
+                <div className={styles.canvasColumn}>
+                    <div
+                        ref={shellRef}
+                        className={`${styles.stageShell} ${canvasMeta.theme === "dark" ? styles.isDark : ""} ${activeTool === "doodle" ? styles.isDoodleActive : ""}`}
+                        onMouseMove={handleAmbientMove}
+                        onTouchMove={handleAmbientMove}
+                        onMouseLeave={handleAmbientLeave}
+                        onTouchEnd={handleAmbientLeave}
+                    >
+                        <div ref={ambientLightRef} className={styles.ambientLight} />
+                        <div
+                            ref={stageFrameRef}
+                            className={styles.stageFrame}
+                            onContextMenu={(e) => {
+                                e.preventDefault();
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                openPieMenu(e.clientX - rect.left, e.clientY - rect.top);
                             }}
                         >
-                            Done
-                        </button>
-                    </div>
-                )}
-
-                {isDockVisible && !showMinimizedDoodleDock && (
-                    <div className={styles.toolbarPanel}>
-                        <div className={styles.toolbarRow}>
-                            <button type="button" className={`${styles.toolButton} ${isSnippetComposerOpen ? styles.toolButtonActive : ""}`} onClick={openSnippetComposer}>
-                                Add Text
-                            </button>
-                            <button type="button" className={`${styles.toolButton} ${isUploadingImage ? styles.toolButtonActive : ""}`} onClick={addImageFromFile} disabled={isUploadingImage}>
-                                {isUploadingImage ? "Uploading..." : "Add Image"}
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.toolButton} ${activeTool === "select" ? styles.toolButtonActive : ""}`}
-                                onClick={() => {
-                                    setActiveTool("select");
-                                    setIsSnippetComposerOpen(false);
-                                }}
+                            <Stage
+                                ref={stageRef}
+                                width={viewportWidth}
+                                height={viewportHeight}
+                                preventDefault={activeTool === "doodle"}
+                                style={{touchAction: activeTool === "doodle" ? "none" : "pan-y"}}
+                                onMouseDown={handleCanvasPointerDown}
+                                onTouchStart={handleCanvasPointerDown}
+                                onMouseMove={handleCanvasPointerMove}
+                                onTouchMove={handleCanvasPointerMove}
+                                onMouseUp={handleCanvasPointerUp}
+                                onTouchEnd={handleCanvasPointerUp}
+                                onTouchCancel={handleCanvasPointerUp}
+                                onMouseLeave={handleCanvasPointerUp}
+                                className={`${styles.stage} ${styles.stageEditor}`}
                             >
-                                Select
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.toolButton} ${activeTool === "doodle" ? styles.toolButtonActive : ""}`}
-                                onClick={() => {
-                                    setIsSnippetComposerOpen(false);
-                                    setActiveTool("doodle");
-                                    setIsDoodleDockMinimized(true);
-                                }}
-                            >
-                                Doodle
-                            </button>
-                            {isDoodleMode && (
-                                <button type="button" className={styles.secondaryButton} onClick={() => setIsDoodleDockMinimized(true)}>
-                                    Minimize
-                                </button>
-                            )}
-                        </div>
-
-                        {isSnippetComposerOpen && (
-                            <div className={styles.snippetComposer}>
-                                <input
-                                    ref={snippetInputRef}
-                                    value={snippetInput}
-                                    onChange={(event) => setSnippetInput(event.target.value)}
-                                    onKeyDown={(event) => {
-                                        if(event.key === "Enter"){
-                                            event.preventDefault();
-                                            addSnippet();
-                                        }
-                                        if(event.key === "Escape"){
-                                            setIsSnippetComposerOpen(false);
-                                        }
-                                    }}
-                                    className={styles.snippetInput}
-                                    placeholder="Type text to place on canvas..."
-                                    maxLength={220}
-                                />
-                                <div className={styles.snippetActions}>
-                                    <button type="button" className={styles.secondaryButton} onClick={addSnippet} disabled={!snippetInput.trim()}>
-                                        Add
-                                    </button>
-                                    <button type="button" className={styles.secondaryButton} onClick={() => setIsSnippetComposerOpen(false)}>
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTool === "doodle" && (
-                            <div className={styles.toolbarColumn}>
-                                <div className={styles.paletteWrap}>
-                                    {COLOR_PALETTES.map((group) => (
-                                        <div key={group.label} className={styles.paletteGroup}>
-                                            <span className={styles.paletteLabel}>{group.label}</span>
-                                            <div className={styles.colorSwatches}>
-                                                {group.colors.map((color) => (
-                                                    <button
-                                                        key={color}
-                                                        type="button"
-                                                        className={`${styles.colorSwatch} ${doodleColor.toLowerCase() === color.toLowerCase() ? styles.colorSwatchActive : ""}`}
-                                                        onClick={() => setDoodleColor(color)}
-                                                        title={`Use ${color} doodle color`}
-                                                        aria-label={`Select doodle color ${color}`}
-                                                        style={{backgroundColor: color}}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <label className={styles.customColorLabel}>
-                                        Custom
-                                        <input
-                                            type="color"
-                                            value={doodleColor}
-                                            onChange={(event) => setDoodleColor(event.target.value)}
-                                            className={styles.colorInput}
-                                            title="Custom doodle color"
-                                        />
-                                    </label>
-                                </div>
-                                <div className={styles.toolbarRow}>
-                                    <input
-                                        type="range"
-                                        min={1}
-                                        max={10}
-                                        step={0.2}
-                                        value={doodleSize}
-                                        onChange={(event) => setDoodleSize(Number(event.target.value))}
-                                        className={styles.sizeRange}
-                                        aria-label="Doodle size"
-                                    />
-                                    <button type="button" className={styles.secondaryButton} onClick={undoLastDoodle} disabled={doodles.length === 0}>
-                                        Undo Doodle
-                                    </button>
-                                    <button type="button" className={styles.secondaryButton} onClick={clearDoodles} disabled={doodles.length === 0 && !isDrawing}>
-                                        Clear Doodles
-                                    </button>
-                                    <span className={styles.toolHint}>Draw directly on wall</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTool === "select" && selectedObject && (
-                            <div className={styles.selectionPanel}>
-                                {selectedSnippet && (
-                                    <div className={styles.styleCarousel}>
-                                        {Object.entries(FONT_BRUSHES).map(([styleKey, styleValue]) => {
-                                            const isActive = selectedSnippet.fontStyle === styleKey;
-                                            return (
-                                                <button
-                                                    key={styleKey}
-                                                    type="button"
-                                                    className={`${styles.fontChip} ${isActive ? styles.fontChipActive : ""}`}
-                                                    onClick={() => updateSnippet(selectedSnippet.id, {fontStyle: styleKey})}
-                                                >
-                                                    <span className={styles.fontChipLabel}>{styleValue.label}</span>
-                                                    <span
-                                                        className={styles.fontChipPreview}
-                                                        style={{
-                                                            fontFamily: styleValue.fontFamily,
-                                                            fontStyle: styleValue.fontStyle
-                                                        }}
-                                                    >
-                                                        {styleValue.preview}
-                                                    </span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                {canvasMeta.gridEnabled && (
+                                    <Layer listening={false} {...layerTransform} opacity={clamp((viewport.scale - 0.8) / 0.5, 0.15, 1)}>
+                                        {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
+                                            <Rect
+                                                key={`grid-v-${index}`}
+                                                x={index * GRID_SIZE}
+                                                y={0}
+                                                width={1}
+                                                height={stageHeight}
+                                                fill={canvasMeta.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
+                                            />
+                                        ))}
+                                        {Array.from({length: Math.floor(stageHeight / GRID_SIZE) + 1}).map((_, index) => (
+                                            <Rect
+                                                key={`grid-h-${index}`}
+                                                x={0}
+                                                y={index * GRID_SIZE}
+                                                width={stageWidth}
+                                                height={1}
+                                                fill={canvasMeta.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
+                                            />
+                                        ))}
+                                    </Layer>
                                 )}
 
-                                <div className={styles.toolbarRow}>
-                                    <button type="button" className={styles.secondaryButton} onClick={() => resizeSelectedObject("down")}>Resize -</button>
-                                    <button type="button" className={styles.secondaryButton} onClick={() => resizeSelectedObject("up")}>Resize +</button>
-                                    <button type="button" className={styles.secondaryButton} onClick={() => rotateSelectedObject(-8)}>Rotate -</button>
-                                    <button type="button" className={styles.secondaryButton} onClick={() => rotateSelectedObject(8)}>Rotate +</button>
-                                    <button type="button" className={styles.secondaryButton} onClick={flipSelectedObject}>Flip</button>
-                                    <button type="button" className={styles.secondaryButton} onClick={bringToFront}>Front</button>
-                                    <button type="button" className={styles.secondaryButton} onClick={sendToBack}>Back</button>
-                                    <button type="button" className={styles.secondaryButton} onClick={removeSelectedObject}>Remove</button>
-                                </div>
-                            </div>
-                        )}
+                                <Layer listening={false} {...layerTransform}>
+                                    {doodles.map((doodle) => (
+                                        <Line
+                                            key={doodle.id}
+                                            points={(doodle.points || []).map((point, index) => (
+                                                index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                            ))}
+                                            stroke={doodle.color || DEFAULT_DOODLE_COLOR}
+                                            strokeWidth={Number(doodle.size) || 2.8}
+                                            lineCap="round"
+                                            lineJoin="round"
+                                            tension={0.35}
+                                        />
+                                    ))}
+                                    {isDrawing && currentDoodlePoints.length >= 2 && (
+                                        <Line
+                                            points={currentDoodlePoints.map((point, index) => (
+                                                index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                            ))}
+                                            stroke={doodleColor}
+                                            strokeWidth={doodleSize}
+                                            lineCap="round"
+                                            lineJoin="round"
+                                            tension={0.35}
+                                        />
+                                    )}
+                                </Layer>
 
-                        <div className={styles.toolbarRow}>
-                            <div className={styles.aspectToggle}>
-                                <button
-                                    type="button"
-                                    className={`${styles.secondaryButton} ${canvasMeta.aspectRatio === "1:1" ? styles.toolButtonActive : ""}`}
-                                    onClick={() => setCanvasMeta((prev) => ({...prev, aspectRatio: "1:1"}))}
-                                >
-                                    1:1
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`${styles.secondaryButton} ${canvasMeta.aspectRatio === "4:5" ? styles.toolButtonActive : ""}`}
-                                    onClick={() => setCanvasMeta((prev) => ({...prev, aspectRatio: "4:5"}))}
-                                >
-                                    4:5
-                                </button>
-                            </div>
-                            <button
-                                type="button"
-                                className={`${styles.secondaryButton} ${canvasMeta.gridEnabled ? styles.toolButtonActive : ""}`}
-                                onClick={() => setCanvasMeta((prev) => ({...prev, gridEnabled: !prev.gridEnabled}))}
-                            >
-                                Grid
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.secondaryButton} ${canvasMeta.snapEnabled ? styles.toolButtonActive : ""}`}
-                                onClick={() => setCanvasMeta((prev) => ({...prev, snapEnabled: !prev.snapEnabled}))}
-                            >
-                                Snap
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.secondaryButton} ${canvasMeta.theme === "dark" ? styles.toolButtonActive : ""}`}
-                                onClick={() => setCanvasMeta((prev) => ({...prev, theme: prev.theme === "dark" ? "light" : "dark"}))}
-                            >
-                                {canvasMeta.theme === "dark" ? "Dark" : "Light"}
-                            </button>
-                            <button type="button" className={styles.secondaryButton} onClick={() => zoomByStep("out")}>Zoom -</button>
-                            <button type="button" className={styles.secondaryButton} onClick={() => zoomByStep("in")}>Zoom +</button>
-                            <button type="button" className={styles.secondaryButton} onClick={resetViewport}>Reset View</button>
+                                <Layer {...layerTransform}>
+                                    {sortedObjects.map((object) => {
+                                        if(object.kind === "snippet"){
+                                            const snippet = object.payload;
+                                            const metrics = getSnippetMetrics(snippet, stageWidth);
+                                            const styleKey = FONT_STYLE_MAP[snippet.fontStyle] || "serif";
+                                            const brush = FONT_BRUSHES[styleKey] || FONT_BRUSHES.serif;
+                                            const snippetX = clamp(snippet.x * stageWidth, 0, Math.max(0, stageWidth - metrics.width));
+                                            const snippetY = clamp(snippet.y * stageHeight, 0, Math.max(0, stageHeight - metrics.height));
+                                            const isSelected = selectedObject?.kind === "snippet" && selectedObject?.id === snippet.id;
+                                            const isDragging = draggingObject?.kind === "snippet" && draggingObject?.id === snippet.id;
+                                            const liftMultiplier = isDragging ? OBJECT_LIFT_MULTIPLIER + 0.02 : isSelected ? OBJECT_LIFT_MULTIPLIER : 1;
+                                            const baseScaleX = snippet.scaleX === -1 ? -1 : 1;
+
+                                            return (
+                                                <Text
+                                                    key={snippet.id}
+                                                    name={snippet.id}
+                                                    x={snippetX}
+                                                    y={snippetY}
+                                                    width={metrics.width}
+                                                    height={metrics.height}
+                                                    text={snippet.text}
+                                                    fontFamily={brush.fontFamily}
+                                                    fontStyle={brush.fontStyle}
+                                                    fontSize={metrics.fontSize}
+                                                    fill={canvasMeta.theme === "dark" ? "#f8f7f1" : "#151513"}
+                                                    align="center"
+                                                    verticalAlign="middle"
+                                                    padding={8}
+                                                    wrap="word"
+                                                    draggable={canEditObjects}
+                                                    rotation={snippet.rotation || 0}
+                                                    scaleX={baseScaleX * liftMultiplier}
+                                                    scaleY={liftMultiplier}
+                                                    stroke={isSelected ? "#68d391" : "transparent"}
+                                                    strokeWidth={isSelected ? 1.2 : 0}
+                                                    preventDefault={shouldPreventTouchDefault}
+                                                    shadowColor={canvasMeta.theme === "dark" ? "rgba(0,0,0,0.58)" : "rgba(0,0,0,0.22)"}
+                                                    shadowBlur={isSelected || isDragging ? 16 : 6}
+                                                    shadowOffsetY={isSelected || isDragging ? 6 : 2}
+                                                    onClick={canEditObjects ? (() => {
+                                                        setSelectedObject({kind: "snippet", id: snippet.id});
+                                                        setIsSnippetComposerOpen(false);
+                                                    }) : undefined}
+                                                    onTap={canEditObjects ? (() => {
+                                                        setSelectedObject({kind: "snippet", id: snippet.id});
+                                                        setIsSnippetComposerOpen(false);
+                                                    }) : undefined}
+                                                    onDragStart={canEditObjects ? ((event) => handleDragStartSnippet(snippet, event)) : undefined}
+                                                    onDragEnd={canEditObjects ? ((event) => handleDragEndSnippet(snippet, event)) : undefined}
+                                                />
+                                            );
+                                        }
+
+                                        const image = object.payload;
+                                        const isSelected = selectedObject?.kind === "image" && selectedObject?.id === image.id;
+                                        const isDragging = draggingObject?.kind === "image" && draggingObject?.id === image.id;
+                                        return (
+                                            <CanvasImageNode
+                                                key={image.id}
+                                                canvasImage={image}
+                                                stageWidth={stageWidth}
+                                                stageHeight={stageHeight}
+                                                isSelected={isSelected}
+                                                isDragging={isDragging}
+                                                isBeingRemoved={animatingRemovalId === image.id}
+                                                canInteract={canEditObjects}
+                                                preventTouchDefault={shouldPreventTouchDefault}
+                                                onSelect={canEditObjects ? (() => {
+                                                    setSelectedObject({kind: "image", id: image.id});
+                                                    setIsSnippetComposerOpen(false);
+                                                }) : undefined}
+                                                onDragStart={canEditObjects ? ((event) => handleDragStartImage(image, event)) : undefined}
+                                                onDragEnd={canEditObjects ? ((event) => handleDragEndImage(image, event)) : undefined}
+                                            />
+                                        );
+                                    })}
+                                </Layer>
+                            </Stage>
                         </div>
+                        <PieMenu
+                            isOpen={pieMenu.isOpen}
+                            position={pieMenu.position}
+                            items={pieMenu.items}
+                            onClose={closePieMenu}
+                            isDark={canvasMeta.theme === "dark"}
+                        />
+                        <div className={styles.stageHud}>
+                            <button type="button" className={styles.hudZoomButton} onClick={() => zoomByStep("out")} aria-label="Zoom out">−</button>
+                            <span className={styles.zoomBadge} onClick={viewport.scale !== 1 ? resetViewport : undefined} style={viewport.scale !== 1 ? {cursor: "pointer"} : undefined}>
+                                {Math.round(viewport.scale * 100)}%
+                            </span>
+                            <button type="button" className={styles.hudZoomButton} onClick={() => zoomByStep("in")} aria-label="Zoom in">+</button>
+                        </div>
+                        {viewport.scale > 1 && (
+                            <CanvasMinimap
+                                viewport={viewport}
+                                stageWidth={stageWidth}
+                                stageHeight={stageHeight}
+                                viewportWidth={viewportWidth}
+                                viewportHeight={viewportHeight}
+                                fitScale={fitScale}
+                                isDark={canvasMeta.theme === "dark"}
+                                updateViewport={updateViewport}
+                            />
+                        )}
+                    </div>
+
+                    <div className={styles.loaderWrapper}>
+                        {(isSending || isUploadingImage) && <BarLoader loading width={"100%"} height={3} color="#ff6b3d" speedMultiplier={0.7} />}
+                    </div>
+
+                    <div className={styles.editorFooter}>
+                        <span className={styles.wordCount}>
+                            {snippets.length} {snippets.length === 1 ? "text block" : "text blocks"} · {images.length} {images.length === 1 ? "image" : "images"} · {doodles.length} {doodles.length === 1 ? "doodle" : "doodles"}
+                        </span>
+                        <button
+                            type="button"
+                            disabled={!title || !hasCanvasContent || isSending}
+                            onClick={saveCanvas}
+                            className={`${styles.shareButton} ${(!title || !hasCanvasContent || isSending) ? styles.shareButtonDisabled : ""}`}
+                        >
+                            Share
+                        </button>
+                    </div>
+                </div>
+
+                {/* ── Right context panel ── */}
+                {showContextPanel && contextPanelContent && (
+                    <div className={styles.contextPanel}>
+                        {contextPanelContent}
                     </div>
                 )}
             </div>

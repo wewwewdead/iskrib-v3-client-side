@@ -48,7 +48,7 @@
 }
 
 .editor-container.is-canvas-mode{
-    max-width: 980px;
+    max-width: 1100px;
     height: 92%;
     overflow-y: auto;
     overflow-x: hidden;
