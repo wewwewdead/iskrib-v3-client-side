@@ -1135,6 +1135,27 @@ export const getCurrentFreedomWallWeek = async(token = null) => {
     return await response.json();
 }
 
+export const getFreedomWallWeeks = async(options = {}, token = null) => {
+    const headers = {};
+    if(token) headers["Authorization"] = `Bearer ${token}`;
+
+    const parsedLimit = Number(options?.limit ?? 8);
+    const params = new URLSearchParams();
+    params.set("limit", String(Number.isNaN(parsedLimit) ? 8 : parsedLimit));
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/weeks?${params.toString()}`, {
+        method: "GET",
+        headers: headers
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to fetch freedom wall weeks");
+    }
+
+    return await response.json();
+}
+
 export const getFreedomWallStickers = async(token = null) => {
     const headers = {};
     if(token) headers["Authorization"] = `Bearer ${token}`;
@@ -1252,6 +1273,54 @@ export const deleteFreedomWallItem = async(token, itemId) => {
     if(!response.ok){
         const error = await response.json().catch(() => ({}));
         throw new Error(error?.error || "failed to delete freedom wall item");
+    }
+
+    return await response.json();
+}
+
+export const reportFreedomWallItem = async(token, itemId, payload = {}) => {
+    if(!token){
+        throw new Error("not authorized");
+    }
+    if(!itemId){
+        throw new Error("itemId is required");
+    }
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/items/${encodeURIComponent(itemId)}/report`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload || {})
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to report freedom wall item");
+    }
+
+    return await response.json();
+}
+
+export const clearMyFreedomWallDoodles = async(token, weekId) => {
+    if(!token){
+        throw new Error("not authorized");
+    }
+    if(!weekId){
+        throw new Error("weekId is required");
+    }
+
+    const response = await apiRequest(`${BASE_URL}/freedom-wall/${encodeURIComponent(weekId)}/my-doodles`, {
+        method: "DELETE",
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || "failed to clear freedom wall doodles");
     }
 
     return await response.json();

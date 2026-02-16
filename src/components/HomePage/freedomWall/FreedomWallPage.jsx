@@ -3,10 +3,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Shape, Stage, Text } from "react-konva";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+    clearMyFreedomWallDoodles,
     createFreedomWallItem,
     deleteFreedomWallItem,
     getCurrentFreedomWallWeek,
     getFreedomWallItems,
+    getFreedomWallWeeks,
+    reportFreedomWallItem,
     updateFreedomWallItem
 } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
@@ -40,6 +43,10 @@ const WALL_MAX_WIDTH = 1080;
 const WALL_MIN_HEIGHT = 420;
 const WALL_MAX_HEIGHT = 900;
 const GRID_SIZE = 36;
+const REPORTABLE_ITEM_TYPES = new Set(["doodle"]);
+const ERASER_RADIUS_PX = 18;
+const ERASER_MOVE_THROTTLE_MS = 16;
+const MINIMAP_WIDTH = 100;
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -81,6 +88,45 @@ const upsertById = (items = [], nextItem) => {
 
 const removeById = (items = [], itemId) => items.filter((item) => String(item?.id) !== String(itemId));
 
+const distancePointToSegment = (px, py, x1, y1, x2, y2) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    if(dx === 0 && dy === 0){
+        return Math.hypot(px - x1, py - y1);
+    }
+
+    const t = clamp(((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy), 0, 1);
+    const cx = x1 + t * dx;
+    const cy = y1 + t * dy;
+    return Math.hypot(px - cx, py - cy);
+};
+
+const isPointerNearDoodle = (pointerX, pointerY, doodle, radiusPx = ERASER_RADIUS_PX) => {
+    if(!doodle?.points || doodle.points.length < 4){
+        return false;
+    }
+
+    const strokeWidth = Math.max(1, Number(doodle.strokeWidth) || 3);
+    const hitDistance = radiusPx + strokeWidth * 0.5;
+
+    const points = doodle.points;
+    for(let i = 0; i < points.length - 2; i += 2){
+        const dist = distancePointToSegment(
+            pointerX,
+            pointerY,
+            points[i],
+            points[i + 1],
+            points[i + 2],
+            points[i + 3]
+        );
+        if(dist <= hitDistance){
+            return true;
+        }
+    }
+
+    return false;
+};
+
 const emojiCanvasCache = new Map();
 
 const useEmojiImage = (emoji, resolution = 128) => {
@@ -120,13 +166,14 @@ const useEmojiImage = (emoji, resolution = 128) => {
     return image;
 };
 
-const StickerNode = ({item, stageWidth, stageHeight, isSelected, canEdit, onSelect, onDragEnd}) => {
+const StickerNode = ({item, stageWidth, stageHeight, isSelected, canEdit, onSelect, onDragEnd, isDraft}) => {
     const emoji = STICKER_OPTIONS[item?.payload?.sticker] || "🐶";
     const image = useEmojiImage(emoji);
     const scale = clamp(Number(item?.payload?.scale) || 1, 0.25, 6);
     const size = clamp(64 * scale, 20, 420);
     const x = clamp((Number(item?.payload?.x) || 0.5) * stageWidth, 0, Math.max(0, stageWidth - size));
     const y = clamp((Number(item?.payload?.y) || 0.5) * stageHeight, 0, Math.max(0, stageHeight - size));
+    const showBorder = isDraft || isSelected;
 
     if(!image){
         return null;
@@ -146,13 +193,13 @@ const StickerNode = ({item, stageWidth, stageHeight, isSelected, canEdit, onSele
                 onDragEnd={onDragEnd}
                 rotation={Number(item?.payload?.rotation) || 0}
             />
-            {isSelected && (
+            {showBorder && (
                 <Rect
                     x={x}
                     y={y}
                     width={size}
                     height={size}
-                    stroke="#4f46e5"
+                    stroke={isDraft ? "#a21caf" : "#4f46e5"}
                     strokeWidth={2}
                     dash={[6, 4]}
                     listening={false}
@@ -162,13 +209,14 @@ const StickerNode = ({item, stageWidth, stageHeight, isSelected, canEdit, onSele
     );
 };
 
-const StampNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd, isSelected}) => {
+const StampNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd, isSelected, isDraft}) => {
     const stamp = STAMP_ICONS[item?.payload?.stamp] || "✨";
     const image = useEmojiImage(stamp, 64);
     const scale = clamp(Number(item?.payload?.scale) || 1, 0.35, 5);
     const size = clamp(34 * scale, 14, 220);
     const x = clamp((Number(item?.payload?.x) || 0.5) * stageWidth, 0, Math.max(0, stageWidth - size));
     const y = clamp((Number(item?.payload?.y) || 0.5) * stageHeight, 0, Math.max(0, stageHeight - size));
+    const showBorder = isDraft || isSelected;
 
     if(!image){
         return null;
@@ -188,13 +236,13 @@ const StampNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd,
                 onDragEnd={onDragEnd}
                 rotation={Number(item?.payload?.rotation) || 0}
             />
-            {isSelected && (
+            {showBorder && (
                 <Rect
                     x={x}
                     y={y}
                     width={size}
                     height={size}
-                    stroke="#0f766e"
+                    stroke={isDraft ? "#a21caf" : "#0f766e"}
                     strokeWidth={2}
                     dash={[6, 4]}
                     listening={false}
@@ -213,7 +261,16 @@ const darkenColor = (hex, amount = 0.15) => {
     return `rgb(${r},${g},${b})`;
 };
 
-const NoteNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd, isSelected}) => {
+const NoteNode = ({
+    item,
+    stageWidth,
+    stageHeight,
+    canEdit,
+    onSelect,
+    onDragEnd,
+    isSelected,
+    isDraft
+}) => {
     const payload = item?.payload || {};
     const width = clamp((Number(payload?.width) || 0.26) * stageWidth, 110, stageWidth * 0.9);
     const height = clamp((Number(payload?.height) || 0.2) * stageHeight, 60, stageHeight * 0.8);
@@ -223,6 +280,10 @@ const NoteNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd, 
     const bgColor = payload?.bgColor || "#fff4a8";
     const curlSize = Math.min(width, height) * 0.14;
     const pinSize = Math.max(5, Math.min(width, height) * 0.04);
+
+    const borderStroke = isDraft ? "#a21caf" : isSelected ? "#a21caf" : "rgba(0,0,0,0.1)";
+    const borderWidth = isDraft ? 2 : isSelected ? 2 : 0.5;
+    const borderDash = isDraft ? [6, 4] : undefined;
 
     return (
         <Group
@@ -262,8 +323,9 @@ const NoteNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd, 
                     ctx.fillStrokeShape(shape);
                 }}
                 fill={bgColor}
-                stroke={isSelected ? "#a21caf" : "rgba(0,0,0,0.1)"}
-                strokeWidth={isSelected ? 2 : 0.5}
+                stroke={borderStroke}
+                strokeWidth={borderWidth}
+                dash={borderDash}
             />
 
             {/* Page curl triangle */}
@@ -324,6 +386,99 @@ const NoteNode = ({item, stageWidth, stageHeight, canEdit, onSelect, onDragEnd, 
     );
 };
 
+const CURSOR_COLORS = ["#a21caf", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4"];
+
+const getCursorColor = (userId) => {
+    let hash = 0;
+    const str = String(userId);
+    for(let i = 0; i < str.length; i++){
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return CURSOR_COLORS[Math.abs(hash) % CURSOR_COLORS.length];
+};
+
+const PuffEffect = ({x, y, id, onComplete}) => {
+    const [progress, setProgress] = useState(0);
+    const startRef = useRef(null);
+    const particlesRef = useRef(null);
+
+    if(!particlesRef.current){
+        const count = 6 + Math.floor(Math.random() * 3);
+        particlesRef.current = Array.from({length: count}, () => ({
+            angle: Math.random() * Math.PI * 2,
+            distance: 30 + Math.random() * 20,
+            color: Math.random() > 0.5 ? "#a21caf" : "#e879f9"
+        }));
+    }
+
+    useEffect(() => {
+        const duration = 500;
+        let animId;
+
+        const animate = (timestamp) => {
+            if(!startRef.current) startRef.current = timestamp;
+            const elapsed = timestamp - startRef.current;
+            const p = Math.min(elapsed / duration, 1);
+            setProgress(p);
+
+            if(p < 1){
+                animId = requestAnimationFrame(animate);
+            } else {
+                onComplete(id);
+            }
+        };
+
+        animId = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(animId);
+    }, [id, onComplete]);
+
+    const particles = particlesRef.current;
+    const eased = 1 - Math.pow(1 - progress, 2);
+
+    return (
+        <Group x={x} y={y} listening={false}>
+            <Circle
+                radius={eased * 28}
+                stroke="#e879f9"
+                strokeWidth={Math.max(0.5, 2 * (1 - progress))}
+                opacity={1 - progress}
+            />
+            {particles.map((p, i) => (
+                <Circle
+                    key={i}
+                    x={Math.cos(p.angle) * p.distance * eased}
+                    y={Math.sin(p.angle) * p.distance * eased}
+                    radius={Math.max(0.5, 3.5 * (1 - progress))}
+                    fill={p.color}
+                    opacity={1 - progress}
+                />
+            ))}
+        </Group>
+    );
+};
+
+const RemoteCursor = ({cursor, stageWidth, stageHeight}) => {
+    const px = cursor.x * stageWidth;
+    const py = cursor.y * stageHeight;
+    const color = getCursorColor(cursor.userId);
+    const displayName = (cursor.userName || "User").slice(0, 10);
+
+    return (
+        <Group x={px} y={py} listening={false}>
+            <Circle radius={5} fill={color} opacity={0.85} />
+            <Text
+                x={8}
+                y={4}
+                text={displayName}
+                fontSize={11}
+                fill={color}
+                fontStyle="bold"
+                opacity={0.8}
+            />
+        </Group>
+    );
+};
+
 const formatWeekLabel = (week = null) => {
     if(!week?.week_start || !week?.week_end){
         return "No active week";
@@ -332,6 +487,37 @@ const formatWeekLabel = (week = null) => {
     const startDate = new Date(week.week_start);
     const endDate = new Date(week.week_end);
     return `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()} (UTC)`;
+};
+
+const formatResetCountdown = (weekEnd, nowMs) => {
+    if(!weekEnd){
+        return "No reset scheduled";
+    }
+
+    const endTimeMs = new Date(weekEnd).getTime();
+    if(Number.isNaN(endTimeMs)){
+        return "No reset scheduled";
+    }
+
+    const diffMs = endTimeMs - nowMs;
+    if(diffMs <= 0){
+        return "Reset imminent";
+    }
+
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    if(days > 0){
+        return `${days} day${days === 1 ? "" : "s"}, ${hours} hour${hours === 1 ? "" : "s"}`;
+    }
+
+    if(hours > 0){
+        return `${hours} hour${hours === 1 ? "" : "s"}, ${minutes} min${minutes === 1 ? "" : "s"}`;
+    }
+
+    return `${minutes} min${minutes === 1 ? "" : "s"}`;
 };
 
 const isCanvasBackgroundTarget = (target, stage) => {
@@ -361,15 +547,46 @@ const FreedomWallPage = () => {
     const [wallError, setWallError] = useState(null);
     const [selectedStamp, setSelectedStamp] = useState("heart");
     const [selectedItemId, setSelectedItemId] = useState(null);
-    const [noteModal, setNoteModal] = useState(null);
+    const [draftNote, setDraftNote] = useState(null);
+    const [draftSticker, setDraftSticker] = useState(null);
+    const [draftStamp, setDraftStamp] = useState(null);
+    const [showClearDoodlesModal, setShowClearDoodlesModal] = useState(false);
     const [noteEditor, setNoteEditor] = useState({
         text: "",
         fontFamily: "Arial",
         fontStyle: "normal",
         fontColor: "#1f2937",
         bgColor: "#fff4a8",
-        fontSize: 16
+        fontSize: 16,
+        width: 0.26,
+        height: 0.2
     });
+    const [placementPuffs, setPlacementPuffs] = useState([]);
+    const [remoteCursors, setRemoteCursors] = useState({});
+    const [stageScale, setStageScale] = useState(1);
+    const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
+    const [isErasing, setIsErasing] = useState(false);
+    const [timeCapsuleWeekId, setTimeCapsuleWeekId] = useState(null);
+    const [nowMs, setNowMs] = useState(() => Date.now());
+    const stageRef = useRef(null);
+    const isPinchingRef = useRef(false);
+    const lastPinchDistRef = useRef(null);
+    const lastPinchCenterRef = useRef(null);
+    const erasedThisStrokeRef = useRef(new Set());
+    const eraseLastTickRef = useRef(0);
+    const clientIdRef = useRef(`fw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    const realtimeChannelRef = useRef(null);
+    const lastCursorBroadcastRef = useRef(0);
+    const minimapDragRef = useRef({
+        isActive: false,
+        pointerId: null,
+        offsetX: 0,
+        offsetY: 0,
+        consumedClick: false
+    });
+    const minimapPendingRef = useRef(null);
+    const minimapFrameRef = useRef(null);
+    const minimapSuppressClickRef = useRef(false);
 
     const authToken = session?.access_token || null;
     const currentUser = user?.userData?.[0] || null;
@@ -388,7 +605,37 @@ const FreedomWallPage = () => {
     });
 
     const activeWeek = activeWeekData?.week || null;
-    const weekId = activeWeek?.id || null;
+    const activeWeekId = activeWeek?.id || null;
+
+    const {
+        data: weeksData,
+        isLoading: isWeeksLoading
+    } = useQuery({
+        queryKey: ["freedomWallWeeks"],
+        queryFn: () => getFreedomWallWeeks({limit: 8}, authToken),
+        refetchOnWindowFocus: true,
+        staleTime: 60 * 1000
+    });
+
+    const recentWeeks = useMemo(() => Array.isArray(weeksData?.weeks) ? weeksData.weeks : [], [weeksData?.weeks]);
+    const previousWeek = useMemo(() => {
+        if(!activeWeekId){
+            return recentWeeks[0] || null;
+        }
+
+        return recentWeeks.find((week) => String(week?.id) !== String(activeWeekId)) || null;
+    }, [activeWeekId, recentWeeks]);
+
+    const isTimeCapsuleMode = Boolean(timeCapsuleWeekId && String(timeCapsuleWeekId) !== String(activeWeekId));
+    const effectiveWeekId = isTimeCapsuleMode ? timeCapsuleWeekId : activeWeekId;
+    const viewedWeek = useMemo(() => {
+        if(!isTimeCapsuleMode){
+            return activeWeek;
+        }
+        return recentWeeks.find((week) => String(week?.id) === String(timeCapsuleWeekId)) || null;
+    }, [activeWeek, isTimeCapsuleMode, recentWeeks, timeCapsuleWeekId]);
+    const weekId = effectiveWeekId;
+    const countdownText = useMemo(() => formatResetCountdown(activeWeek?.week_end, nowMs), [activeWeek?.week_end, nowMs]);
 
     const itemsQueryKey = useMemo(() => ["freedomWallItems", weekId], [weekId]);
 
@@ -402,6 +649,22 @@ const FreedomWallPage = () => {
         refetchOnWindowFocus: false,
         staleTime: 20 * 1000
     });
+
+    useEffect(() => {
+        const interval = setInterval(() => setNowMs(Date.now()), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        if(!timeCapsuleWeekId){
+            return;
+        }
+
+        const stillExists = recentWeeks.some((week) => String(week?.id) === String(timeCapsuleWeekId));
+        if(!stillExists || String(timeCapsuleWeekId) === String(activeWeekId)){
+            setTimeCapsuleWeekId(null);
+        }
+    }, [activeWeekId, recentWeeks, timeCapsuleWeekId]);
 
     useEffect(() => {
         const updateShellWidth = () => {
@@ -428,8 +691,43 @@ const FreedomWallPage = () => {
 
     const stageWidth = useMemo(() => clamp(shellWidth - 12, 280, WALL_MAX_WIDTH), [shellWidth]);
     const stageHeight = useMemo(() => clamp(Math.round(stageWidth * 0.64), WALL_MIN_HEIGHT, WALL_MAX_HEIGHT), [stageWidth]);
+    const minimapHeight = useMemo(() => Math.round(MINIMAP_WIDTH * (stageHeight / stageWidth)), [stageHeight, stageWidth]);
+    const minimapViewport = useMemo(() => {
+        const width = clamp((1 / stageScale) * MINIMAP_WIDTH, 4, MINIMAP_WIDTH);
+        const height = clamp((1 / stageScale) * minimapHeight, 4, minimapHeight);
+        const maxLeft = Math.max(0, MINIMAP_WIDTH - width);
+        const maxTop = Math.max(0, minimapHeight - height);
+        const left = clamp((-stagePosition.x / stageScale) / stageWidth * MINIMAP_WIDTH, 0, maxLeft);
+        const top = clamp((-stagePosition.y / stageScale) / stageHeight * minimapHeight, 0, maxTop);
+        return { left, top, width, height };
+    }, [minimapHeight, stageHeight, stagePosition.x, stagePosition.y, stageScale, stageWidth]);
 
     const sortedItems = useMemo(() => sortItemsByZIndex(itemsData?.data || []), [itemsData?.data]);
+    const doodleEraseTargets = useMemo(() => (
+        sortedItems
+            .filter((item) => item?.item_type === "doodle")
+            .map((item) => {
+                const points = Array.isArray(item?.payload?.points)
+                    ? item.payload.points
+                        .map((point) => Number(point))
+                        .filter((point) => !Number.isNaN(point))
+                    : [];
+
+                if(points.length < 4){
+                    return null;
+                }
+
+                return {
+                    id: item.id,
+                    strokeWidth: Number(item?.payload?.size) || 3,
+                    points: points.map((point, pointIndex) => (
+                        pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
+                    ))
+                };
+            })
+            .filter(Boolean)
+    ), [sortedItems, stageHeight, stageWidth]);
+
     const maxZIndex = useMemo(() => {
         if(!sortedItems.length){
             return 0;
@@ -449,6 +747,11 @@ const FreedomWallPage = () => {
     ), [selectedItem]);
 
     const selectedItemCanEdit = Boolean(selectedItem && currentUserId && String(selectedItem.user_id) === String(currentUserId));
+    const myDoodleCount = useMemo(() => sortedItems.filter((item) => (
+        item?.item_type === "doodle" &&
+        currentUserId &&
+        String(item?.user_id) === String(currentUserId)
+    )).length, [currentUserId, sortedItems]);
 
     useEffect(() => {
         if(!selectedNote){
@@ -462,9 +765,39 @@ const FreedomWallPage = () => {
             fontStyle: NOTE_STYLE_OPTIONS.includes(payload.fontStyle) ? payload.fontStyle : "normal",
             fontColor: payload.fontColor || "#1f2937",
             bgColor: payload.bgColor || "#fff4a8",
-            fontSize: clamp(Number(payload.fontSize) || 16, 10, 64)
+            fontSize: clamp(Number(payload.fontSize) || 16, 10, 64),
+            width: clamp(Number(payload.width) || 0.26, 0.12, 0.8),
+            height: clamp(Number(payload.height) || 0.2, 0.1, 0.7)
         });
     }, [selectedNote]);
+
+    useEffect(() => {
+        if(activeTool !== "note"){
+            setDraftNote(null);
+        }
+        if(activeTool !== "sticker"){
+            setDraftSticker(null);
+        }
+        if(activeTool !== "stamp"){
+            setDraftStamp(null);
+        }
+        if(activeTool !== "eraser"){
+            setIsErasing(false);
+            erasedThisStrokeRef.current.clear();
+        }
+    }, [activeTool]);
+
+    useEffect(() => {
+        setSelectedItemId(null);
+        setDraftNote(null);
+        setDraftSticker(null);
+        setDraftStamp(null);
+        setIsDrawing(false);
+        setDraftDoodlePoints([]);
+        draftDoodleRef.current = [];
+        erasedThisStrokeRef.current.clear();
+        setIsErasing(false);
+    }, [weekId]);
 
     const setItemsCache = useCallback((updater) => {
         if(!weekId){
@@ -506,6 +839,21 @@ const FreedomWallPage = () => {
             };
 
             setItemsCache((items) => [...items, optimisticItem]);
+
+            const itemPayload = payload.payload;
+            let pxX, pxY;
+            if(payload.itemType === "doodle" && Array.isArray(itemPayload.points) && itemPayload.points.length >= 4){
+                const pts = itemPayload.points;
+                const midIdx = Math.floor(pts.length / 2);
+                const midXIdx = midIdx % 2 === 0 ? midIdx : midIdx - 1;
+                pxX = (pts[midXIdx] || 0.5) * stageWidth;
+                pxY = (pts[midXIdx + 1] || 0.5) * stageHeight;
+            } else {
+                pxX = (itemPayload.x || 0.5) * stageWidth;
+                pxY = (itemPayload.y || 0.5) * stageHeight;
+            }
+            setPlacementPuffs((prev) => [...prev, {id: optimisticId, x: pxX, y: pxY, startedAt: Date.now()}]);
+
             return {optimisticId: optimisticId};
         },
         onSuccess: (response, _variables, context) => {
@@ -598,16 +946,78 @@ const FreedomWallPage = () => {
         }
     });
 
+    const reportItemMutation = useMutation({
+        mutationFn: ({itemId}) => reportFreedomWallItem(authToken, itemId),
+        onMutate: async({itemId}) => {
+            let previousItems = [];
+            setItemsCache((items) => {
+                previousItems = items;
+                return removeById(items, itemId);
+            });
+
+            if(String(selectedItemId) === String(itemId)){
+                setSelectedItemId(null);
+            }
+
+            return {previousItems: previousItems};
+        },
+        onError: (error, _variables, context) => {
+            const message = error?.message || error?.error || "Failed to erase doodle";
+            const isNotFound = /not found/i.test(String(message));
+
+            if(!isNotFound && Array.isArray(context?.previousItems)){
+                setItemsCache(() => context.previousItems);
+            }
+
+            if(isNotFound){
+                return;
+            }
+
+            setWallError(message);
+            setTimeout(() => setWallError((prev) => prev === message ? null : prev), 4000);
+        }
+    });
+
+    const clearMyDoodlesMutation = useMutation({
+        mutationFn: ({weekId}) => clearMyFreedomWallDoodles(authToken, weekId),
+        onMutate: async() => {
+            let previousItems = [];
+            setItemsCache((items) => {
+                previousItems = items;
+                return items.filter((item) => !(
+                    item?.item_type === "doodle" &&
+                    currentUserId &&
+                    String(item?.user_id) === String(currentUserId)
+                ));
+            });
+
+            if(selectedItem?.item_type === "doodle" && selectedItemCanEdit){
+                setSelectedItemId(null);
+            }
+
+            return {previousItems: previousItems};
+        },
+        onError: (error, _variables, context) => {
+            if(Array.isArray(context?.previousItems)){
+                setItemsCache(() => context.previousItems);
+            }
+
+            const message = error?.message || error?.error || "Failed to clear doodles";
+            setWallError(message);
+            setTimeout(() => setWallError((prev) => prev === message ? null : prev), 4000);
+        }
+    });
+
     useEffect(() => {
-        if(!weekId){
+        if(!activeWeekId || isTimeCapsuleMode){
             return;
         }
 
         const channel = supabase
-            .channel(`freedom-wall-${weekId}`)
+            .channel(`freedom-wall-${activeWeekId}`)
             .on(
                 "postgres_changes",
-                {event: "*", schema: "public", table: "freedom_wall_items", filter: `week_id=eq.${weekId}`},
+                {event: "*", schema: "public", table: "freedom_wall_items", filter: `week_id=eq.${activeWeekId}`},
                 (payload) => {
                     const eventType = payload?.eventType;
                     const oldRow = payload?.old || null;
@@ -646,20 +1056,416 @@ const FreedomWallPage = () => {
                     });
                 }
             )
+            .on("broadcast", {event: "cursor-move"}, ({payload: cursorPayload}) => {
+                if(!cursorPayload || cursorPayload.clientId === clientIdRef.current) return;
+                setRemoteCursors((prev) => ({
+                    ...prev,
+                    [cursorPayload.clientId]: {...cursorPayload, updatedAt: Date.now()}
+                }));
+            })
+            .on("broadcast", {event: "cursor-leave"}, ({payload: leavePayload}) => {
+                if(!leavePayload?.clientId) return;
+                setRemoteCursors((prev) => {
+                    const next = {...prev};
+                    delete next[leavePayload.clientId];
+                    return next;
+                });
+            })
             .subscribe();
 
+        realtimeChannelRef.current = channel;
+
         return () => {
+            if(realtimeChannelRef.current){
+                realtimeChannelRef.current.send({
+                    type: "broadcast",
+                    event: "cursor-leave",
+                    payload: {clientId: clientIdRef.current}
+                });
+            }
             supabase.removeChannel(channel);
+            realtimeChannelRef.current = null;
         };
-    }, [currentUser?.badge, currentUser?.id, currentUser?.image_url, currentUser?.name, currentUserId, setItemsCache, weekId]);
+    }, [activeWeekId, currentUser?.badge, currentUser?.id, currentUser?.image_url, currentUser?.name, currentUserId, isTimeCapsuleMode, setItemsCache]);
 
     const ensureCanWrite = useCallback(() => {
+        if(isTimeCapsuleMode){
+            const message = "Time Capsule is read-only. Switch to Live Wall to edit.";
+            setWallError(message);
+            setTimeout(() => setWallError((prev) => prev === message ? null : prev), 4000);
+            return false;
+        }
+
+        if(!activeWeekId){
+            return false;
+        }
+
         if(canWrite){
             return true;
         }
         openAuthModal?.();
         return false;
-    }, [canWrite, openAuthModal]);
+    }, [activeWeekId, canWrite, isTimeCapsuleMode, openAuthModal]);
+
+    const tryEraseAtPointer = useCallback((stage, options = {}) => {
+        if(!stage || !canWrite || isTimeCapsuleMode || activeTool !== "eraser"){
+            return;
+        }
+
+        const now = Date.now();
+        if(!options?.force && now - eraseLastTickRef.current < ERASER_MOVE_THROTTLE_MS){
+            return;
+        }
+        eraseLastTickRef.current = now;
+
+        const pointer = stage.getPointerPosition();
+        if(!pointer){
+            return;
+        }
+
+        const pointerX = (pointer.x - stage.x()) / stage.scaleX();
+        const pointerY = (pointer.y - stage.y()) / stage.scaleY();
+
+        for(const doodle of doodleEraseTargets){
+            const doodleId = String(doodle.id);
+            if(erasedThisStrokeRef.current.has(doodleId)){
+                continue;
+            }
+
+            if(!isPointerNearDoodle(pointerX, pointerY, doodle)){
+                continue;
+            }
+
+            erasedThisStrokeRef.current.add(doodleId);
+            reportItemMutation.mutate({itemId: doodle.id});
+        }
+    }, [activeTool, canWrite, doodleEraseTargets, isTimeCapsuleMode, reportItemMutation]);
+
+    const handleClearMyDoodles = useCallback(() => {
+        if(!activeWeekId || !ensureCanWrite()){
+            return;
+        }
+
+        if(myDoodleCount < 1){
+            return;
+        }
+
+        setShowClearDoodlesModal(true);
+    }, [activeWeekId, ensureCanWrite, myDoodleCount]);
+
+    const handleCancelClearMyDoodles = useCallback(() => {
+        if(clearMyDoodlesMutation.isPending){
+            return;
+        }
+        setShowClearDoodlesModal(false);
+    }, [clearMyDoodlesMutation.isPending]);
+
+    const handleConfirmClearMyDoodles = useCallback(() => {
+        if(!activeWeekId || !ensureCanWrite()){
+            return;
+        }
+        if(myDoodleCount < 1){
+            setShowClearDoodlesModal(false);
+            return;
+        }
+        clearMyDoodlesMutation.mutate({weekId: activeWeekId});
+        setShowClearDoodlesModal(false);
+    }, [activeWeekId, clearMyDoodlesMutation, ensureCanWrite, myDoodleCount]);
+
+    useEffect(() => {
+        if(isTimeCapsuleMode || !activeWeekId || myDoodleCount < 1){
+            setShowClearDoodlesModal(false);
+        }
+    }, [activeWeekId, isTimeCapsuleMode, myDoodleCount]);
+
+    const handleToggleTimeCapsule = useCallback(() => {
+        if(isTimeCapsuleMode){
+            setTimeCapsuleWeekId(null);
+            return;
+        }
+
+        if(previousWeek?.id){
+            setTimeCapsuleWeekId(previousWeek.id);
+        }
+    }, [isTimeCapsuleMode, previousWeek]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = Date.now();
+            setRemoteCursors((prev) => {
+                const next = {};
+                let changed = false;
+                for(const [key, cursor] of Object.entries(prev)){
+                    if(now - cursor.updatedAt < 3000){
+                        next[key] = cursor;
+                    } else {
+                        changed = true;
+                    }
+                }
+                return changed ? next : prev;
+            });
+        }, 1500);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleCursorBroadcast = useCallback((event) => {
+        if(!canWrite || isTimeCapsuleMode || !realtimeChannelRef.current) return;
+
+        const now = Date.now();
+        if(now - lastCursorBroadcastRef.current < 80) return;
+        lastCursorBroadcastRef.current = now;
+
+        const stage = event.target.getStage();
+        const pointer = stage?.getPointerPosition();
+        if(!pointer) return;
+
+        const logicalX = (pointer.x - stage.x()) / stage.scaleX();
+        const logicalY = (pointer.y - stage.y()) / stage.scaleY();
+
+        realtimeChannelRef.current.send({
+            type: "broadcast",
+            event: "cursor-move",
+            payload: {
+                clientId: clientIdRef.current,
+                userId: currentUserId,
+                userName: currentUser?.name || "User",
+                x: clamp(logicalX / stageWidth, 0, 1),
+                y: clamp(logicalY / stageHeight, 0, 1),
+                tool: activeTool
+            }
+        });
+    }, [canWrite, isTimeCapsuleMode, stageWidth, stageHeight, currentUserId, currentUser?.name, activeTool]);
+
+    const handleCursorLeave = useCallback(() => {
+        if(!realtimeChannelRef.current) return;
+
+        realtimeChannelRef.current.send({
+            type: "broadcast",
+            event: "cursor-leave",
+            payload: {clientId: clientIdRef.current}
+        });
+    }, []);
+
+    const getTouchDistance = (t1, t2) =>
+        Math.sqrt((t2.clientX - t1.clientX) ** 2 + (t2.clientY - t1.clientY) ** 2);
+
+    const getTouchCenter = (t1, t2, stage) => {
+        const rect = stage.container().getBoundingClientRect();
+        return {
+            x: ((t1.clientX + t2.clientX) / 2) - rect.left,
+            y: ((t1.clientY + t2.clientY) / 2) - rect.top
+        };
+    };
+
+    const clampStagePosition = useCallback((pos, scale) => {
+        const minX = -(stageWidth * scale - stageWidth * 0.3);
+        const maxX = stageWidth * 0.7;
+        const minY = -(stageHeight * scale - stageHeight * 0.3);
+        const maxY = stageHeight * 0.7;
+        return {
+            x: clamp(pos.x, minX, maxX),
+            y: clamp(pos.y, minY, maxY)
+        };
+    }, [stageWidth, stageHeight]);
+
+    const applyMinimapPanPosition = useCallback((left, top) => {
+        const newPos = clampStagePosition({
+            x: -(left / MINIMAP_WIDTH) * stageWidth * stageScale,
+            y: -(top / minimapHeight) * stageHeight * stageScale
+        }, stageScale);
+        setStagePosition(newPos);
+    }, [clampStagePosition, minimapHeight, stageHeight, stageScale, stageWidth]);
+
+    const flushPendingMinimapPan = useCallback(() => {
+        minimapFrameRef.current = null;
+        const pending = minimapPendingRef.current;
+        if(!pending){
+            return;
+        }
+
+        minimapPendingRef.current = null;
+        applyMinimapPanPosition(pending.left, pending.top);
+    }, [applyMinimapPanPosition]);
+
+    const queueMinimapPan = useCallback((left, top) => {
+        minimapPendingRef.current = { left, top };
+        if(minimapFrameRef.current !== null){
+            return;
+        }
+        minimapFrameRef.current = window.requestAnimationFrame(flushPendingMinimapPan);
+    }, [flushPendingMinimapPan]);
+
+    const finalizeMinimapPan = useCallback(() => {
+        if(minimapFrameRef.current !== null){
+            window.cancelAnimationFrame(minimapFrameRef.current);
+            minimapFrameRef.current = null;
+        }
+
+        const pending = minimapPendingRef.current;
+        if(!pending){
+            return;
+        }
+
+        minimapPendingRef.current = null;
+        applyMinimapPanPosition(pending.left, pending.top);
+    }, [applyMinimapPanPosition]);
+
+    const handleMinimapClick = useCallback((event) => {
+        if(minimapSuppressClickRef.current){
+            minimapSuppressClickRef.current = false;
+            return;
+        }
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        const clickX = (event.clientX - rect.left) / MINIMAP_WIDTH;
+        const clickY = (event.clientY - rect.top) / minimapHeight;
+        const newPos = clampStagePosition({
+            x: -(clickX * stageWidth * stageScale - stageWidth / 2),
+            y: -(clickY * stageHeight * stageScale - stageHeight / 2)
+        }, stageScale);
+        setStagePosition(newPos);
+    }, [clampStagePosition, minimapHeight, stageHeight, stageScale, stageWidth]);
+
+    const handleMinimapPointerDown = useCallback((event) => {
+        const isViewportTarget = event.target?.classList?.contains("fw-minimap-viewport");
+        if(!isViewportTarget){
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        const pointerX = clamp(event.clientX - rect.left, 0, MINIMAP_WIDTH);
+        const pointerY = clamp(event.clientY - rect.top, 0, minimapHeight);
+
+        minimapDragRef.current = {
+            isActive: true,
+            pointerId: event.pointerId,
+            offsetX: pointerX - minimapViewport.left,
+            offsetY: pointerY - minimapViewport.top,
+            consumedClick: true
+        };
+
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+    }, [minimapHeight, minimapViewport.left, minimapViewport.top]);
+
+    const handleMinimapPointerMove = useCallback((event) => {
+        const drag = minimapDragRef.current;
+        if(!drag.isActive || drag.pointerId !== event.pointerId){
+            return;
+        }
+
+        event.preventDefault();
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        const pointerX = clamp(event.clientX - rect.left, 0, MINIMAP_WIDTH);
+        const pointerY = clamp(event.clientY - rect.top, 0, minimapHeight);
+        const maxLeft = Math.max(0, MINIMAP_WIDTH - minimapViewport.width);
+        const maxTop = Math.max(0, minimapHeight - minimapViewport.height);
+        const nextLeft = clamp(pointerX - drag.offsetX, 0, maxLeft);
+        const nextTop = clamp(pointerY - drag.offsetY, 0, maxTop);
+
+        queueMinimapPan(nextLeft, nextTop);
+    }, [minimapHeight, minimapViewport.height, minimapViewport.width, queueMinimapPan]);
+
+    const handleMinimapPointerUp = useCallback((event) => {
+        const drag = minimapDragRef.current;
+        if(!drag.isActive || drag.pointerId !== event.pointerId){
+            return;
+        }
+
+        event.preventDefault();
+        event.currentTarget.releasePointerCapture?.(event.pointerId);
+        finalizeMinimapPan();
+        minimapSuppressClickRef.current = drag.consumedClick;
+        minimapDragRef.current = {
+            isActive: false,
+            pointerId: null,
+            offsetX: 0,
+            offsetY: 0,
+            consumedClick: false
+        };
+    }, [finalizeMinimapPan]);
+
+    useEffect(() => () => {
+        if(minimapFrameRef.current !== null){
+            window.cancelAnimationFrame(minimapFrameRef.current);
+        }
+    }, []);
+
+    const handleWheel = useCallback((e) => {
+        e.evt.preventDefault();
+        const stage = e.target.getStage();
+        const pointer = stage.getPointerPosition();
+        if(!pointer) return;
+
+        const oldScale = stage.scaleX();
+        const mousePointTo = {
+            x: (pointer.x - stage.x()) / oldScale,
+            y: (pointer.y - stage.y()) / oldScale
+        };
+
+        const direction = e.evt.deltaY < 0 ? 1 : -1;
+        const factor = 1.08;
+        const newScale = clamp(direction > 0 ? oldScale * factor : oldScale / factor, 0.5, 3);
+
+        const newPos = clampStagePosition({
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale
+        }, newScale);
+
+        setStageScale(newScale);
+        setStagePosition(newPos);
+    }, [clampStagePosition]);
+
+    const handleZoomIn = useCallback(() => {
+        const newScale = clamp(stageScale * 1.3, 0.5, 3);
+        const centerX = stageWidth / 2;
+        const centerY = stageHeight / 2;
+        const mousePointTo = {
+            x: (centerX - stagePosition.x) / stageScale,
+            y: (centerY - stagePosition.y) / stageScale
+        };
+        const newPos = clampStagePosition({
+            x: centerX - mousePointTo.x * newScale,
+            y: centerY - mousePointTo.y * newScale
+        }, newScale);
+        setStageScale(newScale);
+        setStagePosition(newPos);
+    }, [stageScale, stagePosition, stageWidth, stageHeight, clampStagePosition]);
+
+    const handleZoomOut = useCallback(() => {
+        const newScale = clamp(stageScale / 1.3, 0.5, 3);
+        const centerX = stageWidth / 2;
+        const centerY = stageHeight / 2;
+        const mousePointTo = {
+            x: (centerX - stagePosition.x) / stageScale,
+            y: (centerY - stagePosition.y) / stageScale
+        };
+        const newPos = clampStagePosition({
+            x: centerX - mousePointTo.x * newScale,
+            y: centerY - mousePointTo.y * newScale
+        }, newScale);
+        setStageScale(newScale);
+        setStagePosition(newPos);
+    }, [stageScale, stagePosition, stageWidth, stageHeight, clampStagePosition]);
+
+    const handleZoomReset = useCallback(() => {
+        setStageScale(1);
+        setStagePosition({ x: 0, y: 0 });
+    }, []);
+
+    const handlePuffComplete = useCallback((puffId) => {
+        setPlacementPuffs((prev) => prev.filter((p) => p.id !== puffId));
+    }, []);
+
+    const remoteCursorItems = useMemo(() => {
+        return Object.values(remoteCursors)
+            .sort((a, b) => b.updatedAt - a.updatedAt)
+            .slice(0, 15);
+    }, [remoteCursors]);
 
     const getNormalizedPointerPosition = (stage, snap = false) => {
         const pointer = stage?.getPointerPosition();
@@ -667,8 +1473,11 @@ const FreedomWallPage = () => {
             return null;
         }
 
-        const px = snap ? snapToGrid(pointer.x) : pointer.x;
-        const py = snap ? snapToGrid(pointer.y) : pointer.y;
+        const logicalX = (pointer.x - stage.x()) / stage.scaleX();
+        const logicalY = (pointer.y - stage.y()) / stage.scaleY();
+
+        const px = snap ? snapToGrid(logicalX) : logicalX;
+        const py = snap ? snapToGrid(logicalY) : logicalY;
 
         return {
             x: clamp(px / stageWidth, 0, 1),
@@ -677,19 +1486,19 @@ const FreedomWallPage = () => {
     };
 
     const createWallItem = useCallback((itemType, payload) => {
-        if(!weekId || !ensureCanWrite()){
+        if(!activeWeekId || !ensureCanWrite()){
             return;
         }
 
         createItemMutation.mutate({
             payload: {
-                weekId: weekId,
+                weekId: activeWeekId,
                 itemType: itemType,
                 payload: payload,
                 zIndex: maxZIndex + 1
             }
         });
-    }, [createItemMutation, ensureCanWrite, maxZIndex, weekId]);
+    }, [activeWeekId, createItemMutation, ensureCanWrite, maxZIndex]);
 
     const handlePlaceItem = useCallback((stage) => {
         const pointer = getNormalizedPointerPosition(stage);
@@ -698,11 +1507,11 @@ const FreedomWallPage = () => {
         }
 
         if(activeTool === "sticker"){
-            if(!selectedSticker){
+            if(draftSticker || !selectedSticker){
                 return;
             }
 
-            createWallItem("sticker", {
+            setDraftSticker({
                 sticker: selectedSticker,
                 x: pointer.x,
                 y: pointer.y,
@@ -713,7 +1522,11 @@ const FreedomWallPage = () => {
         }
 
         if(activeTool === "stamp"){
-            createWallItem("stamp", {
+            if(draftStamp){
+                return;
+            }
+
+            setDraftStamp({
                 stamp: selectedStamp,
                 x: pointer.x,
                 y: pointer.y,
@@ -724,10 +1537,15 @@ const FreedomWallPage = () => {
         }
 
         if(activeTool === "note"){
-            setNoteModal({
+            if(draftNote){
+                return;
+            }
+            setDraftNote({
                 x: pointer.x,
                 y: pointer.y,
-                text: "New note",
+                width: 0.26,
+                height: 0.2,
+                text: "",
                 fontFamily: "Arial",
                 fontStyle: "normal",
                 fontColor: "#1f2937",
@@ -735,11 +1553,46 @@ const FreedomWallPage = () => {
                 fontSize: 16
             });
         }
-    }, [activeTool, createWallItem, selectedStamp, selectedSticker, stageHeight, stageWidth]);
+    }, [activeTool, createWallItem, draftNote, draftSticker, draftStamp, selectedStamp, selectedSticker, stageHeight, stageWidth]);
 
     const handleStagePointerDown = (event) => {
         const stage = event.target.getStage();
         if(!stage){
+            return;
+        }
+
+        if(event.evt?.touches && event.evt.touches.length >= 2){
+            isPinchingRef.current = true;
+            const t1 = event.evt.touches[0];
+            const t2 = event.evt.touches[1];
+            lastPinchDistRef.current = getTouchDistance(t1, t2);
+            lastPinchCenterRef.current = getTouchCenter(t1, t2, stage);
+            if(event.evt.cancelable) event.evt.preventDefault();
+            return;
+        }
+
+        if(isTimeCapsuleMode){
+            if(isCanvasBackgroundTarget(event.target, stage)){
+                setSelectedItemId(null);
+            }
+            return;
+        }
+
+        if(activeTool === "eraser"){
+            if(!ensureCanWrite()){
+                return;
+            }
+
+            if(event?.evt){
+                stage.setPointersPositions(event.evt);
+            }
+            setIsErasing(true);
+            erasedThisStrokeRef.current.clear();
+            eraseLastTickRef.current = 0;
+            tryEraseAtPointer(stage, {force: true});
+            if(event?.evt?.cancelable){
+                event.evt.preventDefault();
+            }
             return;
         }
 
@@ -765,6 +1618,10 @@ const FreedomWallPage = () => {
         }
 
         if(activeTool === "stamp"){
+            if(draftStamp){
+                return;
+            }
+
             if(!ensureCanWrite()){
                 return;
             }
@@ -779,13 +1636,63 @@ const FreedomWallPage = () => {
 
         if(isCanvasBackgroundTarget(event.target, stage)){
             setSelectedItemId(null);
-            if(activeTool === "sticker" || activeTool === "stamp" || activeTool === "note"){
+            const canPlaceSticker = activeTool === "sticker" && !draftSticker;
+            const canPlaceNote = activeTool === "note" && !draftNote;
+            if(canPlaceSticker || canPlaceNote){
                 handlePlaceItem(stage);
             }
         }
     };
 
     const handleStagePointerMove = (event) => {
+        if(isPinchingRef.current && event.evt?.touches && event.evt.touches.length >= 2){
+            const stage = event.target.getStage();
+            const t1 = event.evt.touches[0];
+            const t2 = event.evt.touches[1];
+            const newDist = getTouchDistance(t1, t2);
+            const newCenter = getTouchCenter(t1, t2, stage);
+
+            if(lastPinchDistRef.current !== null && lastPinchCenterRef.current !== null){
+                const scaleFactor = newDist / lastPinchDistRef.current;
+                const newScale = clamp(stageScale * scaleFactor, 0.5, 3);
+
+                const dx = newCenter.x - lastPinchCenterRef.current.x;
+                const dy = newCenter.y - lastPinchCenterRef.current.y;
+
+                const mousePointTo = {
+                    x: (newCenter.x - stagePosition.x) / stageScale,
+                    y: (newCenter.y - stagePosition.y) / stageScale
+                };
+
+                const newPos = clampStagePosition({
+                    x: newCenter.x - mousePointTo.x * newScale + dx,
+                    y: newCenter.y - mousePointTo.y * newScale + dy
+                }, newScale);
+
+                setStageScale(newScale);
+                setStagePosition(newPos);
+            }
+
+            lastPinchDistRef.current = newDist;
+            lastPinchCenterRef.current = newCenter;
+            if(event.evt.cancelable) event.evt.preventDefault();
+            return;
+        }
+
+        handleCursorBroadcast(event);
+
+        if(activeTool === "eraser" && isErasing){
+            const stage = event.target.getStage();
+            if(event?.evt){
+                stage.setPointersPositions(event.evt);
+            }
+            tryEraseAtPointer(stage);
+            if(event?.evt?.cancelable){
+                event.evt.preventDefault();
+            }
+            return;
+        }
+
         if(activeTool !== "doodle" || !isDrawing){
             return;
         }
@@ -804,7 +1711,20 @@ const FreedomWallPage = () => {
         }
     };
 
-    const handleStagePointerUp = () => {
+    const handleStagePointerUp = (event) => {
+        if(isPinchingRef.current){
+            isPinchingRef.current = false;
+            lastPinchDistRef.current = null;
+            lastPinchCenterRef.current = null;
+            return;
+        }
+
+        if(activeTool === "eraser"){
+            setIsErasing(false);
+            erasedThisStrokeRef.current.clear();
+            return;
+        }
+
         if(activeTool !== "doodle"){
             return;
         }
@@ -837,31 +1757,63 @@ const FreedomWallPage = () => {
         setSelectedItemId(null);
     };
 
-    const handleNoteModalSave = () => {
-        if(!noteModal){
+    const handleDraftNoteSave = () => {
+        if(!draftNote){
             return;
         }
 
-        const noteText = noteModal.text?.trim();
+        const noteText = draftNote.text?.trim();
         if(!noteText){
             return;
         }
 
         createWallItem("note", {
             text: noteText,
-            x: noteModal.x,
-            y: noteModal.y,
-            width: 0.26,
-            height: 0.2,
+            x: draftNote.x,
+            y: draftNote.y,
+            width: clamp(Number(draftNote.width) || 0.26, 0.12, 0.8),
+            height: clamp(Number(draftNote.height) || 0.2, 0.1, 0.7),
             rotation: 0,
-            fontFamily: noteModal.fontFamily || "Arial",
-            fontStyle: noteModal.fontStyle || "normal",
-            fontColor: noteModal.fontColor || "#1f2937",
-            bgColor: noteModal.bgColor || "#fff4a8",
-            fontSize: clamp(Number(noteModal.fontSize) || 16, 10, 64)
+            fontFamily: draftNote.fontFamily || "Arial",
+            fontStyle: draftNote.fontStyle || "normal",
+            fontColor: draftNote.fontColor || "#1f2937",
+            bgColor: draftNote.bgColor || "#fff4a8",
+            fontSize: clamp(Number(draftNote.fontSize) || 16, 10, 64)
         });
 
-        setNoteModal(null);
+        setDraftNote(null);
+    };
+
+    const handleDraftStickerSave = () => {
+        if(!draftSticker){
+            return;
+        }
+
+        createWallItem("sticker", {
+            sticker: draftSticker.sticker,
+            x: draftSticker.x,
+            y: draftSticker.y,
+            scale: clamp(Number(draftSticker.scale) || 1, 0.25, 6),
+            rotation: 0
+        });
+
+        setDraftSticker(null);
+    };
+
+    const handleDraftStampSave = () => {
+        if(!draftStamp){
+            return;
+        }
+
+        createWallItem("stamp", {
+            stamp: draftStamp.stamp,
+            x: draftStamp.x,
+            y: draftStamp.y,
+            scale: clamp(Number(draftStamp.scale) || 1, 0.35, 5),
+            rotation: 0
+        });
+
+        setDraftStamp(null);
     };
 
     const applyNoteChanges = () => {
@@ -883,13 +1835,15 @@ const FreedomWallPage = () => {
                     fontStyle: noteEditor.fontStyle,
                     fontColor: noteEditor.fontColor,
                     bgColor: noteEditor.bgColor,
-                    fontSize: clamp(Number(noteEditor.fontSize) || 16, 10, 64)
+                    fontSize: clamp(Number(noteEditor.fontSize) || 16, 10, 64),
+                    width: clamp(Number(noteEditor.width) || 0.26, 0.12, 0.8),
+                    height: clamp(Number(noteEditor.height) || 0.2, 0.1, 0.7)
                 }
             }
         });
     };
 
-    const moveItemFromDrag = (item, event) => {
+    const moveItemFromDrag = useCallback((item, event) => {
         if(!selectedItemCanEdit || String(selectedItem?.id) !== String(item?.id)){
             return;
         }
@@ -911,7 +1865,7 @@ const FreedomWallPage = () => {
                 }
             }
         });
-    };
+    }, [selectedItem?.id, selectedItemCanEdit, stageHeight, stageWidth, updateItemMutation]);
 
     const bringSelectedItemToFront = () => {
         if(!selectedItem || !selectedItemCanEdit){
@@ -925,6 +1879,99 @@ const FreedomWallPage = () => {
             }
         });
     };
+
+    const wallItemNodes = useMemo(() => sortedItems.map((item) => {
+        const canEditItem = Boolean(
+            currentUserId &&
+            String(item?.user_id) === String(currentUserId) &&
+            activeTool !== "stamp" &&
+            activeTool !== "eraser"
+        );
+        const isSelected = String(selectedItemId) === String(item?.id);
+        const handleSelectItem = () => {
+            if(activeTool === "eraser"){
+                return;
+            }
+            if(activeTool === "stamp"){
+                return;
+            }
+            setSelectedItemId(item.id);
+        };
+
+        if(item?.item_type === "doodle"){
+            const points = Array.isArray(item?.payload?.points)
+                ? item.payload.points
+                    .map((point) => Number(point))
+                    .filter((point) => !Number.isNaN(point))
+                : [];
+            if(points.length < 4){
+                return null;
+            }
+
+            return (
+                <Line
+                    key={item.id}
+                    points={points.map((point, pointIndex) => (
+                        pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
+                    ))}
+                    stroke={item?.payload?.color || "#5f92ff"}
+                    strokeWidth={Number(item?.payload?.size) || 3}
+                    lineCap="round"
+                    lineJoin="round"
+                    tension={0.12}
+                    onClick={handleSelectItem}
+                    onTap={handleSelectItem}
+                />
+            );
+        }
+
+        if(item?.item_type === "sticker"){
+            return (
+                <StickerNode
+                    key={item.id}
+                    item={item}
+                    stageWidth={stageWidth}
+                    stageHeight={stageHeight}
+                    canEdit={canEditItem}
+                    isSelected={isSelected}
+                    onSelect={handleSelectItem}
+                    onDragEnd={(event) => moveItemFromDrag(item, event)}
+                />
+            );
+        }
+
+        if(item?.item_type === "stamp"){
+            return (
+                <StampNode
+                    key={item.id}
+                    item={item}
+                    stageWidth={stageWidth}
+                    stageHeight={stageHeight}
+                    canEdit={canEditItem}
+                    isSelected={isSelected}
+                    onSelect={handleSelectItem}
+                    onDragEnd={(event) => moveItemFromDrag(item, event)}
+                />
+            );
+        }
+
+        if(item?.item_type === "note"){
+            return (
+                <NoteNode
+                    key={item.id}
+                    item={item}
+                    stageWidth={stageWidth}
+                    stageHeight={stageHeight}
+                    canEdit={canEditItem}
+                    isSelected={isSelected}
+                    onSelect={handleSelectItem}
+                    onDragEnd={(event) => moveItemFromDrag(item, event)}
+                />
+            );
+        }
+
+        return null;
+    }), [sortedItems, currentUserId, activeTool, selectedItemId, stageWidth, stageHeight, moveItemFromDrag]);
 
     if(weekError){
         return (
@@ -942,21 +1989,41 @@ const FreedomWallPage = () => {
                     <p className="freedom-wall-subtitle">
                         Public collaborative canvas. Resets weekly.
                     </p>
+                    <div className="freedom-wall-countdown-pill">
+                        Wall resets in: {countdownText}
+                    </div>
                 </div>
-                <div className="freedom-wall-week-pill">
-                    {isWeekLoading ? "Loading week..." : formatWeekLabel(activeWeek)}
+                <div className="freedom-wall-week-shell">
+                    <div className="freedom-wall-week-pill">
+                        {isWeekLoading ? "Loading week..." : formatWeekLabel(viewedWeek || activeWeek)}
+                    </div>
+                    <button
+                        type="button"
+                        className={`fw-tool-btn ${isTimeCapsuleMode ? "is-active" : ""}`}
+                        onClick={handleToggleTimeCapsule}
+                        disabled={!isTimeCapsuleMode && !previousWeek?.id}
+                    >
+                        {isTimeCapsuleMode ? "Back to Live Wall" : "Time Capsule"}
+                    </button>
+                    {isTimeCapsuleMode && (
+                        <span className="fw-label">Viewing previous week (read-only)</span>
+                    )}
+                    {!isTimeCapsuleMode && !isWeeksLoading && !previousWeek?.id && (
+                        <span className="fw-label">Time Capsule unavailable</span>
+                    )}
                 </div>
             </div>
 
             <div className="freedom-wall-toolbar">
                 <div className="freedom-wall-tool-group">
-                    <button type="button" className={`fw-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`} onClick={() => setActiveTool("doodle")}>Doodle</button>
-                    <button type="button" className={`fw-tool-btn ${activeTool === "sticker" ? "is-active" : ""}`} onClick={() => setActiveTool("sticker")}>Sticker</button>
-                    <button type="button" className={`fw-tool-btn ${activeTool === "stamp" ? "is-active" : ""}`} onClick={() => setActiveTool("stamp")}>Stamp</button>
-                    <button type="button" className={`fw-tool-btn ${activeTool === "note" ? "is-active" : ""}`} onClick={() => setActiveTool("note")}>Note</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`} onClick={() => setActiveTool("doodle")} disabled={isTimeCapsuleMode}>Doodle</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "sticker" ? "is-active" : ""}`} onClick={() => setActiveTool("sticker")} disabled={isTimeCapsuleMode}>Sticker</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "stamp" ? "is-active" : ""}`} onClick={() => setActiveTool("stamp")} disabled={isTimeCapsuleMode}>Stamp</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "note" ? "is-active" : ""}`} onClick={() => setActiveTool("note")} disabled={isTimeCapsuleMode}>Note</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "eraser" ? "is-active" : ""}`} onClick={() => setActiveTool("eraser")} disabled={isTimeCapsuleMode}>Eraser</button>
                 </div>
 
-                {activeTool === "doodle" && (
+                {!isTimeCapsuleMode && activeTool === "doodle" && (
                     <div className="freedom-wall-tool-controls">
                         <label className="fw-label">Color</label>
                         <input type="color" value={doodleColor} onChange={(event) => setDoodleColor(event.target.value)} />
@@ -965,7 +2032,7 @@ const FreedomWallPage = () => {
                     </div>
                 )}
 
-                {activeTool === "sticker" && (
+                {!isTimeCapsuleMode && activeTool === "sticker" && !draftSticker && (
                     <div className="freedom-wall-tool-controls">
                         <label className="fw-label">Sticker</label>
                         <div className="fw-sticker-grid">
@@ -980,10 +2047,11 @@ const FreedomWallPage = () => {
                                 </button>
                             ))}
                         </div>
+                        <span className="fw-label">Click canvas to place</span>
                     </div>
                 )}
 
-                {activeTool === "stamp" && (
+                {!isTimeCapsuleMode && activeTool === "stamp" && !draftStamp && (
                     <div className="freedom-wall-tool-controls">
                         <label className="fw-label">Stamp</label>
                         <div className="fw-stamp-grid">
@@ -998,12 +2066,19 @@ const FreedomWallPage = () => {
                                 </button>
                             ))}
                         </div>
+                        <span className="fw-label">Click canvas to place</span>
                     </div>
                 )}
 
-                {activeTool === "note" && (
+                {!isTimeCapsuleMode && activeTool === "note" && !draftNote && (
                     <div className="freedom-wall-tool-controls">
                         <span className="fw-label">Click canvas to place a note</span>
+                    </div>
+                )}
+
+                {!isTimeCapsuleMode && activeTool === "eraser" && (
+                    <div className="freedom-wall-tool-controls">
+                        <span className="fw-label">Drag to erase doodles (finger or mouse)</span>
                     </div>
                 )}
 
@@ -1012,83 +2087,177 @@ const FreedomWallPage = () => {
                         View only. Log in to add items.
                     </div>
                 )}
+
+                {isTimeCapsuleMode && (
+                    <div className="fw-readonly-pill">
+                        Time Capsule mode is view-only.
+                    </div>
+                )}
+
+                {canWrite && !isTimeCapsuleMode && (
+                    <div className="freedom-wall-tool-controls">
+                        <button
+                            type="button"
+                            className="fw-delete-btn"
+                            onClick={handleClearMyDoodles}
+                            disabled={!activeWeekId || clearMyDoodlesMutation.isPending || myDoodleCount < 1}
+                        >
+                            {clearMyDoodlesMutation.isPending ? "Clearing..." : "Clear My Doodles"}
+                        </button>
+                        <span className="fw-label">{myDoodleCount} yours</span>
+                    </div>
+                )}
             </div>
 
-            {noteModal && (
-                <div className="fw-note-modal-overlay" onClick={() => setNoteModal(null)}>
-                    <div className="fw-note-modal" onClick={(e) => e.stopPropagation()}>
+            {!isTimeCapsuleMode && draftNote && (
+                <div className="fw-draft-note-panel">
+                    <div className="fw-draft-note-header">
                         <h4>Design Your Note</h4>
+                        <span className="fw-draft-note-charcount">{(draftNote.text || "").length}/200</span>
+                    </div>
 
-                        <div className="fw-note-modal-preview" style={{
-                            backgroundColor: noteModal.bgColor || "#fff4a8",
-                            color: noteModal.fontColor || "#1f2937",
-                            fontFamily: noteModal.fontFamily || "Arial",
-                            fontStyle: noteModal.fontStyle === "italic" ? "italic" : "normal",
-                            fontWeight: noteModal.fontStyle === "bold" ? "bold" : "normal",
-                            fontSize: `${clamp(Number(noteModal.fontSize) || 16, 10, 64)}px`
-                        }}>
-                            {noteModal.text || "Preview"}
+                    <textarea
+                        className="fw-draft-note-textarea"
+                        value={draftNote.text}
+                        onChange={(e) => setDraftNote((prev) => ({...prev, text: e.target.value}))}
+                        maxLength={200}
+                        placeholder="Write your note..."
+                        autoFocus
+                    />
+
+                    <div className="fw-draft-note-controls">
+                        <div className="fw-draft-note-row">
+                            <label>Font</label>
+                            <select value={draftNote.fontFamily} onChange={(e) => setDraftNote((prev) => ({...prev, fontFamily: e.target.value}))}>
+                                {NOTE_FONT_OPTIONS.map((fontName) => (
+                                    <option key={fontName} value={fontName}>{fontName}</option>
+                                ))}
+                            </select>
                         </div>
 
-                        <textarea
-                            className="fw-note-modal-textarea"
-                            value={noteModal.text}
-                            onChange={(e) => setNoteModal((prev) => ({...prev, text: e.target.value}))}
-                            maxLength={800}
-                            placeholder="Write your note..."
-                            autoFocus
-                        />
-
-                        <div className="fw-note-modal-controls">
-                            <div className="fw-note-modal-row">
-                                <label>Font</label>
-                                <select value={noteModal.fontFamily} onChange={(e) => setNoteModal((prev) => ({...prev, fontFamily: e.target.value}))}>
-                                    {NOTE_FONT_OPTIONS.map((fontName) => (
-                                        <option key={fontName} value={fontName}>{fontName}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="fw-note-modal-row">
-                                <label>Style</label>
-                                <select value={noteModal.fontStyle} onChange={(e) => setNoteModal((prev) => ({...prev, fontStyle: e.target.value}))}>
-                                    {NOTE_STYLE_OPTIONS.map((styleName) => (
-                                        <option key={styleName} value={styleName}>{styleName}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="fw-note-modal-row">
-                                <label>Font color</label>
-                                <input type="color" value={noteModal.fontColor} onChange={(e) => setNoteModal((prev) => ({...prev, fontColor: e.target.value}))} />
-                            </div>
-
-                            <div className="fw-note-modal-row">
-                                <label>Note color</label>
-                                <input type="color" value={noteModal.bgColor} onChange={(e) => setNoteModal((prev) => ({...prev, bgColor: e.target.value}))} />
-                            </div>
-
-                            <div className="fw-note-modal-row">
-                                <label>Size ({noteModal.fontSize}px)</label>
-                                <input type="range" min={10} max={64} step={1} value={noteModal.fontSize} onChange={(e) => setNoteModal((prev) => ({...prev, fontSize: Number(e.target.value)}))} />
-                            </div>
+                        <div className="fw-draft-note-row">
+                            <label>Style</label>
+                            <select value={draftNote.fontStyle} onChange={(e) => setDraftNote((prev) => ({...prev, fontStyle: e.target.value}))}>
+                                {NOTE_STYLE_OPTIONS.map((styleName) => (
+                                    <option key={styleName} value={styleName}>{styleName}</option>
+                                ))}
+                            </select>
                         </div>
 
-                        <div className="fw-note-modal-actions">
-                            <button type="button" className="fw-apply-btn" onClick={handleNoteModalSave}>Place note</button>
-                            <button type="button" className="fw-delete-btn" onClick={() => setNoteModal(null)}>Cancel</button>
+                        <div className="fw-draft-note-row">
+                            <label>Font color</label>
+                            <input type="color" value={draftNote.fontColor} onChange={(e) => setDraftNote((prev) => ({...prev, fontColor: e.target.value}))} />
                         </div>
+
+                        <div className="fw-draft-note-row">
+                            <label>Note color</label>
+                            <input type="color" value={draftNote.bgColor} onChange={(e) => setDraftNote((prev) => ({...prev, bgColor: e.target.value}))} />
+                        </div>
+
+                        <div className="fw-draft-note-row">
+                            <label>Size ({draftNote.fontSize}px)</label>
+                            <input type="range" min={10} max={64} step={1} value={draftNote.fontSize} onChange={(e) => setDraftNote((prev) => ({...prev, fontSize: Number(e.target.value)}))} />
+                        </div>
+
+                        <div className="fw-draft-note-row">
+                            <label>Width ({Math.round((draftNote.width || 0.26) * stageWidth)}px)</label>
+                            <input type="range" min={0.12} max={0.8} step={0.02} value={draftNote.width || 0.26} onChange={(e) => setDraftNote((prev) => ({...prev, width: Number(e.target.value)}))} />
+                        </div>
+
+                        <div className="fw-draft-note-row">
+                            <label>Height ({Math.round((draftNote.height || 0.2) * stageHeight)}px)</label>
+                            <input type="range" min={0.1} max={0.7} step={0.02} value={draftNote.height || 0.2} onChange={(e) => setDraftNote((prev) => ({...prev, height: Number(e.target.value)}))} />
+                        </div>
+                    </div>
+
+                    <div className="fw-draft-note-actions">
+                        <button type="button" className="fw-apply-btn" onClick={handleDraftNoteSave} disabled={!draftNote.text?.trim()}>Place Note</button>
+                        <button type="button" className="fw-delete-btn" onClick={() => setDraftNote(null)}>Cancel</button>
                     </div>
                 </div>
             )}
 
-            {selectedNote && selectedItemCanEdit && (
+            {!isTimeCapsuleMode && draftSticker && (
+                <div className="fw-draft-note-panel">
+                    <div className="fw-draft-note-header">
+                        <h4>Place Your Sticker</h4>
+                        <span className="fw-draft-note-charcount">{STICKER_OPTIONS[draftSticker.sticker] || "🐶"}</span>
+                    </div>
+
+                    <div className="fw-draft-note-controls">
+                        <div className="fw-draft-note-row">
+                            <label>Sticker</label>
+                            <div className="fw-sticker-grid">
+                                {Object.entries(STICKER_OPTIONS).map(([stickerKey, icon]) => (
+                                    <button
+                                        key={stickerKey}
+                                        type="button"
+                                        className={`fw-stamp-btn fw-sticker-btn ${draftSticker.sticker === stickerKey ? "is-active" : ""}`}
+                                        onClick={() => setDraftSticker((prev) => ({...prev, sticker: stickerKey}))}
+                                    >
+                                        {icon}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="fw-draft-note-row">
+                            <label>Scale ({draftSticker.scale}x)</label>
+                            <input type="range" min={0.25} max={6} step={0.25} value={draftSticker.scale} onChange={(e) => setDraftSticker((prev) => ({...prev, scale: Number(e.target.value)}))} />
+                        </div>
+                    </div>
+
+                    <div className="fw-draft-note-actions">
+                        <button type="button" className="fw-apply-btn" onClick={handleDraftStickerSave}>Place Sticker</button>
+                        <button type="button" className="fw-delete-btn" onClick={() => setDraftSticker(null)}>Cancel</button>
+                    </div>
+                </div>
+            )}
+
+            {!isTimeCapsuleMode && draftStamp && (
+                <div className="fw-draft-note-panel">
+                    <div className="fw-draft-note-header">
+                        <h4>Place Your Stamp</h4>
+                        <span className="fw-draft-note-charcount">{STAMP_ICONS[draftStamp.stamp] || "✨"}</span>
+                    </div>
+
+                    <div className="fw-draft-note-controls">
+                        <div className="fw-draft-note-row">
+                            <label>Stamp</label>
+                            <div className="fw-stamp-grid">
+                                {Object.entries(STAMP_ICONS).map(([stampKey, icon]) => (
+                                    <button
+                                        key={stampKey}
+                                        type="button"
+                                        className={`fw-stamp-btn ${draftStamp.stamp === stampKey ? "is-active" : ""}`}
+                                        onClick={() => setDraftStamp((prev) => ({...prev, stamp: stampKey}))}
+                                    >
+                                        {icon}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="fw-draft-note-row">
+                            <label>Scale ({draftStamp.scale}x)</label>
+                            <input type="range" min={0.35} max={5} step={0.25} value={draftStamp.scale} onChange={(e) => setDraftStamp((prev) => ({...prev, scale: Number(e.target.value)}))} />
+                        </div>
+                    </div>
+
+                    <div className="fw-draft-note-actions">
+                        <button type="button" className="fw-apply-btn" onClick={handleDraftStampSave}>Place Stamp</button>
+                        <button type="button" className="fw-delete-btn" onClick={() => setDraftStamp(null)}>Cancel</button>
+                    </div>
+                </div>
+            )}
+
+            {selectedNote && selectedItemCanEdit && activeTool !== "eraser" && !isTimeCapsuleMode && (
                 <div className="freedom-wall-note-editor">
                     <h4>Note Editor</h4>
                     <textarea
                         value={noteEditor.text}
                         onChange={(event) => setNoteEditor((prev) => ({...prev, text: event.target.value}))}
-                        maxLength={800}
+                        maxLength={200}
                     />
                     <div className="fw-note-controls">
                         <label>Font</label>
@@ -1113,6 +2282,12 @@ const FreedomWallPage = () => {
 
                         <label>Size</label>
                         <input type="range" min={10} max={64} step={1} value={noteEditor.fontSize} onChange={(event) => setNoteEditor((prev) => ({...prev, fontSize: Number(event.target.value)}))} />
+
+                        <label>Width ({Math.round((noteEditor.width || 0.26) * stageWidth)}px)</label>
+                        <input type="range" min={0.12} max={0.8} step={0.02} value={noteEditor.width || 0.26} onChange={(event) => setNoteEditor((prev) => ({...prev, width: Number(event.target.value)}))} />
+
+                        <label>Height ({Math.round((noteEditor.height || 0.2) * stageHeight)}px)</label>
+                        <input type="range" min={0.1} max={0.7} step={0.02} value={noteEditor.height || 0.2} onChange={(event) => setNoteEditor((prev) => ({...prev, height: Number(event.target.value)}))} />
                     </div>
 
                     <div className="fw-note-actions">
@@ -1122,35 +2297,42 @@ const FreedomWallPage = () => {
                 </div>
             )}
 
-            {selectedItem && selectedItemCanEdit && selectedItem.item_type !== "note" && (
+            {selectedItem && selectedItemCanEdit && selectedItem.item_type !== "note" && activeTool !== "eraser" && !isTimeCapsuleMode && (
                 <div className="freedom-wall-selected-actions">
                     <button type="button" className="fw-apply-btn" onClick={bringSelectedItemToFront}>Bring front</button>
                     <button type="button" className="fw-delete-btn" onClick={handleDeleteSelectedItem}>Delete selected</button>
                 </div>
             )}
 
-            <div ref={shellRef} className="freedom-wall-canvas-shell">
+            <div ref={shellRef} className={`freedom-wall-canvas-shell ${activeTool === "eraser" && !isTimeCapsuleMode ? "is-eraser-mode" : ""}`}>
                 {isItemsLoading ? (
                     <div className="freedom-wall-loading">Loading wall...</div>
                 ) : (
                     <Stage
+                        ref={stageRef}
                         width={stageWidth}
                         height={stageHeight}
+                        scaleX={stageScale}
+                        scaleY={stageScale}
+                        x={stagePosition.x}
+                        y={stagePosition.y}
                         onMouseDown={handleStagePointerDown}
                         onTouchStart={handleStagePointerDown}
                         onMouseMove={handleStagePointerMove}
                         onTouchMove={handleStagePointerMove}
                         onMouseUp={handleStagePointerUp}
                         onTouchEnd={handleStagePointerUp}
-                        onMouseLeave={handleStagePointerUp}
+                        onMouseLeave={() => { handleStagePointerUp(); handleCursorLeave(); }}
+                        onWheel={handleWheel}
                     >
                         <Layer listening={false}>
-                            <Rect width={stageWidth} height={stageHeight} fill="rgba(205, 250, 255, 0.22)" />
+                            <Rect width={stageWidth} height={stageHeight} fill="#2a3a2e" />
+                            <Rect width={stageWidth} height={stageHeight} fill="rgba(50, 80, 55, 0.15)" />
                             {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
                                 <Line
                                     key={`fw-grid-v-${index}`}
                                     points={[index * GRID_SIZE, 0, index * GRID_SIZE, stageHeight]}
-                                    stroke="rgba(15, 23, 42, 0.06)"
+                                    stroke="rgba(200, 210, 200, 0.04)"
                                     strokeWidth={1}
                                 />
                             ))}
@@ -1158,101 +2340,77 @@ const FreedomWallPage = () => {
                                 <Line
                                     key={`fw-grid-h-${index}`}
                                     points={[0, index * GRID_SIZE, stageWidth, index * GRID_SIZE]}
-                                    stroke="rgba(15, 23, 42, 0.06)"
+                                    stroke="rgba(200, 210, 200, 0.04)"
                                     strokeWidth={1}
                                 />
                             ))}
                         </Layer>
 
                         <Layer>
-                            {sortedItems.map((item) => {
-                                const canEditItem = Boolean(
-                                    currentUserId &&
-                                    String(item?.user_id) === String(currentUserId) &&
-                                    activeTool !== "stamp"
-                                );
-                                const isSelected = String(selectedItemId) === String(item?.id);
-                                const handleSelectItem = () => {
-                                    if(activeTool === "stamp"){
-                                        return;
-                                    }
-                                    setSelectedItemId(item.id);
-                                };
+                            {wallItemNodes}
 
-                                if(item?.item_type === "doodle"){
-                                    const points = Array.isArray(item?.payload?.points)
-                                        ? item.payload.points
-                                            .map((point) => Number(point))
-                                            .filter((point) => !Number.isNaN(point))
-                                        : [];
-                                    if(points.length < 4){
-                                        return null;
-                                    }
+                            {!isTimeCapsuleMode && draftSticker && (
+                                <StickerNode
+                                    item={{payload: draftSticker}}
+                                    stageWidth={stageWidth}
+                                    stageHeight={stageHeight}
+                                    canEdit={true}
+                                    isSelected={false}
+                                    isDraft={true}
+                                    onSelect={() => {}}
+                                    onDragEnd={(event) => {
+                                        const node = event?.target;
+                                        if(!node) return;
+                                        setDraftSticker((prev) => ({
+                                            ...prev,
+                                            x: clamp(node.x() / stageWidth, 0, 1),
+                                            y: clamp(node.y() / stageHeight, 0, 1)
+                                        }));
+                                    }}
+                                />
+                            )}
 
-                                    return (
-                                        <Line
-                                            key={item.id}
-                                            points={points.map((point, pointIndex) => (
-                                                pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
-                                            ))}
-                                            stroke={item?.payload?.color || "#5f92ff"}
-                                            strokeWidth={Number(item?.payload?.size) || 3}
-                                            lineCap="round"
-                                            lineJoin="round"
-                                            tension={0.12}
-                                            onClick={handleSelectItem}
-                                            onTap={handleSelectItem}
-                                        />
-                                    );
-                                }
+                            {!isTimeCapsuleMode && draftStamp && (
+                                <StampNode
+                                    item={{payload: draftStamp}}
+                                    stageWidth={stageWidth}
+                                    stageHeight={stageHeight}
+                                    canEdit={true}
+                                    isSelected={false}
+                                    isDraft={true}
+                                    onSelect={() => {}}
+                                    onDragEnd={(event) => {
+                                        const node = event?.target;
+                                        if(!node) return;
+                                        setDraftStamp((prev) => ({
+                                            ...prev,
+                                            x: clamp(node.x() / stageWidth, 0, 1),
+                                            y: clamp(node.y() / stageHeight, 0, 1)
+                                        }));
+                                    }}
+                                />
+                            )}
 
-                                if(item?.item_type === "sticker"){
-                                    return (
-                                        <StickerNode
-                                            key={item.id}
-                                            item={item}
-                                            stageWidth={stageWidth}
-                                            stageHeight={stageHeight}
-                                            canEdit={canEditItem}
-                                            isSelected={isSelected}
-                                            onSelect={handleSelectItem}
-                                            onDragEnd={(event) => moveItemFromDrag(item, event)}
-                                        />
-                                    );
-                                }
-
-                                if(item?.item_type === "stamp"){
-                                    return (
-                                        <StampNode
-                                            key={item.id}
-                                            item={item}
-                                            stageWidth={stageWidth}
-                                            stageHeight={stageHeight}
-                                            canEdit={canEditItem}
-                                            isSelected={isSelected}
-                                            onSelect={handleSelectItem}
-                                            onDragEnd={(event) => moveItemFromDrag(item, event)}
-                                        />
-                                    );
-                                }
-
-                                if(item?.item_type === "note"){
-                                    return (
-                                        <NoteNode
-                                            key={item.id}
-                                            item={item}
-                                            stageWidth={stageWidth}
-                                            stageHeight={stageHeight}
-                                            canEdit={canEditItem}
-                                            isSelected={isSelected}
-                                            onSelect={handleSelectItem}
-                                            onDragEnd={(event) => moveItemFromDrag(item, event)}
-                                        />
-                                    );
-                                }
-
-                                return null;
-                            })}
+                            {!isTimeCapsuleMode && draftNote && (
+                                <NoteNode
+                                    item={{payload: draftNote}}
+                                    stageWidth={stageWidth}
+                                    stageHeight={stageHeight}
+                                    canEdit={true}
+                                    isSelected={false}
+                                    isDraft={true}
+                                    onSelect={() => {}}
+                                    onDragEnd={(event) => {
+                                        const node = event?.target;
+                                        if(!node) return;
+                                        setDraftNote((prev) => ({
+                                            ...prev,
+                                            x: clamp(node.x() / stageWidth, 0, 1),
+                                            y: clamp(node.y() / stageHeight, 0, 1)
+                                        }));
+                                    }}
+                                />
+                            )}
 
                             {isDrawing && draftDoodlePoints.length >= 4 && (
                                 <Line
@@ -1266,8 +2424,52 @@ const FreedomWallPage = () => {
                                     tension={0.12}
                                 />
                             )}
+
+                            {placementPuffs.map((puff) => (
+                                <PuffEffect key={puff.id} id={puff.id} x={puff.x} y={puff.y} onComplete={handlePuffComplete} />
+                            ))}
+                        </Layer>
+
+                        <Layer listening={false}>
+                            {remoteCursorItems.map((cursor) => (
+                                <RemoteCursor key={cursor.clientId} cursor={cursor} stageWidth={stageWidth} stageHeight={stageHeight} />
+                            ))}
                         </Layer>
                     </Stage>
+                )}
+
+                <div className="fw-zoom-controls">
+                    <button type="button" onClick={handleZoomIn}>+</button>
+                    {stageScale !== 1 && (
+                        <span className="fw-zoom-level">{Math.round(stageScale * 100)}%</span>
+                    )}
+                    <button type="button" onClick={handleZoomOut}>&minus;</button>
+                </div>
+
+                {stageScale !== 1 && (
+                    <button type="button" className="fw-reset-zoom-btn" onClick={handleZoomReset}>Reset view</button>
+                )}
+
+                {stageScale !== 1 && (
+                    <div
+                        className="fw-minimap"
+                        style={{ height: minimapHeight }}
+                        onClick={handleMinimapClick}
+                        onPointerDown={handleMinimapPointerDown}
+                        onPointerMove={handleMinimapPointerMove}
+                        onPointerUp={handleMinimapPointerUp}
+                        onPointerCancel={handleMinimapPointerUp}
+                        onLostPointerCapture={handleMinimapPointerUp}
+                    >
+                        <div
+                            className="fw-minimap-viewport"
+                            style={{
+                                width: minimapViewport.width,
+                                height: minimapViewport.height,
+                                transform: `translate3d(${minimapViewport.left}px, ${minimapViewport.top}px, 0)`
+                            }}
+                        />
+                    </div>
                 )}
             </div>
 
@@ -1275,10 +2477,47 @@ const FreedomWallPage = () => {
                 <div className="freedom-wall-error-toast">{wallError}</div>
             )}
 
+            {showClearDoodlesModal && (
+                <div className="fw-modal-backdrop" onClick={handleCancelClearMyDoodles}>
+                    <div
+                        className="fw-modal-card"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Clear My Doodles Confirmation"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <h4>Clear My Doodles?</h4>
+                        <p>
+                            This will permanently delete your {myDoodleCount} doodle{myDoodleCount === 1 ? "" : "s"} from this week.
+                        </p>
+                        <div className="fw-modal-actions">
+                            <button
+                                type="button"
+                                className="fw-delete-btn"
+                                onClick={handleConfirmClearMyDoodles}
+                                disabled={clearMyDoodlesMutation.isPending}
+                            >
+                                {clearMyDoodlesMutation.isPending ? "Clearing..." : "Yes, Clear"}
+                            </button>
+                            <button
+                                type="button"
+                                className="fw-apply-btn"
+                                onClick={handleCancelClearMyDoodles}
+                                disabled={clearMyDoodlesMutation.isPending}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="freedom-wall-footer">
-                <span>{sortedItems.length} items this week</span>
+                <span>{sortedItems.length} {isTimeCapsuleMode ? "items in time capsule" : "items this week"}</span>
                 <span>
                     {createItemMutation.isPending || updateItemMutation.isPending || deleteItemMutation.isPending
+                    || reportItemMutation.isPending
+                    || clearMyDoodlesMutation.isPending
                         ? "Syncing..."
                         : "Synced"}
                 </span>
