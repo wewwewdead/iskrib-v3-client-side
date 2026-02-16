@@ -28,6 +28,8 @@ const FONT_STYLE_MAP = {
 const GRID_SIZE = 24;
 const CANVAS_MAX_WIDTH = 560;
 const MOBILE_BREAKPOINT = 820;
+const DOODLE_MIN_DISTANCE = 0.004;
+const DOODLE_SMOOTH_FACTOR = 0.3;
 const MIN_VIEWPORT_SCALE = 0.85;
 const MAX_VIEWPORT_SCALE = 3;
 const OBJECT_LIFT_MULTIPLIER = 1.03;
@@ -241,28 +243,36 @@ const CanvasMinimap = ({viewport, stageWidth, stageHeight, viewportWidth, viewpo
         };
     }, [viewport.scale, stageWidth, stageHeight, miniH, viewportWidth, viewportHeight, fitScale]);
 
+    const getClientPos = (e) => {
+        const touch = e.touches?.[0] || e.changedTouches?.[0];
+        return touch ? {x: touch.clientX, y: touch.clientY} : {x: e.clientX, y: e.clientY};
+    };
+
     const handleBackgroundClick = (e) => {
         if(dragRef.current?.didDrag) return;
-        const rect = containerRef.current?.getBoundingClientRect();
-        if(!rect) return;
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+        const bounds = containerRef.current?.getBoundingClientRect();
+        if(!bounds) return;
+        const pos = getClientPos(e);
+        const mx = pos.x - bounds.left;
+        const my = pos.y - bounds.top;
         updateViewport(minimapToViewport(mx, my));
     };
 
-    const handleRectMouseDown = (e) => {
+    const handleRectPointerDown = (e) => {
         e.stopPropagation();
         e.preventDefault();
-        const startClientX = e.clientX;
-        const startClientY = e.clientY;
+        const startPos = getClientPos(e);
         const startRectX = rectX;
         const startRectY = rectY;
+        const isTouch = e.type === "touchstart";
         dragRef.current = {didDrag: false};
 
         const onMove = (moveEvent) => {
+            if(moveEvent.cancelable) moveEvent.preventDefault();
             dragRef.current.didDrag = true;
-            const dx = moveEvent.clientX - startClientX;
-            const dy = moveEvent.clientY - startClientY;
+            const pos = getClientPos(moveEvent);
+            const dx = pos.x - startPos.x;
+            const dy = pos.y - startPos.y;
             const newRectX = startRectX + dx;
             const newRectY = startRectY + dy;
             updateViewport({
@@ -273,13 +283,13 @@ const CanvasMinimap = ({viewport, stageWidth, stageHeight, viewportWidth, viewpo
         };
 
         const onUp = () => {
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
+            document.removeEventListener(isTouch ? "touchmove" : "mousemove", onMove);
+            document.removeEventListener(isTouch ? "touchend" : "mouseup", onUp);
             setTimeout(() => { dragRef.current = null; }, 0);
         };
 
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
+        document.addEventListener(isTouch ? "touchmove" : "mousemove", onMove, {passive: false});
+        document.addEventListener(isTouch ? "touchend" : "mouseup", onUp);
     };
 
     return (
@@ -288,6 +298,7 @@ const CanvasMinimap = ({viewport, stageWidth, stageHeight, viewportWidth, viewpo
             className={`${styles.minimapContainer} ${isDark ? styles.minimapDark : ""}`}
             style={{width: MINIMAP_WIDTH, height: miniH}}
             onClick={handleBackgroundClick}
+            onTouchEnd={(e) => { e.stopPropagation(); handleBackgroundClick(e); }}
         >
             <div
                 className={styles.minimapViewport}
@@ -297,7 +308,8 @@ const CanvasMinimap = ({viewport, stageWidth, stageHeight, viewportWidth, viewpo
                     width: Math.max(rectW, 4),
                     height: Math.max(rectH, 4)
                 }}
-                onMouseDown={handleRectMouseDown}
+                onMouseDown={handleRectPointerDown}
+                onTouchStart={handleRectPointerDown}
             />
         </div>
     );
@@ -1002,7 +1014,19 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             return;
         }
 
-        const nextPoints = [...doodlePointsRef.current, pointer.x, pointer.y];
+        const prevPoints = doodlePointsRef.current;
+        const lastX = prevPoints[prevPoints.length - 2];
+        const lastY = prevPoints[prevPoints.length - 1];
+        const dx = pointer.x - lastX;
+        const dy = pointer.y - lastY;
+        if(Math.sqrt(dx * dx + dy * dy) < DOODLE_MIN_DISTANCE){
+            return;
+        }
+
+        const smoothX = lastX + (pointer.x - lastX) * (1 - DOODLE_SMOOTH_FACTOR);
+        const smoothY = lastY + (pointer.y - lastY) * (1 - DOODLE_SMOOTH_FACTOR);
+
+        const nextPoints = [...prevPoints, smoothX, smoothY];
         doodlePointsRef.current = nextPoints;
         setCurrentDoodlePoints(nextPoints);
     };

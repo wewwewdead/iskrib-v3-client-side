@@ -111,6 +111,8 @@ const INK_SPEED_MAX = 8.0;
 const INK_WIDTH_MIN = 0.3;
 const INK_WIDTH_MAX = 1.5;
 const INK_SMOOTH_FACTOR = 0.35;
+const DOODLE_MIN_DISTANCE = 0.004;
+const DOODLE_SMOOTH_FACTOR = 0.3;
 
 const speedToWidthMultiplier = (speed) => {
     const t = clamp((speed - INK_SPEED_MIN) / (INK_SPEED_MAX - INK_SPEED_MIN), 0, 1);
@@ -1878,11 +1880,23 @@ const FreedomWallPage = () => {
             return;
         }
 
+        const prevPoints = draftDoodleRef.current;
+        const lastPtX = prevPoints[prevPoints.length - 2];
+        const lastPtY = prevPoints[prevPoints.length - 1];
+        const ptDx = normalizedPointer.x - lastPtX;
+        const ptDy = normalizedPointer.y - lastPtY;
+        if(Math.sqrt(ptDx * ptDx + ptDy * ptDy) < DOODLE_MIN_DISTANCE){
+            return;
+        }
+
+        const smoothX = lastPtX + (normalizedPointer.x - lastPtX) * (1 - DOODLE_SMOOTH_FACTOR);
+        const smoothY = lastPtY + (normalizedPointer.y - lastPtY) * (1 - DOODLE_SMOOTH_FACTOR);
+
         const now = performance.now();
         const last = lastDoodlePointRef.current;
         if(last){
-            const dx = (normalizedPointer.x - last.x) * stageWidth;
-            const dy = (normalizedPointer.y - last.y) * stageHeight;
+            const dx = (smoothX - last.x) * stageWidth;
+            const dy = (smoothY - last.y) * stageHeight;
             const dist = Math.sqrt(dx * dx + dy * dy);
             const dt = Math.max(now - last.t, 1);
             const speed = dist / dt;
@@ -1893,9 +1907,9 @@ const FreedomWallPage = () => {
             const smoothed = prev + INK_SMOOTH_FACTOR * (rawWidth - prev);
             draftWidthsRef.current.push(smoothed);
         }
-        lastDoodlePointRef.current = { x: normalizedPointer.x, y: normalizedPointer.y, t: now };
+        lastDoodlePointRef.current = { x: smoothX, y: smoothY, t: now };
 
-        const nextPoints = [...draftDoodleRef.current, normalizedPointer.x, normalizedPointer.y];
+        const nextPoints = [...prevPoints, smoothX, smoothY];
         draftDoodleRef.current = nextPoints;
         setDraftDoodlePoints(nextPoints);
         if(event?.evt?.cancelable){
