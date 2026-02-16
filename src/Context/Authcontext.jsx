@@ -120,7 +120,7 @@ export const AuthProvider = ({children}) => {
     // }, [userData])
 
     const signOut = async() =>{
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' });
         queryClient.setQueryData(['authsession'], null)
         queryClient.clear();
 

@@ -38,6 +38,8 @@
     width: 100%;
     max-width: 720px;
     height: 80%;
+    min-height: 0;
+    overflow: hidden;
     background-color: var(--editor-bg);
     color: var(--editor-text);
     border-radius: 16px;
@@ -48,6 +50,26 @@
 .editor-container.is-canvas-mode{
     max-width: 980px;
     height: 92%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.editor-mode-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.editor-mode-shell.is-canvas-mode {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* ── Close button row ── */

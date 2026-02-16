@@ -5,6 +5,7 @@ import { addCanvasMargin, addCanvasStamp, deleteCanvasMargin, deleteCanvasStamp,
 import { useAuth } from "../../../Context/useAuth";
 import supabase from "../../../utils/supabaseClient";
 import { parseCanvasDoc } from "../../../utils/canvasDoc";
+import styles from "./CanvasEditor.module.css";
 import "./canvas.css";
 
 const STAMP_ICONS = {
@@ -15,14 +16,23 @@ const STAMP_ICONS = {
 };
 
 const FONT_BRUSHES = {
-    serif: {fontFamily: "Georgia", fontStyle: "normal"},
-    mono: {fontFamily: "Courier New", fontStyle: "normal"},
-    handwritten: {fontFamily: "Comic Sans MS", fontStyle: "normal"},
-    bold: {fontFamily: "Trebuchet MS", fontStyle: "bold"},
+    serif: {fontFamily: "\"Courier New\", \"Lucida Console\", monospace", fontStyle: "normal"},
+    handwritten: {fontFamily: "\"Comic Sans MS\", \"Bradley Hand\", cursive", fontStyle: "normal"},
+    bold: {fontFamily: "\"Trebuchet MS\", \"Gill Sans\", sans-serif", fontStyle: "bold"},
+    serifDisplay: {fontFamily: "Georgia, \"Times New Roman\", serif", fontStyle: "normal"}
+};
+
+const FONT_STYLE_MAP = {
+    serif: "serif",
+    handwritten: "handwritten",
+    bold: "bold",
+    mono: "serif",
+    serifDisplay: "serifDisplay"
 };
 
 const GRID_SIZE = 24;
-const CANVAS_MAX_WIDTH = 640;
+const CANVAS_MAX_WIDTH = 560;
+const MOBILE_BREAKPOINT = 820;
 const CANVAS_ROOT_SNIPPET_ID = "canvas-root";
 const STAMP_SIZE = 34;
 const STAMP_FONT_SIZE = 30;
@@ -91,9 +101,17 @@ const getStageHeight = (width, aspectRatio) => {
     return width;
 };
 
+const getLegacyFontStyle = (fontStyle) => {
+    if(fontStyle === "mono"){
+        return "serif";
+    }
+    return FONT_STYLE_MAP[fontStyle] ? fontStyle : "serif";
+};
+
 const getSnippetMetrics = (snippet, stageWidth) => {
     const sizeScale = Number.isFinite(snippet.sizeScale) ? snippet.sizeScale : 1;
-    const baseFontSize = snippet.fontStyle === "bold" ? 34 : snippet.fontStyle === "handwritten" ? 32 : 30;
+    const styleKey = FONT_STYLE_MAP[snippet.fontStyle] || "serif";
+    const baseFontSize = styleKey === "bold" ? 34 : styleKey === "handwritten" ? 32 : 30;
     const fontSize = clamp(baseFontSize * sizeScale, 18, 92);
     const estimatedWidth = Math.max(120, Math.min(stageWidth * 0.78, Math.round((snippet.text.length || 1) * fontSize * 0.58)));
     const charsPerLine = Math.max(8, Math.floor(estimatedWidth / (fontSize * 0.56)));
@@ -172,6 +190,7 @@ const CanvasImageNode = ({canvasImage, stageWidth, stageHeight, onStamp}) => {
     const objectHeight = clamp((canvasImage?.height || 0.3) * stageHeight, 56, stageHeight * 0.95);
     const x = clamp((canvasImage?.x || 0) * stageWidth, 0, Math.max(0, stageWidth - objectWidth));
     const y = clamp((canvasImage?.y || 0) * stageHeight, 0, Math.max(0, stageHeight - objectHeight));
+    const baseScaleX = canvasImage?.scaleX === -1 ? -1 : 1;
 
     return (
         <KonvaImage
@@ -181,7 +200,11 @@ const CanvasImageNode = ({canvasImage, stageWidth, stageHeight, onStamp}) => {
             height={objectHeight}
             image={loadedImage}
             rotation={canvasImage?.rotation || 0}
-            scaleX={canvasImage?.scaleX === -1 ? -1 : 1}
+            scaleX={baseScaleX}
+            scaleY={1}
+            shadowColor="rgba(0,0,0,0.3)"
+            shadowBlur={8}
+            shadowOffsetY={3}
             onClick={onStamp}
             onTap={onStamp}
         />
@@ -313,10 +336,18 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentDoodlePoints, setCurrentDoodlePoints] = useState([]);
     const [liveDoodlesByClient, setLiveDoodlesByClient] = useState({});
+    const [isMobileViewport, setIsMobileViewport] = useState(false);
+    const [isMobileDockOpen, setIsMobileDockOpen] = useState(false);
 
     const parsedCanvasDoc = useMemo(() => parseCanvasDoc(canvasDoc), [canvasDoc]);
     const sortedObjects = useMemo(() => {
-        const textObjects = (parsedCanvasDoc.snippets || []).map((snippet) => ({kind: "snippet", payload: snippet}));
+        const textObjects = (parsedCanvasDoc.snippets || []).map((snippet) => ({
+            kind: "snippet",
+            payload: {
+                ...snippet,
+                fontStyle: getLegacyFontStyle(snippet?.fontStyle)
+            }
+        }));
         const imageObjects = (parsedCanvasDoc.images || []).map((image) => ({kind: "image", payload: image}));
         return [...textObjects, ...imageObjects].sort((a, b) => (a.payload?.zIndex || 0) - (b.payload?.zIndex || 0));
     }, [parsedCanvasDoc.images, parsedCanvasDoc.snippets]);
@@ -353,6 +384,28 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
             }
         };
     }, []);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+        const syncViewport = () => setIsMobileViewport(mediaQuery.matches);
+        syncViewport();
+
+        if(typeof mediaQuery.addEventListener === "function"){
+            mediaQuery.addEventListener("change", syncViewport);
+            return () => mediaQuery.removeEventListener("change", syncViewport);
+        }
+
+        mediaQuery.addListener(syncViewport);
+        return () => mediaQuery.removeListener(syncViewport);
+    }, []);
+
+    useEffect(() => {
+        if(isMobileViewport){
+            setIsMobileDockOpen(false);
+            return;
+        }
+        setIsMobileDockOpen(true);
+    }, [isMobileViewport]);
 
     const stageWidth = useMemo(() => Math.max(240, Math.min(CANVAS_MAX_WIDTH, shellWidth)), [shellWidth]);
     const stageHeight = getStageHeight(stageWidth, parsedCanvasDoc?.meta?.aspectRatio);
@@ -987,6 +1040,10 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     };
 
     const handleCanvasPointerDown = (evt) => {
+        if(isMobileViewport && isMobileDockOpen){
+            setIsMobileDockOpen(false);
+        }
+
         if(activeTool === "doodle" && !canUseDoodle){
             setActiveTool("stamp");
             return;
@@ -1187,322 +1244,371 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
     const doodleItems = marginItems.filter((item) => item?.item_type === "doodle");
     const liveDoodleItems = Object.values(liveDoodlesByClient);
     const stickyItems = marginItems.filter((item) => item?.item_type === "sticky");
+    const isDockVisible = !isMobileViewport || isMobileDockOpen;
 
     return (
-        <div className="canvas-viewer-root">
-            <div className="canvas-stamp-toolbar">
-                <span className="canvas-stamp-label">Community Margin</span>
-                <button
-                    type="button"
-                    className={`canvas-tool-btn ${activeTool === "stamp" ? "is-active" : ""}`}
-                    onClick={() => setActiveTool("stamp")}
-                >
-                    Stamps
-                </button>
-                {canUseDoodle && (
-                    <button
-                        type="button"
-                        className={`canvas-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`}
-                        onClick={() => setActiveTool("doodle")}
-                    >
-                        Doodle
-                    </button>
-                )}
-
-                {activeTool === "stamp" && Object.entries(STAMP_ICONS).map(([stampType, icon]) => (
-                    <button
-                        key={stampType}
-                        type="button"
-                        className={`canvas-stamp-btn ${activeStampType === stampType ? "is-active" : ""}`}
-                        onClick={() => setActiveStampType(stampType)}
-                        draggable={Boolean(session)}
-                        onDragStart={handleStampDragStart(stampType)}
-                        onDragEnd={handleStampDragEnd}
-                        title={session ? "Drag onto the canvas to place this stamp" : "Sign in to place stamps"}
-                    >
-                        {icon}
-                    </button>
-                ))}
-
-                {activeTool === "doodle" && canUseDoodle && (
-                    <div className="canvas-tool-controls">
-                        <div className="canvas-color-swatches">
-                            {DOODLE_COLOR_PRESETS.map((color) => (
-                                <button
-                                    key={color}
-                                    type="button"
-                                    className={`canvas-color-swatch ${doodleColor.toLowerCase() === color.toLowerCase() ? "is-active" : ""}`}
-                                    onClick={() => setDoodleColor(color)}
-                                    title={`Use ${color} doodle color`}
-                                    aria-label={`Select doodle color ${color}`}
-                                    style={{backgroundColor: color}}
-                                />
-                            ))}
-                        </div>
-                        <input
-                            type="color"
-                            value={doodleColor}
-                            onChange={(event) => setDoodleColor(event.target.value)}
-                            className="canvas-color-input"
-                            title="Doodle color"
-                        />
-                        <input
-                            type="range"
-                            min={1}
-                            max={10}
-                            step={0.2}
-                            value={doodleSize}
-                            onChange={(event) => setDoodleSize(Number(event.target.value))}
-                            className="canvas-size-range"
-                        />
-                        <span className="canvas-tool-hint">Press and drag on canvas</span>
-                    </div>
-                )}
-
-            </div>
-
+        <div className={`${styles.editorRoot} ${styles.viewerRoot}`}>
             <div
                 ref={shellRef}
-                className={`canvas-stage-shell ${parsedCanvasDoc?.meta?.theme === "dark" ? "is-dark" : ""} ${isDropActive ? "is-drop-active" : ""} ${activeTool === "doodle" && canUseDoodle ? "is-doodle-active" : ""}`}
+                className={`${styles.stageShell} ${parsedCanvasDoc?.meta?.theme === "dark" ? styles.isDark : ""} ${isDropActive ? styles.isDropActive : ""} ${activeTool === "doodle" && canUseDoodle ? styles.isDoodleActive : ""}`}
                 onDragOver={handleStageDragOver}
                 onDragLeave={handleStageDragLeave}
                 onDrop={handleStageDrop}
             >
-                <Stage
-                    ref={stageRef}
-                    width={stageWidth}
-                    height={stageHeight}
-                    onClick={handleStageClick}
-                    onTap={handleStageClick}
-                    onMouseDown={handleCanvasPointerDown}
-                    onTouchStart={handleCanvasPointerDown}
-                    onMouseMove={handleCanvasPointerMove}
-                    onTouchMove={handleCanvasPointerMove}
-                    onMouseUp={handleCanvasPointerUp}
-                    onTouchEnd={handleCanvasPointerUp}
-                    onMouseLeave={handleCanvasPointerUp}
-                >
-                    {parsedCanvasDoc?.meta?.gridEnabled && (
+                <div className={styles.stageFrame}>
+                    <Stage
+                        ref={stageRef}
+                        width={stageWidth}
+                        height={stageHeight}
+                        onClick={handleStageClick}
+                        onTap={handleStageClick}
+                        onMouseDown={handleCanvasPointerDown}
+                        onTouchStart={handleCanvasPointerDown}
+                        onMouseMove={handleCanvasPointerMove}
+                        onTouchMove={handleCanvasPointerMove}
+                        onMouseUp={handleCanvasPointerUp}
+                        onTouchEnd={handleCanvasPointerUp}
+                        onTouchCancel={handleCanvasPointerUp}
+                        onMouseLeave={handleCanvasPointerUp}
+                        className={styles.stage}
+                    >
+                        {parsedCanvasDoc?.meta?.gridEnabled && (
+                            <Layer listening={false}>
+                                {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
+                                    <Rect
+                                        key={`viewer-grid-v-${index}`}
+                                        x={index * GRID_SIZE}
+                                        y={0}
+                                        width={1}
+                                        height={stageHeight}
+                                        fill={parsedCanvasDoc?.meta?.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
+                                    />
+                                ))}
+                                {Array.from({length: Math.floor(stageHeight / GRID_SIZE) + 1}).map((_, index) => (
+                                    <Rect
+                                        key={`viewer-grid-h-${index}`}
+                                        x={0}
+                                        y={index * GRID_SIZE}
+                                        width={stageWidth}
+                                        height={1}
+                                        fill={parsedCanvasDoc?.meta?.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
+                                    />
+                                ))}
+                            </Layer>
+                        )}
+
                         <Layer listening={false}>
-                            {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
-                                <Line
-                                    key={`viewer-grid-v-${index}`}
-                                    points={[index * GRID_SIZE, 0, index * GRID_SIZE, stageHeight]}
-                                    stroke={parsedCanvasDoc?.meta?.theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}
-                                    strokeWidth={1}
-                                />
-                            ))}
-                            {Array.from({length: Math.floor(stageHeight / GRID_SIZE) + 1}).map((_, index) => (
-                                <Line
-                                    key={`viewer-grid-h-${index}`}
-                                    points={[0, index * GRID_SIZE, stageWidth, index * GRID_SIZE]}
-                                    stroke={parsedCanvasDoc?.meta?.theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}
-                                    strokeWidth={1}
-                                />
-                            ))}
-                        </Layer>
-                    )}
-
-                    <Layer listening={false}>
-                        {docDoodles.map((doodle) => {
-                            const points = Array.isArray(doodle?.points)
-                                ? doodle.points.map((point) => Number(point)).filter((point) => !Number.isNaN(point))
-                                : [];
-                            if(points.length < 4){
-                                return null;
-                            }
-
-                            return (
-                                <Line
-                                    key={`doc-doodle-${doodle.id}`}
-                                    points={points.map((point, index) => (
-                                        index % 2 === 0 ? point * stageWidth : point * stageHeight
-                                    ))}
-                                    stroke={doodle?.color || "#5f92ff"}
-                                    strokeWidth={Number(doodle?.size) || 2.8}
-                                    lineCap="round"
-                                    lineJoin="round"
-                                    tension={0.1}
-                                />
-                            );
-                        })}
-                    </Layer>
-
-                    <Layer>
-                        {sortedObjects.map((object) => {
-                            if(object.kind === "snippet"){
-                                const snippet = object.payload;
-                                const metrics = getSnippetMetrics(snippet, stageWidth);
-                                const brush = FONT_BRUSHES[snippet.fontStyle] || FONT_BRUSHES.serif;
-                                const snippetX = clamp(snippet.x * stageWidth, 0, Math.max(0, stageWidth - metrics.width));
-                                const snippetY = clamp(snippet.y * stageHeight, 0, Math.max(0, stageHeight - metrics.height));
+                            {docDoodles.map((doodle) => {
+                                const points = Array.isArray(doodle?.points)
+                                    ? doodle.points.map((point) => Number(point)).filter((point) => !Number.isNaN(point))
+                                    : [];
+                                if(points.length < 4){
+                                    return null;
+                                }
 
                                 return (
-                                    <Text
-                                        key={snippet.id}
-                                        x={snippetX}
-                                        y={snippetY}
-                                        width={metrics.width}
-                                        height={metrics.height}
-                                        text={snippet.text}
-                                        fontFamily={brush.fontFamily}
-                                        fontStyle={brush.fontStyle}
-                                        fontSize={metrics.fontSize}
-                                        fill={parsedCanvasDoc?.meta?.theme === "dark" ? "#f8f8f8" : "#151515"}
-                                        align="center"
-                                        verticalAlign="middle"
-                                        padding={8}
-                                        wrap="word"
-                                        rotation={snippet.rotation || 0}
-                                        scaleX={snippet.scaleX === -1 ? -1 : 1}
-                                        onClick={(event) => handleAddStampOnObject(snippet.id, event)}
-                                        onTap={(event) => handleAddStampOnObject(snippet.id, event)}
+                                    <Line
+                                        key={`doc-doodle-${doodle.id}`}
+                                        points={points.map((point, index) => (
+                                            index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                        ))}
+                                        stroke={doodle?.color || "#5f92ff"}
+                                        strokeWidth={Number(doodle?.size) || 2.8}
+                                        lineCap="round"
+                                        lineJoin="round"
+                                        tension={0.1}
                                     />
                                 );
-                            }
+                            })}
+                        </Layer>
 
-                            const image = object.payload;
-                            return (
-                                <CanvasImageNode
-                                    key={image.id}
-                                    canvasImage={image}
-                                    stageWidth={stageWidth}
-                                    stageHeight={stageHeight}
-                                    onStamp={(event) => handleAddStampOnObject(image.id, event)}
-                                />
-                            );
-                        })}
-                    </Layer>
+                        <Layer>
+                            {sortedObjects.map((object) => {
+                                if(object.kind === "snippet"){
+                                    const snippet = object.payload;
+                                    const metrics = getSnippetMetrics(snippet, stageWidth);
+                                    const styleKey = FONT_STYLE_MAP[snippet.fontStyle] || "serif";
+                                    const brush = FONT_BRUSHES[styleKey] || FONT_BRUSHES.serif;
+                                    const snippetX = clamp(snippet.x * stageWidth, 0, Math.max(0, stageWidth - metrics.width));
+                                    const snippetY = clamp(snippet.y * stageHeight, 0, Math.max(0, stageHeight - metrics.height));
 
-                    <Layer>
-                        {stamps.map((stamp) => {
-                            const canDelete = currentUserId && (stamp.user_id === currentUserId || authorId === currentUserId);
-                            return (
-                                <StampNode
-                                    key={stamp.id}
-                                    stamp={stamp}
-                                    stageWidth={stageWidth}
-                                    stageHeight={stageHeight}
-                                    canDelete={canDelete}
-                                    onDelete={() => deleteStampMutation.mutate(stamp.id)}
-                                />
-                            );
-                        })}
-                    </Layer>
+                                    return (
+                                        <Text
+                                            key={snippet.id}
+                                            x={snippetX}
+                                            y={snippetY}
+                                            width={metrics.width}
+                                            height={metrics.height}
+                                            text={snippet.text}
+                                            fontFamily={brush.fontFamily}
+                                            fontStyle={brush.fontStyle}
+                                            fontSize={metrics.fontSize}
+                                            fill={parsedCanvasDoc?.meta?.theme === "dark" ? "#f8f7f1" : "#151513"}
+                                            align="center"
+                                            verticalAlign="middle"
+                                            padding={8}
+                                            wrap="word"
+                                            rotation={snippet.rotation || 0}
+                                            scaleX={snippet.scaleX === -1 ? -1 : 1}
+                                            shadowColor={parsedCanvasDoc?.meta?.theme === "dark" ? "rgba(0,0,0,0.58)" : "rgba(0,0,0,0.22)"}
+                                            shadowBlur={6}
+                                            shadowOffsetY={2}
+                                            onClick={(event) => handleAddStampOnObject(snippet.id, event)}
+                                            onTap={(event) => handleAddStampOnObject(snippet.id, event)}
+                                        />
+                                    );
+                                }
 
-                    <Layer>
-                        {doodleItems.map((item) => {
-                            const canDelete = currentUserId && (item.user_id === currentUserId || authorId === currentUserId);
-                            const points = Array.isArray(item?.payload?.points)
-                                ? item.payload.points
-                                    .map((point) => Number(point))
-                                    .filter((point) => !Number.isNaN(point))
-                                : [];
-                            const stagePoints = points.map((point, index) => (
-                                index % 2 === 0 ? point * stageWidth : point * stageHeight
-                            ));
-                            return (
+                                const image = object.payload;
+                                return (
+                                    <CanvasImageNode
+                                        key={image.id}
+                                        canvasImage={image}
+                                        stageWidth={stageWidth}
+                                        stageHeight={stageHeight}
+                                        onStamp={(event) => handleAddStampOnObject(image.id, event)}
+                                    />
+                                );
+                            })}
+                        </Layer>
+
+                        <Layer>
+                            {stamps.map((stamp) => {
+                                const canDelete = currentUserId && (stamp.user_id === currentUserId || authorId === currentUserId);
+                                return (
+                                    <StampNode
+                                        key={stamp.id}
+                                        stamp={stamp}
+                                        stageWidth={stageWidth}
+                                        stageHeight={stageHeight}
+                                        canDelete={canDelete}
+                                        onDelete={() => deleteStampMutation.mutate(stamp.id)}
+                                    />
+                                );
+                            })}
+                        </Layer>
+
+                        <Layer>
+                            {doodleItems.map((item) => {
+                                const canDelete = currentUserId && (item.user_id === currentUserId || authorId === currentUserId);
+                                const points = Array.isArray(item?.payload?.points)
+                                    ? item.payload.points
+                                        .map((point) => Number(point))
+                                        .filter((point) => !Number.isNaN(point))
+                                    : [];
+                                const stagePoints = points.map((point, index) => (
+                                    index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                ));
+                                return (
+                                    <Line
+                                        key={item.id}
+                                        points={stagePoints}
+                                        stroke={item?.payload?.color || "#5f92ff"}
+                                        strokeWidth={Number(item?.payload?.size) || 2.8}
+                                        lineCap="round"
+                                        lineJoin="round"
+                                        tension={0.1}
+                                        onClick={() => {
+                                            if(canDelete){
+                                                deleteMarginMutation.mutate(item.id);
+                                            }
+                                        }}
+                                        onTap={() => {
+                                            if(canDelete){
+                                                deleteMarginMutation.mutate(item.id);
+                                            }
+                                        }}
+                                    />
+                                );
+                            })}
+
+                            {liveDoodleItems.map((doodle) => (
                                 <Line
-                                    key={item.id}
-                                    points={stagePoints}
-                                    stroke={item?.payload?.color || "#5f92ff"}
-                                    strokeWidth={Number(item?.payload?.size) || 2.8}
+                                    key={`live-doodle-${doodle.clientId}`}
+                                    points={doodle.points.map((point, index) => (
+                                        index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                    ))}
+                                    stroke={doodle.color || "#5f92ff"}
+                                    strokeWidth={Number(doodle.size) || 2.8}
                                     lineCap="round"
                                     lineJoin="round"
                                     tension={0.1}
-                                    onClick={() => {
-                                        if(canDelete){
-                                            deleteMarginMutation.mutate(item.id);
-                                        }
-                                    }}
-                                    onTap={() => {
-                                        if(canDelete){
-                                            deleteMarginMutation.mutate(item.id);
-                                        }
-                                    }}
+                                    opacity={0.86}
+                                    listening={false}
                                 />
-                            );
-                        })}
+                            ))}
 
-                        {liveDoodleItems.map((doodle) => (
-                            <Line
-                                key={`live-doodle-${doodle.clientId}`}
-                                points={doodle.points.map((point, index) => (
-                                    index % 2 === 0 ? point * stageWidth : point * stageHeight
-                                ))}
-                                stroke={doodle.color || "#5f92ff"}
-                                strokeWidth={Number(doodle.size) || 2.8}
-                                lineCap="round"
-                                lineJoin="round"
-                                tension={0.1}
-                                opacity={0.86}
-                                listening={false}
-                            />
-                        ))}
+                            {isDrawing && currentDoodlePoints.length >= 2 && (
+                                <Line
+                                    points={currentDoodlePoints.map((point, index) => (
+                                        index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                    ))}
+                                    stroke={doodleColor}
+                                    strokeWidth={doodleSize}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                    tension={0.1}
+                                />
+                            )}
+                        </Layer>
 
-                        {isDrawing && currentDoodlePoints.length >= 2 && (
-                            <Line
-                                points={currentDoodlePoints.map((point, index) => (
-                                    index % 2 === 0 ? point * stageWidth : point * stageHeight
-                                ))}
-                                stroke={doodleColor}
-                                strokeWidth={doodleSize}
-                                lineCap="round"
-                                lineJoin="round"
-                                tension={0.1}
-                            />
-                        )}
-                    </Layer>
+                        <Layer>
+                            {stickyItems.map((item) => {
+                                const canDelete = currentUserId && (item.user_id === currentUserId || authorId === currentUserId);
+                                const stickyX = clamp((Number(item?.payload?.x) || 0) * stageWidth, 0, Math.max(0, stageWidth - STICKY_WIDTH));
+                                const stickyY = clamp((Number(item?.payload?.y) || 0) * stageHeight, 0, Math.max(0, stageHeight - STICKY_HEIGHT));
+                                return (
+                                    <Group
+                                        key={item.id}
+                                        x={stickyX}
+                                        y={stickyY}
+                                        onClick={() => {
+                                            if(canDelete){
+                                                deleteMarginMutation.mutate(item.id);
+                                            }
+                                        }}
+                                        onTap={() => {
+                                            if(canDelete){
+                                                deleteMarginMutation.mutate(item.id);
+                                            }
+                                        }}
+                                    >
+                                        <Rect
+                                            width={STICKY_WIDTH}
+                                            height={STICKY_HEIGHT}
+                                            cornerRadius={8}
+                                            fill={item?.payload?.color || "#fff4a8"}
+                                            shadowColor="rgba(0,0,0,0.18)"
+                                            shadowBlur={8}
+                                            shadowOffsetY={3}
+                                        />
+                                        <Text
+                                            x={10}
+                                            y={10}
+                                            width={STICKY_WIDTH - 20}
+                                            height={STICKY_HEIGHT - 20}
+                                            text={item?.payload?.text || ""}
+                                            fontSize={15}
+                                            lineHeight={1.25}
+                                            fill="#1b1c1e"
+                                            wrap="word"
+                                        />
+                                    </Group>
+                                );
+                            })}
+                        </Layer>
+                    </Stage>
+                </div>
+                <div className={styles.stageHud}>
+                    <span className={styles.zoomBadge}>{activeTool === "stamp" ? "Stamp mode" : "Doodle mode"}</span>
+                    {activeTool === "doodle" && canUseDoodle && <span className={styles.gestureHint}>Press and drag to doodle</span>}
+                </div>
+            </div>
 
-                    <Layer>
-                        {stickyItems.map((item) => {
-                            const canDelete = currentUserId && (item.user_id === currentUserId || authorId === currentUserId);
-                            const stickyX = clamp((Number(item?.payload?.x) || 0) * stageWidth, 0, Math.max(0, stageWidth - STICKY_WIDTH));
-                            const stickyY = clamp((Number(item?.payload?.y) || 0) * stageHeight, 0, Math.max(0, stageHeight - STICKY_HEIGHT));
-                            return (
-                                <Group
-                                    key={item.id}
-                                    x={stickyX}
-                                    y={stickyY}
-                                    onClick={() => {
-                                        if(canDelete){
-                                            deleteMarginMutation.mutate(item.id);
-                                        }
-                                    }}
-                                    onTap={() => {
-                                        if(canDelete){
-                                            deleteMarginMutation.mutate(item.id);
-                                        }
-                                    }}
+            <div className={styles.editorFooter}>
+                <span className={styles.wordCount}>
+                    Community Margin · {stamps.length} {stamps.length === 1 ? "stamp" : "stamps"} · {doodleItems.length} {doodleItems.length === 1 ? "doodle" : "doodles"}
+                </span>
+            </div>
+
+            <div className={`${styles.toolbarDock} ${styles.toolbarDockInCv}`}>
+                {isMobileViewport && (
+                    <button
+                        type="button"
+                        aria-label={isDockVisible ? "Close tool dock" : "Open tool dock"}
+                        className={`${styles.toolbarOrb} ${isDockVisible ? styles.toolbarOrbOpen : ""}`}
+                        onClick={() => setIsMobileDockOpen((prev) => !prev)}
+                    >
+                        {isDockVisible ? "Close" : "Tools"}
+                    </button>
+                )}
+
+                {isDockVisible && (
+                    <div className={styles.toolbarPanel}>
+                        <div className={styles.toolbarRow}>
+                            <button
+                                type="button"
+                                className={`${styles.toolButton} ${activeTool === "stamp" ? styles.toolButtonActive : ""}`}
+                                onClick={() => setActiveTool("stamp")}
+                            >
+                                Stamps
+                            </button>
+                            {canUseDoodle && (
+                                <button
+                                    type="button"
+                                    className={`${styles.toolButton} ${activeTool === "doodle" ? styles.toolButtonActive : ""}`}
+                                    onClick={() => setActiveTool("doodle")}
                                 >
-                                    <Rect
-                                        width={STICKY_WIDTH}
-                                        height={STICKY_HEIGHT}
-                                        cornerRadius={8}
-                                        fill={item?.payload?.color || "#fff4a8"}
-                                        shadowColor="rgba(0,0,0,0.18)"
-                                        shadowBlur={8}
-                                        shadowOffsetY={3}
+                                    Doodle
+                                </button>
+                            )}
+                        </div>
+
+                        {activeTool === "stamp" && (
+                            <div className={styles.toolbarRow}>
+                                {Object.entries(STAMP_ICONS).map(([stampType, icon]) => (
+                                    <button
+                                        key={stampType}
+                                        type="button"
+                                        className={`${styles.toolButton} ${activeStampType === stampType ? styles.toolButtonActive : ""}`}
+                                        onClick={() => setActiveStampType(stampType)}
+                                        draggable={Boolean(session)}
+                                        onDragStart={handleStampDragStart(stampType)}
+                                        onDragEnd={handleStampDragEnd}
+                                        title={session ? "Drag onto the canvas to place this stamp" : "Sign in to place stamps"}
+                                        style={{fontSize: "1rem", lineHeight: 1, minWidth: "2.3rem"}}
+                                    >
+                                        {icon}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTool === "doodle" && canUseDoodle && (
+                            <div className={styles.toolbarColumn}>
+                                <div className={styles.colorSwatches}>
+                                    {DOODLE_COLOR_PRESETS.map((color) => (
+                                        <button
+                                            key={color}
+                                            type="button"
+                                            className={`${styles.colorSwatch} ${doodleColor.toLowerCase() === color.toLowerCase() ? styles.colorSwatchActive : ""}`}
+                                            onClick={() => setDoodleColor(color)}
+                                            title={`Use ${color} doodle color`}
+                                            aria-label={`Select doodle color ${color}`}
+                                            style={{backgroundColor: color}}
+                                        />
+                                    ))}
+                                </div>
+                                <div className={styles.toolbarRow}>
+                                    <label className={styles.customColorLabel}>
+                                        Custom
+                                        <input
+                                            type="color"
+                                            value={doodleColor}
+                                            onChange={(event) => setDoodleColor(event.target.value)}
+                                            className={styles.colorInput}
+                                            title="Doodle color"
+                                        />
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min={1}
+                                        max={10}
+                                        step={0.2}
+                                        value={doodleSize}
+                                        onChange={(event) => setDoodleSize(Number(event.target.value))}
+                                        className={styles.sizeRange}
                                     />
-                                    <Text
-                                        x={10}
-                                        y={10}
-                                        width={STICKY_WIDTH - 20}
-                                        height={STICKY_HEIGHT - 20}
-                                        text={item?.payload?.text || ""}
-                                        fontSize={15}
-                                        lineHeight={1.25}
-                                        fill="#1b1c1e"
-                                        wrap="word"
-                                    />
-                                </Group>
-                            );
-                        })}
-                    </Layer>
-                </Stage>
+                                    <span className={styles.toolHint}>Press and drag on canvas</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 export default CanvasViewer;
+

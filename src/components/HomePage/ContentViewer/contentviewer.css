@@ -275,7 +275,7 @@
 }
 
 .cv-canvas-actions{
-    margin: -34px 0 56px;
+    margin: 12px 0 14px;
     display: flex;
     justify-content: flex-start;
 }
@@ -360,7 +360,7 @@
         margin-bottom: 60px;
     }
     .cv-canvas-actions{
-        margin: -24px 0 44px;
+        margin: 10px 0 12px;
     }
     .cv-toast {
         bottom: 160px;

@@ -1,35 +1,47 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import Konva from "konva";
 import { Image as KonvaImage, Layer, Line, Rect, Stage, Text } from "react-konva";
 import { BarLoader } from "react-spinners";
 import { useQueryClient } from "@tanstack/react-query";
 import { saveJournal, saveJournalImage } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
 import { parseCanvasDoc } from "../../../utils/canvasDoc";
+import styles from "./CanvasEditor.module.css";
 import "./canvas.css";
 
 const FONT_BRUSHES = {
-    serif: {label: "Serif", fontFamily: "Georgia", fontStyle: "normal"},
-    mono: {label: "Mono", fontFamily: "Courier New", fontStyle: "normal"},
-    handwritten: {label: "Hand", fontFamily: "Comic Sans MS", fontStyle: "normal"},
-    bold: {label: "Bold", fontFamily: "Trebuchet MS", fontStyle: "bold"},
+    serif: {label: "Typewriter", fontFamily: "\"Courier New\", \"Lucida Console\", monospace", fontStyle: "normal", preview: "Ink Tape"},
+    handwritten: {label: "Brush Script", fontFamily: "\"Comic Sans MS\", \"Bradley Hand\", cursive", fontStyle: "normal", preview: "Wild Brush"},
+    bold: {label: "Street Bold", fontFamily: "\"Trebuchet MS\", \"Gill Sans\", sans-serif", fontStyle: "bold", preview: "Tagline"},
+    serifDisplay: {label: "Poster Serif", fontFamily: "Georgia, \"Times New Roman\", serif", fontStyle: "normal", preview: "Headline"}
+};
+
+const FONT_STYLE_MAP = {
+    serif: "serif",
+    handwritten: "handwritten",
+    bold: "bold",
+    mono: "serif",
+    serifDisplay: "serifDisplay"
 };
 
 const GRID_SIZE = 24;
 const CANVAS_MAX_WIDTH = 560;
-const DOODLE_COLOR_PRESETS = [
-    "#5f92ff",
-    "#ff4d6d",
-    "#ff7f11",
-    "#ffd23f",
-    "#22c55e",
-    "#14b8a6",
-    "#8b5cf6",
-    "#111827",
-    "#ffffff"
+const MOBILE_BREAKPOINT = 820;
+const MIN_VIEWPORT_SCALE = 0.85;
+const MAX_VIEWPORT_SCALE = 3;
+const OBJECT_LIFT_MULTIPLIER = 1.03;
+
+const COLOR_PALETTES = [
+    {label: "Pastels", colors: ["#f8c8dc", "#f9e2af", "#b7e4c7", "#bde0fe", "#d7c3ff"]},
+    {label: "Earth", colors: ["#8c5e3c", "#b7794b", "#5a6d4d", "#4d6f75", "#2f3e46"]},
+    {label: "Neon", colors: ["#ff2d55", "#ff7a00", "#f7ff00", "#00e5ff", "#8a2be2"]}
 ];
+
+const DEFAULT_DOODLE_COLOR = COLOR_PALETTES[2].colors[0];
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const createId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 const sanitizeNormalizedPoints = (rawPoints) => {
     if(!Array.isArray(rawPoints)){
         return [];
@@ -44,28 +56,77 @@ const sanitizeNormalizedPoints = (rawPoints) => {
         return [];
     }
 
-    return numericPoints.length % 2 === 0
-        ? numericPoints
-        : numericPoints.slice(0, -1);
+    return numericPoints.length % 2 === 0 ? numericPoints : numericPoints.slice(0, -1);
 };
 
-const getStageHeight = (width, aspectRatio) => {
-    if(aspectRatio === "4:5"){
-        return Math.round(width * 1.25);
+const getStageHeight = (width, aspectRatio) => (aspectRatio === "4:5" ? Math.round(width * 1.25) : width);
+
+const getLegacyFontStyle = (fontStyle) => {
+    if(fontStyle === "mono"){
+        return "serif";
     }
-    return width;
+    return FONT_STYLE_MAP[fontStyle] ? fontStyle : "serif";
 };
 
 const getSnippetMetrics = (snippet, stageWidth) => {
     const sizeScale = Number.isFinite(snippet.sizeScale) ? snippet.sizeScale : 1;
-    const baseFontSize = snippet.fontStyle === "bold" ? 34 : snippet.fontStyle === "handwritten" ? 32 : 30;
+    const styleKey = FONT_STYLE_MAP[snippet.fontStyle] || "serif";
+    const baseFontSize = styleKey === "bold" ? 34 : styleKey === "handwritten" ? 32 : 30;
     const fontSize = clamp(baseFontSize * sizeScale, 18, 92);
     const estimatedWidth = Math.max(120, Math.min(stageWidth * 0.78, Math.round((snippet.text.length || 1) * fontSize * 0.58)));
     const charsPerLine = Math.max(8, Math.floor(estimatedWidth / (fontSize * 0.56)));
     const lineCount = Math.max(1, Math.ceil((snippet.text.length || 1) / charsPerLine));
     const height = Math.max(68, Math.round(lineCount * fontSize * 1.14 + 18));
-
     return {width: estimatedWidth, height, fontSize};
+};
+
+const constrainViewport = (candidate, stageWidth, stageHeight) => {
+    const scale = clamp(candidate?.scale || 1, MIN_VIEWPORT_SCALE, MAX_VIEWPORT_SCALE);
+    const scaledWidth = stageWidth * scale;
+    const scaledHeight = stageHeight * scale;
+    let minX = Math.min(0, stageWidth - scaledWidth);
+    let maxX = 0;
+    let minY = Math.min(0, stageHeight - scaledHeight);
+    let maxY = 0;
+
+    if(scaledWidth <= stageWidth){
+        const centeredX = (stageWidth - scaledWidth) / 2;
+        minX = centeredX;
+        maxX = centeredX;
+    }
+    if(scaledHeight <= stageHeight){
+        const centeredY = (stageHeight - scaledHeight) / 2;
+        minY = centeredY;
+        maxY = centeredY;
+    }
+
+    return {
+        scale,
+        x: clamp(candidate?.x || 0, minX, maxX),
+        y: clamp(candidate?.y || 0, minY, maxY)
+    };
+};
+
+const getTouchGeometry = (nativeEvent, stage) => {
+    const touches = nativeEvent?.touches;
+    if(!stage || !touches || touches.length < 2){
+        return null;
+    }
+
+    const bounds = stage.container()?.getBoundingClientRect();
+    if(!bounds){
+        return null;
+    }
+
+    const first = touches[0];
+    const second = touches[1];
+    const firstPoint = {x: first.clientX - bounds.left, y: first.clientY - bounds.top};
+    const secondPoint = {x: second.clientX - bounds.left, y: second.clientY - bounds.top};
+
+    return {
+        center: {x: (firstPoint.x + secondPoint.x) / 2, y: (firstPoint.y + secondPoint.y) / 2},
+        distance: Math.hypot(secondPoint.x - firstPoint.x, secondPoint.y - firstPoint.y)
+    };
 };
 
 const useLoadedImage = (src) => {
@@ -92,12 +153,25 @@ const useLoadedImage = (src) => {
     return image;
 };
 
-const CanvasImageNode = ({canvasImage, stageWidth, stageHeight, isSelected, onSelect, onDragEnd, canInteract}) => {
+const CanvasImageNode = ({
+    canvasImage,
+    stageWidth,
+    stageHeight,
+    isSelected,
+    isDragging,
+    onSelect,
+    onDragStart,
+    onDragEnd,
+    canInteract,
+    preventTouchDefault
+}) => {
     const loadedImage = useLoadedImage(canvasImage?.src);
     const objectWidth = clamp((canvasImage?.width || 0.3) * stageWidth, 56, stageWidth * 0.95);
     const objectHeight = clamp((canvasImage?.height || 0.3) * stageHeight, 56, stageHeight * 0.95);
     const x = clamp((canvasImage?.x || 0) * stageWidth, 0, Math.max(0, stageWidth - objectWidth));
     const y = clamp((canvasImage?.y || 0) * stageHeight, 0, Math.max(0, stageHeight - objectHeight));
+    const liftMultiplier = isDragging ? OBJECT_LIFT_MULTIPLIER + 0.02 : isSelected ? OBJECT_LIFT_MULTIPLIER : 1;
+    const baseScaleX = canvasImage?.scaleX === -1 ? -1 : 1;
 
     return (
         <>
@@ -109,12 +183,15 @@ const CanvasImageNode = ({canvasImage, stageWidth, stageHeight, isSelected, onSe
                 image={loadedImage}
                 draggable={canInteract}
                 rotation={canvasImage?.rotation || 0}
-                scaleX={canvasImage?.scaleX === -1 ? -1 : 1}
-                shadowColor="rgba(0,0,0,0.24)"
-                shadowBlur={8}
-                shadowOffsetY={3}
+                scaleX={baseScaleX * liftMultiplier}
+                scaleY={liftMultiplier}
+                shadowColor="rgba(0,0,0,0.3)"
+                shadowBlur={isSelected || isDragging ? 16 : 8}
+                shadowOffsetY={isSelected || isDragging ? 6 : 3}
+                preventDefault={preventTouchDefault}
                 onClick={canInteract ? onSelect : undefined}
                 onTap={canInteract ? onSelect : undefined}
+                onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
             />
             {isSelected && (
@@ -123,8 +200,8 @@ const CanvasImageNode = ({canvasImage, stageWidth, stageHeight, isSelected, onSe
                     y={y}
                     width={objectWidth}
                     height={objectHeight}
-                    stroke="#2f80ed"
-                    strokeWidth={1.6}
+                    stroke="#68d391"
+                    strokeWidth={1.7}
                     dash={[6, 4]}
                     rotation={canvasImage?.rotation || 0}
                     listening={false}
@@ -138,18 +215,22 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     const {session, user} = useAuth();
     const queryClient = useQueryClient();
     const shellRef = useRef(null);
+    const stageRef = useRef(null);
     const hasHydratedInitialDocRef = useRef(false);
     const snippetInputRef = useRef(null);
     const doodlePointsRef = useRef([]);
+    const viewportRef = useRef({scale: 1, x: 0, y: 0});
+    const pinchStateRef = useRef({isActive: false, lastDistance: 0, lastCenter: null});
     const [shellWidth, setShellWidth] = useState(CANVAS_MAX_WIDTH);
 
     const [activeTool, setActiveTool] = useState("select");
     const [isSnippetComposerOpen, setIsSnippetComposerOpen] = useState(false);
     const [snippetInput, setSnippetInput] = useState("");
-    const [selectedObject, setSelectedObject] = useState(null); // {kind: 'snippet'|'image', id}
+    const [selectedObject, setSelectedObject] = useState(null);
+    const [draggingObject, setDraggingObject] = useState(null);
     const [isSending, setIsSending] = useState(false);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
-    const [doodleColor, setDoodleColor] = useState("#5f92ff");
+    const [doodleColor, setDoodleColor] = useState(DEFAULT_DOODLE_COLOR);
     const [doodleSize, setDoodleSize] = useState(2.8);
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentDoodlePoints, setCurrentDoodlePoints] = useState([]);
@@ -162,104 +243,10 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     const [snippets, setSnippets] = useState([]);
     const [images, setImages] = useState([]);
     const [doodles, setDoodles] = useState([]);
-
-    useEffect(() => {
-        if(hasHydratedInitialDocRef.current || !initialCanvasDoc){
-            return;
-        }
-
-        const parsedDoc = parseCanvasDoc(initialCanvasDoc);
-        setCanvasMeta((prev) => ({
-            ...prev,
-            aspectRatio: parsedDoc?.meta?.aspectRatio === '4:5' ? '4:5' : '1:1',
-            gridEnabled: Boolean(parsedDoc?.meta?.gridEnabled),
-            theme: parsedDoc?.meta?.theme === 'dark' ? 'dark' : 'light'
-        }));
-        setSnippets((parsedDoc?.snippets || []).map((snippet) => ({
-            ...snippet,
-            id: snippet.id || createId('snippet'),
-            zIndex: Number.isFinite(snippet?.zIndex) ? snippet.zIndex : 0
-        })));
-        setImages((parsedDoc?.images || []).map((image) => ({
-            ...image,
-            id: image.id || createId('image'),
-            zIndex: Number.isFinite(image?.zIndex) ? image.zIndex : 0
-        })));
-        setDoodles((parsedDoc?.doodles || []).map((doodle) => ({
-            ...doodle,
-            id: doodle.id || createId('doodle'),
-            points: sanitizeNormalizedPoints(doodle.points)
-        })));
-        hasHydratedInitialDocRef.current = true;
-    }, [initialCanvasDoc]);
-
-    useEffect(() => {
-        const updateShellWidth = () => {
-            const nextWidth = shellRef.current?.clientWidth || CANVAS_MAX_WIDTH;
-            setShellWidth(nextWidth);
-        };
-
-        updateShellWidth();
-        window.addEventListener("resize", updateShellWidth);
-
-        let resizeObserver = null;
-        if(typeof ResizeObserver !== "undefined" && shellRef.current){
-            resizeObserver = new ResizeObserver(updateShellWidth);
-            resizeObserver.observe(shellRef.current);
-        }
-
-        return () => {
-            window.removeEventListener("resize", updateShellWidth);
-            if(resizeObserver){
-                resizeObserver.disconnect();
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        if(!isSnippetComposerOpen){
-            return;
-        }
-
-        const frame = window.requestAnimationFrame(() => {
-            snippetInputRef.current?.focus();
-        });
-
-        return () => window.cancelAnimationFrame(frame);
-    }, [isSnippetComposerOpen]);
-
-    useEffect(() => {
-        if(activeTool !== "doodle"){
-            doodlePointsRef.current = [];
-            setCurrentDoodlePoints([]);
-            setIsDrawing(false);
-        }
-    }, [activeTool]);
-
-    const stageWidth = useMemo(() => Math.max(280, Math.min(CANVAS_MAX_WIDTH, shellWidth - 24)), [shellWidth]);
-    const stageHeight = getStageHeight(stageWidth, canvasMeta.aspectRatio);
-
-    const getNextZIndex = () => {
-        const allZ = [
-            ...snippets.map((snippet) => snippet.zIndex || 0),
-            ...images.map((image) => image.zIndex || 0)
-        ];
-        return allZ.length ? Math.max(...allZ) + 1 : 0;
-    };
-
-    const sortedObjects = useMemo(() => {
-        const snippetObjects = snippets.map((snippet) => ({kind: "snippet", payload: snippet}));
-        const imageObjects = images.map((image) => ({kind: "image", payload: image}));
-        return [...snippetObjects, ...imageObjects].sort((a, b) => (a.payload?.zIndex || 0) - (b.payload?.zIndex || 0));
-    }, [snippets, images]);
-
-    const selectedSnippet = selectedObject?.kind === "snippet"
-        ? snippets.find((snippet) => snippet.id === selectedObject.id) || null
-        : null;
-    const selectedImage = selectedObject?.kind === "image"
-        ? images.find((image) => image.id === selectedObject.id) || null
-        : null;
-    const canEditObjects = activeTool === "select";
+    const [viewport, setViewport] = useState({scale: 1, x: 0, y: 0});
+    const [isMobileViewport, setIsMobileViewport] = useState(false);
+    const [isMobileDockOpen, setIsMobileDockOpen] = useState(false);
+    const [isDoodleDockMinimized, setIsDoodleDockMinimized] = useState(false);
 
     const updateSnippet = (snippetId, updater) => {
         setSnippets((prev) => prev.map((snippet) => {
@@ -280,6 +267,179 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             return {...image, ...nextValue};
         }));
     };
+
+    useEffect(() => {
+        if(hasHydratedInitialDocRef.current || !initialCanvasDoc){
+            return;
+        }
+
+        const parsedDoc = parseCanvasDoc(initialCanvasDoc);
+        setCanvasMeta((prev) => ({
+            ...prev,
+            aspectRatio: parsedDoc?.meta?.aspectRatio === "4:5" ? "4:5" : "1:1",
+            gridEnabled: Boolean(parsedDoc?.meta?.gridEnabled),
+            theme: parsedDoc?.meta?.theme === "dark" ? "dark" : "light"
+        }));
+        setSnippets((parsedDoc?.snippets || []).map((snippet) => ({
+            ...snippet,
+            id: snippet.id || createId("snippet"),
+            fontStyle: getLegacyFontStyle(snippet.fontStyle),
+            zIndex: Number.isFinite(snippet?.zIndex) ? snippet.zIndex : 0
+        })));
+        setImages((parsedDoc?.images || []).map((image) => ({
+            ...image,
+            id: image.id || createId("image"),
+            zIndex: Number.isFinite(image?.zIndex) ? image.zIndex : 0
+        })));
+        setDoodles((parsedDoc?.doodles || []).map((doodle) => ({
+            ...doodle,
+            id: doodle.id || createId("doodle"),
+            points: sanitizeNormalizedPoints(doodle.points)
+        })));
+        hasHydratedInitialDocRef.current = true;
+    }, [initialCanvasDoc]);
+
+    useEffect(() => {
+        const getContentWidth = () => {
+            const element = shellRef.current;
+            if(!element){
+                return CANVAS_MAX_WIDTH;
+            }
+            const computedStyle = getComputedStyle(element);
+            const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+            const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
+            return Math.max(0, element.clientWidth - paddingLeft - paddingRight);
+        };
+
+        const updateShellWidth = () => {
+            setShellWidth(getContentWidth());
+        };
+
+        updateShellWidth();
+        window.addEventListener("resize", updateShellWidth);
+
+        let resizeObserver = null;
+        if(typeof ResizeObserver !== "undefined" && shellRef.current){
+            resizeObserver = new ResizeObserver(updateShellWidth);
+            resizeObserver.observe(shellRef.current);
+        }
+
+        return () => {
+            window.removeEventListener("resize", updateShellWidth);
+            if(resizeObserver){
+                resizeObserver.disconnect();
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+        const syncViewport = () => setIsMobileViewport(mediaQuery.matches);
+        syncViewport();
+
+        if(typeof mediaQuery.addEventListener === "function"){
+            mediaQuery.addEventListener("change", syncViewport);
+            return () => mediaQuery.removeEventListener("change", syncViewport);
+        }
+
+        mediaQuery.addListener(syncViewport);
+        return () => mediaQuery.removeListener(syncViewport);
+    }, []);
+
+    useEffect(() => {
+        if(isMobileViewport){
+            setIsMobileDockOpen(false);
+            return;
+        }
+        setIsMobileDockOpen(true);
+    }, [isMobileViewport]);
+
+    useEffect(() => {
+        if(!isSnippetComposerOpen){
+            return;
+        }
+        const frame = window.requestAnimationFrame(() => snippetInputRef.current?.focus());
+        return () => window.cancelAnimationFrame(frame);
+    }, [isSnippetComposerOpen]);
+
+    useEffect(() => {
+        if(activeTool !== "doodle"){
+            doodlePointsRef.current = [];
+            setCurrentDoodlePoints([]);
+            setIsDrawing(false);
+            setIsDoodleDockMinimized(false);
+        }
+    }, [activeTool]);
+
+    const viewportWidth = useMemo(() => Math.max(280, Math.min(CANVAS_MAX_WIDTH, shellWidth)), [shellWidth]);
+    const viewportHeight = getStageHeight(viewportWidth, canvasMeta.aspectRatio);
+    const stageWidth = CANVAS_MAX_WIDTH;
+    const stageHeight = getStageHeight(stageWidth, canvasMeta.aspectRatio);
+    const fitScale = viewportWidth > 0 ? viewportWidth / stageWidth : 1;
+    const fitOffsetX = (viewportWidth - stageWidth * fitScale) / 2;
+    const fitOffsetY = (viewportHeight - stageHeight * fitScale) / 2;
+
+    const updateViewport = (updater) => {
+        setViewport((prev) => {
+            const nextValue = typeof updater === "function" ? updater(prev) : updater;
+            const constrained = constrainViewport(nextValue, viewportWidth, viewportHeight);
+            viewportRef.current = constrained;
+            return constrained;
+        });
+    };
+
+    useEffect(() => {
+        viewportRef.current = viewport;
+    }, [viewport]);
+
+    useEffect(() => {
+        setViewport((prev) => constrainViewport(prev, viewportWidth, viewportHeight));
+    }, [viewportWidth, viewportHeight]);
+
+    useEffect(() => {
+        const safePixelRatio = clamp(window.devicePixelRatio || 1, 1, 2.5);
+        const stage = stageRef.current;
+        if(!stage){
+            return;
+        }
+
+        const previousRatio = Konva.pixelRatio;
+        Konva.pixelRatio = safePixelRatio;
+        stage.getLayers().forEach((layer) => {
+            const canvas = layer?.getCanvas?.();
+            if(canvas?.setPixelRatio){
+                canvas.setPixelRatio(safePixelRatio);
+            }
+        });
+        stage.batchDraw();
+        return () => {
+            Konva.pixelRatio = previousRatio;
+        };
+    }, [viewportWidth, viewportHeight]);
+
+    const getNextZIndex = () => {
+        const allZ = [
+            ...snippets.map((snippet) => snippet.zIndex || 0),
+            ...images.map((image) => image.zIndex || 0)
+        ];
+        return allZ.length ? Math.max(...allZ) + 1 : 0;
+    };
+
+    const sortedObjects = useMemo(() => {
+        const snippetObjects = snippets.map((snippet) => ({kind: "snippet", payload: snippet}));
+        const imageObjects = images.map((image) => ({kind: "image", payload: image}));
+        return [...snippetObjects, ...imageObjects].sort((a, b) => (a.payload?.zIndex || 0) - (b.payload?.zIndex || 0));
+    }, [snippets, images]);
+
+    const selectedSnippet = selectedObject?.kind === "snippet"
+        ? snippets.find((snippet) => snippet.id === selectedObject.id) || null
+        : null;
+    const canEditObjects = activeTool === "select";
+    const isDockVisible = !isMobileViewport || isMobileDockOpen;
+    const isDoodleMode = activeTool === "doodle";
+    const shouldPreventTouchDefault = isDoodleMode;
+    const showMinimizedDoodleDock = isDockVisible && isDoodleMode && isDoodleDockMinimized;
+    const hasCanvasContent = snippets.length > 0 || images.length > 0 || doodles.length > 0;
 
     const addSnippet = () => {
         const trimmed = snippetInput.trim();
@@ -342,7 +502,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                     return;
                 }
 
-                const filePath = imageSrc.split('/journal-images/').pop();
+                const filePath = imageSrc.split("/journal-images/").pop();
                 if(filePath && addUploadedImagePath){
                     addUploadedImagePath(filePath);
                 }
@@ -361,7 +521,6 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                     scaleX: 1,
                     zIndex: getNextZIndex()
                 };
-
                 setImages((prev) => [...prev, imageObject]);
                 setSelectedObject({kind: "image", id: imageObject.id});
                 setActiveTool("select");
@@ -419,7 +578,6 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         if(!selectedObject){
             return;
         }
-
         const resizeFactor = direction === "up" ? 1.1 : 0.9;
         if(selectedObject.kind === "snippet"){
             updateSnippet(selectedObject.id, (snippet) => ({
@@ -455,25 +613,145 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         }
     };
 
-    const getNormalizedPointer = (stage) => {
+    const getPointerInCanvasSpace = (stage) => {
         const pointer = stage?.getPointerPosition();
         if(!pointer){
             return null;
         }
-
+        const activeViewport = viewportRef.current;
+        const totalScale = fitScale * activeViewport.scale;
+        const totalX = fitOffsetX + activeViewport.x;
+        const totalY = fitOffsetY + activeViewport.y;
         return {
-            x: clamp(pointer.x / stageWidth, 0, 1),
-            y: clamp(pointer.y / stageHeight, 0, 1)
+            x: clamp((pointer.x - totalX) / totalScale, 0, stageWidth),
+            y: clamp((pointer.y - totalY) / totalScale, 0, stageHeight)
         };
     };
 
+    const getNormalizedPointer = (stage) => {
+        const worldPointer = getPointerInCanvasSpace(stage);
+        if(!worldPointer){
+            return null;
+        }
+        return {
+            x: stageWidth > 0 ? worldPointer.x / stageWidth : 0,
+            y: stageHeight > 0 ? worldPointer.y / stageHeight : 0
+        };
+    };
+
+    const cancelDrawingSession = () => {
+        doodlePointsRef.current = [];
+        setCurrentDoodlePoints([]);
+        setIsDrawing(false);
+    };
+
+    const maybeBeginPinchGesture = (event) => {
+        const nativeEvent = event?.evt;
+        const stage = event?.target?.getStage?.();
+        const gesture = getTouchGeometry(nativeEvent, stage);
+        if(!gesture || gesture.distance < 6){
+            return false;
+        }
+        if(nativeEvent?.cancelable){
+            nativeEvent.preventDefault();
+        }
+        pinchStateRef.current = {
+            isActive: true,
+            lastDistance: gesture.distance,
+            lastCenter: gesture.center
+        };
+        cancelDrawingSession();
+        return true;
+    };
+
+    const maybeHandlePinchMove = (event) => {
+        const nativeEvent = event?.evt;
+        const stage = event?.target?.getStage?.();
+        const gesture = getTouchGeometry(nativeEvent, stage);
+        if(!gesture){
+            return false;
+        }
+        if(nativeEvent?.cancelable){
+            nativeEvent.preventDefault();
+        }
+
+        const pinchState = pinchStateRef.current;
+        if(!pinchState.isActive){
+            pinchStateRef.current = {
+                isActive: true,
+                lastDistance: gesture.distance,
+                lastCenter: gesture.center
+            };
+            return true;
+        }
+
+        const lastDistance = pinchState.lastDistance || gesture.distance;
+        const distanceRatio = gesture.distance / Math.max(lastDistance, 1);
+        const currentViewport = viewportRef.current;
+        const nextScale = clamp(currentViewport.scale * distanceRatio, MIN_VIEWPORT_SCALE, MAX_VIEWPORT_SCALE);
+        const anchorCenter = pinchState.lastCenter || gesture.center;
+        const currentTotalScale = fitScale * currentViewport.scale;
+        const currentTotalX = fitOffsetX + currentViewport.x;
+        const currentTotalY = fitOffsetY + currentViewport.y;
+        const nextTotalScale = fitScale * nextScale;
+        const worldPoint = {
+            x: (anchorCenter.x - currentTotalX) / currentTotalScale,
+            y: (anchorCenter.y - currentTotalY) / currentTotalScale
+        };
+        updateViewport({
+            scale: nextScale,
+            x: gesture.center.x - worldPoint.x * nextTotalScale - fitOffsetX,
+            y: gesture.center.y - worldPoint.y * nextTotalScale - fitOffsetY
+        });
+        pinchStateRef.current = {
+            isActive: true,
+            lastDistance: gesture.distance,
+            lastCenter: gesture.center
+        };
+        return true;
+    };
+
+    const maybeCompletePinchGesture = (event) => {
+        if(!pinchStateRef.current.isActive){
+            return false;
+        }
+        const activeTouches = event?.evt?.touches?.length || 0;
+        if(activeTouches >= 2){
+            return true;
+        }
+        pinchStateRef.current = {isActive: false, lastDistance: 0, lastCenter: null};
+        cancelDrawingSession();
+        return true;
+    };
+
+    const animateDropNode = (node, targetScaleX, targetScaleY = 1, isSelected = false) => {
+        if(!node){
+            return;
+        }
+        node.to({
+            duration: 0.36,
+            easing: Konva.Easings.ElasticEaseOut,
+            scaleX: targetScaleX,
+            scaleY: targetScaleY,
+            shadowBlur: isSelected ? 16 : 8,
+            shadowOffsetY: isSelected ? 6 : 3
+        });
+    };
+
     const handleCanvasPointerDown = (event) => {
+        if(isMobileViewport && isMobileDockOpen){
+            setIsMobileDockOpen(false);
+        }
+        if(maybeBeginPinchGesture(event)){
+            return;
+        }
+
         const nativeEvent = event?.evt;
         if(activeTool === "doodle" && nativeEvent?.cancelable){
             nativeEvent.preventDefault();
         }
 
-        const stage = event.target.getStage();
+        const stage = event?.target?.getStage?.();
         if(!stage){
             return;
         }
@@ -483,7 +761,6 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             if(!pointer){
                 return;
             }
-
             setSelectedObject(null);
             const initialPoints = [pointer.x, pointer.y];
             doodlePointsRef.current = initialPoints;
@@ -498,16 +775,19 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     };
 
     const handleCanvasPointerMove = (event) => {
+        if(maybeHandlePinchMove(event)){
+            return;
+        }
+
         const nativeEvent = event?.evt;
         if(activeTool === "doodle" && nativeEvent?.cancelable){
             nativeEvent.preventDefault();
         }
-
         if(activeTool !== "doodle" || !isDrawing){
             return;
         }
 
-        const stage = event.target.getStage();
+        const stage = event?.target?.getStage?.();
         const pointer = getNormalizedPointer(stage);
         if(!pointer){
             return;
@@ -518,7 +798,10 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         setCurrentDoodlePoints(nextPoints);
     };
 
-    const handleCanvasPointerUp = () => {
+    const handleCanvasPointerUp = (event) => {
+        if(maybeCompletePinchGesture(event)){
+            return;
+        }
         if(activeTool !== "doodle"){
             return;
         }
@@ -527,35 +810,46 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         if(points.length >= 4){
             setDoodles((prev) => [...prev, {
                 id: createId("doodle"),
-                points: points,
+                points,
                 color: doodleColor,
                 size: doodleSize
             }]);
         }
-
-        doodlePointsRef.current = [];
-        setCurrentDoodlePoints([]);
-        setIsDrawing(false);
+        cancelDrawingSession();
     };
 
-    const undoLastDoodle = () => {
-        setDoodles((prev) => prev.slice(0, -1));
-    };
-
+    const undoLastDoodle = () => setDoodles((prev) => prev.slice(0, -1));
     const clearDoodles = () => {
         setDoodles([]);
-        doodlePointsRef.current = [];
-        setCurrentDoodlePoints([]);
-        setIsDrawing(false);
+        cancelDrawingSession();
     };
 
-    const handleDragEndSnippet = (snippet, evt) => {
+    const handleDragStartSnippet = (snippet, event) => {
+        if(!canEditObjects){
+            return;
+        }
+        setDraggingObject({kind: "snippet", id: snippet.id});
+        setSelectedObject({kind: "snippet", id: snippet.id});
+        setIsSnippetComposerOpen(false);
+        event.target.moveToTop();
+    };
+
+    const handleDragStartImage = (image, event) => {
+        if(!canEditObjects){
+            return;
+        }
+        setDraggingObject({kind: "image", id: image.id});
+        setSelectedObject({kind: "image", id: image.id});
+        setIsSnippetComposerOpen(false);
+        event.target.moveToTop();
+    };
+
+    const handleDragEndSnippet = (snippet, event) => {
         const metrics = getSnippetMetrics(snippet, stageWidth);
         const maxX = Math.max(0, stageWidth - metrics.width);
         const maxY = Math.max(0, stageHeight - metrics.height);
-
-        let nextX = clamp(evt.target.x(), 0, maxX);
-        let nextY = clamp(evt.target.y(), 0, maxY);
+        let nextX = clamp(event.target.x(), 0, maxX);
+        let nextY = clamp(event.target.y(), 0, maxY);
 
         if(canvasMeta.snapEnabled){
             nextX = clamp(Math.round(nextX / GRID_SIZE) * GRID_SIZE, 0, maxX);
@@ -566,16 +860,19 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             x: stageWidth > 0 ? nextX / stageWidth : 0,
             y: stageHeight > 0 ? nextY / stageHeight : 0
         });
+
+        setDraggingObject(null);
+        const baseScaleX = snippet.scaleX === -1 ? -1 : 1;
+        animateDropNode(event.target, baseScaleX * OBJECT_LIFT_MULTIPLIER, OBJECT_LIFT_MULTIPLIER, true);
     };
 
-    const handleDragEndImage = (image, evt) => {
+    const handleDragEndImage = (image, event) => {
         const objectWidth = clamp((image?.width || 0.3) * stageWidth, 56, stageWidth * 0.95);
         const objectHeight = clamp((image?.height || 0.3) * stageHeight, 56, stageHeight * 0.95);
         const maxX = Math.max(0, stageWidth - objectWidth);
         const maxY = Math.max(0, stageHeight - objectHeight);
-
-        let nextX = clamp(evt.target.x(), 0, maxX);
-        let nextY = clamp(evt.target.y(), 0, maxY);
+        let nextX = clamp(event.target.x(), 0, maxX);
+        let nextY = clamp(event.target.y(), 0, maxY);
 
         if(canvasMeta.snapEnabled){
             nextX = clamp(Math.round(nextX / GRID_SIZE) * GRID_SIZE, 0, maxX);
@@ -586,10 +883,37 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             x: stageWidth > 0 ? nextX / stageWidth : 0,
             y: stageHeight > 0 ? nextY / stageHeight : 0
         });
+
+        setDraggingObject(null);
+        const baseScaleX = image.scaleX === -1 ? -1 : 1;
+        animateDropNode(event.target, baseScaleX * OBJECT_LIFT_MULTIPLIER, OBJECT_LIFT_MULTIPLIER, true);
     };
 
+    const zoomByStep = (direction) => {
+        const currentViewport = viewportRef.current;
+        const step = direction === "in" ? 0.14 : -0.14;
+        const nextScale = clamp(currentViewport.scale + step, MIN_VIEWPORT_SCALE, MAX_VIEWPORT_SCALE);
+        const center = {x: viewportWidth / 2, y: viewportHeight / 2};
+        const currentTotalScale = fitScale * currentViewport.scale;
+        const currentTotalX = fitOffsetX + currentViewport.x;
+        const currentTotalY = fitOffsetY + currentViewport.y;
+        const nextTotalScale = fitScale * nextScale;
+        const worldPoint = {
+            x: (center.x - currentTotalX) / currentTotalScale,
+            y: (center.y - currentTotalY) / currentTotalScale
+        };
+
+        updateViewport({
+            scale: nextScale,
+            x: center.x - worldPoint.x * nextTotalScale - fitOffsetX,
+            y: center.y - worldPoint.y * nextTotalScale - fitOffsetY
+        });
+    };
+
+    const resetViewport = () => updateViewport({scale: 1, x: 0, y: 0});
+
     const saveCanvas = async() => {
-        if(!title || (snippets.length === 0 && images.length === 0 && doodles.length === 0)){
+        if(!title || !hasCanvasContent){
             return;
         }
 
@@ -606,7 +930,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 x: Number(snippet.x.toFixed(5)),
                 y: Number(snippet.y.toFixed(5)),
                 rotation: Number((snippet.rotation || 0).toFixed(2)),
-                fontStyle: snippet.fontStyle,
+                fontStyle: snippet.fontStyle === "serifDisplay" ? "serif" : snippet.fontStyle,
                 scaleX: snippet.scaleX === -1 ? -1 : 1,
                 sizeScale: Number((snippet.sizeScale || 1).toFixed(3)),
                 zIndex: snippet.zIndex || 0
@@ -625,7 +949,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             doodles: doodles.map((doodle) => ({
                 id: doodle.id,
                 points: sanitizeNormalizedPoints(doodle.points).map((point) => Number(point.toFixed(5))),
-                color: doodle.color || "#5f92ff",
+                color: doodle.color || DEFAULT_DOODLE_COLOR,
                 size: Number((doodle.size || 2.8).toFixed(3))
             }))
         };
@@ -653,332 +977,444 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         }
     };
 
+    const openSnippetComposer = () => {
+        setActiveTool("select");
+        setIsSnippetComposerOpen((prev) => !prev);
+        setSelectedObject(null);
+    };
+
+    const layerTransform = {
+        x: fitOffsetX + viewport.x,
+        y: fitOffsetY + viewport.y,
+        scaleX: fitScale * viewport.scale,
+        scaleY: fitScale * viewport.scale
+    };
+
     return (
-        <div className="canvas-editor-root">
+        <div className={styles.editorRoot}>
             {remixSource?.journalId && (
-                <div className="canvas-remix-banner">
-                    Remixing {remixSource?.authorName ? `${remixSource.authorName}'s` : 'a'} canvas
-                </div>
-            )}
-            <div className="canvas-editor-controls">
-                <button
-                    type="button"
-                    className={`canvas-control-btn ${isSnippetComposerOpen ? "is-active" : ""}`}
-                    onClick={() => {
-                        setActiveTool("select");
-                        setIsSnippetComposerOpen((prev) => !prev);
-                    }}
-                >
-                    Add Text
-                </button>
-                <button
-                    type="button"
-                    className={`canvas-control-btn ${isUploadingImage ? "is-active" : ""}`}
-                    onClick={addImageFromFile}
-                    disabled={isUploadingImage}
-                >
-                    {isUploadingImage ? "Uploading..." : "Add Image"}
-                </button>
-                <button
-                    type="button"
-                    className={`canvas-tool-btn ${activeTool === "select" ? "is-active" : ""}`}
-                    onClick={() => setActiveTool("select")}
-                >
-                    Select
-                </button>
-                <button
-                    type="button"
-                    className={`canvas-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`}
-                    onClick={() => {
-                        setIsSnippetComposerOpen(false);
-                        setActiveTool("doodle");
-                    }}
-                >
-                    Doodle
-                </button>
-                {activeTool === "doodle" && (
-                    <div className="canvas-tool-controls">
-                        <div className="canvas-color-swatches">
-                            {DOODLE_COLOR_PRESETS.map((color) => (
-                                <button
-                                    key={color}
-                                    type="button"
-                                    className={`canvas-color-swatch ${doodleColor.toLowerCase() === color.toLowerCase() ? "is-active" : ""}`}
-                                    onClick={() => setDoodleColor(color)}
-                                    title={`Use ${color} doodle color`}
-                                    aria-label={`Select doodle color ${color}`}
-                                    style={{backgroundColor: color}}
-                                />
-                            ))}
-                        </div>
-                        <input
-                            type="color"
-                            value={doodleColor}
-                            onChange={(event) => setDoodleColor(event.target.value)}
-                            className="canvas-color-input"
-                            title="Doodle color"
-                        />
-                        <input
-                            type="range"
-                            min={1}
-                            max={10}
-                            step={0.2}
-                            value={doodleSize}
-                            onChange={(event) => setDoodleSize(Number(event.target.value))}
-                            className="canvas-size-range"
-                        />
-                        <button type="button" className="canvas-control-btn" onClick={undoLastDoodle} disabled={doodles.length === 0}>
-                            Undo Doodle
-                        </button>
-                        <button type="button" className="canvas-control-btn" onClick={clearDoodles} disabled={doodles.length === 0 && !isDrawing}>
-                            Clear Doodles
-                        </button>
-                        <span className="canvas-tool-hint">Drag on canvas</span>
-                    </div>
-                )}
-                <select
-                    value={canvasMeta.aspectRatio}
-                    onChange={(event) => setCanvasMeta((prev) => ({...prev, aspectRatio: event.target.value === "4:5" ? "4:5" : "1:1"}))}
-                    className="canvas-select"
-                >
-                    <option value="1:1">1:1</option>
-                    <option value="4:5">4:5</option>
-                </select>
-                <button
-                    type="button"
-                    className={`canvas-control-btn ${canvasMeta.gridEnabled ? "is-active" : ""}`}
-                    onClick={() => setCanvasMeta((prev) => ({...prev, gridEnabled: !prev.gridEnabled}))}
-                >
-                    Grid
-                </button>
-                <button
-                    type="button"
-                    className={`canvas-control-btn ${canvasMeta.snapEnabled ? "is-active" : ""}`}
-                    onClick={() => setCanvasMeta((prev) => ({...prev, snapEnabled: !prev.snapEnabled}))}
-                >
-                    Snap
-                </button>
-                <button
-                    type="button"
-                    className={`canvas-control-btn ${canvasMeta.theme === "dark" ? "is-active" : ""}`}
-                    onClick={() => setCanvasMeta((prev) => ({...prev, theme: prev.theme === "dark" ? "light" : "dark"}))}
-                >
-                    {canvasMeta.theme === "dark" ? "Dark" : "Light"}
-                </button>
-            </div>
-
-            {isSnippetComposerOpen && (
-                <div className="canvas-snippet-popover">
-                    <input
-                        ref={snippetInputRef}
-                        value={snippetInput}
-                        onChange={(event) => setSnippetInput(event.target.value)}
-                        onKeyDown={(event) => {
-                            if(event.key === "Enter"){
-                                event.preventDefault();
-                                addSnippet();
-                            }
-                            if(event.key === "Escape"){
-                                setIsSnippetComposerOpen(false);
-                            }
-                        }}
-                        className="canvas-snippet-input"
-                        placeholder="Type text to place on canvas..."
-                        maxLength={220}
-                    />
-                    <div className="canvas-snippet-actions">
-                        <button type="button" className="canvas-control-btn" onClick={addSnippet} disabled={!snippetInput.trim()}>
-                            Add
-                        </button>
-                        <button type="button" className="canvas-control-btn" onClick={() => setIsSnippetComposerOpen(false)}>
-                            Cancel
-                        </button>
-                    </div>
+                <div className={styles.remixBanner}>
+                    Remixing {remixSource?.authorName ? `${remixSource.authorName}'s` : "a"} canvas
                 </div>
             )}
 
-            {activeTool === "select" && selectedObject && (
-                <div className="canvas-editor-selection-bar">
-                    {selectedSnippet && Object.entries(FONT_BRUSHES).map(([styleKey, styleValue]) => (
-                        <button
-                            key={styleKey}
-                            type="button"
-                            className={`canvas-brush-btn ${selectedSnippet.fontStyle === styleKey ? "is-active" : ""}`}
-                            onClick={() => updateSnippet(selectedSnippet.id, {fontStyle: styleKey})}
-                        >
-                            {styleValue.label}
-                        </button>
-                    ))}
-                    <button type="button" className="canvas-control-btn" onClick={() => resizeSelectedObject("down")}>
-                        Resize -
-                    </button>
-                    <button type="button" className="canvas-control-btn" onClick={() => resizeSelectedObject("up")}>
-                        Resize +
-                    </button>
-                    <button type="button" className="canvas-control-btn" onClick={() => rotateSelectedObject(-8)}>
-                        Rotate -
-                    </button>
-                    <button type="button" className="canvas-control-btn" onClick={() => rotateSelectedObject(8)}>
-                        Rotate +
-                    </button>
-                    <button type="button" className="canvas-control-btn" onClick={flipSelectedObject}>
-                        Flip
-                    </button>
-                    <button type="button" className="canvas-control-btn" onClick={bringToFront}>
-                        Front
-                    </button>
-                    <button type="button" className="canvas-control-btn" onClick={sendToBack}>
-                        Back
-                    </button>
-                    <button type="button" className="canvas-control-btn" onClick={removeSelectedObject}>
-                        Remove
-                    </button>
-                </div>
-            )}
-
-            <div ref={shellRef} className={`canvas-stage-shell ${canvasMeta.theme === "dark" ? "is-dark" : ""} ${activeTool === "doodle" ? "is-doodle-active" : ""}`}>
-                <Stage
-                    width={stageWidth}
-                    height={stageHeight}
-                    onMouseDown={handleCanvasPointerDown}
-                    onTouchStart={handleCanvasPointerDown}
-                    onMouseMove={handleCanvasPointerMove}
-                    onTouchMove={handleCanvasPointerMove}
-                    onMouseUp={handleCanvasPointerUp}
-                    onTouchEnd={handleCanvasPointerUp}
-                    onMouseLeave={handleCanvasPointerUp}
-                >
-                    {canvasMeta.gridEnabled && (
-                        <Layer listening={false}>
-                            {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
-                                <Rect
-                                    key={`grid-v-${index}`}
-                                    x={index * GRID_SIZE}
-                                    y={0}
-                                    width={1}
-                                    height={stageHeight}
-                                    fill={canvasMeta.theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}
-                                />
-                            ))}
-                            {Array.from({length: Math.floor(stageHeight / GRID_SIZE) + 1}).map((_, index) => (
-                                <Rect
-                                    key={`grid-h-${index}`}
-                                    x={0}
-                                    y={index * GRID_SIZE}
-                                    width={stageWidth}
-                                    height={1}
-                                    fill={canvasMeta.theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}
-                                />
-                            ))}
-                        </Layer>
-                    )}
-
-                    <Layer listening={false}>
-                        {doodles.map((doodle) => (
-                            <Line
-                                key={doodle.id}
-                                points={(doodle.points || []).map((point, index) => (
-                                    index % 2 === 0 ? point * stageWidth : point * stageHeight
+            <div
+                ref={shellRef}
+                className={`${styles.stageShell} ${canvasMeta.theme === "dark" ? styles.isDark : ""} ${activeTool === "doodle" ? styles.isDoodleActive : ""}`}
+            >
+                <div className={styles.stageFrame}>
+                    <Stage
+                        ref={stageRef}
+                        width={viewportWidth}
+                        height={viewportHeight}
+                        preventDefault={activeTool === "doodle"}
+                        style={{touchAction: activeTool === "doodle" ? "none" : "pan-y"}}
+                        onMouseDown={handleCanvasPointerDown}
+                        onTouchStart={handleCanvasPointerDown}
+                        onMouseMove={handleCanvasPointerMove}
+                        onTouchMove={handleCanvasPointerMove}
+                        onMouseUp={handleCanvasPointerUp}
+                        onTouchEnd={handleCanvasPointerUp}
+                        onTouchCancel={handleCanvasPointerUp}
+                        onMouseLeave={handleCanvasPointerUp}
+                        className={`${styles.stage} ${styles.stageEditor}`}
+                    >
+                        {canvasMeta.gridEnabled && (
+                            <Layer listening={false} {...layerTransform}>
+                                {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
+                                    <Rect
+                                        key={`grid-v-${index}`}
+                                        x={index * GRID_SIZE}
+                                        y={0}
+                                        width={1}
+                                        height={stageHeight}
+                                        fill={canvasMeta.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
+                                    />
                                 ))}
-                                stroke={doodle.color || "#5f92ff"}
-                                strokeWidth={Number(doodle.size) || 2.8}
-                                lineCap="round"
-                                lineJoin="round"
-                                tension={0.1}
-                            />
-                        ))}
-                        {isDrawing && currentDoodlePoints.length >= 2 && (
-                            <Line
-                                points={currentDoodlePoints.map((point, index) => (
-                                    index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                {Array.from({length: Math.floor(stageHeight / GRID_SIZE) + 1}).map((_, index) => (
+                                    <Rect
+                                        key={`grid-h-${index}`}
+                                        x={0}
+                                        y={index * GRID_SIZE}
+                                        width={stageWidth}
+                                        height={1}
+                                        fill={canvasMeta.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
+                                    />
                                 ))}
-                                stroke={doodleColor}
-                                strokeWidth={doodleSize}
-                                lineCap="round"
-                                lineJoin="round"
-                                tension={0.1}
-                            />
+                            </Layer>
                         )}
-                    </Layer>
 
-                    <Layer>
-                        {sortedObjects.map((object) => {
-                            if(object.kind === "snippet"){
-                                const snippet = object.payload;
-                                const metrics = getSnippetMetrics(snippet, stageWidth);
-                                const brush = FONT_BRUSHES[snippet.fontStyle] || FONT_BRUSHES.serif;
-                                const snippetX = clamp(snippet.x * stageWidth, 0, Math.max(0, stageWidth - metrics.width));
-                                const snippetY = clamp(snippet.y * stageHeight, 0, Math.max(0, stageHeight - metrics.height));
-                                const isSelected = selectedObject?.kind === "snippet" && selectedObject?.id === snippet.id;
+                        <Layer listening={false} {...layerTransform}>
+                            {doodles.map((doodle) => (
+                                <Line
+                                    key={doodle.id}
+                                    points={(doodle.points || []).map((point, index) => (
+                                        index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                    ))}
+                                    stroke={doodle.color || DEFAULT_DOODLE_COLOR}
+                                    strokeWidth={Number(doodle.size) || 2.8}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                    tension={0.1}
+                                />
+                            ))}
+                            {isDrawing && currentDoodlePoints.length >= 2 && (
+                                <Line
+                                    points={currentDoodlePoints.map((point, index) => (
+                                        index % 2 === 0 ? point * stageWidth : point * stageHeight
+                                    ))}
+                                    stroke={doodleColor}
+                                    strokeWidth={doodleSize}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                    tension={0.1}
+                                />
+                            )}
+                        </Layer>
 
+                        <Layer {...layerTransform}>
+                            {sortedObjects.map((object) => {
+                                if(object.kind === "snippet"){
+                                    const snippet = object.payload;
+                                    const metrics = getSnippetMetrics(snippet, stageWidth);
+                                    const styleKey = FONT_STYLE_MAP[snippet.fontStyle] || "serif";
+                                    const brush = FONT_BRUSHES[styleKey] || FONT_BRUSHES.serif;
+                                    const snippetX = clamp(snippet.x * stageWidth, 0, Math.max(0, stageWidth - metrics.width));
+                                    const snippetY = clamp(snippet.y * stageHeight, 0, Math.max(0, stageHeight - metrics.height));
+                                    const isSelected = selectedObject?.kind === "snippet" && selectedObject?.id === snippet.id;
+                                    const isDragging = draggingObject?.kind === "snippet" && draggingObject?.id === snippet.id;
+                                    const liftMultiplier = isDragging ? OBJECT_LIFT_MULTIPLIER + 0.02 : isSelected ? OBJECT_LIFT_MULTIPLIER : 1;
+                                    const baseScaleX = snippet.scaleX === -1 ? -1 : 1;
+
+                                    return (
+                                        <Text
+                                            key={snippet.id}
+                                            x={snippetX}
+                                            y={snippetY}
+                                            width={metrics.width}
+                                            height={metrics.height}
+                                            text={snippet.text}
+                                            fontFamily={brush.fontFamily}
+                                            fontStyle={brush.fontStyle}
+                                            fontSize={metrics.fontSize}
+                                            fill={canvasMeta.theme === "dark" ? "#f8f7f1" : "#151513"}
+                                            align="center"
+                                            verticalAlign="middle"
+                                            padding={8}
+                                            wrap="word"
+                                            draggable={canEditObjects}
+                                            rotation={snippet.rotation || 0}
+                                            scaleX={baseScaleX * liftMultiplier}
+                                            scaleY={liftMultiplier}
+                                            stroke={isSelected ? "#68d391" : "transparent"}
+                                            strokeWidth={isSelected ? 1.2 : 0}
+                                            preventDefault={shouldPreventTouchDefault}
+                                            shadowColor={canvasMeta.theme === "dark" ? "rgba(0,0,0,0.58)" : "rgba(0,0,0,0.22)"}
+                                            shadowBlur={isSelected || isDragging ? 16 : 6}
+                                            shadowOffsetY={isSelected || isDragging ? 6 : 2}
+                                            onClick={canEditObjects ? (() => {
+                                                setSelectedObject({kind: "snippet", id: snippet.id});
+                                                setIsSnippetComposerOpen(false);
+                                            }) : undefined}
+                                            onTap={canEditObjects ? (() => {
+                                                setSelectedObject({kind: "snippet", id: snippet.id});
+                                                setIsSnippetComposerOpen(false);
+                                            }) : undefined}
+                                            onDragStart={canEditObjects ? ((event) => handleDragStartSnippet(snippet, event)) : undefined}
+                                            onDragEnd={canEditObjects ? ((event) => handleDragEndSnippet(snippet, event)) : undefined}
+                                        />
+                                    );
+                                }
+
+                                const image = object.payload;
+                                const isSelected = selectedObject?.kind === "image" && selectedObject?.id === image.id;
+                                const isDragging = draggingObject?.kind === "image" && draggingObject?.id === image.id;
                                 return (
-                                    <Text
-                                        key={snippet.id}
-                                        x={snippetX}
-                                        y={snippetY}
-                                        width={metrics.width}
-                                        height={metrics.height}
-                                        text={snippet.text}
-                                        fontFamily={brush.fontFamily}
-                                        fontStyle={brush.fontStyle}
-                                        fontSize={metrics.fontSize}
-                                        fill={canvasMeta.theme === "dark" ? "#f8f8f8" : "#151515"}
-                                        align="center"
-                                        verticalAlign="middle"
-                                        padding={8}
-                                        wrap="word"
-                                        draggable={canEditObjects}
-                                        rotation={snippet.rotation || 0}
-                                        scaleX={snippet.scaleX === -1 ? -1 : 1}
-                                        stroke={isSelected ? "#2f80ed" : "transparent"}
-                                        strokeWidth={isSelected ? 1 : 0}
-                                        shadowColor={canvasMeta.theme === "dark" ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.15)"}
-                                        shadowBlur={6}
-                                        shadowOffsetY={2}
-                                        onClick={canEditObjects ? (() => setSelectedObject({kind: "snippet", id: snippet.id})) : undefined}
-                                        onTap={canEditObjects ? (() => setSelectedObject({kind: "snippet", id: snippet.id})) : undefined}
-                                        onDragEnd={canEditObjects ? ((event) => handleDragEndSnippet(snippet, event)) : undefined}
+                                    <CanvasImageNode
+                                        key={image.id}
+                                        canvasImage={image}
+                                        stageWidth={stageWidth}
+                                        stageHeight={stageHeight}
+                                        isSelected={isSelected}
+                                        isDragging={isDragging}
+                                        canInteract={canEditObjects}
+                                        preventTouchDefault={shouldPreventTouchDefault}
+                                        onSelect={canEditObjects ? (() => {
+                                            setSelectedObject({kind: "image", id: image.id});
+                                            setIsSnippetComposerOpen(false);
+                                        }) : undefined}
+                                        onDragStart={canEditObjects ? ((event) => handleDragStartImage(image, event)) : undefined}
+                                        onDragEnd={canEditObjects ? ((event) => handleDragEndImage(image, event)) : undefined}
                                     />
                                 );
-                            }
-
-                            const image = object.payload;
-                            const isSelected = selectedObject?.kind === "image" && selectedObject?.id === image.id;
-                            return (
-                                <CanvasImageNode
-                                    key={image.id}
-                                    canvasImage={image}
-                                    stageWidth={stageWidth}
-                                    stageHeight={stageHeight}
-                                    isSelected={isSelected}
-                                    canInteract={canEditObjects}
-                                    onSelect={canEditObjects ? (() => setSelectedObject({kind: "image", id: image.id})) : undefined}
-                                    onDragEnd={canEditObjects ? ((event) => handleDragEndImage(image, event)) : undefined}
-                                />
-                            );
-                        })}
-                    </Layer>
-                </Stage>
+                            })}
+                        </Layer>
+                    </Stage>
+                </div>
+                <div className={styles.stageHud}>
+                    <span className={styles.zoomBadge}>{Math.round(viewport.scale * 100)}%</span>
+                    {isMobileViewport && <span className={styles.gestureHint}>Pinch to zoom, two fingers to pan</span>}
+                </div>
             </div>
 
-            <div className="editor-loader-wrapper">
-                {(isSending || isUploadingImage) && (
-                    <BarLoader loading={isSending || isUploadingImage} width={"100%"} height={3} color="var(--accent-purple)" speedMultiplier={0.7} />
-                )}
+            <div className={styles.loaderWrapper}>
+                {(isSending || isUploadingImage) && <BarLoader loading width={"100%"} height={3} color="#ff6b3d" speedMultiplier={0.7} />}
             </div>
 
-            <div className="editor-footer">
-                <span className="editor-word-count">
+            <div className={styles.editorFooter}>
+                <span className={styles.wordCount}>
                     {snippets.length} {snippets.length === 1 ? "text block" : "text blocks"} · {images.length} {images.length === 1 ? "image" : "images"} · {doodles.length} {doodles.length === 1 ? "doodle" : "doodles"}
                 </span>
                 <button
                     type="button"
-                    disabled={!title || (snippets.length === 0 && images.length === 0 && doodles.length === 0) || isSending}
+                    disabled={!title || !hasCanvasContent || isSending}
                     onClick={saveCanvas}
-                    className={title && (snippets.length > 0 || images.length > 0 || doodles.length > 0) ? "editor-save-bttn" : "editor-save-bttn-disabled"}
+                    className={`${styles.shareButton} ${(!title || !hasCanvasContent || isSending) ? styles.shareButtonDisabled : ""}`}
                 >
                     Share
                 </button>
+            </div>
+
+            <div className={`${styles.toolbarDock} ${isMobileViewport ? styles.mobileDock : ""} ${showMinimizedDoodleDock ? styles.toolbarDockMinimized : ""}`}>
+                {isMobileViewport && (
+                    <button
+                        type="button"
+                        aria-label={isDockVisible ? "Close tool dock" : "Open tool dock"}
+                        className={`${styles.toolbarOrb} ${isDockVisible ? styles.toolbarOrbOpen : ""}`}
+                        onClick={() => setIsMobileDockOpen((prev) => !prev)}
+                    >
+                        {isDockVisible ? "Close" : "Tools"}
+                    </button>
+                )}
+
+                {showMinimizedDoodleDock && (
+                    <div className={styles.doodleMiniBar}>
+                        <span className={styles.doodleMiniLabel}>Doodle mode</span>
+                        <span className={styles.doodleMiniColor} style={{backgroundColor: doodleColor}} />
+                        <span className={styles.doodleMiniSize}>{doodleSize.toFixed(1)} px</span>
+                        <button type="button" className={styles.secondaryButton} onClick={() => setIsDoodleDockMinimized(false)}>
+                            Controls
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.secondaryButton}
+                            onClick={() => {
+                                setActiveTool("select");
+                                setIsDoodleDockMinimized(false);
+                            }}
+                        >
+                            Done
+                        </button>
+                    </div>
+                )}
+
+                {isDockVisible && !showMinimizedDoodleDock && (
+                    <div className={styles.toolbarPanel}>
+                        <div className={styles.toolbarRow}>
+                            <button type="button" className={`${styles.toolButton} ${isSnippetComposerOpen ? styles.toolButtonActive : ""}`} onClick={openSnippetComposer}>
+                                Add Text
+                            </button>
+                            <button type="button" className={`${styles.toolButton} ${isUploadingImage ? styles.toolButtonActive : ""}`} onClick={addImageFromFile} disabled={isUploadingImage}>
+                                {isUploadingImage ? "Uploading..." : "Add Image"}
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.toolButton} ${activeTool === "select" ? styles.toolButtonActive : ""}`}
+                                onClick={() => {
+                                    setActiveTool("select");
+                                    setIsSnippetComposerOpen(false);
+                                }}
+                            >
+                                Select
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.toolButton} ${activeTool === "doodle" ? styles.toolButtonActive : ""}`}
+                                onClick={() => {
+                                    setIsSnippetComposerOpen(false);
+                                    setActiveTool("doodle");
+                                    setIsDoodleDockMinimized(true);
+                                }}
+                            >
+                                Doodle
+                            </button>
+                            {isDoodleMode && (
+                                <button type="button" className={styles.secondaryButton} onClick={() => setIsDoodleDockMinimized(true)}>
+                                    Minimize
+                                </button>
+                            )}
+                        </div>
+
+                        {isSnippetComposerOpen && (
+                            <div className={styles.snippetComposer}>
+                                <input
+                                    ref={snippetInputRef}
+                                    value={snippetInput}
+                                    onChange={(event) => setSnippetInput(event.target.value)}
+                                    onKeyDown={(event) => {
+                                        if(event.key === "Enter"){
+                                            event.preventDefault();
+                                            addSnippet();
+                                        }
+                                        if(event.key === "Escape"){
+                                            setIsSnippetComposerOpen(false);
+                                        }
+                                    }}
+                                    className={styles.snippetInput}
+                                    placeholder="Type text to place on canvas..."
+                                    maxLength={220}
+                                />
+                                <div className={styles.snippetActions}>
+                                    <button type="button" className={styles.secondaryButton} onClick={addSnippet} disabled={!snippetInput.trim()}>
+                                        Add
+                                    </button>
+                                    <button type="button" className={styles.secondaryButton} onClick={() => setIsSnippetComposerOpen(false)}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTool === "doodle" && (
+                            <div className={styles.toolbarColumn}>
+                                <div className={styles.paletteWrap}>
+                                    {COLOR_PALETTES.map((group) => (
+                                        <div key={group.label} className={styles.paletteGroup}>
+                                            <span className={styles.paletteLabel}>{group.label}</span>
+                                            <div className={styles.colorSwatches}>
+                                                {group.colors.map((color) => (
+                                                    <button
+                                                        key={color}
+                                                        type="button"
+                                                        className={`${styles.colorSwatch} ${doodleColor.toLowerCase() === color.toLowerCase() ? styles.colorSwatchActive : ""}`}
+                                                        onClick={() => setDoodleColor(color)}
+                                                        title={`Use ${color} doodle color`}
+                                                        aria-label={`Select doodle color ${color}`}
+                                                        style={{backgroundColor: color}}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <label className={styles.customColorLabel}>
+                                        Custom
+                                        <input
+                                            type="color"
+                                            value={doodleColor}
+                                            onChange={(event) => setDoodleColor(event.target.value)}
+                                            className={styles.colorInput}
+                                            title="Custom doodle color"
+                                        />
+                                    </label>
+                                </div>
+                                <div className={styles.toolbarRow}>
+                                    <input
+                                        type="range"
+                                        min={1}
+                                        max={10}
+                                        step={0.2}
+                                        value={doodleSize}
+                                        onChange={(event) => setDoodleSize(Number(event.target.value))}
+                                        className={styles.sizeRange}
+                                        aria-label="Doodle size"
+                                    />
+                                    <button type="button" className={styles.secondaryButton} onClick={undoLastDoodle} disabled={doodles.length === 0}>
+                                        Undo Doodle
+                                    </button>
+                                    <button type="button" className={styles.secondaryButton} onClick={clearDoodles} disabled={doodles.length === 0 && !isDrawing}>
+                                        Clear Doodles
+                                    </button>
+                                    <span className={styles.toolHint}>Draw directly on wall</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTool === "select" && selectedObject && (
+                            <div className={styles.selectionPanel}>
+                                {selectedSnippet && (
+                                    <div className={styles.styleCarousel}>
+                                        {Object.entries(FONT_BRUSHES).map(([styleKey, styleValue]) => {
+                                            const isActive = selectedSnippet.fontStyle === styleKey;
+                                            return (
+                                                <button
+                                                    key={styleKey}
+                                                    type="button"
+                                                    className={`${styles.fontChip} ${isActive ? styles.fontChipActive : ""}`}
+                                                    onClick={() => updateSnippet(selectedSnippet.id, {fontStyle: styleKey})}
+                                                >
+                                                    <span className={styles.fontChipLabel}>{styleValue.label}</span>
+                                                    <span
+                                                        className={styles.fontChipPreview}
+                                                        style={{
+                                                            fontFamily: styleValue.fontFamily,
+                                                            fontStyle: styleValue.fontStyle
+                                                        }}
+                                                    >
+                                                        {styleValue.preview}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                <div className={styles.toolbarRow}>
+                                    <button type="button" className={styles.secondaryButton} onClick={() => resizeSelectedObject("down")}>Resize -</button>
+                                    <button type="button" className={styles.secondaryButton} onClick={() => resizeSelectedObject("up")}>Resize +</button>
+                                    <button type="button" className={styles.secondaryButton} onClick={() => rotateSelectedObject(-8)}>Rotate -</button>
+                                    <button type="button" className={styles.secondaryButton} onClick={() => rotateSelectedObject(8)}>Rotate +</button>
+                                    <button type="button" className={styles.secondaryButton} onClick={flipSelectedObject}>Flip</button>
+                                    <button type="button" className={styles.secondaryButton} onClick={bringToFront}>Front</button>
+                                    <button type="button" className={styles.secondaryButton} onClick={sendToBack}>Back</button>
+                                    <button type="button" className={styles.secondaryButton} onClick={removeSelectedObject}>Remove</button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={styles.toolbarRow}>
+                            <div className={styles.aspectToggle}>
+                                <button
+                                    type="button"
+                                    className={`${styles.secondaryButton} ${canvasMeta.aspectRatio === "1:1" ? styles.toolButtonActive : ""}`}
+                                    onClick={() => setCanvasMeta((prev) => ({...prev, aspectRatio: "1:1"}))}
+                                >
+                                    1:1
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`${styles.secondaryButton} ${canvasMeta.aspectRatio === "4:5" ? styles.toolButtonActive : ""}`}
+                                    onClick={() => setCanvasMeta((prev) => ({...prev, aspectRatio: "4:5"}))}
+                                >
+                                    4:5
+                                </button>
+                            </div>
+                            <button
+                                type="button"
+                                className={`${styles.secondaryButton} ${canvasMeta.gridEnabled ? styles.toolButtonActive : ""}`}
+                                onClick={() => setCanvasMeta((prev) => ({...prev, gridEnabled: !prev.gridEnabled}))}
+                            >
+                                Grid
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.secondaryButton} ${canvasMeta.snapEnabled ? styles.toolButtonActive : ""}`}
+                                onClick={() => setCanvasMeta((prev) => ({...prev, snapEnabled: !prev.snapEnabled}))}
+                            >
+                                Snap
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.secondaryButton} ${canvasMeta.theme === "dark" ? styles.toolButtonActive : ""}`}
+                                onClick={() => setCanvasMeta((prev) => ({...prev, theme: prev.theme === "dark" ? "light" : "dark"}))}
+                            >
+                                {canvasMeta.theme === "dark" ? "Dark" : "Light"}
+                            </button>
+                            <button type="button" className={styles.secondaryButton} onClick={() => zoomByStep("out")}>Zoom -</button>
+                            <button type="button" className={styles.secondaryButton} onClick={() => zoomByStep("in")}>Zoom +</button>
+                            <button type="button" className={styles.secondaryButton} onClick={resetViewport}>Reset View</button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -106,6 +106,71 @@ const MINIMAP_WIDTH = 100;
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const getWallSizeScale = (stageWidth) => clamp(stageWidth / WALL_MAX_WIDTH, 0.25, 1);
 
+const INK_SPEED_MIN = 0.1;
+const INK_SPEED_MAX = 8.0;
+const INK_WIDTH_MIN = 0.3;
+const INK_WIDTH_MAX = 1.5;
+const INK_SMOOTH_FACTOR = 0.35;
+
+const speedToWidthMultiplier = (speed) => {
+    const t = clamp((speed - INK_SPEED_MIN) / (INK_SPEED_MAX - INK_SPEED_MIN), 0, 1);
+    return INK_WIDTH_MAX - (t * t) * (INK_WIDTH_MAX - INK_WIDTH_MIN);
+};
+
+const makeInkSceneFunc = (points, widths, baseWidth, color) => (ctx, shape) => {
+    if(points.length < 4){
+        return;
+    }
+
+    const numPts = points.length / 2;
+    const xs = [];
+    const ys = [];
+    for(let i = 0; i < numPts; i++){
+        xs.push(points[i * 2]);
+        ys.push(points[i * 2 + 1]);
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if(numPts === 2){
+        ctx.lineWidth = baseWidth * (widths[0] ?? 1);
+        ctx.beginPath();
+        ctx.moveTo(xs[0], ys[0]);
+        ctx.lineTo(xs[1], ys[1]);
+        ctx.stroke();
+        return;
+    }
+
+    for(let i = 0; i < numPts - 1; i++){
+        const w = widths[i] ?? widths[widths.length - 1] ?? 1;
+        ctx.lineWidth = baseWidth * w;
+        ctx.beginPath();
+
+        if(i === 0){
+            ctx.moveTo(xs[0], ys[0]);
+        } else {
+            ctx.moveTo((xs[i - 1] + xs[i]) / 2, (ys[i - 1] + ys[i]) / 2);
+        }
+
+        if(i === numPts - 2){
+            ctx.quadraticCurveTo(xs[i], ys[i], xs[i + 1], ys[i + 1]);
+        } else {
+            ctx.quadraticCurveTo(xs[i], ys[i], (xs[i] + xs[i + 1]) / 2, (ys[i] + ys[i + 1]) / 2);
+        }
+
+        ctx.stroke();
+    }
+
+    const lastW = widths[widths.length - 1] ?? 1;
+    const endR = (baseWidth * lastW) / 2;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(xs[numPts - 1], ys[numPts - 1], endR, 0, Math.PI * 2);
+    ctx.fill();
+};
+
 const snapToGrid = (px, gridSize = GRID_SIZE) => Math.round(px / gridSize) * gridSize;
 
 const sortItemsByZIndex = (items = []) => [...items].sort((a, b) => {
@@ -630,6 +695,8 @@ const FreedomWallPage = () => {
     const queryClient = useQueryClient();
     const shellRef = useRef(null);
     const draftDoodleRef = useRef([]);
+    const draftWidthsRef = useRef([]);
+    const lastDoodlePointRef = useRef(null);
     const [shellWidth, setShellWidth] = useState(980);
     const [activeTool, setActiveTool] = useState("doodle");
     const [doodleColor, setDoodleColor] = useState("#5f92ff");
@@ -1715,6 +1782,8 @@ const FreedomWallPage = () => {
             setSelectedItemId(null);
             const initialPoints = [normalizedPointer.x, normalizedPointer.y];
             draftDoodleRef.current = initialPoints;
+            draftWidthsRef.current = [];
+            lastDoodlePointRef.current = { x: normalizedPointer.x, y: normalizedPointer.y, t: performance.now() };
             setDraftDoodlePoints(initialPoints);
             setIsDrawing(true);
             if(event?.evt?.cancelable){
@@ -1809,6 +1878,23 @@ const FreedomWallPage = () => {
             return;
         }
 
+        const now = performance.now();
+        const last = lastDoodlePointRef.current;
+        if(last){
+            const dx = (normalizedPointer.x - last.x) * stageWidth;
+            const dy = (normalizedPointer.y - last.y) * stageHeight;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const dt = Math.max(now - last.t, 1);
+            const speed = dist / dt;
+            const rawWidth = speedToWidthMultiplier(speed);
+            const prev = draftWidthsRef.current.length > 0
+                ? draftWidthsRef.current[draftWidthsRef.current.length - 1]
+                : rawWidth;
+            const smoothed = prev + INK_SMOOTH_FACTOR * (rawWidth - prev);
+            draftWidthsRef.current.push(smoothed);
+        }
+        lastDoodlePointRef.current = { x: normalizedPointer.x, y: normalizedPointer.y, t: now };
+
         const nextPoints = [...draftDoodleRef.current, normalizedPointer.x, normalizedPointer.y];
         draftDoodleRef.current = nextPoints;
         setDraftDoodlePoints(nextPoints);
@@ -1842,8 +1928,11 @@ const FreedomWallPage = () => {
 
         if(points.length >= 4){
             const normalizedPoints = points.length % 2 === 0 ? points : points.slice(0, -1);
+            const numSegments = normalizedPoints.length / 2 - 1;
+            const widths = draftWidthsRef.current.slice(0, numSegments);
             createWallItem("doodle", {
                 points: normalizedPoints,
+                widths: widths.length > 0 ? widths : undefined,
                 color: doodleColor,
                 size: doodleSize
             });
@@ -1852,6 +1941,8 @@ const FreedomWallPage = () => {
         setIsDrawing(false);
         setDraftDoodlePoints([]);
         draftDoodleRef.current = [];
+        draftWidthsRef.current = [];
+        lastDoodlePointRef.current = null;
     };
 
     const handleDeleteSelectedItem = () => {
@@ -2014,14 +2105,32 @@ const FreedomWallPage = () => {
                 return null;
             }
 
+            const pixelPoints = points.map((point, pointIndex) => (
+                pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
+            ));
+            const doodleColor = item?.payload?.color || "#5f92ff";
+            const doodleBaseWidth = (Number(item?.payload?.size) || 3) * wallSizeScale;
+            const widths = Array.isArray(item?.payload?.widths) && item.payload.widths.length > 0
+                ? item.payload.widths
+                : null;
+
+            if(widths){
+                return (
+                    <Shape
+                        key={item.id}
+                        sceneFunc={makeInkSceneFunc(pixelPoints, widths, doodleBaseWidth, doodleColor)}
+                        onClick={handleSelectItem}
+                        onTap={handleSelectItem}
+                    />
+                );
+            }
+
             return (
                 <Line
                     key={item.id}
-                    points={points.map((point, pointIndex) => (
-                        pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
-                    ))}
-                    stroke={item?.payload?.color || "#5f92ff"}
-                    strokeWidth={(Number(item?.payload?.size) || 3) * wallSizeScale}
+                    points={pixelPoints}
+                    stroke={doodleColor}
+                    strokeWidth={doodleBaseWidth}
                     lineCap="round"
                     lineJoin="round"
                     tension={0.12}
@@ -2543,18 +2652,15 @@ const FreedomWallPage = () => {
                                 />
                             )}
 
-                            {isDrawing && draftDoodlePoints.length >= 4 && (
-                                <Line
-                                    points={draftDoodlePoints.map((point, pointIndex) => (
-                                        pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
-                                    ))}
-                                    stroke={doodleColor}
-                                    strokeWidth={doodleSize * wallSizeScale}
-                                    lineCap="round"
-                                    lineJoin="round"
-                                    tension={0.12}
-                                />
-                            )}
+                            {isDrawing && draftDoodlePoints.length >= 4 && (() => {
+                                const pixelPts = draftDoodlePoints.map((point, pointIndex) => (
+                                    pointIndex % 2 === 0 ? point * stageWidth : point * stageHeight
+                                ));
+                                const baseW = doodleSize * wallSizeScale;
+                                return draftWidthsRef.current.length > 0
+                                    ? <Shape sceneFunc={makeInkSceneFunc(pixelPts, draftWidthsRef.current, baseW, doodleColor)} />
+                                    : <Line points={pixelPts} stroke={doodleColor} strokeWidth={baseW} lineCap="round" lineJoin="round" tension={0.12} />;
+                            })()}
 
                             {placementPuffs.map((puff) => (
                                 <PuffEffect key={puff.id} id={puff.id} x={puff.x} y={puff.y} onComplete={handlePuffComplete} />

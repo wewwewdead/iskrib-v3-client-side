@@ -380,6 +380,20 @@ const ContentView = () => {
                         </button>
                     </div>
 
+                    {postData?.postType === 'canvas' && (
+                        <div className="cv-canvas-actions">
+                            <button
+                                type="button"
+                                className="cv-remix-btn"
+                                onClick={handleRemixCanvas}
+                                disabled={!session}
+                                title={session ? "Remix this canvas" : "Sign in to remix"}
+                            >
+                                Remix this Canvas
+                            </button>
+                        </div>
+                    )}
+
                     {/* Body content */}
                     <div className="cv-body">
                         {postData?.postType === 'canvas' ? (
@@ -406,20 +420,6 @@ const ContentView = () => {
                             </LexicalComposer>
                         )}
                     </div>
-
-                    {postData?.postType === 'canvas' && (
-                        <div className="cv-canvas-actions">
-                            <button
-                                type="button"
-                                className="cv-remix-btn"
-                                onClick={handleRemixCanvas}
-                                disabled={!session}
-                                title={session ? "Remix this canvas" : "Sign in to remix"}
-                            >
-                                Remix this Canvas
-                            </button>
-                        </div>
-                    )}
                 </article>
 
                 {/* Toast notification */}

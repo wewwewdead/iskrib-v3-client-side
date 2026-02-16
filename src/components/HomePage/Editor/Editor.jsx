@@ -113,27 +113,29 @@ const Editor=({onClose, initialMode = 'text', initialTitle = '', initialCanvasDo
                     </button>
                 </div>
 
-                <ErrorBoundary>
-                    {editorMode === 'text' ? (
-                        <EditorInner
-                            addUploadImagesPath={addUploadedImagePath}
-                            onclose={handleCloseEditor}
-                            onCloseOnSave={handleCloseEditorOnSave}
-                            title={title}
-                            setWordCount={setWordCount}
-                            wordCount={wordCount}
-                            onSwitchToCanvas={() => setEditorMode('canvas')}
-                        />
-                    ) : (
-                        <CanvasEditor
-                            title={title}
-                            onCloseOnSave={handleCloseEditorOnSave}
-                            addUploadedImagePath={addUploadedImagePath}
-                            initialCanvasDoc={initialCanvasDoc}
-                            remixSource={remixSource}
-                        />
-                    )}
-                </ErrorBoundary>
+                <div className={`editor-mode-shell ${editorMode === 'canvas' ? 'is-canvas-mode' : ''}`}>
+                    <ErrorBoundary>
+                        {editorMode === 'text' ? (
+                            <EditorInner
+                                addUploadImagesPath={addUploadedImagePath}
+                                onclose={handleCloseEditor}
+                                onCloseOnSave={handleCloseEditorOnSave}
+                                title={title}
+                                setWordCount={setWordCount}
+                                wordCount={wordCount}
+                                onSwitchToCanvas={() => setEditorMode('canvas')}
+                            />
+                        ) : (
+                            <CanvasEditor
+                                title={title}
+                                onCloseOnSave={handleCloseEditorOnSave}
+                                addUploadedImagePath={addUploadedImagePath}
+                                initialCanvasDoc={initialCanvasDoc}
+                                remixSource={remixSource}
+                            />
+                        )}
+                    </ErrorBoundary>
+                </div>
             </motion.div>
         </div>
         </>
