@@ -1,0 +1,64 @@
+.overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    pointer-events: auto;
+}
+
+.ring {
+    position: absolute;
+    pointer-events: none;
+}
+
+.item {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(247, 241, 231, 0.72);
+    backdrop-filter: blur(12px) saturate(130%);
+    box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #1c2127;
+    text-align: center;
+    line-height: 1.1;
+    user-select: none;
+    transform: translate(-50%, -50%);
+}
+
+.item:hover {
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.item:active {
+    transform: translate(-50%, -50%) scale(0.92);
+}
+
+.deleteItem {
+    color: #d94040;
+}
+
+.isDark .item {
+    background: rgba(28, 35, 44, 0.74);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #f2efe8;
+    box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.isDark .item:hover {
+    background: rgba(40, 50, 62, 0.88);
+}

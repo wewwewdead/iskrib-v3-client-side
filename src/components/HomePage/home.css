@@ -31,7 +31,7 @@
     width: 750px;
     height: 90px;
     border-bottom: 0.7px solid var(--border-light);
-    z-index: 1;
+    z-index: 120;
 }
 .header-links{
     display: flex;

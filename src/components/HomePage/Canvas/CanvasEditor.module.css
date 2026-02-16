@@ -246,7 +246,7 @@
     border-radius: 22px;
     border: 1px solid var(--dock-border);
     background: var(--dock-bg);
-    backdrop-filter: blur(10px) saturate(125%);
+    backdrop-filter: blur(15px) saturate(125%);
     box-shadow:
         0 14px 34px rgba(0, 0, 0, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.35);
@@ -264,7 +264,7 @@
     border-radius: 999px;
     border: 1px solid var(--dock-border);
     background: var(--dock-bg);
-    backdrop-filter: blur(10px) saturate(125%);
+    backdrop-filter: blur(15px) saturate(125%);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
     padding: 0.42rem 0.5rem;
 }
@@ -506,6 +506,31 @@
     .toolbarDockMinimized {
         width: 100%;
     }
+}
+
+.ambientLight {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 18px;
+    background: radial-gradient(
+        320px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+        rgba(255, 223, 186, 0.18),
+        transparent 70%
+    );
+    mix-blend-mode: overlay;
+    opacity: var(--cursor-opacity, 0);
+    transition: opacity 0.4s ease;
+}
+
+.isDark .ambientLight {
+    background: radial-gradient(
+        320px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+        rgba(140, 180, 255, 0.14),
+        transparent 70%
+    );
+    mix-blend-mode: soft-light;
 }
 
 @keyframes ambientPulse {

@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { saveJournal, saveJournalImage } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
 import { parseCanvasDoc } from "../../../utils/canvasDoc";
+import PieMenu from "./PieMenu";
 import styles from "./CanvasEditor.module.css";
 import "./canvas.css";
 
@@ -41,6 +42,11 @@ const DEFAULT_DOODLE_COLOR = COLOR_PALETTES[2].colors[0];
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const createId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const randomPlacement = () => ({
+    rotation: (Math.random() - 0.5) * 10,
+    xOffset: (Math.random() - 0.5) * 0.06,
+    yOffset: (Math.random() - 0.5) * 0.06
+});
 
 const sanitizeNormalizedPoints = (rawPoints) => {
     if(!Array.isArray(rawPoints)){
@@ -163,7 +169,8 @@ const CanvasImageNode = ({
     onDragStart,
     onDragEnd,
     canInteract,
-    preventTouchDefault
+    preventTouchDefault,
+    isBeingRemoved
 }) => {
     const loadedImage = useLoadedImage(canvasImage?.src);
     const objectWidth = clamp((canvasImage?.width || 0.3) * stageWidth, 56, stageWidth * 0.95);
@@ -176,12 +183,13 @@ const CanvasImageNode = ({
     return (
         <>
             <KonvaImage
+                name={canvasImage?.id}
                 x={x}
                 y={y}
                 width={objectWidth}
                 height={objectHeight}
                 image={loadedImage}
-                draggable={canInteract}
+                draggable={canInteract && !isBeingRemoved}
                 rotation={canvasImage?.rotation || 0}
                 scaleX={baseScaleX * liftMultiplier}
                 scaleY={liftMultiplier}
@@ -215,6 +223,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     const {session, user} = useAuth();
     const queryClient = useQueryClient();
     const shellRef = useRef(null);
+    const ambientLightRef = useRef(null);
     const stageRef = useRef(null);
     const hasHydratedInitialDocRef = useRef(false);
     const snippetInputRef = useRef(null);
@@ -247,6 +256,11 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     const [isMobileViewport, setIsMobileViewport] = useState(false);
     const [isMobileDockOpen, setIsMobileDockOpen] = useState(false);
     const [isDoodleDockMinimized, setIsDoodleDockMinimized] = useState(false);
+    const [animatingRemovalId, setAnimatingRemovalId] = useState(null);
+    const [doodleRedoStack, setDoodleRedoStack] = useState([]);
+    const multiTapRef = useRef({fingerCount: 0, timestamp: 0});
+    const longPressRef = useRef(null);
+    const [pieMenu, setPieMenu] = useState({isOpen: false, position: null, items: []});
 
     const updateSnippet = (snippetId, updater) => {
         setSnippets((prev) => prev.map((snippet) => {
@@ -447,12 +461,13 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             return;
         }
 
+        const jitter = randomPlacement();
         const snippet = {
             id: createId("snippet"),
             text: trimmed,
-            x: 0.16,
-            y: 0.2,
-            rotation: 0,
+            x: clamp(0.16 + jitter.xOffset, 0.02, 0.82),
+            y: clamp(0.2 + jitter.yOffset, 0.02, 0.82),
+            rotation: jitter.rotation,
             fontStyle: "serif",
             scaleX: 1,
             sizeScale: 1,
@@ -510,14 +525,15 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 const ratio = dimensions.width / dimensions.height;
                 const baseWidth = 0.34;
                 const rawHeight = ratio > 0 ? baseWidth / ratio : 0.24;
+                const imgJitter = randomPlacement();
                 const imageObject = {
                     id: createId("image"),
                     src: imageSrc,
-                    x: 0.18,
-                    y: 0.24,
+                    x: clamp(0.18 + imgJitter.xOffset, 0.02, 0.82),
+                    y: clamp(0.24 + imgJitter.yOffset, 0.02, 0.82),
                     width: clamp(baseWidth, 0.14, 0.8),
                     height: clamp(rawHeight, 0.12, 0.8),
-                    rotation: 0,
+                    rotation: imgJitter.rotation,
                     scaleX: 1,
                     zIndex: getNextZIndex()
                 };
@@ -563,15 +579,38 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     };
 
     const removeSelectedObject = () => {
-        if(!selectedObject){
+        if(!selectedObject || animatingRemovalId){
             return;
         }
-        if(selectedObject.kind === "snippet"){
-            setSnippets((prev) => prev.filter((snippet) => snippet.id !== selectedObject.id));
-        } else {
-            setImages((prev) => prev.filter((image) => image.id !== selectedObject.id));
-        }
+        const targetId = selectedObject.id;
+        const targetKind = selectedObject.kind;
+        setAnimatingRemovalId(targetId);
         setSelectedObject(null);
+
+        const stage = stageRef.current;
+        const node = stage?.findOne(`#${targetId}`) || stage?.findOne((n) => n.name() === targetId);
+
+        const doRemove = () => {
+            if(targetKind === "snippet"){
+                setSnippets((prev) => prev.filter((s) => s.id !== targetId));
+            } else {
+                setImages((prev) => prev.filter((img) => img.id !== targetId));
+            }
+            setAnimatingRemovalId(null);
+        };
+
+        if(node){
+            node.to({
+                duration: 0.3,
+                scaleX: 0,
+                scaleY: 0,
+                opacity: 0,
+                rotation: (node.rotation() || 0) + 15,
+                onFinish: doRemove
+            });
+        } else {
+            doRemove();
+        }
     };
 
     const resizeSelectedObject = (direction) => {
@@ -612,6 +651,67 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             updateImage(selectedObject.id, (image) => ({scaleX: image.scaleX === -1 ? 1 : -1}));
         }
     };
+
+    const duplicateSelectedObject = () => {
+        if(!selectedObject) return;
+        const jitter = randomPlacement();
+        if(selectedObject.kind === "snippet"){
+            const source = snippets.find((s) => s.id === selectedObject.id);
+            if(!source) return;
+            const clone = {
+                ...source,
+                id: createId("snippet"),
+                x: clamp((source.x || 0) + 0.04 + jitter.xOffset * 0.5, 0.02, 0.88),
+                y: clamp((source.y || 0) + 0.04 + jitter.yOffset * 0.5, 0.02, 0.88),
+                rotation: (source.rotation || 0) + jitter.rotation * 0.3,
+                zIndex: getNextZIndex()
+            };
+            setSnippets((prev) => [...prev, clone]);
+            setSelectedObject({kind: "snippet", id: clone.id});
+        } else {
+            const source = images.find((img) => img.id === selectedObject.id);
+            if(!source) return;
+            const clone = {
+                ...source,
+                id: createId("image"),
+                x: clamp((source.x || 0) + 0.04 + jitter.xOffset * 0.5, 0.02, 0.88),
+                y: clamp((source.y || 0) + 0.04 + jitter.yOffset * 0.5, 0.02, 0.88),
+                rotation: (source.rotation || 0) + jitter.rotation * 0.3,
+                zIndex: getNextZIndex()
+            };
+            setImages((prev) => [...prev, clone]);
+            setSelectedObject({kind: "image", id: clone.id});
+        }
+    };
+
+    const buildPieMenuItems = () => {
+        if(isDoodleMode){
+            return [
+                {label: "Undo", icon: "\u21A9", action: undoLastDoodle},
+                {label: "Redo", icon: "\u21AA", action: redoLastDoodle},
+                {label: "Clear", icon: "\u2715", action: clearDoodles, isDelete: true}
+            ];
+        }
+        if(!selectedObject) return [];
+        return [
+            {label: "Delete", icon: "\u2715", action: removeSelectedObject, isDelete: true},
+            {label: "Duplicate", icon: "\u2750", action: duplicateSelectedObject},
+            {label: "Front", icon: "\u2191", action: bringToFront},
+            {label: "Back", icon: "\u2193", action: sendToBack},
+            {label: "A+", icon: "A+", action: () => resizeSelectedObject("up")},
+            {label: "A\u2013", icon: "A\u2013", action: () => resizeSelectedObject("down")},
+            {label: "Rotate", icon: "\u21BB", action: () => rotateSelectedObject(15)},
+            {label: "Flip", icon: "\u21C4", action: flipSelectedObject}
+        ];
+    };
+
+    const openPieMenu = (x, y) => {
+        const items = buildPieMenuItems();
+        if(items.length === 0) return;
+        setPieMenu({isOpen: true, position: {x, y}, items});
+    };
+
+    const closePieMenu = () => setPieMenu({isOpen: false, position: null, items: []});
 
     const getPointerInCanvasSpace = (stage) => {
         const pointer = stage?.getPointerPosition();
@@ -742,13 +842,32 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         if(isMobileViewport && isMobileDockOpen){
             setIsMobileDockOpen(false);
         }
+        closePieMenu();
+
+        const nativeEvent = event?.evt;
+        const touchCount = nativeEvent?.touches?.length || 0;
+        if(touchCount >= 2){
+            multiTapRef.current = {fingerCount: touchCount, timestamp: Date.now()};
+        }
+
         if(maybeBeginPinchGesture(event)){
             return;
         }
-
-        const nativeEvent = event?.evt;
         if(activeTool === "doodle" && nativeEvent?.cancelable){
             nativeEvent.preventDefault();
+        }
+
+        clearTimeout(longPressRef.current);
+        if(touchCount <= 1){
+            const stageForLp = event?.target?.getStage?.();
+            const container = stageForLp?.container();
+            longPressRef.current = setTimeout(() => {
+                if(!container) return;
+                const rect = container.getBoundingClientRect();
+                const cx = (nativeEvent?.touches?.[0]?.clientX ?? nativeEvent?.clientX ?? 0) - rect.left;
+                const cy = (nativeEvent?.touches?.[0]?.clientY ?? nativeEvent?.clientY ?? 0) - rect.top;
+                openPieMenu(cx, cy);
+            }, 400);
         }
 
         const stage = event?.target?.getStage?.();
@@ -775,6 +894,8 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     };
 
     const handleCanvasPointerMove = (event) => {
+        clearTimeout(longPressRef.current);
+
         if(maybeHandlePinchMove(event)){
             return;
         }
@@ -799,9 +920,20 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
     };
 
     const handleCanvasPointerUp = (event) => {
+        clearTimeout(longPressRef.current);
         if(maybeCompletePinchGesture(event)){
+            const tap = multiTapRef.current;
+            if(tap.fingerCount >= 2 && Date.now() - tap.timestamp < 300){
+                if(tap.fingerCount === 2){
+                    undoLastDoodle();
+                } else if(tap.fingerCount >= 3){
+                    redoLastDoodle();
+                }
+            }
+            multiTapRef.current = {fingerCount: 0, timestamp: 0};
             return;
         }
+        multiTapRef.current = {fingerCount: 0, timestamp: 0};
         if(activeTool !== "doodle"){
             return;
         }
@@ -814,13 +946,29 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 color: doodleColor,
                 size: doodleSize
             }]);
+            setDoodleRedoStack([]);
         }
         cancelDrawingSession();
     };
 
-    const undoLastDoodle = () => setDoodles((prev) => prev.slice(0, -1));
+    const undoLastDoodle = () => {
+        setDoodles((prev) => {
+            if(prev.length === 0) return prev;
+            setDoodleRedoStack((stack) => [...stack, prev[prev.length - 1]]);
+            return prev.slice(0, -1);
+        });
+    };
+    const redoLastDoodle = () => {
+        setDoodleRedoStack((stack) => {
+            if(stack.length === 0) return stack;
+            const restored = stack[stack.length - 1];
+            setDoodles((prev) => [...prev, restored]);
+            return stack.slice(0, -1);
+        });
+    };
     const clearDoodles = () => {
         setDoodles([]);
+        setDoodleRedoStack([]);
         cancelDrawingSession();
     };
 
@@ -990,6 +1138,25 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         scaleY: fitScale * viewport.scale
     };
 
+    const handleAmbientMove = (e) => {
+        const el = ambientLightRef.current;
+        if(!el) return;
+        const rect = el.parentElement?.getBoundingClientRect();
+        if(!rect) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = ((clientX - rect.left) / rect.width * 100).toFixed(1);
+        const y = ((clientY - rect.top) / rect.height * 100).toFixed(1);
+        el.style.setProperty("--cursor-x", `${x}%`);
+        el.style.setProperty("--cursor-y", `${y}%`);
+        el.style.setProperty("--cursor-opacity", "1");
+    };
+
+    const handleAmbientLeave = () => {
+        const el = ambientLightRef.current;
+        if(el) el.style.setProperty("--cursor-opacity", "0");
+    };
+
     return (
         <div className={styles.editorRoot}>
             {remixSource?.journalId && (
@@ -1001,8 +1168,20 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
             <div
                 ref={shellRef}
                 className={`${styles.stageShell} ${canvasMeta.theme === "dark" ? styles.isDark : ""} ${activeTool === "doodle" ? styles.isDoodleActive : ""}`}
+                onMouseMove={handleAmbientMove}
+                onTouchMove={handleAmbientMove}
+                onMouseLeave={handleAmbientLeave}
+                onTouchEnd={handleAmbientLeave}
             >
-                <div className={styles.stageFrame}>
+                <div ref={ambientLightRef} className={styles.ambientLight} />
+                <div
+                    className={styles.stageFrame}
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        openPieMenu(e.clientX - rect.left, e.clientY - rect.top);
+                    }}
+                >
                     <Stage
                         ref={stageRef}
                         width={viewportWidth}
@@ -1020,7 +1199,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                         className={`${styles.stage} ${styles.stageEditor}`}
                     >
                         {canvasMeta.gridEnabled && (
-                            <Layer listening={false} {...layerTransform}>
+                            <Layer listening={false} {...layerTransform} opacity={clamp((viewport.scale - 0.8) / 0.5, 0.15, 1)}>
                                 {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
                                     <Rect
                                         key={`grid-v-${index}`}
@@ -1055,7 +1234,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                                     strokeWidth={Number(doodle.size) || 2.8}
                                     lineCap="round"
                                     lineJoin="round"
-                                    tension={0.1}
+                                    tension={0.35}
                                 />
                             ))}
                             {isDrawing && currentDoodlePoints.length >= 2 && (
@@ -1067,7 +1246,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                                     strokeWidth={doodleSize}
                                     lineCap="round"
                                     lineJoin="round"
-                                    tension={0.1}
+                                    tension={0.35}
                                 />
                             )}
                         </Layer>
@@ -1089,6 +1268,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                                     return (
                                         <Text
                                             key={snippet.id}
+                                            name={snippet.id}
                                             x={snippetX}
                                             y={snippetY}
                                             width={metrics.width}
@@ -1137,6 +1317,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                                         stageHeight={stageHeight}
                                         isSelected={isSelected}
                                         isDragging={isDragging}
+                                        isBeingRemoved={animatingRemovalId === image.id}
                                         canInteract={canEditObjects}
                                         preventTouchDefault={shouldPreventTouchDefault}
                                         onSelect={canEditObjects ? (() => {
@@ -1151,6 +1332,13 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                         </Layer>
                     </Stage>
                 </div>
+                <PieMenu
+                    isOpen={pieMenu.isOpen}
+                    position={pieMenu.position}
+                    items={pieMenu.items}
+                    onClose={closePieMenu}
+                    isDark={canvasMeta.theme === "dark"}
+                />
                 <div className={styles.stageHud}>
                     <span className={styles.zoomBadge}>{Math.round(viewport.scale * 100)}%</span>
                     {isMobileViewport && <span className={styles.gestureHint}>Pinch to zoom, two fingers to pan</span>}

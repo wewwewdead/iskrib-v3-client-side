@@ -1316,7 +1316,7 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                                         strokeWidth={Number(doodle?.size) || 2.8}
                                         lineCap="round"
                                         lineJoin="round"
-                                        tension={0.1}
+                                        tension={0.35}
                                     />
                                 );
                             })}
@@ -1407,7 +1407,7 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                                         strokeWidth={Number(item?.payload?.size) || 2.8}
                                         lineCap="round"
                                         lineJoin="round"
-                                        tension={0.1}
+                                        tension={0.35}
                                         onClick={() => {
                                             if(canDelete){
                                                 deleteMarginMutation.mutate(item.id);
@@ -1432,7 +1432,7 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                                     strokeWidth={Number(doodle.size) || 2.8}
                                     lineCap="round"
                                     lineJoin="round"
-                                    tension={0.1}
+                                    tension={0.35}
                                     opacity={0.86}
                                     listening={false}
                                 />
@@ -1447,7 +1447,7 @@ const CanvasViewer = ({journalId, canvasDoc, authorId}) => {
                                     strokeWidth={doodleSize}
                                     lineCap="round"
                                     lineJoin="round"
-                                    tension={0.1}
+                                    tension={0.35}
                                 />
                             )}
                         </Layer>
