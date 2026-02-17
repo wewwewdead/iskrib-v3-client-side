@@ -141,7 +141,11 @@ const PostCards = () => {
             ),
 
             className: 'like-button',
-            action: (e, journalId, receiverId) => handleClickLike(e, journalId, receiverId),
+            action: (e, journalId, receiverId) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleClickLike(journalId, receiverId);
+            },
             countLike: (count) => <p style={{padding:'0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -167,7 +171,11 @@ const PostCards = () => {
                 </g>
             </svg>),
             className: 'bookmark-button',
-            bookmarkAction: (e, journalId) => debounceClickBookmark(e, journalId),
+            bookmarkAction: (e, journalId) => {
+                e.preventDefault();
+                e.stopPropagation();
+                debounceClickBookmark(journalId);
+            },
             countBookmarks: (count) => <p  style={{padding: '0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -242,8 +250,7 @@ const PostCards = () => {
 
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
 
-    const handleClickLike = async(e, journalId, receiverId) => {
-        e.stopPropagation();
+    const handleClickLike = async (journalId, receiverId) => {
         if(!session) return openAuthModal();
         console.log(journalId)
         mutationLike.mutate({journalId, receiverId}) //passing this into mutationFn {journalId: the id}
@@ -252,8 +259,7 @@ const PostCards = () => {
 
     const mutationBookmark = useBookMarkMutation(session, userId);
 
-    const handleClickBookmark = async(e, journalId,) =>{
-        e.stopPropagation();
+    const handleClickBookmark = async (journalId) => {
         if(!session) return openAuthModal();
         console.log(journalId)
         // mutationBookmark.mutate({journalId});

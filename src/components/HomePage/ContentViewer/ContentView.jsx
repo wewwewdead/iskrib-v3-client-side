@@ -6,7 +6,7 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import './contentviewer.css'
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MoonLoader } from "react-spinners";
 import CalculateText from "../postCards/calculateReadingTime";
@@ -23,19 +23,48 @@ import { useQuery } from "@tanstack/react-query";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 import { getCanvasWholeText, parseCanvasDoc } from "../../../utils/canvasDoc";
 
+const normalizeInteractionFlag = (value) => {
+    if(typeof value === 'boolean') return value;
+    if(typeof value === 'string'){
+        const normalized = value.trim().toLowerCase();
+        if(normalized === 'true') return true;
+        if(normalized === 'false') return false;
+    }
+    if(typeof value === 'number'){
+        return value === 1;
+    }
+    return Boolean(value);
+};
+
+const normalizeCount = (value) => {
+    const number = Number(value);
+    if(!Number.isFinite(number) || number < 0){
+        return 0;
+    }
+    return number;
+};
+
+const getNextToggleCount = (isActive, currentCount) => {
+    return isActive
+        ? Math.max(0, currentCount - 1)
+        : currentCount + 1;
+};
+
 const ContentView = () => {
     const navigate = useNavigate();
     const [showBackButton, setShowBackButton] = useState(true);
-    const { session, user } = useAuth();
+    const { session, user, openAuthModal } = useAuth();
 
     const timeOutRef = useRef();
     const timeOutRefBookmark = useRef();
+    const likeInFlightRef = useRef(false);
+    const bookmarkInFlightRef = useRef(false);
 
     const [showCommentsContainer, setShowCommentsContainer] = useState(false);
-    const [isLiked, setIsliked] = useState('');
-    const [likesCount, setLikesCount] = useState(null);
-    const [isBookmarked, setIsBookmarked] = useState(null);
-    const [bookmarkCounts, setBookmarkCounts] = useState(null);
+    const [isLiked, setIsliked] = useState(false);
+    const [likesCount, setLikesCount] = useState(0);
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [bookmarkCounts, setBookmarkCounts] = useState(0);
 
     const [bookmarkedMessage, setBookmarkedMessage] = useState('');
 
@@ -69,7 +98,7 @@ const ContentView = () => {
         refetchOnWindowFocus: false,
     });
 
-    const postData = (() => {
+    const postData = useMemo(() => {
         const journal = fetchedJournalData?.journal;
         if(journal){
             const postType = journal?.post_type || 'text';
@@ -127,7 +156,7 @@ const ContentView = () => {
             bookmarksCount: statePostData?.bookmarksCount || 0,
             badge: statePostData?.badge
         };
-    })();
+    }, [fetchedJournalData, statePostData]);
 
     const { data: followsData, isLoading: isLoadingFollows } = useQuery({
         queryKey: ['followsData', user?.userData?.[0]?.id, postData?.userId],
@@ -142,24 +171,54 @@ const ContentView = () => {
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
     const handleClickLike = async (e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => {
         e.stopPropagation();
-        mutationLike.mutate({ journalId, receiverId, senderImageUrl, sendername, senderEmail });
-        setLikesCount((prevCount) => (typeof prevCount === 'number' ? prevCount : 0) + (isLiked ? -1 : 1));
-        setIsliked((prev) => !prev);
+        if(likeInFlightRef.current){
+            return;
+        }
+        if(!session){
+            openAuthModal?.();
+            return;
+        }
+        const wasLiked = normalizeInteractionFlag(isLiked);
+        likeInFlightRef.current = true;
+        setIsliked(!wasLiked);
+        setLikesCount((prevCount) => getNextToggleCount(wasLiked, normalizeCount(prevCount)));
+        mutationLike.mutate(
+            { journalId, receiverId, senderImageUrl, sendername, senderEmail },
+            {
+                onSettled: () => {
+                    likeInFlightRef.current = false;
+                }
+            }
+        );
     }
 
     const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
     const handleClickBookmark = async (e, journalId) => {
         e.stopPropagation();
-        setIsBookmarked(!isBookmarked);
-        setBookmarkCounts(isBookmarked ? bookmarkCounts - 1 : bookmarkCounts + 1);
-        const response = await mutationBookmark.mutateAsync({ journalId });
+        if(bookmarkInFlightRef.current){
+            return;
+        }
+        if(!session){
+            openAuthModal?.();
+            return;
+        }
+        const wasBookmarked = normalizeInteractionFlag(isBookmarked);
+        bookmarkInFlightRef.current = true;
+        setIsBookmarked(!wasBookmarked);
+        setBookmarkCounts((prevCount) => getNextToggleCount(wasBookmarked, normalizeCount(prevCount)));
+        let response = null;
+        try {
+            response = await mutationBookmark.mutateAsync({ journalId });
+        } finally {
+            bookmarkInFlightRef.current = false;
+        }
         
         if(timeOutRefBookmark.current){
             clearTimeout(timeOutRefBookmark.current);
         }
-        if (response.message === 'success') {
+        if (response?.message === 'success') {
             setBookmarkedMessage('Post was added to your Bookmarks'); 
-        } else {
+        } else if(response?.message === 'deleted'){
             setBookmarkedMessage('Post was removed from your Bookmarks');
         }
             
@@ -218,11 +277,11 @@ const ContentView = () => {
 
     useEffect(() => {
         if (!postData) return;
-        setLikesCount(postData?.likesCount);
-        setBookmarkCounts(postData?.bookmarksCount);
-        setIsliked(postData?.isLiked);
-        setIsBookmarked(postData?.isBookmarked);
-    }, [postData]);
+        setLikesCount(normalizeCount(postData?.likesCount));
+        setBookmarkCounts(normalizeCount(postData?.bookmarksCount));
+        setIsliked(normalizeInteractionFlag(postData?.isLiked));
+        setIsBookmarked(normalizeInteractionFlag(postData?.isBookmarked));
+    }, [postData?.likesCount, postData?.bookmarksCount, postData?.isLiked, postData?.isBookmarked]);
 
     useEffect(() => {
         if (postData?.title) {

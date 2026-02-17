@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Konva from "konva";
-import { Image as KonvaImage, Layer, Line, Rect, Stage, Text } from "react-konva";
 import { BarLoader } from "react-spinners";
 import { useQueryClient } from "@tanstack/react-query";
 import { saveJournal, saveJournalImage } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
 import { parseCanvasDoc } from "../../../utils/canvasDoc";
+import CanvasSurface, { buildSortedCanvasObjects } from "./CanvasSurface";
 import PieMenu from "./PieMenu";
 import styles from "./CanvasEditor.module.css";
 import "./canvas.css";
@@ -135,90 +135,6 @@ const getTouchGeometry = (nativeEvent, stage) => {
         center: {x: (firstPoint.x + secondPoint.x) / 2, y: (firstPoint.y + secondPoint.y) / 2},
         distance: Math.hypot(secondPoint.x - firstPoint.x, secondPoint.y - firstPoint.y)
     };
-};
-
-const useLoadedImage = (src) => {
-    const [image, setImage] = useState(null);
-
-    useEffect(() => {
-        if(!src){
-            setImage(null);
-            return;
-        }
-
-        const img = new window.Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => setImage(img);
-        img.onerror = () => setImage(null);
-        img.src = src;
-
-        return () => {
-            img.onload = null;
-            img.onerror = null;
-        };
-    }, [src]);
-
-    return image;
-};
-
-const CanvasImageNode = ({
-    canvasImage,
-    stageWidth,
-    stageHeight,
-    isSelected,
-    isDragging,
-    onSelect,
-    onDragStart,
-    onDragEnd,
-    canInteract,
-    preventTouchDefault,
-    isBeingRemoved
-}) => {
-    const loadedImage = useLoadedImage(canvasImage?.src);
-    const objectWidth = clamp((canvasImage?.width || 0.3) * stageWidth, 56, stageWidth * 0.95);
-    const objectHeight = clamp((canvasImage?.height || 0.3) * stageHeight, 56, stageHeight * 0.95);
-    const x = clamp((canvasImage?.x || 0) * stageWidth, 0, Math.max(0, stageWidth - objectWidth));
-    const y = clamp((canvasImage?.y || 0) * stageHeight, 0, Math.max(0, stageHeight - objectHeight));
-    const liftMultiplier = isDragging ? OBJECT_LIFT_MULTIPLIER + 0.02 : isSelected ? OBJECT_LIFT_MULTIPLIER : 1;
-    const baseScaleX = canvasImage?.scaleX === -1 ? -1 : 1;
-
-    return (
-        <>
-            <KonvaImage
-                name={canvasImage?.id}
-                x={x}
-                y={y}
-                width={objectWidth}
-                height={objectHeight}
-                image={loadedImage}
-                draggable={canInteract && !isBeingRemoved}
-                rotation={canvasImage?.rotation || 0}
-                scaleX={baseScaleX * liftMultiplier}
-                scaleY={liftMultiplier}
-                shadowColor="rgba(0,0,0,0.3)"
-                shadowBlur={isSelected || isDragging ? 16 : 8}
-                shadowOffsetY={isSelected || isDragging ? 6 : 3}
-                preventDefault={preventTouchDefault}
-                onClick={canInteract ? onSelect : undefined}
-                onTap={canInteract ? onSelect : undefined}
-                onDragStart={onDragStart}
-                onDragEnd={onDragEnd}
-            />
-            {isSelected && (
-                <Rect
-                    x={x}
-                    y={y}
-                    width={objectWidth}
-                    height={objectHeight}
-                    stroke="#68d391"
-                    strokeWidth={1.7}
-                    dash={[6, 4]}
-                    rotation={canvasImage?.rotation || 0}
-                    listening={false}
-                />
-            )}
-        </>
-    );
 };
 
 const MINIMAP_WIDTH = 110;
@@ -536,11 +452,7 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         return allZ.length ? Math.max(...allZ) + 1 : 0;
     };
 
-    const sortedObjects = useMemo(() => {
-        const snippetObjects = snippets.map((snippet) => ({kind: "snippet", payload: snippet}));
-        const imageObjects = images.map((image) => ({kind: "image", payload: image}));
-        return [...snippetObjects, ...imageObjects].sort((a, b) => (a.payload?.zIndex || 0) - (b.payload?.zIndex || 0));
-    }, [snippets, images]);
+    const sortedObjects = useMemo(() => buildSortedCanvasObjects(snippets, images), [snippets, images]);
 
     const selectedSnippet = selectedObject?.kind === "snippet"
         ? snippets.find((snippet) => snippet.id === selectedObject.id) || null
@@ -1261,13 +1173,6 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
         setSelectedObject(null);
     };
 
-    const layerTransform = {
-        x: fitOffsetX + viewport.x,
-        y: fitOffsetY + viewport.y,
-        scaleX: fitScale * viewport.scale,
-        scaleY: fitScale * viewport.scale
-    };
-
     const handleAmbientMove = (e) => {
         const el = ambientLightRef.current;
         if(!el) return;
@@ -1544,155 +1449,47 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                                 openPieMenu(e.clientX - rect.left, e.clientY - rect.top);
                             }}
                         >
-                            <Stage
-                                ref={stageRef}
-                                width={viewportWidth}
-                                height={viewportHeight}
-                                preventDefault={activeTool === "doodle"}
-                                style={{touchAction: activeTool === "doodle" ? "none" : "pan-y"}}
-                                onMouseDown={handleCanvasPointerDown}
-                                onTouchStart={handleCanvasPointerDown}
-                                onMouseMove={handleCanvasPointerMove}
-                                onTouchMove={handleCanvasPointerMove}
-                                onMouseUp={handleCanvasPointerUp}
-                                onTouchEnd={handleCanvasPointerUp}
-                                onTouchCancel={handleCanvasPointerUp}
-                                onMouseLeave={handleCanvasPointerUp}
+                            <CanvasSurface
+                                stageRef={stageRef}
+                                viewportWidth={viewportWidth}
+                                viewportHeight={viewportHeight}
+                                stageWidth={stageWidth}
+                                stageHeight={stageHeight}
+                                fitScale={fitScale}
+                                fitOffsetX={fitOffsetX}
+                                fitOffsetY={fitOffsetY}
+                                viewport={viewport}
+                                gridEnabled={canvasMeta.gridEnabled}
+                                theme={canvasMeta.theme}
+                                doodles={doodles}
+                                isDrawing={isDrawing}
+                                currentDoodlePoints={currentDoodlePoints}
+                                doodleColor={doodleColor}
+                                doodleSize={doodleSize}
+                                sortedObjects={sortedObjects}
+                                selectedObject={selectedObject}
+                                draggingObject={draggingObject}
+                                animatingRemovalId={animatingRemovalId}
+                                canEditObjects={canEditObjects}
+                                shouldPreventTouchDefault={shouldPreventTouchDefault}
+                                activeTool={activeTool}
                                 className={`${styles.stage} ${styles.stageEditor}`}
-                            >
-                                {canvasMeta.gridEnabled && (
-                                    <Layer listening={false} {...layerTransform} opacity={clamp((viewport.scale - 0.8) / 0.5, 0.15, 1)}>
-                                        {Array.from({length: Math.floor(stageWidth / GRID_SIZE) + 1}).map((_, index) => (
-                                            <Rect
-                                                key={`grid-v-${index}`}
-                                                x={index * GRID_SIZE}
-                                                y={0}
-                                                width={1}
-                                                height={stageHeight}
-                                                fill={canvasMeta.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
-                                            />
-                                        ))}
-                                        {Array.from({length: Math.floor(stageHeight / GRID_SIZE) + 1}).map((_, index) => (
-                                            <Rect
-                                                key={`grid-h-${index}`}
-                                                x={0}
-                                                y={index * GRID_SIZE}
-                                                width={stageWidth}
-                                                height={1}
-                                                fill={canvasMeta.theme === "dark" ? "rgba(235,235,235,0.08)" : "rgba(24,24,24,0.09)"}
-                                            />
-                                        ))}
-                                    </Layer>
-                                )}
-
-                                <Layer listening={false} {...layerTransform}>
-                                    {doodles.map((doodle) => (
-                                        <Line
-                                            key={doodle.id}
-                                            points={(doodle.points || []).map((point, index) => (
-                                                index % 2 === 0 ? point * stageWidth : point * stageHeight
-                                            ))}
-                                            stroke={doodle.color || DEFAULT_DOODLE_COLOR}
-                                            strokeWidth={Number(doodle.size) || 2.8}
-                                            lineCap="round"
-                                            lineJoin="round"
-                                            tension={0.35}
-                                        />
-                                    ))}
-                                    {isDrawing && currentDoodlePoints.length >= 2 && (
-                                        <Line
-                                            points={currentDoodlePoints.map((point, index) => (
-                                                index % 2 === 0 ? point * stageWidth : point * stageHeight
-                                            ))}
-                                            stroke={doodleColor}
-                                            strokeWidth={doodleSize}
-                                            lineCap="round"
-                                            lineJoin="round"
-                                            tension={0.35}
-                                        />
-                                    )}
-                                </Layer>
-
-                                <Layer {...layerTransform}>
-                                    {sortedObjects.map((object) => {
-                                        if(object.kind === "snippet"){
-                                            const snippet = object.payload;
-                                            const metrics = getSnippetMetrics(snippet, stageWidth);
-                                            const styleKey = FONT_STYLE_MAP[snippet.fontStyle] || "serif";
-                                            const brush = FONT_BRUSHES[styleKey] || FONT_BRUSHES.serif;
-                                            const snippetX = clamp(snippet.x * stageWidth, 0, Math.max(0, stageWidth - metrics.width));
-                                            const snippetY = clamp(snippet.y * stageHeight, 0, Math.max(0, stageHeight - metrics.height));
-                                            const isSelected = selectedObject?.kind === "snippet" && selectedObject?.id === snippet.id;
-                                            const isDragging = draggingObject?.kind === "snippet" && draggingObject?.id === snippet.id;
-                                            const liftMultiplier = isDragging ? OBJECT_LIFT_MULTIPLIER + 0.02 : isSelected ? OBJECT_LIFT_MULTIPLIER : 1;
-                                            const baseScaleX = snippet.scaleX === -1 ? -1 : 1;
-
-                                            return (
-                                                <Text
-                                                    key={snippet.id}
-                                                    name={snippet.id}
-                                                    x={snippetX}
-                                                    y={snippetY}
-                                                    width={metrics.width}
-                                                    height={metrics.height}
-                                                    text={snippet.text}
-                                                    fontFamily={brush.fontFamily}
-                                                    fontStyle={brush.fontStyle}
-                                                    fontSize={metrics.fontSize}
-                                                    fill={canvasMeta.theme === "dark" ? "#f8f7f1" : "#151513"}
-                                                    align="center"
-                                                    verticalAlign="middle"
-                                                    padding={8}
-                                                    wrap="word"
-                                                    draggable={canEditObjects}
-                                                    rotation={snippet.rotation || 0}
-                                                    scaleX={baseScaleX * liftMultiplier}
-                                                    scaleY={liftMultiplier}
-                                                    stroke={isSelected ? "#68d391" : "transparent"}
-                                                    strokeWidth={isSelected ? 1.2 : 0}
-                                                    preventDefault={shouldPreventTouchDefault}
-                                                    shadowColor={canvasMeta.theme === "dark" ? "rgba(0,0,0,0.58)" : "rgba(0,0,0,0.22)"}
-                                                    shadowBlur={isSelected || isDragging ? 16 : 6}
-                                                    shadowOffsetY={isSelected || isDragging ? 6 : 2}
-                                                    onClick={canEditObjects ? (() => {
-                                                        setSelectedObject({kind: "snippet", id: snippet.id});
-                                                        setIsSnippetComposerOpen(false);
-                                                    }) : undefined}
-                                                    onTap={canEditObjects ? (() => {
-                                                        setSelectedObject({kind: "snippet", id: snippet.id});
-                                                        setIsSnippetComposerOpen(false);
-                                                    }) : undefined}
-                                                    onDragStart={canEditObjects ? ((event) => handleDragStartSnippet(snippet, event)) : undefined}
-                                                    onDragEnd={canEditObjects ? ((event) => handleDragEndSnippet(snippet, event)) : undefined}
-                                                />
-                                            );
-                                        }
-
-                                        const image = object.payload;
-                                        const isSelected = selectedObject?.kind === "image" && selectedObject?.id === image.id;
-                                        const isDragging = draggingObject?.kind === "image" && draggingObject?.id === image.id;
-                                        return (
-                                            <CanvasImageNode
-                                                key={image.id}
-                                                canvasImage={image}
-                                                stageWidth={stageWidth}
-                                                stageHeight={stageHeight}
-                                                isSelected={isSelected}
-                                                isDragging={isDragging}
-                                                isBeingRemoved={animatingRemovalId === image.id}
-                                                canInteract={canEditObjects}
-                                                preventTouchDefault={shouldPreventTouchDefault}
-                                                onSelect={canEditObjects ? (() => {
-                                                    setSelectedObject({kind: "image", id: image.id});
-                                                    setIsSnippetComposerOpen(false);
-                                                }) : undefined}
-                                                onDragStart={canEditObjects ? ((event) => handleDragStartImage(image, event)) : undefined}
-                                                onDragEnd={canEditObjects ? ((event) => handleDragEndImage(image, event)) : undefined}
-                                            />
-                                        );
-                                    })}
-                                </Layer>
-                            </Stage>
+                                onPointerDown={handleCanvasPointerDown}
+                                onPointerMove={handleCanvasPointerMove}
+                                onPointerUp={handleCanvasPointerUp}
+                                onSnippetSelect={(snippet) => {
+                                    setSelectedObject({kind: "snippet", id: snippet.id});
+                                    setIsSnippetComposerOpen(false);
+                                }}
+                                onSnippetDragStart={handleDragStartSnippet}
+                                onSnippetDragEnd={handleDragEndSnippet}
+                                onImageSelect={(image) => {
+                                    setSelectedObject({kind: "image", id: image.id});
+                                    setIsSnippetComposerOpen(false);
+                                }}
+                                onImageDragStart={handleDragStartImage}
+                                onImageDragEnd={handleDragEndImage}
+                            />
                         </div>
                         <PieMenu
                             isOpen={pieMenu.isOpen}

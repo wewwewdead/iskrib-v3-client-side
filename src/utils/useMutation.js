@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
 
@@ -13,9 +14,45 @@ const updateInfiniteJournalsCache = (old, updater) => {
     };
 };
 
+const normalizeInteractionFlag = (value) => {
+    if(typeof value === 'boolean') return value;
+    if(typeof value === 'string'){
+        const normalized = value.trim().toLowerCase();
+        if(normalized === 'true') return true;
+        if(normalized === 'false') return false;
+    }
+    if(typeof value === 'number'){
+        return value === 1;
+    }
+    return Boolean(value);
+};
+
+const normalizeCount = (value) => {
+    const number = Number(value);
+    if(!Number.isFinite(number) || number < 0){
+        return 0;
+    }
+    return number;
+};
+
+const getNextToggleCount = (isActive, currentCount) => {
+    return isActive
+        ? Math.max(0, currentCount - 1)
+        : currentCount + 1;
+};
+
+const toJournalKey = (journalId) => {
+    if(journalId === undefined || journalId === null){
+        return '';
+    }
+    return String(journalId);
+};
+
 export const useBookMarkMutation = (session, userId) => {
     const queryClient = useQueryClient();
-    return useMutation({
+    const inFlightBookmarkIdsRef = useRef(new Set());
+
+    const mutation = useMutation({
         mutationFn: (data) => addBookmark(session?.access_token, data),
 
         onMutate: async(data) =>{
@@ -32,13 +69,14 @@ export const useBookMarkMutation = (session, userId) => {
             const updater = (journal) => {
                 if(journal.id !== data.journalId) return journal;
 
-                const isBookmarked = journal.has_bookmarked;
-                const count = journal.bookmark_count?.[0]?.count ?? 0;
+                const isBookmarked = normalizeInteractionFlag(journal?.has_bookmarked);
+                const count = normalizeCount(journal?.bookmark_count?.[0]?.count);
+                const nextCount = getNextToggleCount(isBookmarked, count);
 
                 return{
                     ...journal,
                     has_bookmarked: !isBookmarked,
-                    bookmark_count: [{count: isBookmarked ? count - 1 : count + 1}]
+                    bookmark_count: [{count: nextCount}]
                 };
             };
 
@@ -58,7 +96,53 @@ export const useBookMarkMutation = (session, userId) => {
             queryClient.invalidateQueries({ queryKey: ['userJournals'] });
             queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
         }
-    })
+    });
+
+    const guardedMutate = (variables, options) => {
+        const journalKey = toJournalKey(variables?.journalId);
+        if(journalKey && inFlightBookmarkIdsRef.current.has(journalKey)){
+            return;
+        }
+
+        if(journalKey){
+            inFlightBookmarkIdsRef.current.add(journalKey);
+        }
+
+        mutation.mutate(variables, {
+            ...options,
+            onSettled: (data, error, vars, context) => {
+                if(journalKey){
+                    inFlightBookmarkIdsRef.current.delete(journalKey);
+                }
+                options?.onSettled?.(data, error, vars, context);
+            }
+        });
+    };
+
+    const guardedMutateAsync = async (variables, options) => {
+        const journalKey = toJournalKey(variables?.journalId);
+        if(journalKey && inFlightBookmarkIdsRef.current.has(journalKey)){
+            return {message: 'skipped'};
+        }
+
+        if(journalKey){
+            inFlightBookmarkIdsRef.current.add(journalKey);
+        }
+
+        try {
+            return await mutation.mutateAsync(variables, options);
+        } finally {
+            if(journalKey){
+                inFlightBookmarkIdsRef.current.delete(journalKey);
+            }
+        }
+    };
+
+    return {
+        ...mutation,
+        mutate: guardedMutate,
+        mutateAsync: guardedMutateAsync
+    };
 }
 
 
@@ -66,7 +150,9 @@ export const useBookMarkMutation = (session, userId) => {
 
 export const useLikeMutation = (session, userId) =>{
     const queryClient = useQueryClient();
-    return useMutation({
+    const inFlightLikeIdsRef = useRef(new Set());
+
+    const mutation = useMutation({
         mutationFn: (data) => clickLike(session?.access_token, data), //receiving the object data {journalId: the Id}
 
         onMutate: async(data) => {
@@ -83,13 +169,14 @@ export const useLikeMutation = (session, userId) =>{
             const updater = (journal) => {
                 if(journal.id !== data.journalId) return journal;
 
-                const isLiked = journal.has_liked;
-                const count = journal.like_count?.[0]?.count ?? 0;
+                const isLiked = normalizeInteractionFlag(journal?.has_liked);
+                const count = normalizeCount(journal?.like_count?.[0]?.count);
+                const nextCount = getNextToggleCount(isLiked, count);
 
                 return{
                     ...journal,
                     has_liked: !isLiked,
-                    like_count: [{count: isLiked ? count - 1 : count + 1}]
+                    like_count: [{count: nextCount}]
                 };
             };
 
@@ -109,7 +196,53 @@ export const useLikeMutation = (session, userId) =>{
       queryClient.invalidateQueries({ queryKey: ['userJournals'] });
       queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
     },
-})
+});
+
+    const guardedMutate = (variables, options) => {
+        const journalKey = toJournalKey(variables?.journalId);
+        if(journalKey && inFlightLikeIdsRef.current.has(journalKey)){
+            return;
+        }
+
+        if(journalKey){
+            inFlightLikeIdsRef.current.add(journalKey);
+        }
+
+        mutation.mutate(variables, {
+            ...options,
+            onSettled: (data, error, vars, context) => {
+                if(journalKey){
+                    inFlightLikeIdsRef.current.delete(journalKey);
+                }
+                options?.onSettled?.(data, error, vars, context);
+            }
+        });
+    };
+
+    const guardedMutateAsync = async (variables, options) => {
+        const journalKey = toJournalKey(variables?.journalId);
+        if(journalKey && inFlightLikeIdsRef.current.has(journalKey)){
+            return {message: 'skipped'};
+        }
+
+        if(journalKey){
+            inFlightLikeIdsRef.current.add(journalKey);
+        }
+
+        try {
+            return await mutation.mutateAsync(variables, options);
+        } finally {
+            if(journalKey){
+                inFlightLikeIdsRef.current.delete(journalKey);
+            }
+        }
+    };
+
+    return {
+        ...mutation,
+        mutate: guardedMutate,
+        mutateAsync: guardedMutateAsync
+    };
 }
 
 export const useFollowMutation = (session) =>{
