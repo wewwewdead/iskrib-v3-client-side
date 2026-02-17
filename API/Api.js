@@ -1326,6 +1326,99 @@ export const clearMyFreedomWallDoodles = async(token, weekId) => {
     return await response.json();
 }
 
+export const requestConstellation = async (token, starIdA, starIdB, label = '') => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/constellation/request`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ starIdA, starIdB, label }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to request constellation');
+    }
+
+    return await response.json();
+};
+
+export const respondConstellation = async (token, constellationId, accept) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/constellation/respond`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ constellationId, accept }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to respond to constellation');
+    }
+
+    return await response.json();
+};
+
+export const getViewportConstellations = async (postIds) => {
+    if (!Array.isArray(postIds) || postIds.length === 0) {
+        return { data: [] };
+    }
+
+    const params = new URLSearchParams();
+    params.set('postIds', postIds.join(','));
+
+    const response = await apiRequest(`${BASE_URL}/constellation/viewport?${params.toString()}`, {
+        method: 'GET',
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch constellations');
+    }
+
+    return await response.json();
+};
+
+export const deleteConstellation = async (token, constellationId) => {
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/constellation/${encodeURIComponent(constellationId)}`, {
+        method: 'DELETE',
+        headers: headers,
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to delete constellation');
+    }
+
+    return await response.json();
+};
+
+export const getUniversePosts = async(minX, maxX, minY, maxY, limit = 200) => {
+    const params = new URLSearchParams();
+    params.set('minX', String(minX));
+    params.set('maxX', String(maxX));
+    params.set('minY', String(minY));
+    params.set('maxY', String(maxY));
+    params.set('limit', String(limit));
+
+    const response = await apiRequest(`${BASE_URL}/universe/posts?${params.toString()}`, {
+        method: 'GET'
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch universe posts');
+    }
+
+    return await response.json();
+}
+
 // export const getLikedPosts = async(token) =>{
 //     const headers = {}
 //     if(token) headers['Authorization'] = `Bearer ${token}`

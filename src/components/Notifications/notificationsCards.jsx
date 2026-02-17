@@ -9,7 +9,7 @@ import ParseContent from "../HomePage/postCards/parseData";
 import formatPostDate from "../../../helpers/formatDateString";
 import { handleCLickContent, handleClickOpinion } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
-import { useReadNotificationMutation, useUserDeleteNotificationMutation } from "../../utils/useMutation";
+import { useReadNotificationMutation, useUserDeleteNotificationMutation, useRespondConstellationMutation } from "../../utils/useMutation";
 import { AnimatePresence, motion} from "framer-motion";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import { handleImageFallback } from "../../utils/handleImageFallback";
@@ -63,6 +63,20 @@ const NotificationCards = () =>{
                 <svg xmlns="http://www.w3.org/2000/svg" fill="var(--accent-amber)" width="30px" height="30px" viewBox="0 0 32 32" version="1.1">
                     <title>reply-all</title>
                     <path d="M0 16q0-1.056 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.64 0.352 0.928 1.056l-8.096 5.376q-0.832 0.576-1.312 1.472t-0.448 1.856 0.448 1.888 1.312 1.44l8.096 5.376q-0.288 0.736-0.928 1.088-0.48 0.256-1.056 0.224t-0.992-0.352l-12-8q-0.896-0.544-0.896-1.664zM8 16q0-1.088 0.896-1.664l12-8q0.448-0.288 0.992-0.32t1.056 0.224q0.48 0.256 0.768 0.736t0.288 1.024v4q3.328 0 5.664 2.336t2.336 5.664q0 2.080-1.12 4-1.056-1.824-2.88-2.912t-4-1.088v4q0 0.544-0.288 1.024t-0.768 0.736-1.056 0.224-0.992-0.32l-12-8q-0.896-0.576-0.896-1.664z"/>
+                </svg>,
+        },
+        {
+            type: 'constellation_request',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30px" height="30px" fill="#5f92ff">
+                    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+                </svg>,
+        },
+        {
+            type: 'constellation_accepted',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30px" height="30px" fill="#5fffb0">
+                    <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
                 </svg>,
         }
     ]
@@ -154,6 +168,7 @@ const NotificationCards = () =>{
         setSettingsId(settingsId === notifId ? null : notifId);
     }
 
+    const mutationRespondConstellation = useRespondConstellationMutation(session);
     const mutationDeleteNotif  = useUserDeleteNotificationMutation(session);
 
     const handleClickDeleteNotification = async(e, notifId, source) =>{
@@ -269,9 +284,58 @@ const NotificationCards = () =>{
 
                             <div
                             className="notification-content"
-                            onClick={(e) => handleReadNotif(e, notification)}
+                            onClick={(e) => {
+                                if (displayType === 'constellation_request' || displayType === 'constellation_accepted') {
+                                    e.stopPropagation();
+                                    mutationReadNotif.mutate({ notifId: notification.id, source: notification?.source || 'journal' });
+                                    navigate('/universe', {
+                                        state: {
+                                            flyToConstellation: {
+                                                starIdA: notification.constellations?.star_id_a,
+                                                starIdB: notification.constellations?.star_id_b,
+                                            },
+                                        },
+                                    });
+                                    return;
+                                }
+                                handleReadNotif(e, notification);
+                            }}
                             >
-                                {isOpinion ? (
+                                {displayType === 'constellation_request' ? (
+                                    <div className="notification-content-text">
+                                        <p className="notif-content-sliced-text">wants to create a constellation link with your star</p>
+                                        {notification.constellations?.status === 'accepted' ? (
+                                            <span className="constellation-status-badge constellation-status-accepted">Accepted</span>
+                                        ) : notification.constellations?.status === 'declined' ? (
+                                            <span className="constellation-status-badge constellation-status-declined">Declined</span>
+                                        ) : (
+                                            <div className="constellation-respond-buttons">
+                                                <button
+                                                    className="constellation-accept-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        mutationRespondConstellation.mutate({ constellationId: notification?.constellation_id, accept: true });
+                                                    }}
+                                                >
+                                                    Accept
+                                                </button>
+                                                <button
+                                                    className="constellation-decline-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        mutationRespondConstellation.mutate({ constellationId: notification?.constellation_id, accept: false });
+                                                    }}
+                                                >
+                                                    Decline
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : displayType === 'constellation_accepted' ? (
+                                    <div className="notification-content-text">
+                                        <p className="notif-content-sliced-text">Your constellation link has been accepted!</p>
+                                    </div>
+                                ) : isOpinion ? (
                                     <div className="notification-content-text">
                                         <p className="notif-content-sliced-text">{notification?.opinions?.opinion?.length > 100 ? notification?.opinions?.opinion?.substring(0, 100) + '...' : notification?.opinions?.opinion}</p>
                                     </div>

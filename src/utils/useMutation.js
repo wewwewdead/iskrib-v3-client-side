@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
+import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, respondConstellation, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
 
 const updateInfiniteJournalsCache = (old, updater) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -417,4 +417,39 @@ export const useUpdateCollectionPrivacyMutation = (session) => {
         retry: 1,
         onSucces: (data) => console.log(data)
     })
+}
+
+export const useRespondConstellationMutation = (session) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => respondConstellation(session?.access_token, data?.constellationId, data?.accept),
+        onMutate: async (data) => {
+            await queryClient.cancelQueries(['getNotifications']);
+            const previousData = queryClient.getQueryData(['getNotifications']);
+            queryClient.setQueryData(['getNotifications'], (old) => {
+                if (!old || !Array.isArray(old.pages)) return old;
+                return {
+                    ...old,
+                    pages: old.pages.map((page) => ({
+                        ...page,
+                        data: Array.isArray(page?.data) ? page.data.map((notif) => {
+                            if (notif.constellation_id === data.constellationId) {
+                                return { ...notif, constellations: { status: data.accept ? 'accepted' : 'declined' } };
+                            }
+                            return notif;
+                        }) : page?.data,
+                    })),
+                };
+            });
+            return { previousData };
+        },
+        onError: (err, data, context) => {
+            if (context?.previousData) {
+                queryClient.setQueryData(['getNotifications'], context.previousData);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries(['getNotifications']);
+        }
+    });
 }

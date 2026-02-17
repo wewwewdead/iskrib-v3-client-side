@@ -102,6 +102,25 @@ const HomePage = () => {
         </svg>
     };
 
+    const universeLink = {
+        path: '/universe',
+        label: 'Universe',
+        action: () => navigate('/universe'),
+        icon:
+        <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"}>
+            <circle cx="6" cy="6" r="2"/>
+            <circle cx="18" cy="8" r="1.5"/>
+            <circle cx="12" cy="4" r="1"/>
+            <circle cx="10" cy="14" r="2.5"/>
+            <circle cx="17" cy="17" r="1.8"/>
+            <circle cx="5" cy="19" r="1.2"/>
+            <line x1="6" y1="6" x2="12" y2="4" stroke={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"} strokeWidth="0.5" opacity="0.4"/>
+            <line x1="12" y1="4" x2="18" y2="8" stroke={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"} strokeWidth="0.5" opacity="0.4"/>
+            <line x1="6" y1="6" x2="10" y2="14" stroke={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"} strokeWidth="0.5" opacity="0.4"/>
+            <line x1="10" y1="14" x2="17" y2="17" stroke={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"} strokeWidth="0.5" opacity="0.4"/>
+        </svg>
+    };
+
     const authLinks = [
         {
             path: '/profile',
@@ -178,8 +197,8 @@ const HomePage = () => {
     ];
 
     const links = isGuest
-        ? [homeLink, exploreLink, galleryLink, freedomWallLink, ...guestLinks]
-        : [homeLink, exploreLink, galleryLink, freedomWallLink, ...authLinks];
+        ? [homeLink, exploreLink, galleryLink, freedomWallLink, universeLink, ...guestLinks]
+        : [homeLink, exploreLink, galleryLink, freedomWallLink, universeLink, ...authLinks];
 
     const imgRef = useRef(null)
     const [showProfileEditor, setShowProfileEditor] = useState(false);

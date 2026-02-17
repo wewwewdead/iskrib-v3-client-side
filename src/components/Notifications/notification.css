@@ -287,6 +287,73 @@
     overflow-y: auto;
 }
 
+/* Constellation notification buttons */
+.constellation-respond-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.constellation-accept-btn {
+    padding: 6px 16px;
+    background: rgba(95, 255, 176, 0.12);
+    border: 1px solid rgba(95, 255, 176, 0.4);
+    border-radius: 8px;
+    color: #5fffb0;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.constellation-accept-btn:hover {
+    background: rgba(95, 255, 176, 0.2);
+    border-color: rgba(95, 255, 176, 0.6);
+}
+
+.constellation-decline-btn {
+    padding: 6px 16px;
+    background: rgba(255, 95, 95, 0.1);
+    border: 1px solid rgba(255, 95, 95, 0.3);
+    border-radius: 8px;
+    color: rgba(255, 95, 95, 0.8);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.constellation-decline-btn:hover {
+    background: rgba(255, 95, 95, 0.18);
+    border-color: rgba(255, 95, 95, 0.5);
+}
+
+/* Constellation status badges */
+.constellation-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+    width: fit-content;
+}
+
+.constellation-status-accepted {
+    background: rgba(95, 255, 176, 0.12);
+    color: #5fffb0;
+    border: 1px solid rgba(95, 255, 176, 0.3);
+}
+
+.constellation-status-declined {
+    background: rgba(150, 150, 150, 0.1);
+    color: rgba(150, 150, 150, 0.7);
+    border: 1px solid rgba(150, 150, 150, 0.2);
+}
+
 /* mobile responsive */
 @media(max-width: 768px){
     .notifications-header {

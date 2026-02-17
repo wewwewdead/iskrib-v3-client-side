@@ -35,6 +35,7 @@ const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionVie
 const ExplorePage = lazy(() => import('./components/HomePage/explore/ExplorePage.jsx'));
 const GalleryPage = lazy(() => import('./components/HomePage/gallery/GalleryPage.jsx'));
 const FreedomWallPage = lazy(() => import('./components/HomePage/freedomWall/FreedomWallPage.jsx'));
+const Universe = lazy(() => import('./components/Universe/Universe.jsx'));
 
 const AppAuthModal = () => {
   const {showAuthModal, closeAuthModal} = useAuth();
@@ -118,6 +119,8 @@ const App = () => {
                 <Route path='unreadNotification' element={<UnreadNotification/>}/>
               </Route>  
             </Route>   
+
+            <Route path='/universe' element={<Universe/>}/>
 
             <Route path='/login' element={<LoginPage/>}/>
             <Route path='/signUp' element={<SignUp/>}/>

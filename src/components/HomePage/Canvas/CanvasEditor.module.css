@@ -26,11 +26,16 @@
     width: fit-content;
     border-radius: 999px;
     padding: 0.3rem 0.68rem;
-    border: 1px solid rgba(17, 25, 40, 0.2);
+    border: 1px solid color-mix(in srgb, var(--accent-purple) 30%, var(--border-light));
     background: linear-gradient(120deg, rgba(111, 207, 151, 0.15), rgba(254, 202, 87, 0.16));
-    color: #2f3e46;
+    color: var(--text-primary);
     font-size: 0.72rem;
     letter-spacing: 0.01em;
+}
+
+[data-theme="dark"] .remixBanner {
+    border-color: color-mix(in srgb, var(--accent-purple) 46%, var(--border-light));
+    background: linear-gradient(120deg, rgba(111, 207, 151, 0.24), rgba(251, 191, 36, 0.24));
 }
 
 /* ── New layout wrappers ── */
