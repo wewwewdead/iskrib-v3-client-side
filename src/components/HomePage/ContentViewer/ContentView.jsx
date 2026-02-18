@@ -457,9 +457,7 @@ const ContentView = () => {
                     <div className="cv-body">
                         {postData?.postType === 'canvas' ? (
                             <CanvasViewer
-                                journalId={postData?.journalId}
                                 canvasDoc={postData?.canvasDoc}
-                                authorId={postData?.userId}
                             />
                         ) : (
                             <LexicalComposer initialConfig={{

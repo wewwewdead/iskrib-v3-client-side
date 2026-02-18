@@ -487,66 +487,6 @@ export const getComments = async(cursor= null, limit= 10, postId) =>{
     }
 }
 
-export const addCanvasStamp = async(token, payload) => {
-    const headers = {'Content-Type': 'application/json'};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/canvas/stamps`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload || {})
-    });
-
-    if(!response.ok){
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.error || 'failed to add canvas stamp');
-    }
-
-    return await response.json();
-}
-
-export const getCanvasStamps = async(journalId, token = null) => {
-    if(!journalId){
-        throw new Error('journalId is required');
-    }
-
-    const headers = {};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/canvas/stamps?journalId=${encodeURIComponent(journalId)}`, {
-        method: 'GET',
-        headers: headers
-    });
-
-    if(!response.ok){
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.error || 'failed to fetch canvas stamps');
-    }
-
-    return await response.json();
-}
-
-export const deleteCanvasStamp = async(token, stampId) => {
-    if(!stampId){
-        throw new Error('stampId is required');
-    }
-
-    const headers = {};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/canvas/stamps/${encodeURIComponent(stampId)}`, {
-        method: 'DELETE',
-        headers: headers
-    });
-
-    if(!response.ok){
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.error || 'failed to delete canvas stamp');
-    }
-
-    return await response.json();
-}
-
 export const createCanvasRemix = async(token, payload) => {
     const headers = {'Content-Type': 'application/json'};
     if(token) headers['Authorization'] = `Bearer ${token}`;
@@ -560,66 +500,6 @@ export const createCanvasRemix = async(token, payload) => {
     if(!response.ok){
         const error = await response.json().catch(() => ({}));
         throw new Error(error?.error || 'failed to create canvas remix');
-    }
-
-    return await response.json();
-}
-
-export const getCanvasMargins = async(journalId, token = null) => {
-    if(!journalId){
-        throw new Error('journalId is required');
-    }
-
-    const headers = {};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/canvas/margins?journalId=${encodeURIComponent(journalId)}`, {
-        method: 'GET',
-        headers: headers
-    });
-
-    if(!response.ok){
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.error || 'failed to fetch canvas margins');
-    }
-
-    return await response.json();
-}
-
-export const addCanvasMargin = async(token, payload) => {
-    const headers = {'Content-Type': 'application/json'};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/canvas/margins`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload || {})
-    });
-
-    if(!response.ok){
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.error || 'failed to add canvas margin item');
-    }
-
-    return await response.json();
-}
-
-export const deleteCanvasMargin = async(token, marginId) => {
-    if(!marginId){
-        throw new Error('marginId is required');
-    }
-
-    const headers = {};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/canvas/margins/${encodeURIComponent(marginId)}`, {
-        method: 'DELETE',
-        headers: headers
-    });
-
-    if(!response.ok){
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.error || 'failed to delete canvas margin item');
     }
 
     return await response.json();
