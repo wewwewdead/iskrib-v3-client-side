@@ -505,6 +505,24 @@ export const createCanvasRemix = async(token, payload) => {
     return await response.json();
 }
 
+export const createRepost = async(token, {sourceJournalId, caption}) => {
+    const headers = {'Content-Type': 'application/json'};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/repost`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({sourceJournalId, caption})
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to create repost');
+    }
+
+    return await response.json();
+}
+
 export const addBookmark = async(token, journalId) =>{
     const headers = {'Content-Type': 'application/json'};
     if(token) headers['Authorization'] = `Bearer ${token}`;

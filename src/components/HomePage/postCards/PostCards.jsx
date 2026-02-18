@@ -19,6 +19,7 @@ import formatPostDate from "../../../../helpers/formatDateString";
 import { handleImageFallback } from "../../../utils/handleImageFallback";
 import { getCanvasPreview } from "../../../utils/canvasDoc";
 import CanvasPreview from "./CanvasPreview/CanvasPreview";
+import RepostModal from "../../RepostModal/RepostModal";
 
 
 const PostCards = () => {
@@ -44,6 +45,8 @@ const PostCards = () => {
     const [debouncedSearchInput, setDebouncedSearchInput] = useState('');
     const [committedSearchQuery, setCommittedSearchQuery] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [repostModalJournal, setRepostModalJournal] = useState(null);
+    const [repostToastMessage, setRepostToastMessage] = useState('');
 
     const handleClickUserProfileOriginal = handleClickProfile(navigate);
     const clickContent = handleCLickContent(navigate);
@@ -179,6 +182,14 @@ const PostCards = () => {
                 debounceClickBookmark(journalId);
             },
             countBookmarks: (count) => <p  style={{padding: '0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
+        },
+        {
+            repostAction: true,
+            repostIcon:
+                <svg className="svg-repost" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="#5e5e5eff">
+                    <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
+                </svg>,
+            className: 'repost-button',
         },
         {
             iconCount: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.6rem', color: "var(--icon-view-count)"}}>{formatCounts(count)}</p>,
@@ -519,17 +530,24 @@ const PostCards = () => {
                 </div>
             )}
             {journals.map((journal, index) => {
-                const isCanvasPost = journal?.post_type === 'canvas';
-                const parsedContent = ParseContent(journal.content);
+                const isRepost = journal?.is_repost === true;
+                const isCanvasPost = !isRepost && journal?.post_type === 'canvas';
+                const parsedContent = !isRepost ? ParseContent(journal.content) : null;
                 const canvasPreview = isCanvasPost ? getCanvasPreview(journal?.canvas_doc) : null;
-                const wholeText = isCanvasPost ? canvasPreview?.wholeText || '' : parsedContent?.wholeText || '';
-                const previewText = isCanvasPost ? canvasPreview?.slicedText || '' : parsedContent?.slicedText || '';
-                const thumbnail = isCanvasPost ? null : parsedContent?.firstImage?.src;
+                const wholeText = isRepost ? '' : isCanvasPost ? canvasPreview?.wholeText || '' : parsedContent?.wholeText || '';
+                const previewText = isRepost ? '' : isCanvasPost ? canvasPreview?.slicedText || '' : parsedContent?.slicedText || '';
+                const thumbnail = isRepost ? null : isCanvasPost ? null : parsedContent?.firstImage?.src;
                 const isLiked = journal?.has_liked;
                 const isBookmarked = journal?.has_bookmarked;
+
+                // For repost cards: parse original post content for preview
+                const repostSource = isRepost ? journal?.repost_source : null;
+                const repostSourceParsed = repostSource ? ParseContent(repostSource.content) : null;
+                const repostSourcePreviewText = repostSourceParsed?.slicedText || '';
+
                 return(
                     <motion.div
-                        className={`cards${isCanvasPost ? ' is-canvas-card' : ''}`}
+                        className={`cards${isCanvasPost ? ' is-canvas-card' : ''}${isRepost ? ' is-repost-card' : ''}`}
                         key={journal.id}
                         onClick={isCanvasPost ? (e) => handleExpandCanvas(e, journal) : undefined}
                         role={isCanvasPost ? 'button' : undefined}
@@ -542,55 +560,123 @@ const PostCards = () => {
                         } : undefined}
                     >
 
-                        {isCanvasPost && (
-                            <CanvasPreview canvasDoc={journal?.canvas_doc} />
-                        )}
-
-                        {thumbnail && (
-                            <img
-                                className="card-image-banner"
-                                src={thumbnail}
-                                alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
-                                loading="lazy"
-                                onError={handleImageFallback}
-                                onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)}
-                            />
-                        )}
-
-                        <div className="card-content">
-                            <div onClick={isCanvasPost ? undefined : (e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)} className="content-container">
-                                <div className="feed-text-content-container">
-                                    <div className="feed-title-content">
-                                        {isCanvasPost && (
-                                            <span className="canvas-type-badge">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                     strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="M12 19l7-7 3 3-7 7-3-3z"/>
-                                                    <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
-                                                    <path d="M2 2l7.586 7.586"/>
-                                                    <circle cx="11" cy="11" r="2"/>
-                                                </svg>
-                                                Canvas
-                                            </span>
-                                        )}
-                                        <h2 className="feed-title">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
-                                    </div>
-                                    <p className="feed-text-content">{previewText}</p>
-                                </div>
+                        {isRepost && (
+                            <div className="repost-header-badge">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="var(--text-faint)">
+                                    <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
+                                </svg>
+                                <span onClick={(e) => handleClickUserProfile(e, user?.userData?.[0]?.id, journal.users.id)} className="repost-header-name">{journal.users.name}</span>
+                                <span>reposted</span>
                             </div>
+                        )}
 
-                            {isCanvasPost && (
-                                <div className="canvas-card-actions">
-                                    <button
-                                        type="button"
-                                        className="canvas-card-action-btn is-remix"
-                                        onClick={(e) => handleRemixCanvas(e, journal)}
-                                    >
-                                        Remix this Canvas
-                                    </button>
+                        {isRepost ? (
+                            <div
+                                className="card-content"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if(!session) return openAuthModal();
+                                    const formadata = new FormData();
+                                    formadata.append('journalId', journal.id);
+                                    mutateViews.mutate(formadata);
+                                    const postSlug = journal.title
+                                        ? journal.title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+                                        : '';
+                                    navigate(`/home/post/${encodeURIComponent(journal.id)}${postSlug ? `/${postSlug}` : ''}`, {
+                                        state: {
+                                            isRepost: true,
+                                            repostCaption: journal.repost_caption || '',
+                                            repostSource: repostSource,
+                                            title: journal.title,
+                                            userId: journal.users?.id,
+                                            name: journal.users?.name,
+                                            avatar: journal.users?.image_url,
+                                            created_at: journal.created_at,
+                                            journalId: journal.id,
+                                            isLiked: journal.has_liked,
+                                            commentsCount: journal.comment_count?.[0]?.count || 0,
+                                            isBookmarked: journal.has_bookmarked,
+                                            likesCount: journal.like_count?.[0]?.count || 0,
+                                            bookmarksCount: journal.bookmark_count?.[0]?.count || 0,
+                                            badge: journal.users?.badge,
+                                        }
+                                    });
+                                }}
+                            >
+                                {journal.repost_caption && (
+                                    <p className="repost-caption-text">{journal.repost_caption}</p>
+                                )}
+                                {repostSource ? (
+                                    <div className="repost-embedded-card">
+                                        <div className="repost-embedded-author">
+                                            <img className="repost-embedded-avatar" src={repostSource.users?.image_url || '/assets/profile.jpg'} alt="original author" />
+                                            <span className="repost-embedded-name">{repostSource.users?.name}</span>
+                                            <VerifiedBadge badge={repostSource.users?.badge} size={12} />
+                                        </div>
+                                        <p className="repost-embedded-title">{repostSource.title?.length > 60 ? repostSource.title.substring(0, 60) + '...' : repostSource.title}</p>
+                                        {repostSourcePreviewText && (
+                                            <p className="repost-embedded-text">{repostSourcePreviewText}</p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="repost-unavailable">
+                                        This post is no longer available
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                {isCanvasPost && (
+                                    <CanvasPreview canvasDoc={journal?.canvas_doc} />
+                                )}
+
+                                {thumbnail && (
+                                    <img
+                                        className="card-image-banner"
+                                        src={thumbnail}
+                                        alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
+                                        loading="lazy"
+                                        onError={handleImageFallback}
+                                        onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)}
+                                    />
+                                )}
+
+                                <div className="card-content">
+                                    <div onClick={isCanvasPost ? undefined : (e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)} className="content-container">
+                                        <div className="feed-text-content-container">
+                                            <div className="feed-title-content">
+                                                {isCanvasPost && (
+                                                    <span className="canvas-type-badge">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                             strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                                                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                                                            <path d="M2 2l7.586 7.586"/>
+                                                            <circle cx="11" cy="11" r="2"/>
+                                                        </svg>
+                                                        Canvas
+                                                    </span>
+                                                )}
+                                                <h2 className="feed-title">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
+                                            </div>
+                                            <p className="feed-text-content">{previewText}</p>
+                                        </div>
+                                    </div>
+
+                                    {isCanvasPost && (
+                                        <div className="canvas-card-actions">
+                                            <button
+                                                type="button"
+                                                className="canvas-card-action-btn is-remix"
+                                                onClick={(e) => handleRemixCanvas(e, journal)}
+                                            >
+                                                Remix this Canvas
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
+                            </>
+                        )}
 
                         <div className="card-icons-container">
                             <div className="user-info-child-container">
@@ -623,6 +709,20 @@ const PostCards = () => {
                                             {icon.bookmarkAction && (
                                                 <div onClick={(e) => icon.bookmarkAction(e, journal.id)} id="card-icons" className={icon.className}>
                                                     {icon.checkBookrmark(isBookmarked)}
+                                                </div>
+                                            )}
+
+                                            {icon.repostAction && journal.users.id !== userId && (
+                                                <div onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    if(!session) return openAuthModal();
+                                                    const journalForModal = journal.is_repost && journal.repost_source
+                                                        ? { id: journal.repost_source.id, title: journal.repost_source.title, users: journal.repost_source.users }
+                                                        : journal;
+                                                    setRepostModalJournal(journalForModal);
+                                                }} id="card-icons" className={icon.className}>
+                                                    {icon.repostIcon}
                                                 </div>
                                             )}
 
@@ -680,6 +780,33 @@ const PostCards = () => {
             )}
         </div>
        </AnimatePresence>
+
+        {repostModalJournal && (
+            <RepostModal
+                journal={repostModalJournal}
+                onClose={(result) => {
+                    setRepostModalJournal(null);
+                    if(result === 'success'){
+                        setRepostToastMessage('Post was reposted');
+                        setTimeout(() => setRepostToastMessage(''), 2500);
+                    }
+                }}
+            />
+        )}
+
+        <AnimatePresence>
+            {repostToastMessage && (
+                <motion.div
+                    className="repost-toast"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {repostToastMessage}
+                </motion.div>
+            )}
+        </AnimatePresence>
         </>
     )
 }

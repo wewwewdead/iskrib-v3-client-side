@@ -6,6 +6,7 @@ const FormatNotificationType = (type) => {
         comment: 'Commented on your post',
         reply: 'Replied on your comment',
         follow: 'Follows you',
+        repost: 'Reposted your post',
         opinion_reply: 'Replied to your opinion',
         constellation_request: 'Wants to link stars with you',
         constellation_accepted: 'Accepted your constellation link'

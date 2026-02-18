@@ -66,6 +66,13 @@ const NotificationCards = () =>{
                 </svg>,
         },
         {
+            type: 'repost',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" width="30px" height="30px" viewBox="0 0 24 24" fill="var(--accent-sage)">
+                    <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
+                </svg>,
+        },
+        {
             type: 'constellation_request',
             icon:
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30px" height="30px" fill="#5f92ff">
@@ -92,6 +99,11 @@ const NotificationCards = () =>{
 
         if(source === 'opinion'){
             handleClickOpinionNotif(e, notification?.opinions?.id, notification?.opinions?.user_id)
+        } else if(notification?.type === 'repost' && notification?.repost_journal_id){
+            // Navigate to the repost post (quote + embedded original)
+            const repostId = notification.repost_journal_id;
+            const encodedId = encodeURIComponent(repostId);
+            navigate(`/home/post/${encodedId}`);
         } else {
             const parsedContent = ParseContent(notification?.journals?.content);
             handleClickNotif(

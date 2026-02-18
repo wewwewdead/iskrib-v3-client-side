@@ -296,6 +296,153 @@
     cursor: not-allowed;
 }
 
+/* ── Repost view ── */
+.cv-repost-quote-section {
+    margin-top: 80px;
+    margin-bottom: 20px;
+}
+.cv-repost-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-faint);
+    user-select: none;
+}
+.cv-repost-badge svg {
+    flex-shrink: 0;
+}
+.cv-repost-badge-name {
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.1s ease;
+}
+.cv-repost-badge-name:hover {
+    color: var(--text-primary);
+}
+.cv-repost-badge-label {
+    color: var(--text-faint);
+}
+.cv-repost-badge-date {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+.cv-repost-caption {
+    margin: 16px 0 0;
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 450;
+    color: var(--text-heading);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.cv-repost-embedded {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.25rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-card);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cv-repost-embedded:hover {
+    border-color: var(--accent-sage);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+.cv-repost-embedded-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.cv-repost-embedded-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.cv-repost-embedded-name {
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.cv-repost-embedded-date {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+.cv-repost-embedded-title {
+    margin: 0.25rem 0 0;
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+.cv-repost-embedded-content {
+    margin-top: 0.75rem;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text-primary);
+    line-height: 1.75;
+    pointer-events: none;
+}
+.cv-repost-embedded-content .editor-paragraph {
+    margin: 0 0 0.6rem;
+}
+.cv-repost-embedded-content img {
+    max-width: 100%;
+    border-radius: 4px;
+}
+.cv-repost-embedded-content .editor-heading-h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 1rem 0 0.5rem;
+    color: var(--text-heading);
+}
+.cv-repost-embedded-content .editor-heading-h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0.85rem 0 0.4rem;
+    color: var(--text-heading);
+}
+.cv-repost-embedded-content .editor-quote {
+    margin: 0.5rem 0;
+    padding: 0.3rem 0.75rem;
+    border-left: 2px solid var(--accent-purple);
+    background: color-mix(in srgb, var(--accent-purple) 5%, transparent);
+    color: var(--text-primary);
+    font-style: italic;
+}
+.cv-repost-unavailable {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    margin-bottom: 80px;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-card);
+    border-radius: 12px;
+    font-family: var(--font-ui);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-faint);
+}
+
 /* ── Toast ── */
 .cv-toast {
     position: fixed;
@@ -369,5 +516,20 @@
         transform: none;
         text-align: center;
         width: fit-content;
+    }
+    .cv-repost-quote-section {
+        margin-top: 60px;
+    }
+    .cv-repost-embedded {
+        padding: 1rem;
+    }
+    .cv-repost-embedded-title {
+        font-size: 1.2rem;
+    }
+    .cv-repost-embedded-content {
+        font-size: 0.9rem;
+    }
+    .cv-repost-caption {
+        font-size: 1rem;
     }
 }

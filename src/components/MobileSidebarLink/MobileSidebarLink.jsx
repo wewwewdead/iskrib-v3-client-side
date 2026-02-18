@@ -47,8 +47,8 @@ const MobileSidebarLink = ({onclose}) => {
                         <img className='sidebar-profile-avatar' src={userData?.image_url || '/assets/profile.jpg'} alt={`${userData?.name || "User"} profile picture`} />
                     </div>
 
-                    <div onClick={signOut} className='sidebar-signout-bttn'>
-                        Sign Out
+                    <div onClick={userData ? signOut : () => navigatePath('/login')} className='sidebar-signout-bttn'>
+                        {userData ? 'Sign Out' : 'Log In'}
                     </div>
 
                 </div>

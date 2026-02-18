@@ -680,6 +680,119 @@
     letter-spacing: 0.01rem;
 }
 
+/* ── Repost card ── */
+.repost-header-badge{
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1.15rem 0;
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-faint);
+}
+.repost-header-name{
+    font-weight: 650;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.repost-header-name:hover{
+    text-decoration: underline;
+    color: var(--accent-sage);
+}
+.repost-caption-text{
+    margin: 0;
+    font-family: var(--font-ui);
+    font-size: 0.88rem;
+    font-weight: 450;
+    color: var(--text-heading);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.repost-embedded-card{
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-card);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.repost-embedded-card:hover{
+    border-color: var(--accent-sage);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+.repost-embedded-author{
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.repost-embedded-avatar{
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.repost-embedded-name{
+    font-family: var(--font-ui);
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.repost-embedded-title{
+    margin: 0;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 0.92rem;
+    font-weight: 650;
+    color: var(--text-heading);
+    line-height: 1.35;
+}
+.repost-embedded-text{
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--text-body);
+    line-height: 1.55;
+}
+.repost-unavailable{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-card);
+    border-radius: 10px;
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-faint);
+}
+.repost-button:hover{
+    background-color: rgba(72, 208, 135, 0.12);
+}
+.repost-button:hover .svg-repost path{
+    fill: var(--accent-sage);
+}
+.repost-toast{
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    padding: 0.5rem 1.2rem;
+    background: var(--accent-sage);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
 .sample-content-show{
     width: 100%;
     height: 100%;

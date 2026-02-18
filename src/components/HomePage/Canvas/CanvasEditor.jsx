@@ -176,7 +176,7 @@ const CanvasMinimap = ({viewport, stageWidth, stageHeight, viewportWidth, viewpo
 
     const handleRectPointerDown = (e) => {
         e.stopPropagation();
-        e.preventDefault();
+        if(e.cancelable) e.preventDefault();
         const startPos = getClientPos(e);
         const startRectX = rectX;
         const startRectY = rectY;

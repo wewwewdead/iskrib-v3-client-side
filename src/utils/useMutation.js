@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, addJournalViews, clickLike, deleteNotification, readNotification, respondConstellation, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
+import {addBookmark, addFollows, addJournalViews, clickLike, createRepost, deleteNotification, readNotification, respondConstellation, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
 
 const updateInfiniteJournalsCache = (old, updater) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -450,6 +450,17 @@ export const useRespondConstellationMutation = (session) => {
         },
         onSettled: () => {
             queryClient.invalidateQueries(['getNotifications']);
+        }
+    });
+}
+
+export const useRepostMutation = (session) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data) => createRepost(session?.access_token, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['journals'] });
+            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
         }
     });
 }
