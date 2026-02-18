@@ -679,7 +679,13 @@
         right: 16px;
         left: 16px;
         bottom: 12px;
-        max-height: 300px;
+        max-height: calc(100vh - 80px);
+        max-height: calc(100dvh - 80px);
+        overflow-y: auto;
+    }
+
+    .galaxyPreviewBg {
+        height: 80px;
     }
 
     .linkModeButton {
