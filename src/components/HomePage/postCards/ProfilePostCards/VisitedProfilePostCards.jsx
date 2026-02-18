@@ -157,6 +157,7 @@ const VisitedProfilePostCards = () =>{
                 const wholeText = isCanvasPost ? canvasPreview?.wholeText || '' : parsedContent?.wholeText || '';
                 const previewText = isCanvasPost ? canvasPreview?.slicedText || '' : parsedContent?.slicedText || '';
                 const thumbnail = isCanvasPost ? null : parsedContent?.firstImage?.src;
+                const badgeClass = journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : '';
 
                 return(
                     <motion.div
@@ -177,47 +178,12 @@ const VisitedProfilePostCards = () =>{
                                 alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                 loading="lazy"
                                 onError={handleImageFallback}
-                                onClick={(e) => viewContent(
-                                    e,
-                                    journal?.content,
-                                    wholeText,
-                                    journal?.title,
-                                    userId,
-                                    journal?.users?.name,
-                                    journal?.users?.image_url,
-                                    journal?.created_at,
-                                    journal?.id,
-                                    journal?.has_liked,
-                                    journal?.comment_count?.[0].count,
-                                    journal?.has_bookmarked,
-                                    journal?.like_count?.[0].count,
-                                    journal?.bookmark_count?.[0].count,
-                                    journal?.users?.badge,
-                                    journal?.post_type,
-                                    journal?.canvas_doc )}
+                                onClick={(e) => viewContent(e, journal?.content, wholeText, journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.canvas_doc)}
                             />
                         )}
 
                         <div className='user-profile-card-content'>
-                            <div onClick={(e) => viewContent(
-                                e,
-                                journal?.content,
-                                 wholeText,
-                                 journal?.title,
-                                 userId,
-                                 journal?.users?.name,
-                                 journal?.users?.image_url,
-                                 journal?.created_at,
-                                 journal?.id,
-                                 journal?.has_liked,
-                                 journal?.comment_count?.[0].count,
-                                 journal?.has_bookmarked,
-                                 journal?.like_count?.[0].count,
-                                 journal?.bookmark_count?.[0].count,
-                                 journal?.users.badge,
-                                 journal?.post_type,
-                                 journal?.canvas_doc )} className="content-container">
-
+                            <div onClick={(e) => viewContent(e, journal?.content, wholeText, journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.canvas_doc)} className="content-container">
                                 <div className='feed-text-content-container'>
                                     <div className='feed-title-content'>
                                         <h2 className="feed-title-profile-page">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
@@ -228,7 +194,7 @@ const VisitedProfilePostCards = () =>{
 
                             <div className="card-icons-container">
                                 <div className='user-info-child-container'>
-                                    <div className={`user-avatar-container ${journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                    <div className={`user-avatar-container ${badgeClass}`}>
                                         <img src={journal.users.image_url || '/assets/profile.jpg'} alt="user-profile" loading='lazy' className="user-info-avatar"/>
                                     </div>
                                     <div className="user-name-container">

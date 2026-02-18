@@ -16,6 +16,7 @@ import WormholeLayer from './layers/WormholeLayer';
 import ConstellationLayer from './layers/ConstellationLayer';
 import RocketLayer from './layers/RocketLayer';
 import UniverseMinimap from './components/UniverseMinimap';
+import ConstellationPanel from './components/ConstellationPanel';
 import RocketHUD from './components/RocketHUD';
 import useRocketMode, { MAGNET_THRESHOLD_Z } from './hooks/useRocketMode';
 import { extractSnippet, MIN_UNIVERSE_ZOOM, userHomeCoords } from './utils/starUtils';
@@ -1108,6 +1109,19 @@ const Universe = () => {
                                 ))}
                             </div>
                         </div>
+                    )}
+
+                    {focusedConstellation && !isLinkMode && (
+                        <ConstellationPanel
+                            constellation={focusedConstellation}
+                            posts={posts}
+                            onClose={handleDismissFocus}
+                            onReadPost={(postId) => navigate(`/home/post/${postId}`)}
+                            onFlyToStar={(starId) => {
+                                handleConstellationTravel(starId, focusedConstellation);
+                                handleDismissFocus();
+                            }}
+                        />
                     )}
                 </>
             )}

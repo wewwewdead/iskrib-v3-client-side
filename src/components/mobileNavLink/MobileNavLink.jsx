@@ -3,15 +3,14 @@ import './mobilenavlink.css';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../Context/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { preloadProfileRoute } from '../../utils/preloadRoutes';
 
-const MobileNavlink = ({ clickOpenSidebar }) => {
+const MobileNavlink = () => {
     const [showNavlinks, setShowNavlinks] = useState(true);
     const timeOutRef = useRef();
     const navigate = useNavigate();
     const location = useLocation();
 
-    const { user, notifCount, session, openAuthModal } = useAuth();
+    const { session, openAuthModal } = useAuth();
 
     const handleNavigatePath = (path) => {
         if (location.pathname === path) {
@@ -20,19 +19,10 @@ const MobileNavlink = ({ clickOpenSidebar }) => {
         return navigate(path);
     };
 
-    const activeColor = '#5f92ff';
+    const activeColor = '#D4A853';
     const inactiveColor = '#787878';
 
     const navLinks = [
-        {
-            type: 'profile',
-            label: 'Me',
-            action: () => {
-                if (!session) return openAuthModal();
-                preloadProfileRoute();
-                clickOpenSidebar();
-            },
-        },
         {
             type: 'icon',
             label: 'Home',
@@ -73,35 +63,35 @@ const MobileNavlink = ({ clickOpenSidebar }) => {
         },
         {
             type: 'icon',
-            label: 'Notifications',
-            path: '/home/notifications',
-            action: (path) => {
-                if (!session) return openAuthModal();
-                handleNavigatePath(path);
-            },
-            notifCount: notifCount > 0 ? notifCount : '',
+            label: 'Freedom Wall',
+            path: '/home/freedom-wall',
+            action: (path) => handleNavigatePath(path),
             icon: (isActive) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill={isActive ? activeColor : inactiveColor}>
-                    <g>
-                        <path fillRule="evenodd" clipRule="evenodd" d="M14.802 19.8317C15.4184 19.7699 15.8349 20.4242 15.5437 20.9539C15.3385 21.3271 15.0493 21.6529 14.7029 21.9197C14.3496 22.1918 13.9397 22.4006 13.5 22.5408C13.0601 22.6812 12.593 22.7522 12.1242 22.7522C11.6554 22.7522 11.1883 22.6812 10.7484 22.5408C10.3087 22.4006 9.89883 22.1918 9.54556 21.9197C9.1991 21.6529 8.90988 21.3271 8.70472 20.9539C8.41354 20.4242 8.83002 19.7699 9.44644 19.8317C9.63869 19.851 11.1433 19.9981 12.1242 19.9981C13.1051 19.9981 14.6097 19.851 14.802 19.8317Z" fill={isActive ? activeColor : inactiveColor}/>
-                        <path fillRule="evenodd" clipRule="evenodd" d="M8.52901 2.08755C10.7932 1.00445 13.4465 0.967602 15.7423 1.98737L15.9475 2.07851C18.3532 3.14707 19.8934 5.4622 19.8934 8.0096L19.8934 9.27297C19.8934 10.2885 20.1236 11.2918 20.5681 12.213L20.8335 12.7632C22.0525 15.29 20.465 18.2435 17.6156 18.7498L17.455 18.7783C13.93 19.4046 10.3154 19.4046 6.79044 18.7783C3.90274 18.2653 2.37502 15.1943 3.77239 12.7115L3.99943 12.3082C4.55987 11.3124 4.85335 10.1981 4.85335 9.06596L4.85335 7.79233C4.85335 5.3744 6.27704 3.16478 8.52901 2.08755Z" fill={isActive ? activeColor : inactiveColor}/>
-                    </g>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7.2A3.2 3.2 0 0 1 7.2 4h9.6A3.2 3.2 0 0 1 20 7.2v9.6a3.2 3.2 0 0 1-3.2 3.2H7.2A3.2 3.2 0 0 1 4 16.8V7.2Z" stroke={isActive ? activeColor : inactiveColor} strokeWidth="1.6" />
+                    <path d="M8 15.5c1.7-3 2.4-3 4 0 1.5-2.2 2.1-2.2 3.9 0" stroke={isActive ? activeColor : inactiveColor} strokeWidth="1.6" strokeLinecap="round" />
+                    <circle cx="9" cy="9.2" r="1.1" fill={isActive ? activeColor : inactiveColor} />
+                    <circle cx="14.2" cy="8.6" r="0.9" fill={isActive ? activeColor : inactiveColor} />
                 </svg>
             ),
         },
         {
             type: 'icon',
-            label: 'Bookmarks',
-            path: '/home/bookmark',
-            action: (path) => {
-                if (!session) return openAuthModal();
-                handleNavigatePath(path);
-            },
+            label: 'Universe',
+            path: '/universe',
+            action: (path) => handleNavigatePath(path),
             icon: (isActive) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none">
-                    <g>
-                        <path fillRule="evenodd" clipRule="evenodd" d="M8 1.25C5.37665 1.25 3.25 3.37665 3.25 6V20.4648C3.25 21.7269 4.27311 22.75 5.53518 22.75C5.98634 22.75 6.42739 22.6165 6.80278 22.3662L11.3066 19.3636C11.7265 19.0837 12.2735 19.0837 12.6934 19.3636L17.1972 22.3662C17.5726 22.6165 18.0137 22.75 18.4648 22.75C19.7269 22.75 20.75 21.7269 20.75 20.4648V6C20.75 3.37665 18.6234 1.25 16 1.25H8ZM9 6.75C8.58579 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 8.58579 8.25 9 8.25H15C15.4142 8.25 15.75 7.91421 15.75 7.5C15.75 7.08579 15.4142 6.75 15 6.75H9Z" fill={isActive ? activeColor : inactiveColor}/>
-                    </g>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill={isActive ? activeColor : inactiveColor}>
+                    <circle cx="6" cy="6" r="2"/>
+                    <circle cx="18" cy="8" r="1.5"/>
+                    <circle cx="12" cy="4" r="1"/>
+                    <circle cx="10" cy="14" r="2.5"/>
+                    <circle cx="17" cy="17" r="1.8"/>
+                    <circle cx="5" cy="19" r="1.2"/>
+                    <line x1="6" y1="6" x2="12" y2="4" stroke={isActive ? activeColor : inactiveColor} strokeWidth="0.5" opacity="0.4"/>
+                    <line x1="12" y1="4" x2="18" y2="8" stroke={isActive ? activeColor : inactiveColor} strokeWidth="0.5" opacity="0.4"/>
+                    <line x1="6" y1="6" x2="10" y2="14" stroke={isActive ? activeColor : inactiveColor} strokeWidth="0.5" opacity="0.4"/>
+                    <line x1="10" y1="14" x2="17" y2="17" stroke={isActive ? activeColor : inactiveColor} strokeWidth="0.5" opacity="0.4"/>
                 </svg>
             ),
         },
@@ -142,28 +132,6 @@ const MobileNavlink = ({ clickOpenSidebar }) => {
                         {navLinks.map((link, index) => {
                             const isActive = link.path && location.pathname === link.path;
 
-                            if (link.type === 'profile') {
-                                return (
-                                    <div
-                                        key={index}
-                                        className="mobile-navlink-item"
-                                        onClick={link.action}
-                                    >
-                                        <div className="mobile-navlink-profile-container">
-                                            <img
-                                                loading="lazy"
-                                                className={`navlink-profile ${session ? 'navlink-profile-active' : ''}`}
-                                                src={user?.userData?.[0]?.image_url || '/assets/profile.jpg'}
-                                                alt="profile"
-                                            />
-                                        </div>
-                                        <p className={`mobile-navlink-label ${session ? 'mobile-navlink-label-active' : ''}`}>
-                                            {link.label}
-                                        </p>
-                                    </div>
-                                );
-                            }
-
                             return (
                                 <div
                                     key={index}
@@ -172,11 +140,6 @@ const MobileNavlink = ({ clickOpenSidebar }) => {
                                 >
                                     <div className="mobile-navlink-icons">
                                         {link.icon(isActive)}
-                                        {link.notifCount && (
-                                            <div className="notification-count">
-                                                {link.notifCount}
-                                            </div>
-                                        )}
                                     </div>
                                     <p className={`mobile-navlink-label ${isActive ? 'mobile-navlink-label-active' : ''}`}>
                                         {link.label}

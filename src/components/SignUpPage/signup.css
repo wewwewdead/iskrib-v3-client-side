@@ -36,7 +36,7 @@
     border-radius: 47% 53% 61% 39% / 45% 51% 49% 55%;
     background: radial-gradient(
         ellipse at 30% 30%,
-        rgba(107, 143, 113, 0.08),
+        rgba(212, 168, 83, 0.08),
         transparent 70%
     );
     top: -120px;
@@ -52,7 +52,7 @@
     border-radius: 61% 39% 47% 53% / 49% 55% 45% 51%;
     background: radial-gradient(
         ellipse at 70% 60%,
-        rgba(107, 143, 113, 0.06),
+        rgba(212, 168, 83, 0.06),
         transparent 70%
     );
     bottom: -80px;
@@ -68,12 +68,12 @@
 }
 
 .brand {
-    font-family: "Lexend Deca", sans-serif;
+    font-family: "Playfair Display", serif;
     font-size: 1.1rem;
     font-weight: 600;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     margin-bottom: 48px;
     position: relative;
     z-index: 1;
@@ -84,7 +84,7 @@
     display: block;
     width: 32px;
     height: 2px;
-    background: var(--accent-sage);
+    background: var(--accent-amber);
     margin-top: 16px;
     opacity: 0.5;
 }
@@ -132,7 +132,7 @@
     display: inline-block;
     width: 4px;
     height: 4px;
-    background: var(--accent-sage);
+    background: var(--accent-amber);
     border-radius: 50%;
     opacity: 0.6;
 }
@@ -172,7 +172,7 @@
 }
 
 .form-title {
-    font-family: "Lexend Deca", sans-serif;
+    font-family: "Playfair Display", serif;
     font-size: 1.5rem;
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -238,8 +238,8 @@
 
 .auth-input:focus {
     outline: none;
-    border-color: var(--accent-sage);
-    box-shadow: 0 0 0 3px rgba(107, 143, 113, 0.12);
+    border-color: var(--accent-amber);
+    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.12);
     background: var(--bg-primary);
 }
 
@@ -275,11 +275,11 @@
 
 .show-toggle:hover {
     background: var(--bg-hover);
-    color: var(--accent-sage);
+    color: var(--accent-amber);
 }
 
 .show-toggle:focus-visible {
-    outline: 2px solid var(--accent-sage);
+    outline: 2px solid var(--accent-amber);
     outline-offset: 2px;
 }
 
@@ -372,9 +372,9 @@
 }
 
 .secondary-button:hover:not(:disabled) {
-    border-color: var(--accent-sage);
-    background: rgba(107, 143, 113, 0.04);
-    color: var(--accent-sage);
+    border-color: var(--accent-amber);
+    background: rgba(212, 168, 83, 0.04);
+    color: var(--accent-amber);
 }
 
 .secondary-button:disabled {
@@ -404,7 +404,7 @@
 .link-button {
     background: none;
     border: none;
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     font-family: var(--font-ui);
     font-weight: 600;
     font-size: 0.85rem;
@@ -420,7 +420,7 @@
 }
 
 .link-button:focus-visible {
-    outline: 2px solid var(--accent-sage);
+    outline: 2px solid var(--accent-amber);
     outline-offset: 2px;
     border-radius: 4px;
 }
@@ -571,7 +571,7 @@
 [data-theme="dark"] .auth-panel::before {
     background: radial-gradient(
         ellipse at 30% 30%,
-        rgba(127, 168, 134, 0.06),
+        rgba(212, 168, 83, 0.06),
         transparent 70%
     );
 }
@@ -579,7 +579,7 @@
 [data-theme="dark"] .auth-panel::after {
     background: radial-gradient(
         ellipse at 70% 60%,
-        rgba(127, 168, 134, 0.04),
+        rgba(212, 168, 83, 0.04),
         transparent 70%
     );
 }
@@ -625,10 +625,10 @@
 }
 
 [data-theme="dark"] .primary-button {
-    background: var(--accent-sage);
-    color: #0f1710;
+    background: var(--accent-amber);
+    color: #1A1612;
 }
 
 [data-theme="dark"] .primary-button:hover:not(:disabled) {
-    box-shadow: 0 4px 20px rgba(127, 168, 134, 0.25);
+    box-shadow: 0 4px 20px rgba(212, 168, 83, 0.25);
 }

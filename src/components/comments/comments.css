@@ -68,7 +68,7 @@
     width: 5px;
 }
 .cm-list::-webkit-scrollbar-thumb {
-    background: var(--accent-sage);
+    background: var(--accent-amber);
     border-radius: 4px;
 }
 .cm-list::-webkit-scrollbar-track {
@@ -99,7 +99,7 @@
     font-family: var(--font-ui);
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     transition: background-color 0.15s ease;
 }
 .cm-load-more:hover {
@@ -137,7 +137,7 @@
 }
 .cm-textarea:focus {
     outline: none;
-    border-color: var(--accent-sage);
+    border-color: var(--accent-amber);
 }
 .cm-textarea::placeholder {
     color: var(--text-faint);
@@ -166,7 +166,7 @@
     border: none;
     padding: 0.35rem 1.1rem;
     border-radius: 20px;
-    background-color: var(--accent-sage);
+    background-color: var(--accent-amber);
     color: #ffffff;
     font-family: var(--font-ui);
     font-size: 0.78rem;
@@ -210,7 +210,7 @@
     transition: background-color 0.2s ease;
 }
 .cm-card:hover > .cm-thread-line {
-    background-color: var(--accent-sage);
+    background-color: var(--accent-amber);
 }
 
 .cm-card-content {
@@ -259,7 +259,7 @@
     transition: color 0.15s ease;
 }
 .cm-username:hover {
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     text-decoration: underline;
 }
 .cm-dot {
@@ -306,7 +306,7 @@
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 .cm-reply-btn:hover {
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     background-color: var(--bg-pill);
 }
 
@@ -326,7 +326,7 @@
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 .cm-toggle-replies-btn:hover {
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     background-color: var(--bg-pill);
 }
 
@@ -354,7 +354,7 @@
 }
 .cm-reply-textarea:focus {
     outline: none;
-    border-color: var(--accent-sage);
+    border-color: var(--accent-amber);
 }
 .cm-reply-textarea::placeholder {
     color: var(--text-faint);
@@ -382,7 +382,7 @@
     border: none;
     padding: 0.3rem 0.9rem;
     border-radius: 20px;
-    background-color: var(--accent-sage);
+    background-color: var(--accent-amber);
     color: #ffffff;
     font-family: var(--font-ui);
     font-size: 0.72rem;
@@ -419,7 +419,7 @@
     font-family: var(--font-ui);
     font-size: 0.72rem;
     font-weight: 500;
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     transition: background-color 0.15s ease;
 }
 .cm-show-more-replies:hover {

@@ -7,7 +7,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #04141d;
+    background-color: #0C0C0C;
     z-index: 9999;
 }
 
@@ -20,7 +20,7 @@
 
 /* the brand text inside the SVG */
 .splash-text {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Playfair Display', serif;
     font-weight: 800;
     font-size: 42px;
     letter-spacing: -0.03em;
@@ -49,7 +49,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: rgb(4, 20, 29);
+    background-color: #0C0C0C;
     backdrop-filter: blur(25px);
     width: 100%;
     height: 100vh;

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './writejournalbutton.css'
 
-const WriteJournalButton = ({onOpen}) =>{
+const WriteJournalButton = ({onOpen, hideOnHomeFeed}) =>{
     const [showPenIcon, setShowPenIcon] = useState(true)
     const timeOutRef = useRef();
 
@@ -31,7 +31,7 @@ const WriteJournalButton = ({onOpen}) =>{
         <AnimatePresence>
             {showPenIcon && (
                 <motion.div
-                    className="write-journal-fab"
+                    className={`write-journal-fab${hideOnHomeFeed ? ' fab-hidden-home' : ''}`}
                     onClick={onOpen}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }}

@@ -123,7 +123,7 @@
     right: 0;
     height: 3px;
     border-radius: 12px 12px 0 0;
-    background: linear-gradient(90deg, var(--accent-sage), color-mix(in srgb, var(--accent-sage) 60%, #8b5cf6));
+    background: linear-gradient(90deg, var(--accent-sage), color-mix(in srgb, var(--accent-sage) 60%, var(--accent-amber)));
     opacity: 0.7;
     transition: opacity 0.2s ease;
     z-index: 0;

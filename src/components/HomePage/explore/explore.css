@@ -162,8 +162,8 @@
     width: fit-content;
     padding: 0.25rem 0.65rem 0.25rem 0.4rem;
     border-radius: 20px;
-    background: linear-gradient(135deg, rgba(107, 143, 113, 0.15), rgba(245, 158, 11, 0.1));
-    border: 1px solid rgba(107, 143, 113, 0.25);
+    background: linear-gradient(135deg, rgba(212, 168, 83, 0.15), rgba(245, 158, 11, 0.1));
+    border: 1px solid rgba(212, 168, 83, 0.25);
 }
 .explore-hero-flame{
     width: 16px;
@@ -181,7 +181,7 @@
     font-weight: 700;
     letter-spacing: 0.04rem;
     text-transform: uppercase;
-    color: var(--accent-sage);
+    color: var(--accent-amber);
 }
 
 /* Hero title */
@@ -238,7 +238,7 @@
     gap: 0.25rem;
     padding: 0.22rem 0.55rem;
     border-radius: 8px;
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(107, 143, 113, 0.08));
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(212, 168, 83, 0.08));
     border: 1px solid rgba(245, 158, 11, 0.2);
     font-family: var(--font-ui);
     font-size: 0.62rem;
@@ -286,7 +286,7 @@
 .explore-runner-card:hover{
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
     transform: translateY(-1px);
-    border-color: rgba(107, 143, 113, 0.2);
+    border-color: rgba(212, 168, 83, 0.2);
 }
 
 /* Rank column */
@@ -307,7 +307,7 @@
     user-select: none;
 }
 .explore-runner-rank--top{
-    color: var(--accent-sage);
+    color: var(--accent-amber);
 }
 
 /* Runner body */
@@ -429,7 +429,7 @@
     user-select: none;
 }
 .explore-page-container .cards:nth-child(-n+3) .explore-rank{
-    color: var(--accent-sage);
+    color: var(--accent-amber);
 }
 
 /* ── Fix border stacking in search mode ── */

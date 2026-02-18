@@ -193,28 +193,27 @@
         border-radius: 5px;
     }
 
-    /* ── Freedom Wall CTA (mobile) ── */
-    .mobile-freedom-wall-cta{
+    /* ── Notification badge in sidebar ── */
+    .sidebar-notif-label{
         display: flex;
-        justify-content: flex-start;
         align-items: center;
-        padding: 0.35rem 0.5rem;
-        color: #e6a817;
-        background: linear-gradient(135deg, rgba(234, 179, 56, 0.1), rgba(255, 204, 51, 0.06));
-        border: 1px solid rgba(234, 179, 56, 0.22);
-        border-radius: 8px;
-        font-weight: 660;
+        gap: 0.4rem;
     }
-    .mobile-freedom-wall-cta-active{
+    .sidebar-notif-badge{
         display: flex;
-        justify-content: flex-start;
+        justify-content: center;
         align-items: center;
-        padding: 0.35rem 0.5rem;
-        color: #ffffff;
-        background: linear-gradient(135deg, #e6a817, #d4960e);
-        border: 1px solid rgba(234, 179, 56, 0.4);
-        border-radius: 8px;
-        font-weight: 660;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 10px;
+        background-color: rgb(255, 100, 100);
+        color: #fff;
+        font-family: var(--font-ui, sans-serif);
+        font-size: 0.6rem;
+        font-weight: 700;
+        line-height: 1;
+        box-sizing: border-box;
     }
 
     /* ── Mobile dark mode toggle ── */

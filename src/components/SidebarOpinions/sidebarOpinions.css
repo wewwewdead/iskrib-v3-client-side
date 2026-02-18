@@ -26,7 +26,7 @@
     padding: 0.8rem;
     border: 0.7px solid  rgba(151, 151, 151, 0.168);
     gap: 0.8rem;
-    background-color: #4995c7;
+    background-color: #D4A853;
     border-radius: 15px;
 }
 .signal-header{
@@ -47,7 +47,7 @@
   transition: ease-in-out 0.2s;
 }
 .write-opinions-bttn:hover{
-    background-color: rgb(0, 99, 156); 
+    background-color: #B8862D;
 }
 
 .latest-opinions-container{
@@ -67,7 +67,7 @@
     width: 5px;
 }
 .latest-opinions-container::-webkit-scrollbar-thumb{
-    background: var(--accent-sage);
+    background: var(--accent-amber);
     border-radius: 4px;
 }
 .latest-opinions-container::-webkit-scrollbar-track{
@@ -190,7 +190,7 @@
     border: none;
     padding: 0.35rem 1.15rem;
     border-radius: 20px;
-    background-color: var(--accent-sage);
+    background-color: var(--accent-amber);
     color: #ffffff;
     font-family: var(--font-ui);
     font-size: 0.78rem;
@@ -298,8 +298,8 @@
     font-size: 0.8rem;
     border-radius: 15px;
     padding: 0.8rem;
-    background-color: #E3F2FD;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), 
+    background-color: rgba(212, 168, 83, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05),
                 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 /* The larger circle */
@@ -311,7 +311,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background-color: #bbddf4;
+    background-color: rgba(212, 168, 83, 0.25);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 /* The smaller circle */
@@ -323,7 +323,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: #9cc2dc;
+    background-color: rgba(212, 168, 83, 0.2);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 .opinion-reply-button{
@@ -334,8 +334,8 @@
     align-items: center;
     padding: 0.2rem 0.5rem;
     border-radius: 10px;
-    background-color: #9cc2dc;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), 
+    background-color: rgba(212, 168, 83, 0.25);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05),
                 0 1px 4px rgba(0, 0, 0, 0.05);
     gap: 0.2rem;
     color: rgb(80, 80, 80);
@@ -396,7 +396,7 @@
     font-size: 0.8rem;
     border-radius: 15px;
     padding: 0.8rem 1rem;
-    background-color: #E3F2FD;
+    background-color: rgba(212, 168, 83, 0.1);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
@@ -404,7 +404,7 @@
     cursor: pointer;
     font-weight: 650;
     font-size: 0.78rem;
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     font-family: var(--font-ui);
     text-decoration: underline;
 }
@@ -427,7 +427,7 @@
     cursor: pointer;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18),
                 0 1.5px 6px rgba(0, 0, 0, 0.10),
-                0 0 18px rgba(255, 255, 255, 0.18);
+                0 0 18px rgba(212, 168, 83, 0.18);
     transition: box-shadow 0.25s ease,
                 transform 0.25s ease;
     user-select: none;
@@ -436,7 +436,7 @@
 .write-opinion-fab:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.24),
                 0 2px 8px rgba(0, 0, 0, 0.12),
-                0 0 22px rgba(255, 255, 255, 0.24);
+                0 0 22px rgba(212, 168, 83, 0.24);
     transform: translateY(-2px);
 }
 .write-opinion-fab:active {
@@ -533,8 +533,8 @@
     font-size: 1rem;
     border-radius: 15px;
     padding: 0.8rem;
-    background-color: #E3F2FD;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), 
+    background-color: rgba(212, 168, 83, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05),
                 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -547,7 +547,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background-color: #E3F2FD;
+    background-color: rgba(212, 168, 83, 0.15);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 /* The smaller circle */
@@ -559,7 +559,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: #E3F2FD;
+    background-color: rgba(212, 168, 83, 0.12);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 .visited-user-opinions-inview{
@@ -809,7 +809,7 @@
     cursor: pointer;
 }
 .so-username:hover {
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     text-decoration: underline;
 }
 
@@ -901,7 +901,7 @@
     transition: color 0.15s ease;
 }
 .ov-username:hover {
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     text-decoration: underline;
 }
 .ov-dot {
@@ -940,7 +940,7 @@
     font-family: var(--font-ui);
     font-size: 0.72rem;
     font-weight: 500;
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     cursor: pointer;
 }
 .ov-full-date {
@@ -980,7 +980,7 @@
     cursor: text;
 }
 .ov-reply-input:focus {
-    border-bottom: 2px solid var(--accent-sage);
+    border-bottom: 2px solid var(--accent-amber);
 }
 
 .ov-btn-row {
@@ -1009,7 +1009,7 @@
     border: none;
     padding: 0.35rem 1rem;
     border-radius: 20px;
-    background-color: var(--accent-sage);
+    background-color: var(--accent-amber);
     color: #ffffff;
     font-family: var(--font-ui);
     font-size: 0.78rem;
@@ -1054,7 +1054,7 @@
     transition: background-color 0.2s ease;
 }
 .rc-card:hover > .rc-thread-line {
-    background-color: var(--accent-sage);
+    background-color: var(--accent-amber);
 }
 
 .rc-content {
@@ -1122,7 +1122,7 @@
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 .rc-toggle-btn:hover {
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     background-color: var(--bg-pill);
 }
 
@@ -1147,7 +1147,7 @@
     font-family: var(--font-ui);
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--accent-sage);
+    color: var(--accent-amber);
     transition: background-color 0.15s ease;
 }
 .rc-load-more:hover {

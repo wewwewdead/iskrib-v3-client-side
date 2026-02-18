@@ -490,7 +490,7 @@ const HomePage = () => {
                 )}
                 </AnimatePresence> */}
 
-                <Outlet />
+                <Outlet context={{ clickOpenSidebar: handleClickMobileProfileLink, handleOpenTextEditor }} />
             </div>
             <div className="sidebar-right-holder-container">
                 {/* Log out */}
@@ -500,11 +500,11 @@ const HomePage = () => {
                 
             </div>
             
-            {!isGuest && !isOpinionsPage && !isOpinionsViewer&& (
-                <WriteJournalButton onOpen={handleOpenTextEditor}/>
+            {!isGuest && !isOpinionsPage && !isOpinionsViewer && (
+                <WriteJournalButton onOpen={handleOpenTextEditor} hideOnHomeFeed={location.pathname === '/home' || location.pathname === '/home/opinions'}/>
             )}
             
-            <MobileNavlink clickOpenSidebar={handleClickMobileProfileLink}/>
+            <MobileNavlink />
         </div>
         
         {showMobileSideBar && (

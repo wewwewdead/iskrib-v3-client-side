@@ -7,7 +7,7 @@ import { getJournals, searchJournals } from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
-import { useLocation, useNavigate, } from "react-router-dom";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 
 import { useAuth } from "../../../Context/useAuth";
@@ -24,6 +24,8 @@ import CanvasPreview from "./CanvasPreview/CanvasPreview";
 const PostCards = () => {
     const {session, user, openAuthModal} = useAuth();
     const location = useLocation();
+    const outletContext = useOutletContext() || {};
+    const { clickOpenSidebar, handleOpenTextEditor } = outletContext;
 
     const navigate = useNavigate();
     const modalRef = useRef(null);
@@ -404,7 +406,16 @@ const PostCards = () => {
 
     return(
         <>
-        <div className="search-shell feed-search-shell" ref={searchShellRef}>
+        <div className="mobile-top-header">
+            <span className="mobile-brand-text">iskrib</span>
+            {clickOpenSidebar && (
+                <button className="mobile-header-profile-btn" onClick={clickOpenSidebar}>
+                    <img src={user?.userData?.[0]?.image_url || '/assets/profile.jpg'} alt="profile" />
+                </button>
+            )}
+        </div>
+
+        <div className="search-shell" ref={searchShellRef}>
         <div className="search-top-bar">
             <div className="search-input-wrap">
                 <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -429,6 +440,14 @@ const PostCards = () => {
             <button type="button" className="search-freedom-wall-btn" onClick={handleVisitFreedomWall}>
                 Visit Freedom Wall
             </button>
+            {handleOpenTextEditor && (
+                <button type="button" className="mobile-write-btn" onClick={() => handleOpenTextEditor()}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path fillRule="evenodd" clipRule="evenodd" d="M22.8013 1.74899C22.6665 1.22946 22.1457 0.908925 21.6212 1.02275C8.65054 3.83745 2.58949 13.7685 0.052924 22.7276C-0.0695134 23.16 0.111594 23.621 0.495639 23.8545C0.671767 23.9616 0.870732 24.0087 1.06614 23.9987C1.30094 22.8623 2.3183 22.0061 3.53976 22L3.82845 21.7288C4.23095 21.3506 4.25066 20.7177 3.87248 20.3153C3.65552 20.0843 3.35472 19.9794 3.06169 20.0033L3.10053 19.9025C3.13285 19.8568 3.16175 19.8078 3.18671 19.7556C3.39169 19.327 3.62105 19.0828 3.85127 18.9282C4.08827 18.769 4.38857 18.663 4.7947 18.6054C5.20936 18.5467 5.69118 18.5437 6.27396 18.5637C6.4627 18.5702 6.66791 18.5794 6.8832 18.5891L6.88328 18.5891C7.29482 18.6077 7.74319 18.6279 8.18371 18.6335C9.57215 18.6515 11.1777 18.5382 12.8464 17.8022C14.5236 17.0625 16.1803 15.7318 17.7487 13.451C17.9918 13.0974 17.9823 12.6281 17.7249 12.2846C17.6946 12.2443 17.6617 12.2067 17.6266 12.1721C18.6722 11.5802 19.5909 10.7793 20.3487 9.88147C21.3629 8.6798 22.1246 7.27154 22.5618 5.86914C22.9956 4.47728 23.1309 3.02041 22.8013 1.74899Z" />
+                    </svg>
+                    Write
+                </button>
+            )}
             {isSearchMode ? (
                 <span className="search-mode-pill">
                     {isSearchFetching ? 'Searching...' : 'Matched'}
@@ -456,6 +475,11 @@ const PostCards = () => {
                 )}
             </div>
         )}
+        </div>
+
+        <div className="mobile-fw-banner" onClick={handleVisitFreedomWall}>
+            <span>Freedom Wall</span>
+            <span className="mobile-fw-banner-sub">Speak freely</span>
         </div>
 
         <AnimatePresence>
@@ -617,7 +641,7 @@ const PostCards = () => {
                                 )}
                             </div>
 
-                            
+
 
                             <div className="reading-time-container">
                                 <p className="reading-time-text">{CalculateText(wholeText)}</p>
@@ -642,7 +666,7 @@ const PostCards = () => {
                             className="bookmarked-content-message-container"
                             >
                                 {bookmarkedMessage}
-                                
+
                             </div>
                         )}
                     </motion.div>

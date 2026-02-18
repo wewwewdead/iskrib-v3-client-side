@@ -27,7 +27,7 @@
     background: rgba(140, 140, 140, 0.3);
 }
 .sidebar-header{
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-family: "Playfair Display", serif;
     padding: 0.2rem 0 0 1.5rem;
     font-size: 1.65rem;
     letter-spacing: -0.02rem;
@@ -254,7 +254,7 @@
     flex-shrink: 0;
 }
 .theme-toggle-track.active{
-    background-color: #5f92ff;
+    background-color: #D4A853;
 }
 .theme-toggle-thumb{
     position: absolute;
