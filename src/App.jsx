@@ -9,7 +9,7 @@ import Loader from './components/loadingComponent/BgLoader.jsx';
 import SeoManager from './seo/SeoManager.jsx';
 
 const AuthModal = lazy(() => import('./components/AuthModal/AuthModal.jsx'));
-const HomePage = lazy(() => import('./components/HomePage/home.jsx'));
+const HomePage = lazy(() => import('./components/HomePage/Home.jsx'));
 const LoginPage = lazy(() => import('./components/LoginPage/login.jsx'));
 const SignUp = lazy(() => import('./components/SignUpPage/signup.jsx'));
 const MyProfile = lazy(() => import('./components/ProfilePage/MyProfile.jsx'));
