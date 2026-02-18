@@ -14,7 +14,10 @@ import NebulaLayer from './layers/NebulaLayer';
 import InteractiveLayer from './layers/InteractiveLayer';
 import WormholeLayer from './layers/WormholeLayer';
 import ConstellationLayer from './layers/ConstellationLayer';
+import RocketLayer from './layers/RocketLayer';
 import UniverseMinimap from './components/UniverseMinimap';
+import RocketHUD from './components/RocketHUD';
+import useRocketMode, { MAGNET_THRESHOLD_Z } from './hooks/useRocketMode';
 import { extractSnippet, MIN_UNIVERSE_ZOOM, userHomeCoords } from './utils/starUtils';
 import {
     buildSectorIndex,
@@ -57,6 +60,12 @@ const Universe = () => {
     const [constellations, setConstellations] = useState([]);
     const [linkModeError, setLinkModeError] = useState(null);
     const [focusedConstellation, setFocusedConstellation] = useState(null);
+    const [universeMode, setUniverseMode] = useState('strategic');
+    const [rocketWarpIn, setRocketWarpIn] = useState(false);
+    const [reverseWarpActive, setReverseWarpActive] = useState(false);
+    const selectedGalaxyUserIdRef = useRef(null);
+    const pendingRocketRestoreRef = useRef(null);
+    const warpTimerRef = useRef(null);
 
     // Gravity data from server (fallback paths when embeddings are unavailable in payload)
     const [centroids, setCentroids] = useState([]);
@@ -76,6 +85,8 @@ const Universe = () => {
         isLinkMode, firstStar, secondStar, isSubmitting, linkModeStatus,
         toggleLinkMode, cancelLinkMode, handleStarClickInLinkMode, submitLink,
     } = useConstellationLinkMode(userId, session);
+
+    const rocketMode = useRocketMode();
 
     const [labelInput, setLabelInput] = useState('');
 
@@ -553,6 +564,149 @@ const Universe = () => {
         setFocusedConstellation(null);
     }, []);
 
+    // ── Rocket mode handlers ─────────────────────────────────────
+    const handleExploreGalaxy = useCallback(() => {
+        if (!selectedGalaxy) return;
+        const galaxyPosts = postArray.filter(p => {
+            const uid = p.users?.id ?? p.user_id;
+            return uid === selectedGalaxy.userId;
+        });
+        if (galaxyPosts.length === 0) return;
+
+        selectedGalaxyUserIdRef.current = selectedGalaxy.userId;
+        const center = { x: selectedGalaxy.x, y: selectedGalaxy.y };
+        const size = { ...stageSize }; // snapshot at click time
+        setRocketWarpIn(true);
+        setSelectedGalaxy(null);
+        setGalaxyProfile(null);
+
+        warpTimerRef.current = setTimeout(() => {
+            setRocketWarpIn(false);
+            if (size.width === 0 || size.height === 0) return;
+            setUniverseMode('pilot');
+            rocketMode.enter(galaxyPosts, center, size);
+        }, 800);
+    }, [selectedGalaxy, postArray, rocketMode, stageSize]);
+
+    const handleExitRocket = useCallback(() => {
+        rocketMode.exit();
+        setUniverseMode('strategic');
+    }, [rocketMode]);
+
+    const handleRocketInteract = useCallback(() => {
+        const ds = rocketMode.getDockingState();
+        // Already docking — ignore
+        if (ds === 'approaching' || ds === 'flash' || ds === 'done') return;
+
+        const post = rocketMode.getTargetedPost();
+        if (!post) return;
+
+        const idx = rocketMode.targetIndexRef.current;
+        const stars = rocketMode.starsRef.current;
+        const targetStar = idx >= 0 && idx < stars.length ? stars[idx] : null;
+
+        const saveSessionAndNavigate = (snapshot) => {
+            const sessionData = {
+                ...snapshot,
+                galaxyUserId: selectedGalaxyUserIdRef.current,
+                postId: post.id,
+            };
+            try { sessionStorage.setItem('rocketSession', JSON.stringify(sessionData)); } catch { /* storage full */ }
+            navigate(`/home/post/${post.id}`, { state: { fromRocket: true } });
+        };
+
+        if (targetStar && targetStar.viewZ < MAGNET_THRESHOLD_Z) {
+            // Close enough — trigger cinematic docking sequence
+            rocketMode.triggerDocking(idx, () => saveSessionAndNavigate(rocketMode.getSessionSnapshot()));
+        } else {
+            // Far away — direct navigate (existing fallback for ENTER at distance)
+            saveSessionAndNavigate(rocketMode.getSessionSnapshot());
+        }
+    }, [rocketMode, navigate]);
+
+    // Set docking callback for proximity auto-dock
+    useEffect(() => {
+        rocketMode.setDockingCallback(() => {
+            const idx = rocketMode.dockingTargetIdxRef.current;
+            const stars = rocketMode.starsRef.current;
+            if (idx < 0 || idx >= stars.length) return;
+            const post = stars[idx].post;
+            if (!post) return;
+
+            const snapshot = rocketMode.getSessionSnapshot();
+            const sessionData = {
+                ...snapshot,
+                galaxyUserId: selectedGalaxyUserIdRef.current,
+                postId: post.id,
+            };
+            try { sessionStorage.setItem('rocketSession', JSON.stringify(sessionData)); } catch { /* storage full */ }
+            navigate(`/home/post/${post.id}`, { state: { fromRocket: true } });
+        });
+    }, [rocketMode, navigate]);
+
+    // Restore rocket session on mount (reverse warp)
+    useEffect(() => {
+        const raw = sessionStorage.getItem('rocketSession');
+        if (!raw) return;
+        try {
+            const session = JSON.parse(raw);
+            // Discard if older than 5 minutes
+            if (Date.now() - session.timestamp > 5 * 60 * 1000) {
+                sessionStorage.removeItem('rocketSession');
+                return;
+            }
+            sessionStorage.removeItem('rocketSession');
+            setReverseWarpActive(true);
+            pendingRocketRestoreRef.current = session;
+        } catch {
+            sessionStorage.removeItem('rocketSession');
+        }
+    }, []);
+
+    // Once posts load, restore rocket mode from session
+    useEffect(() => {
+        const session = pendingRocketRestoreRef.current;
+        if (!session || postArray.length === 0) return;
+        if (stageSize.width === 0 || stageSize.height === 0) return;
+
+        const galaxyPosts = postArray.filter(p => {
+            const uid = p.users?.id ?? p.user_id;
+            return uid === session.galaxyUserId;
+        });
+
+        if (galaxyPosts.length === 0) {
+            pendingRocketRestoreRef.current = null;
+            setReverseWarpActive(false);
+            return;
+        }
+
+        pendingRocketRestoreRef.current = null;
+        selectedGalaxyUserIdRef.current = session.galaxyUserId;
+        setUniverseMode('pilot');
+        rocketMode.restoreFromSnapshot(session, galaxyPosts, stageSize);
+
+        // Re-install auto-dock callback (cleared during previous docking completion)
+        rocketMode.setDockingCallback(() => {
+            const idx = rocketMode.dockingTargetIdxRef.current;
+            const stars = rocketMode.starsRef.current;
+            if (idx < 0 || idx >= stars.length) return;
+            const post = stars[idx].post;
+            if (!post) return;
+
+            const snapshot = rocketMode.getSessionSnapshot();
+            const sessionData = {
+                ...snapshot,
+                galaxyUserId: selectedGalaxyUserIdRef.current,
+                postId: post.id,
+            };
+            try { sessionStorage.setItem('rocketSession', JSON.stringify(sessionData)); } catch { /* storage full */ }
+            navigate(`/home/post/${post.id}`, { state: { fromRocket: true } });
+        });
+
+        const reverseWarpTimer = setTimeout(() => setReverseWarpActive(false), 600);
+        return () => clearTimeout(reverseWarpTimer);
+    }, [postArray, rocketMode, stageSize, navigate]);
+
     // One-time auto focus after first payload is loaded.
     // Skip if we have a constellation flyTo target — that effect handles it instead.
     useEffect(() => {
@@ -644,6 +798,7 @@ const Universe = () => {
 
     // ESC key to cancel link mode or dismiss constellation focus
     useEffect(() => {
+        if (universeMode !== 'strategic') return;
         if (!isLinkMode && !focusedConstellation) return;
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
@@ -653,105 +808,111 @@ const Universe = () => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isLinkMode, cancelLinkMode, focusedConstellation]);
+    }, [isLinkMode, cancelLinkMode, focusedConstellation, universeMode]);
 
     useEffect(() => {
         return () => {
             if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
             if (settleDebounceRef.current) clearTimeout(settleDebounceRef.current);
+            if (warpTimerRef.current) clearTimeout(warpTimerRef.current);
+            rocketMode.exit();
         };
     }, []);
 
     return (
         <div className={`${styles.universeContainer} ${isDragging ? styles.grabbing : ''}`}>
-            <button className={styles.backButton} onClick={() => navigate('/home')}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-                </svg>
-                Back
-            </button>
+            {universeMode === 'strategic' && (
+                <>
+                    <button className={styles.backButton} onClick={() => navigate('/home')}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                        </svg>
+                        Back
+                    </button>
 
-            {userId && (
-                <button
-                    className={`${styles.linkModeButton} ${isLinkMode ? styles.linkModeActive : ''}`}
-                    onClick={toggleLinkMode}
-                    disabled={isSubmitting}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                        <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
-                    </svg>
-                    {isLinkMode
-                        ? (secondStar ? 'Naming link...' : (firstStar ? 'Select second star...' : 'Select your star...'))
-                        : 'Link Stars'}
-                </button>
-            )}
-
-            {isLinkMode && linkModeStatus === 'enter_label' && (
-                <div className={styles.labelInputPanel}>
-                    <div className={styles.labelInputHeader}>
-                        Link "{firstStar?.title}" ↔ "{secondStar?.title}"
-                    </div>
-                    <input
-                        className={styles.labelInputField}
-                        type="text"
-                        placeholder="Name this constellation (optional)"
-                        value={labelInput}
-                        onChange={(e) => setLabelInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                submitLink(labelInput);
-                                setLabelInput('');
-                            }
-                        }}
-                        autoFocus
-                    />
-                    <div className={styles.labelInputActions}>
+                    {userId && (
                         <button
-                            className={styles.labelInputCreate}
+                            className={`${styles.linkModeButton} ${isLinkMode ? styles.linkModeActive : ''}`}
+                            onClick={toggleLinkMode}
                             disabled={isSubmitting}
-                            onClick={() => {
-                                submitLink(labelInput);
-                                setLabelInput('');
-                            }}
                         >
-                            {isSubmitting ? 'Creating...' : 'Create Link'}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+                            </svg>
+                            {isLinkMode
+                                ? (secondStar ? 'Naming link...' : (firstStar ? 'Select second star...' : 'Select your star...'))
+                                : 'Link Stars'}
                         </button>
-                        <button
-                            className={styles.labelInputCancel}
-                            onClick={() => {
-                                cancelLinkMode();
-                                setLabelInput('');
-                            }}
-                        >
-                            Cancel
-                        </button>
+                    )}
+
+                    {isLinkMode && linkModeStatus === 'enter_label' && (
+                        <div className={styles.labelInputPanel}>
+                            <div className={styles.labelInputHeader}>
+                                Link "{firstStar?.title}" ↔ "{secondStar?.title}"
+                            </div>
+                            <input
+                                className={styles.labelInputField}
+                                type="text"
+                                placeholder="Name this constellation (optional)"
+                                value={labelInput}
+                                onChange={(e) => setLabelInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        submitLink(labelInput);
+                                        setLabelInput('');
+                                    }
+                                }}
+                                autoFocus
+                            />
+                            <div className={styles.labelInputActions}>
+                                <button
+                                    className={styles.labelInputCreate}
+                                    disabled={isSubmitting}
+                                    onClick={() => {
+                                        submitLink(labelInput);
+                                        setLabelInput('');
+                                    }}
+                                >
+                                    {isSubmitting ? 'Creating...' : 'Create Link'}
+                                </button>
+                                <button
+                                    className={styles.labelInputCancel}
+                                    onClick={() => {
+                                        cancelLinkMode();
+                                        setLabelInput('');
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {isLinkMode && linkModeStatus !== 'enter_label' && (
+                        <div className={styles.linkModeIndicator}>
+                            <span>
+                                {linkModeError
+                                    ? linkModeError
+                                    : firstStar
+                                        ? `Selected "${firstStar.title}" — now click another user's star`
+                                        : 'Click one of your stars to begin'}
+                            </span>
+                            <button className={styles.linkModeCancel} onClick={cancelLinkMode}>Cancel</button>
+                        </div>
+                    )}
+
+                    <div className={styles.distanceTracker}>
+                        {(() => {
+                            const dx = centerWorld.x - homePosition.x;
+                            const dy = centerWorld.y - homePosition.y;
+                            const dist = Math.round(Math.sqrt(dx * dx + dy * dy));
+                            return dist < 50
+                                ? 'Home'
+                                : `${dist.toLocaleString()} Lightyears from Home`;
+                        })()}
                     </div>
-                </div>
+                </>
             )}
-
-            {isLinkMode && linkModeStatus !== 'enter_label' && (
-                <div className={styles.linkModeIndicator}>
-                    <span>
-                        {linkModeError
-                            ? linkModeError
-                            : firstStar
-                                ? `Selected "${firstStar.title}" — now click another user's star`
-                                : 'Click one of your stars to begin'}
-                    </span>
-                    <button className={styles.linkModeCancel} onClick={cancelLinkMode}>Cancel</button>
-                </div>
-            )}
-
-            <div className={styles.distanceTracker}>
-                {(() => {
-                    const dx = centerWorld.x - homePosition.x;
-                    const dy = centerWorld.y - homePosition.y;
-                    const dist = Math.round(Math.sqrt(dx * dx + dy * dy));
-                    return dist < 50
-                        ? 'Home'
-                        : `${dist.toLocaleString()} Lightyears from Home`;
-                })()}
-            </div>
 
             {isInitialLoading && (
                 <div className={styles.loadingOverlay}>
@@ -766,168 +927,197 @@ const Universe = () => {
                 ref={stageRef}
                 width={stageSize.width}
                 height={stageSize.height}
-                {...stageEvents}
+                {...(universeMode === 'strategic' ? stageEvents : {})}
                 onClick={(e) => {
+                    if (universeMode !== 'strategic') return;
                     if (focusedConstellation && e.target === e.target.getStage()) {
                         handleDismissFocus();
                     }
                 }}
                 onTap={(e) => {
+                    if (universeMode !== 'strategic') return;
                     if (focusedConstellation && e.target === e.target.getStage()) {
                         handleDismissFocus();
                     }
                 }}
             >
                 <DeepSpaceLayer layerProps={getLayerProps(0.1)} />
-                <MidGalaxyLayer layerProps={getLayerProps(0.4)} />
-                <NebulaLayer
-                    layerProps={getLayerProps(0.85)}
-                    galaxies={galaxies}
-                    centroids={centroids}
-                />
-                {enrichedWormholes.length > 0 && (
-                    <WormholeLayer
-                        layerProps={getLayerProps(1.0)}
-                        wormholes={enrichedWormholes}
-                        zoom={zoom}
-                    />
+                {universeMode === 'strategic' && (
+                    <>
+                        <MidGalaxyLayer layerProps={getLayerProps(0.4)} />
+                        <NebulaLayer
+                            layerProps={getLayerProps(0.85)}
+                            galaxies={galaxies}
+                            centroids={centroids}
+                        />
+                        {enrichedWormholes.length > 0 && (
+                            <WormholeLayer
+                                layerProps={getLayerProps(1.0)}
+                                wormholes={enrichedWormholes}
+                                zoom={zoom}
+                            />
+                        )}
+                        {constellations.length > 0 && (
+                            <ConstellationLayer
+                                layerProps={getLayerProps(1.0)}
+                                constellations={constellations}
+                                computedStarPositions={finalStarPositions}
+                                zoom={zoom}
+                                chainColors={chainColors}
+                                userId={userId}
+                                onConstellationFocus={handleConstellationFocus}
+                                focusedConstellationId={focusedConstellation?.id || null}
+                            />
+                        )}
+                        <InteractiveLayer
+                            layerProps={getLayerProps(1.0)}
+                            posts={postArray}
+                            galaxies={galaxies}
+                            zoom={zoom}
+                            showTitles={showTitles}
+                            pulsingId={pulsingId}
+                            onStarClick={handleStarClick}
+                            onGalaxyClick={handleGalaxyClick}
+                            galaxyPositions={galaxyPositions}
+                            starPullOffsets={starPullOffsets}
+                            similarPairs={similarPairs}
+                            galaxyEdges={effectiveGalaxyEdges}
+                            activePostIds={activePostIds}
+                            useEmbeddingBridges={hasEmbeddingGravity}
+                            camera={camera}
+                            stageSize={stageSize}
+                            computedStarPositions={finalStarPositions}
+                            constellationStarColors={constellationStarColors}
+                            focusedStarIds={focusedStarIds}
+                        />
+                    </>
                 )}
-                {constellations.length > 0 && (
-                    <ConstellationLayer
-                        layerProps={getLayerProps(1.0)}
-                        constellations={constellations}
-                        computedStarPositions={finalStarPositions}
-                        zoom={zoom}
-                        chainColors={chainColors}
-                        userId={userId}
-                        onConstellationFocus={handleConstellationFocus}
-                        focusedConstellationId={focusedConstellation?.id || null}
-                    />
+                {universeMode === 'pilot' && (
+                    <RocketLayer rocketMode={rocketMode} />
                 )}
-                <InteractiveLayer
-                    layerProps={getLayerProps(1.0)}
-                    posts={postArray}
-                    galaxies={galaxies}
-                    zoom={zoom}
-                    showTitles={showTitles}
-                    pulsingId={pulsingId}
-                    onStarClick={handleStarClick}
-                    onGalaxyClick={handleGalaxyClick}
-                    galaxyPositions={galaxyPositions}
-                    starPullOffsets={starPullOffsets}
-                    similarPairs={similarPairs}
-                    galaxyEdges={effectiveGalaxyEdges}
-                    activePostIds={activePostIds}
-                    useEmbeddingBridges={hasEmbeddingGravity}
-                    camera={camera}
-                    stageSize={stageSize}
-                    computedStarPositions={finalStarPositions}
-                    constellationStarColors={constellationStarColors}
-                    focusedStarIds={focusedStarIds}
-                />
             </Stage>
 
             {isWarping && <div className={styles.warpOverlay} />}
+            {rocketWarpIn && <div className={styles.rocketWarpIn} />}
+            {reverseWarpActive && <div className={styles.reverseWarp} />}
 
-            <UniverseMinimap
-                galaxies={galaxies}
-                camera={camera}
-                zoom={zoom}
-                stageSize={stageSize}
-                onNavigate={handleMinimapNavigate}
-                constellations={acceptedConstellations}
-                computedStarPositions={finalStarPositions}
-                focusedConstellationId={focusedConstellation?.id || null}
-            />
-
-            {selectedGalaxy && galaxyProfile && (
-                <div className={styles.galaxyPreviewPanel}>
-                    <button
-                        className={styles.galaxyPreviewClose}
-                        onClick={() => { setSelectedGalaxy(null); setGalaxyProfile(null); }}
-                    >
-                        &times;
-                    </button>
-                    <div
-                        className={styles.galaxyPreviewBg}
-                        style={galaxyProfile.background || {}}
+            {universeMode === 'strategic' && (
+                <>
+                    <UniverseMinimap
+                        galaxies={galaxies}
+                        camera={camera}
+                        zoom={zoom}
+                        stageSize={stageSize}
+                        onNavigate={handleMinimapNavigate}
+                        constellations={acceptedConstellations}
+                        computedStarPositions={finalStarPositions}
+                        focusedConstellationId={focusedConstellation?.id || null}
                     />
-                    <div className={styles.galaxyPreviewContent}>
-                        <img
-                            className={styles.galaxyPreviewAvatar}
-                            src={galaxyProfile.image_url || '/assets/profile.jpg'}
-                            alt=""
-                        />
-                        <div className={styles.galaxyPreviewHeading}>
-                            This is {galaxyProfile.name || selectedGalaxy.name}'s galaxy
+
+                    {selectedGalaxy && galaxyProfile && (
+                        <div className={styles.galaxyPreviewPanel}>
+                            <button
+                                className={styles.galaxyPreviewClose}
+                                onClick={() => { setSelectedGalaxy(null); setGalaxyProfile(null); }}
+                            >
+                                &times;
+                            </button>
+                            <div
+                                className={styles.galaxyPreviewBg}
+                                style={galaxyProfile.background || {}}
+                            />
+                            <div className={styles.galaxyPreviewContent}>
+                                <img
+                                    className={styles.galaxyPreviewAvatar}
+                                    src={galaxyProfile.image_url || '/assets/profile.jpg'}
+                                    alt=""
+                                />
+                                <div className={styles.galaxyPreviewHeading}>
+                                    This is {galaxyProfile.name || selectedGalaxy.name}'s galaxy
+                                </div>
+                                {galaxyProfile.bio && (
+                                    <div className={styles.galaxyPreviewBio}>{galaxyProfile.bio}</div>
+                                )}
+                                <button
+                                    className={styles.galaxyPreviewVisitBtn}
+                                    onClick={(e) => handleClickProfile(navigate)(e, userId, selectedGalaxy.userId)}
+                                >
+                                    Visit Profile
+                                </button>
+                                <button
+                                    className={styles.galaxyPreviewExploreBtn}
+                                    onClick={handleExploreGalaxy}
+                                >
+                                    Explore Galaxy
+                                </button>
+                            </div>
                         </div>
-                        {galaxyProfile.bio && (
-                            <div className={styles.galaxyPreviewBio}>{galaxyProfile.bio}</div>
-                        )}
-                        <button
-                            className={styles.galaxyPreviewVisitBtn}
-                            onClick={(e) => handleClickProfile(navigate)(e, userId, selectedGalaxy.userId)}
-                        >
-                            Visit Profile
-                        </button>
-                    </div>
-                </div>
+                    )}
+
+                    {selectedPost && (
+                        <div className={styles.previewPanel}>
+                            <button
+                                className={styles.previewClose}
+                                onClick={() => setSelectedPost(null)}
+                            >
+                                &times;
+                            </button>
+                            <div className={styles.previewAuthor}>
+                                <img
+                                    className={styles.previewAvatar}
+                                    src={selectedPost.users?.image_url || selectedPost.user_image_url || '/assets/profile.jpg'}
+                                    alt=""
+                                />
+                                <span className={styles.previewAuthorName}>
+                                    {selectedPost.users?.name || selectedPost.user_name || 'Anonymous'}
+                                </span>
+                            </div>
+                            <div className={styles.previewTitle}>{selectedPost.title}</div>
+                            <div className={styles.previewSnippet}>{extractSnippet(selectedPost)}</div>
+                            <div className={styles.previewLikes}>
+                                {(() => {
+                                    const count = selectedPost.like_count != null
+                                        ? selectedPost.like_count
+                                        : (Array.isArray(selectedPost.likes) && selectedPost.likes[0]?.count != null
+                                            ? selectedPost.likes[0].count : 0);
+                                    return `${count} like${count !== 1 ? 's' : ''}`;
+                                })()}
+                            </div>
+                            <div className={styles.previewActions}>
+                                <button className={styles.previewReadBtn} onClick={handleReadPost}>
+                                    Read
+                                </button>
+                                {getWormholeForPost(selectedPost.id) && (
+                                    <div className={styles.wormholeBtnWrap}>
+                                        <button className={styles.wormholeBtn} onClick={handleWormholeTravel}>
+                                            Wormhole to "{getWormholeForPost(selectedPost.id).targetTitle}"
+                                        </button>
+                                        <div className={styles.wormholeTooltip}>
+                                            This post is semantically linked to a distant post. Click to warp there instantly.
+                                        </div>
+                                    </div>
+                                )}
+                                {getConstellationLinksForPost(selectedPost.id).map((link) => (
+                                    <button
+                                        key={link.constellation.id}
+                                        className={styles.constellationBtn}
+                                        onClick={() => handleConstellationTravel(link.targetStarId, link.constellation)}
+                                    >
+                                        {link.label ? `${link.label} \u2192 "${link.targetTitle}"` : `Fly to "${link.targetTitle}"`}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
-            {selectedPost && (
-                <div className={styles.previewPanel}>
-                    <button
-                        className={styles.previewClose}
-                        onClick={() => setSelectedPost(null)}
-                    >
-                        &times;
-                    </button>
-                    <div className={styles.previewAuthor}>
-                        <img
-                            className={styles.previewAvatar}
-                            src={selectedPost.users?.image_url || selectedPost.user_image_url || '/assets/profile.jpg'}
-                            alt=""
-                        />
-                        <span className={styles.previewAuthorName}>
-                            {selectedPost.users?.name || selectedPost.user_name || 'Anonymous'}
-                        </span>
-                    </div>
-                    <div className={styles.previewTitle}>{selectedPost.title}</div>
-                    <div className={styles.previewSnippet}>{extractSnippet(selectedPost)}</div>
-                    <div className={styles.previewLikes}>
-                        {(() => {
-                            const count = selectedPost.like_count != null
-                                ? selectedPost.like_count
-                                : (Array.isArray(selectedPost.likes) && selectedPost.likes[0]?.count != null
-                                    ? selectedPost.likes[0].count : 0);
-                            return `${count} like${count !== 1 ? 's' : ''}`;
-                        })()}
-                    </div>
-                    <div className={styles.previewActions}>
-                        <button className={styles.previewReadBtn} onClick={handleReadPost}>
-                            Read
-                        </button>
-                        {getWormholeForPost(selectedPost.id) && (
-                            <div className={styles.wormholeBtnWrap}>
-                                <button className={styles.wormholeBtn} onClick={handleWormholeTravel}>
-                                    Wormhole to "{getWormholeForPost(selectedPost.id).targetTitle}"
-                                </button>
-                                <div className={styles.wormholeTooltip}>
-                                    This post is semantically linked to a distant post. Click to warp there instantly.
-                                </div>
-                            </div>
-                        )}
-                        {getConstellationLinksForPost(selectedPost.id).map((link) => (
-                            <button
-                                key={link.constellation.id}
-                                className={styles.constellationBtn}
-                                onClick={() => handleConstellationTravel(link.targetStarId, link.constellation)}
-                            >
-                                {link.label ? `${link.label} \u2192 "${link.targetTitle}"` : `Fly to "${link.targetTitle}"`}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+            {universeMode === 'pilot' && (
+                <RocketHUD
+                    rocketMode={rocketMode}
+                    onExit={handleExitRocket}
+                    onInteract={handleRocketInteract}
+                />
             )}
         </div>
     );
