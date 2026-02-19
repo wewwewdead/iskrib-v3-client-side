@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   DEFAULT_OG_IMAGE,
+  DEFAULT_OG_IMAGE_HEIGHT,
+  DEFAULT_OG_IMAGE_WIDTH,
   ORGANIZATION_SCHEMA,
   buildAbsoluteUrl,
   buildWebsiteSchema,
@@ -87,6 +89,16 @@ const replaceSeo = (html, pathname) => {
   );
   updated = replaceOrInsert(
     updated,
+    /<meta[^>]*id=["']seo-og-image-width["'][^>]*>/i,
+    `<meta id="seo-og-image-width" property="og:image:width" content="${String(DEFAULT_OG_IMAGE_WIDTH)}" />`
+  );
+  updated = replaceOrInsert(
+    updated,
+    /<meta[^>]*id=["']seo-og-image-height["'][^>]*>/i,
+    `<meta id="seo-og-image-height" property="og:image:height" content="${String(DEFAULT_OG_IMAGE_HEIGHT)}" />`
+  );
+  updated = replaceOrInsert(
+    updated,
     /<meta[^>]*id=["']seo-twitter-card["'][^>]*>/i,
     `<meta id="seo-twitter-card" name="twitter:card" content="summary_large_image" />`
   );
@@ -104,6 +116,16 @@ const replaceSeo = (html, pathname) => {
     updated,
     /<meta[^>]*id=["']seo-twitter-image["'][^>]*>/i,
     `<meta id="seo-twitter-image" name="twitter:image" content="${ogImage}" />`
+  );
+  updated = replaceOrInsert(
+    updated,
+    /<meta[^>]*id=["']seo-twitter-image-width["'][^>]*>/i,
+    `<meta id="seo-twitter-image-width" name="twitter:image:width" content="${String(DEFAULT_OG_IMAGE_WIDTH)}" />`
+  );
+  updated = replaceOrInsert(
+    updated,
+    /<meta[^>]*id=["']seo-twitter-image-height["'][^>]*>/i,
+    `<meta id="seo-twitter-image-height" name="twitter:image:height" content="${String(DEFAULT_OG_IMAGE_HEIGHT)}" />`
   );
 
   const websiteSchema = JSON.stringify(buildWebsiteSchema(canonicalUrl));

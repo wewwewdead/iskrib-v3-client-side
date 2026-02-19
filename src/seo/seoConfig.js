@@ -1,6 +1,8 @@
 export const SITE_NAME = "Iskryb";
 export const SITE_URL = "https://iskrib.com";
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/temporary-logo.svg`;
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/no-image.png`;
+export const DEFAULT_OG_IMAGE_WIDTH = 1200;
+export const DEFAULT_OG_IMAGE_HEIGHT = 630;
 
 export const DEFAULT_SEO = {
   title: `${SITE_NAME} | Social Journaling and Opinions`,

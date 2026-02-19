@@ -135,7 +135,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
             <span className="editor-word-count">
                 {wordCount} {wordCount === 1 ? 'word' : 'words'}
             </span>
-            <button disabled={!title || !hasContent} onClick={(e) =>handleClickSave(e, title)} className={title && hasContent ? 'editor-save-bttn' : 'editor-save-bttn-disabled'}>
+            <button disabled={!title || !hasContent || isSending} onClick={(e) =>handleClickSave(e, title)} className={title && hasContent && !isSending ? 'editor-save-bttn' : 'editor-save-bttn-disabled'}>
                 Share
             </button>
         </div>

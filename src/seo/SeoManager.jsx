@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
   DEFAULT_OG_IMAGE,
+  DEFAULT_OG_IMAGE_HEIGHT,
+  DEFAULT_OG_IMAGE_WIDTH,
   ORGANIZATION_SCHEMA,
   buildAbsoluteUrl,
   buildWebsiteSchema,
@@ -67,12 +69,16 @@ const SeoManager = () => {
     ensureMeta("seo-og-title", "property", "og:title", ogTitle);
     ensureMeta("seo-og-description", "property", "og:description", ogDescription);
     ensureMeta("seo-og-image", "property", "og:image", ogImage);
+    ensureMeta("seo-og-image-width", "property", "og:image:width", String(DEFAULT_OG_IMAGE_WIDTH));
+    ensureMeta("seo-og-image-height", "property", "og:image:height", String(DEFAULT_OG_IMAGE_HEIGHT));
     ensureMeta("seo-og-site-name", "property", "og:site_name", "Iskryb");
 
     ensureMeta("seo-twitter-card", "name", "twitter:card", "summary_large_image");
     ensureMeta("seo-twitter-title", "name", "twitter:title", ogTitle);
     ensureMeta("seo-twitter-description", "name", "twitter:description", ogDescription);
     ensureMeta("seo-twitter-image", "name", "twitter:image", ogImage);
+    ensureMeta("seo-twitter-image-width", "name", "twitter:image:width", String(DEFAULT_OG_IMAGE_WIDTH));
+    ensureMeta("seo-twitter-image-height", "name", "twitter:image:height", String(DEFAULT_OG_IMAGE_HEIGHT));
 
     ensureLink("seo-canonical", "canonical", canonicalUrl);
     ensureLink("seo-hreflang-en", "alternate", canonicalUrl, { hreflang: "en-US" });
