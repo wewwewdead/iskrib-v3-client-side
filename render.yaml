@@ -41,3 +41,5 @@ services:
         sync: false
       - key: VITE_SITE_KEY
         sync: false
+      - key: VITE_FB_APP_ID
+        sync: false

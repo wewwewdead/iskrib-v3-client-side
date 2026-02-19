@@ -22,6 +22,13 @@ const ensureMeta = (id, attribute, key, content) => {
   element.setAttribute("content", content);
 };
 
+const removeElementById = (id) => {
+  const element = document.getElementById(id);
+  if (element && element.parentNode) {
+    element.parentNode.removeChild(element);
+  }
+};
+
 const ensureLink = (id, rel, href, extra = {}) => {
   let element = document.getElementById(id);
   if (!element) {
@@ -58,6 +65,7 @@ const SeoManager = () => {
     const ogTitle = seo.ogTitle || seo.title;
     const ogDescription = seo.ogDescription || seo.description;
     const ogImage = seo.ogImage || DEFAULT_OG_IMAGE;
+    const fbAppId = (import.meta.env.VITE_FB_APP_ID || "").trim();
 
     document.title = seo.title;
 
@@ -72,6 +80,11 @@ const SeoManager = () => {
     ensureMeta("seo-og-image-width", "property", "og:image:width", String(DEFAULT_OG_IMAGE_WIDTH));
     ensureMeta("seo-og-image-height", "property", "og:image:height", String(DEFAULT_OG_IMAGE_HEIGHT));
     ensureMeta("seo-og-site-name", "property", "og:site_name", "Iskryb");
+    if (fbAppId) {
+      ensureMeta("seo-fb-app-id", "property", "fb:app_id", fbAppId);
+    } else {
+      removeElementById("seo-fb-app-id");
+    }
 
     ensureMeta("seo-twitter-card", "name", "twitter:card", "summary_large_image");
     ensureMeta("seo-twitter-title", "name", "twitter:title", ogTitle);

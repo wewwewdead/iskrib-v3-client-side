@@ -33,6 +33,7 @@ const replaceSeo = (html, pathname) => {
   const ogTitle = seo.ogTitle || seo.title;
   const ogDescription = seo.ogDescription || seo.description;
   const ogImage = seo.ogImage || DEFAULT_OG_IMAGE;
+  const fbAppId = String(process.env.VITE_FB_APP_ID || "").trim();
 
   let updated = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(seo.title)}</title>`);
 
@@ -97,6 +98,15 @@ const replaceSeo = (html, pathname) => {
     /<meta[^>]*id=["']seo-og-image-height["'][^>]*>/i,
     `<meta id="seo-og-image-height" property="og:image:height" content="${String(DEFAULT_OG_IMAGE_HEIGHT)}" />`
   );
+  if (fbAppId) {
+    updated = replaceOrInsert(
+      updated,
+      /<meta[^>]*id=["']seo-fb-app-id["'][^>]*>/i,
+      `<meta id="seo-fb-app-id" property="fb:app_id" content="${escapeHtml(fbAppId)}" />`
+    );
+  } else {
+    updated = updated.replace(/<meta[^>]*id=["']seo-fb-app-id["'][^>]*>\s*/i, "");
+  }
   updated = replaceOrInsert(
     updated,
     /<meta[^>]*id=["']seo-twitter-card["'][^>]*>/i,
