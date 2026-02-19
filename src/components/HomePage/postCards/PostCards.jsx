@@ -63,14 +63,11 @@ const PostCards = () => {
 
     const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType = null, canvasDoc = null) =>{
         e.stopPropagation();
-        if(!session){
-            return openAuthModal();
+        if(session){
+            const formadata = new FormData();
+            formadata.append('journalId', journalId);
+            mutateViews.mutate(formadata);
         }
-        const formadata = new FormData();
-
-        formadata.append('journalId', journalId);
-        mutateViews.mutate(formadata);
-
         clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType, canvasDoc )
     }
 
@@ -575,10 +572,11 @@ const PostCards = () => {
                                 className="card-content"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    if(!session) return openAuthModal();
-                                    const formadata = new FormData();
-                                    formadata.append('journalId', journal.id);
-                                    mutateViews.mutate(formadata);
+                                    if(session){
+                                        const formadata = new FormData();
+                                        formadata.append('journalId', journal.id);
+                                        mutateViews.mutate(formadata);
+                                    }
                                     const postSlug = journal.title
                                         ? journal.title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
                                         : '';
