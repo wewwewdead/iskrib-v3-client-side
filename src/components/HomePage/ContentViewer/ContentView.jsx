@@ -423,9 +423,7 @@ const ContentView = () => {
                                             src.created_at,
                                             src.id,
                                             false, 0, false, 0, 0,
-                                            src.users?.badge,
-                                            src.post_type,
-                                            src.canvas_doc
+                                            src.users?.badge
                                         );
                                     }}
                                 >

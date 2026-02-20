@@ -1,4 +1,5 @@
 import './profilepostcards.css';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../../../Context/useAuth';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteJournal, deleteJournalImage, getUserJournals } from '../../../../../API/Api';
@@ -306,10 +307,6 @@ const ProfilePostCards = () =>{
                                 transition={{ duration: 0.25, ease: 'easeOut' }}
                                 onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)}
                             >
-                                {showEditor === journal.id && (
-                                    <EditJournal journalData={journalData ? journalData : {}} onClose={handleClickCloseEditor}/>
-                                )}
-
                                 {showConfirmationBttn === journal.id && (
                                     <AnimatePresence>
                                     <div className="confirmation-delete-bg">
@@ -442,10 +439,7 @@ const ProfilePostCards = () =>{
                         transition={{duration: 0.3, ease: 'easeOut'}}
                     >
 
-                        <div className={`profile-postcards ${showEditor === journal.id ? 'is-editing' : ''}${isCanvasPost ? ' is-canvas-card' : ''}`}>
-                            {showEditor === journal.id && (
-                                <EditJournal key={index} journalData={journalData ? journalData : {}} onClose={handleClickCloseEditor}/>
-                            )}
+                        <div className={`profile-postcards${isCanvasPost ? ' is-canvas-card' : ''}`}>
 
                             {isCanvasPost && (
                                 <CanvasPreview canvasDoc={journal?.canvas_doc} />
@@ -628,6 +622,13 @@ const ProfilePostCards = () =>{
                 )}
             </div>
         </div>
+
+        {showEditor !== null && createPortal(
+            <AnimatePresence>
+                <EditJournal journalData={journalData ?? {}} onClose={handleClickCloseEditor} />
+            </AnimatePresence>,
+            document.querySelector('.profile-parent-container') || document.body
+        )}
         </>
     )
 }

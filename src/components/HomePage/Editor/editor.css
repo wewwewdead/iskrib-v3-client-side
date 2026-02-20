@@ -289,6 +289,9 @@
     color: var(--editor-text);
     padding: 1rem 0.5rem;
 }
+.editor-input {
+    font-synthesis: style;
+}
 .editor-input:focus {
     outline: none;
 }

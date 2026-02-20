@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import './profilepostcards.css';
 import '../../Editor/editor.css';
-import { AnimatePresence, motion} from 'framer-motion';
+import { motion } from 'framer-motion';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import ImageNode from '../../Editor/nodes/ImageNode';
@@ -37,21 +37,16 @@ const EditJournal = ({onClose, journalData}) => {
     }
 
     const [title, setTitle] = useState(journalData?.title);
-    const [showNotes, setShowNotes] = useState(true);
     const [editorState , setEditorState] = useState(journalData?.content);
     const [isUpdatingJournal, setIsUpdatingJournal] = useState(false);
     const addUploadedImagePath = useCallback(() => {}, []);
 
-    const handlClickCloseEditor = (e) =>{
+    const handleClickCloseEditor = (e) => {
         e.stopPropagation();
         onClose();
     }
-    const handleCloseNotes = (e) =>{
-        e.stopPropagation();
-        setShowNotes(false);
-    }
 
-    const saveEditJournal = async(e, journalId, journalContent, title) =>{
+    const saveEditJournal = async(e, journalId, journalContent, title) => {
         e.stopPropagation();
         const formdata = new FormData();
         if(journalId){
@@ -89,109 +84,89 @@ const EditJournal = ({onClose, journalData}) => {
 
     const onChange = useCallback((state) => {
         const jsonb = JSON.stringify(state.toJSON());
-        // console.log(jsonb)
         setEditorState(jsonb);
     }, [])
 
-    useEffect(() => {
-        console.log(journalData)
-    }, [journalData])
-
     return(
-        <>
-        <AnimatePresence>
-        <motion.div 
-        className='edit-journal-container'
-        initial={{opacity:0, scale:0}}
-        animate={{scale:1, opacity: 1, transition: {type: 'spring', stiffness: 200, damping: 25}}}
-        exit={{opacity: 0, scale: 0}}
-        >
-            {showNotes && (
-                <div className='important-notes-container'>
+        <div className='editor-parent-container' onClick={handleClickCloseEditor}>
+            <motion.div
+                className='editor-container'
+                initial={{scale: 0, opacity: 0.8}}
+                animate={{scale: 1, opacity: 1}}
+                exit={{scale: 0.8, opacity: 0}}
+                transition={{type: 'spring', stiffness: 260, damping: 25}}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className='editor-close-bttn-container'>
+                    <button
+                        onClick={handleClickCloseEditor}
+                        className='editor-close-bttn'
+                        aria-label="Close editor"
+                        title="Close"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                    </button>
+                </div>
 
-                    <div className='notes-close-button-container'>
-                        <div onClick={(e) => handleCloseNotes(e)} className='notes-close-button'>
-                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#d20000ff"><path d="m336-280-56-56 144-144-144-143 56-56 144 144 143-144 56 56-144 143 144 144-56 56-143-144-144 144Z"/></svg>
-                        </div>
-                    
+                <input
+                    value={title || ''}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className='content-title-input'
+                    type="text"
+                    placeholder='Title'
+                />
+
+                <LexicalComposer initialConfig={{
+                    namespace: 'editContent',
+                    theme: theme,
+                    editable: true,
+                    editorState: typeof journalData?.content === 'string'
+                    ? journalData.content : JSON.stringify(journalData?.content),
+                    nodes: [HeadingNode, ImageNode, QuoteNode],
+                    onError(error){
+                        throw error
+                    },
+                }}>
+                    <div className="toolbar-wrapper">
+                        <ToolBar addUploadedImagePath={addUploadedImagePath}/>
                     </div>
 
-                    <p>Important Notes!</p>
-                    <p>
-                        You can only edit the <em>Title</em> and the <em>Text</em>.
-                        <br />
-                        You can remove and resize the <em>Images</em> but you can't add new <em>Images</em>.
-                    </p>
-
-                </div>
-            )}
-            
-            <div className='edit-journal-header-container'>
-
-                <div className='first-child-header-container'>
-                     <div onClick={(e) => handlClickCloseEditor(e)} className='edit-journal-close-bttn'>
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentcolor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                    <div className="editor-loader-wrapper">
+                        {isUpdatingJournal && (
+                            <BarLoader loading={isUpdatingJournal} width={'100%'} height={3} color="var(--accent-purple)" speedMultiplier={0.7}/>
+                        )}
                     </div>
-                    <div className='edit-journal-header'>
-                        Edit Post
+
+                    <div className="editor-shell">
+                        <RichTextPlugin
+                            contentEditable={
+                                <ContentEditable
+                                    className="editor-input"
+                                    aria-placeholder="Edit your post..."
+                                    placeholder={<div className="editor-placeholder">Edit your post...</div>}
+                                />
+                            }
+                            ErrorBoundary={LexicalErrorBoundary}
+                        />
+
+                        <ImagePlugin addUploadedImagePath={addUploadedImagePath}/>
+                        <HistoryPlugin/>
+                        <OnChangePlugin onChange={onChange}/>
                     </div>
-                </div>
 
-                <div className='second-child-header-container'>
-                    <div onClick={(e) => saveEditJournal(e, journalData?.id, editorState, title)} className='save-edit-button'>
-                        Save edit
+                    <div className='editor-footer'>
+                        <span></span>
+                        <button
+                            onClick={(e) => saveEditJournal(e, journalData?.id, editorState, title)}
+                            className='editor-save-bttn'
+                            disabled={isUpdatingJournal}
+                        >
+                            Save edit
+                        </button>
                     </div>
-                </div>
-               
-            </div>
-
-            <div className='title-container'>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} className='edit-joutnal-title-input' type="text"/>
-            </div>
-            
-            <LexicalComposer initialConfig={{
-                namespace: 'editContent',
-                theme: theme,
-                editable: true,
-                editorState: typeof journalData?.content === 'string'
-                ? journalData.content : JSON.stringify(journalData?.content),
-                nodes: [HeadingNode, ImageNode, QuoteNode],
-                onError(error){
-                    throw error
-                },
-            }}>
-                <div className="toolbar-wrapper">
-                    <ToolBar addUploadedImagePath={addUploadedImagePath}/>
-                </div>
-
-                <div className="editor-loader-wrapper">
-                    {isUpdatingJournal && (
-                        <BarLoader loading={isUpdatingJournal} width={'100%'} height={3} color="var(--accent-purple)" speedMultiplier={0.7}/>
-                    )}
-                </div>
-
-                <div className="editor-shell">
-                    <RichTextPlugin
-                        contentEditable={
-                            <ContentEditable
-                                className="editor-input"
-                                aria-placeholder="Edit your post..."
-                                placeholder={<div className="editor-placeholder">Edit your post...</div>}
-                            />
-                        }
-                        ErrorBoundary={LexicalErrorBoundary}
-                    />
-
-                    <ImagePlugin addUploadedImagePath={addUploadedImagePath}/>
-                    <HistoryPlugin/>
-                    <OnChangePlugin onChange={onChange}/>
-                </div>
-
-            </LexicalComposer>
-
-        </motion.div>
-        </AnimatePresence>
-        </>
+                </LexicalComposer>
+            </motion.div>
+        </div>
     )
 }
 
