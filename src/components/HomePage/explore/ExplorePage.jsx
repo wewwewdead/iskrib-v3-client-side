@@ -10,6 +10,7 @@ import CalculateText from "../postCards/calculateReadingTime";
 import formatPostDate from "../../../../helpers/formatDateString";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 import { handleImageFallback } from "../../../utils/handleImageFallback";
+import { useAddViewsMutation } from "../../../utils/useMutation";
 import "../postCards/postcards.css";
 import "./explore.css";
 
@@ -184,6 +185,7 @@ const ExplorePage = () => {
     const navigate = useNavigate();
     const { session, user, openAuthModal } = useAuth();
     const userId = user?.userData?.[0]?.id || null;
+    const mutateViews = useAddViewsMutation(session);
     const searchShellRef = useRef(null);
 
     const [searchInput, setSearchInput] = useState("");
@@ -281,6 +283,9 @@ const ExplorePage = () => {
             setSearchInput(journal.title);
             setDebouncedSearchInput(journal.title);
         }
+        const formadata = new FormData();
+        formadata.append('journalId', journal.id);
+        mutateViews.mutate(formadata);
         navigate(`/home/post/${journal.id}`);
     };
 
@@ -292,6 +297,9 @@ const ExplorePage = () => {
             openAuthModal();
             return;
         }
+        const formadata = new FormData();
+        formadata.append('journalId', journalId);
+        mutateViews.mutate(formadata);
         navigate(`/home/post/${journalId}`);
     };
 

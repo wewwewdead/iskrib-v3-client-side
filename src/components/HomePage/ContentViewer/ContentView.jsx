@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MoonLoader } from "react-spinners";
 import CalculateText from "../postCards/calculateReadingTime";
 import ParseContent from "../postCards/parseData";
-import { useBookMarkMutation, useFollowMutation, useLikeMutation } from "../../../utils/useMutation";
+import { useBookMarkMutation, useFollowMutation, useLikeMutation, useAddViewsMutation } from "../../../utils/useMutation";
 import { useAuth } from "../../../Context/useAuth";
 import CommentSection from "../../comments/comments";
 import CanvasViewer from "../Canvas/CanvasViewer";
@@ -180,6 +180,7 @@ const ContentView = () => {
     const handleclickUserProfile = handleClickProfile(navigate);
     const viewContent = handleCLickContent(navigate);
 
+    const mutateViews = useAddViewsMutation(session);
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
     const handleClickLike = async (e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => {
         e.stopPropagation();
@@ -410,6 +411,11 @@ const ContentView = () => {
                                     className="cv-repost-embedded"
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        if(session){
+                                            const formadata = new FormData();
+                                            formadata.append('journalId', postData.repostSource.id);
+                                            mutateViews.mutate(formadata);
+                                        }
                                         const src = postData.repostSource;
                                         const srcParsed = ParseContent(src.content);
                                         viewContent(
