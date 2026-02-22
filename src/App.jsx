@@ -90,12 +90,19 @@ const App = () => {
               <Route path='myOpinions' element={<MyOpinions/>}/>         
             </Route>
 
-            <Route path='/visitProfile' element={<Visitprofile/>}> 
+            <Route path='/visitProfile' element={<Visitprofile/>}>
               <Route index element={<VisitedProfilePostCards/>}/>
               <Route path='media' element={<VisitedProfileMediaSection/>}/>
               <Route path='visitedCollections' element={<CollectionViewer/>}/>
               <Route path='visitedOpinions' element={<VisitedProfileOpinions/>}/>
-            </Route>  
+            </Route>
+
+            <Route path='/u/:username' element={<Visitprofile/>}>
+              <Route index element={<VisitedProfilePostCards/>}/>
+              <Route path='media' element={<VisitedProfileMediaSection/>}/>
+              <Route path='collections' element={<CollectionViewer/>}/>
+              <Route path='opinions' element={<VisitedProfileOpinions/>}/>
+            </Route>
 
             <Route path='/home' element={<HomePage/>}>
               <Route index element={<PostCards/>}/>

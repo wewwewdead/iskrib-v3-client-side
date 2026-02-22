@@ -25,6 +25,7 @@ import { getCanvasWholeText, parseCanvasDoc } from "../../../utils/canvasDoc";
 import RepostModal from "../../RepostModal/RepostModal";
 import ShareMenu from "../../ShareMenu/ShareMenu";
 import getShareUrl from "../../../utils/getShareUrl";
+import usePostSeo from "../../../seo/usePostSeo";
 
 const normalizeInteractionFlag = (value) => {
     if(typeof value === 'boolean') return value;
@@ -169,6 +170,8 @@ const ContentView = () => {
         };
     }, [fetchedJournalData, statePostData]);
 
+    usePostSeo(postData);
+
     const { data: followsData, isLoading: isLoadingFollows } = useQuery({
         queryKey: ['followsData', user?.userData?.[0]?.id, postData?.userId],
         queryFn: ({ queryKey }) => getFollowsData(queryKey[1], queryKey[2]),
@@ -297,17 +300,6 @@ const ContentView = () => {
         setIsliked(normalizeInteractionFlag(postData?.isLiked));
         setIsBookmarked(normalizeInteractionFlag(postData?.isBookmarked));
     }, [postData?.likesCount, postData?.bookmarksCount, postData?.isLiked, postData?.isBookmarked]);
-
-    useEffect(() => {
-        if (postData?.title) {
-            document.title = `${postData.title} | Iskrib`;
-            return () => {
-                document.title = 'Iskrib';
-            };
-        }
-
-        document.title = 'Iskrib';
-    }, [postData?.title]);
 
     useEffect(() => {
         const hideBackBttn = () => {

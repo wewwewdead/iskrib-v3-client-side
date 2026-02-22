@@ -95,11 +95,27 @@ export const SEO_ROUTES = [
 const DYNAMIC_PATTERNS = [
   {
     test: (pathname) => /^\/home\/post\/[^/]+(?:\/[^/]+)?$/.test(pathname),
-    seo: {
-      title: `${SITE_NAME} Post`,
-      description: "Read community journals and discussions on Iskryb.",
-      canonicalPath: null,
-      robots: "index,follow",
+    seo: (pathname) => {
+      const match = pathname.match(/^\/home\/post\/([^/]+)/);
+      const journalId = match ? match[1] : null;
+      return {
+        title: `${SITE_NAME} Post`,
+        description: "Read community journals and discussions on Iskryb.",
+        canonicalPath: journalId ? `/home/post/${journalId}` : null,
+        robots: "index,follow",
+      };
+    },
+  },
+  {
+    test: (pathname) => /^\/u\/[^/]+/.test(pathname),
+    seo: (pathname) => {
+      const username = pathname.split("/")[2];
+      return {
+        title: `${username}'s Profile | ${SITE_NAME}`,
+        description: `View ${username}'s journals and opinions on Iskryb.`,
+        canonicalPath: `/u/${username}`,
+        robots: "index,follow",
+      };
     },
   },
 ];
@@ -125,7 +141,10 @@ export const getSeoForPath = (pathname) => {
 
   const dynamicMatch = DYNAMIC_PATTERNS.find((entry) => entry.test(normalized));
   if (dynamicMatch) {
-    return { ...DEFAULT_SEO, ...dynamicMatch.seo };
+    const seo = typeof dynamicMatch.seo === "function"
+      ? dynamicMatch.seo(normalized)
+      : dynamicMatch.seo;
+    return { ...DEFAULT_SEO, ...seo };
   }
 
   return { ...DEFAULT_SEO };

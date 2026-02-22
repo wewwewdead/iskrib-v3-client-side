@@ -51,6 +51,44 @@ export const updateProfileData = async(body, token) => {
     const data = await response.json();
     console.log(data)
 }
+export const getUserByUsername = async(username) => {
+    const response = await apiRequest(`${BASE_URL}/user/${encodeURIComponent(username)}`, {
+        method: 'GET',
+    });
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch user by username');
+    }
+    return await response.json();
+}
+
+export const checkUsernameAvailability = async(username) => {
+    const response = await apiRequest(`${BASE_URL}/check-username/${encodeURIComponent(username)}`, {
+        method: 'GET',
+    });
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to check username');
+    }
+    return await response.json();
+}
+
+export const updateUsername = async(token, username) => {
+    const headers = {'Content-Type': 'application/json'};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/update-username`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ username })
+    });
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to update username');
+    }
+    return await response.json();
+}
+
 export const getUserData = async(userId) =>{
 
     const response = await apiRequest(`${BASE_URL}/getUserData?userId=${userId}`, {

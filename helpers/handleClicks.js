@@ -73,9 +73,15 @@ export const handleClickOpinion = (navigate) => {
 }
 
 export const handleClickProfile = (navigate) => {
-    return(e, loggedInUserId, clickedUserId) =>{
+    return(e, loggedInUserId, clickedUserId, clickedUsername) =>{
         if(loggedInUserId === clickedUserId){
             navigate('/profile');
+        } else if(clickedUsername){
+            navigate(`/u/${clickedUsername}`, {
+                state: {
+                    userId: clickedUserId
+                }
+            })
         } else {
             navigate(`/visitProfile?userId=${clickedUserId}`, {
                 state: {

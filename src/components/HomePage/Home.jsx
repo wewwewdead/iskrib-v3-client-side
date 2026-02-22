@@ -4,7 +4,7 @@ import { useAuth } from "../../Context/useAuth";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
 import { MoonLoader, BeatLoader, BarLoader } from "react-spinners";
-import { checkUser, getUserData, submitProfileData } from "../../../API/Api";
+import { checkUser, getUserData, submitProfileData, checkUsernameAvailability } from "../../../API/Api";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -209,6 +209,10 @@ const HomePage = () => {
 
     const [name, setName] = useState('')
     const [bio, setBio] = useState('')
+    const [setupUsername, setSetupUsername] = useState('')
+    const [usernameAvailable, setUsernameAvailable] = useState(null)
+    const [usernameChecking, setUsernameChecking] = useState(false)
+    const usernameCheckTimer = useRef(null)
     const [uploadingUserData, setUploadingUserData] = useState(false)
 
     const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
@@ -233,6 +237,45 @@ const HomePage = () => {
             reader.readAsDataURL(file)
         }
     }
+
+    const slugifyForUsername = (val) =>
+        String(val || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+    const handleNameChangeForSetup = (e) => {
+        const newName = e.target.value;
+        setName(newName);
+        // Auto-suggest username from name if user hasn't manually edited username
+        if (!setupUsername || setupUsername === slugifyForUsername(name)) {
+            const suggested = slugifyForUsername(newName);
+            setSetupUsername(suggested);
+            checkUsernameDebounced(suggested);
+        }
+    };
+
+    const handleUsernameChange = (e) => {
+        const raw = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        setSetupUsername(raw);
+        checkUsernameDebounced(raw);
+    };
+
+    const checkUsernameDebounced = (uname) => {
+        if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current);
+        if (!uname || uname.length < 3) {
+            setUsernameAvailable(null);
+            return;
+        }
+        setUsernameChecking(true);
+        usernameCheckTimer.current = setTimeout(async () => {
+            try {
+                const result = await checkUsernameAvailability(uname);
+                setUsernameAvailable(result.available);
+            } catch {
+                setUsernameAvailable(null);
+            } finally {
+                setUsernameChecking(false);
+            }
+        }, 400);
+    };
 
     const handleOpenTextEditor = useCallback((config = {}) => {
         editor.setEditable(true)
@@ -259,6 +302,9 @@ const HomePage = () => {
             if(bio && name){
                 formdata.append('name', name)
                 formdata.append('bio', bio)
+                if(setupUsername && setupUsername.length >= 3){
+                    formdata.append('username', setupUsername)
+                }
             }
             const {data} = await submitProfileData(formdata, session?.access_token);
             // if(data){
@@ -270,6 +316,8 @@ const HomePage = () => {
         } finally {
             setBio('')
             setName('')
+            setSetupUsername('')
+            setUsernameAvailable(null)
             setImageFile(null)
             setProfilePreview('')
             setUploadingUserData(false)
@@ -439,7 +487,7 @@ const HomePage = () => {
                             </span>
                         </div>
                         
-                        <input value={name} maxLength={20} onChange={(e) => setName(e.target.value)} className="edit-profile-name-input" type="text" />
+                        <input value={name} maxLength={20} onChange={handleNameChangeForSetup} className="edit-profile-name-input" type="text" />
                     </div>
                     <div className="bio-input-container">
                         <div className="input-title-container">
@@ -453,7 +501,24 @@ const HomePage = () => {
                         
                         <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={150} className="edit-profile-bio-input" type="text" />
                     </div>
-                    
+
+                    <div className="name-input-container">
+                        <div className="input-title-container">
+                            <span className="input-title">Username</span>
+                            <span className="input-title" style={setupUsername.length > 0 && setupUsername.length < 3 ? {color: 'red'} : {}}>
+                                {usernameChecking ? 'Checking...' : usernameAvailable === true ? 'Available' : usernameAvailable === false ? 'Taken' : ''}
+                            </span>
+                        </div>
+                        <input
+                            value={setupUsername}
+                            maxLength={50}
+                            onChange={handleUsernameChange}
+                            className="edit-profile-name-input"
+                            type="text"
+                            placeholder="e.g. john-doe"
+                        />
+                    </div>
+
                 </div>
 
             </motion.div>

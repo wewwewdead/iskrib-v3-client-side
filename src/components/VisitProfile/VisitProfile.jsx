@@ -2,9 +2,9 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import '../ProfilePage/myprofile.css';
 import './visitProfile.css';
 import { useAuth } from '../../Context/useAuth';
-import { getFollowsData, getUserData, getUserJournals } from '../../../API/Api';
+import { getFollowsData, getUserData, getUserJournals, getUserByUsername } from '../../../API/Api';
 import { Fragment, useEffect, useRef } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../SideBar/Sidebar';
 import { MoonLoader } from 'react-spinners';
 import { useFollowMutation } from '../../utils/useMutation';
@@ -17,12 +17,33 @@ import { useState } from 'react';
 import WriteJournalButton from '../WriteJournalButton/WriteJournalButton';
 import Editor from '../HomePage/Editor/Editor';
 import Loader from '../loadingComponent/BgLoader';
+import useProfileSeo from '../../seo/useProfileSeo';
 
 const Visitprofile = () =>{
     const location = useLocation();
     const stateData = location.state;
+    const { username: urlUsername } = useParams();
     const queryUserId = new URLSearchParams(location.search).get('userId');
-    const visitedUserId = stateData?.userId || queryUserId;
+    const isUsernameRoute = !!urlUsername;
+
+    // Fetch user by username if on /@username route
+    const { data: usernameData, isLoading: isLoadingByUsername } = useQuery({
+        queryKey: ['userByUsername', urlUsername],
+        queryFn: () => getUserByUsername(urlUsername),
+        enabled: isUsernameRoute,
+        staleTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
+    });
+
+    // Resolve visitedUserId from either username lookup, state, or query param
+    const visitedUserId = isUsernameRoute
+        ? usernameData?.userData?.[0]?.id
+        : (stateData?.userId || queryUserId);
+
+    const resolvedUsername = isUsernameRoute
+        ? urlUsername
+        : usernameData?.userData?.[0]?.username;
+
     const {session, user, notifCount, loading} = useAuth();
 
     const [showSidebar, setShowSidebar]= useState(false)
@@ -33,12 +54,23 @@ const Visitprofile = () =>{
     const navigate = useNavigate();
     const visitedProfileNavState = { userId: visitedUserId };
     const visibleProfileSections = [{id: 'stats'}, {id: 'bio'}, {id: 'joined_date'}];
-    const tablists =[
-        {label: 'Writings', path: '/visitProfile', action: () => navigate(`/visitProfile?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
-        {label: 'Media', path: '/visitProfile/media', action: () => navigate(`/visitProfile/media?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
-        {label: 'Collections', path: '/visitProfile/visitedCollections', action: () => navigate(`/visitProfile/visitedCollections?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
-        {label: 'Opinions', path:'/visitProfile/visitedOpinions', action: () => navigate(`/visitProfile/visitedOpinions?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})}
-    ]
+
+    // Use @username paths when available, fall back to legacy /visitProfile paths
+    const profileUsername = resolvedUsername || usernameData?.userData?.[0]?.username;
+    const useNewUrls = !!profileUsername;
+    const tablists = useNewUrls
+        ? [
+            {label: 'Writings', path: `/u/${profileUsername}`, action: () => navigate(`/u/${profileUsername}`, {state: visitedProfileNavState})},
+            {label: 'Media', path: `/u/${profileUsername}/media`, action: () => navigate(`/u/${profileUsername}/media`, {state: visitedProfileNavState})},
+            {label: 'Collections', path: `/u/${profileUsername}/collections`, action: () => navigate(`/u/${profileUsername}/collections`, {state: visitedProfileNavState})},
+            {label: 'Opinions', path: `/u/${profileUsername}/opinions`, action: () => navigate(`/u/${profileUsername}/opinions`, {state: visitedProfileNavState})}
+        ]
+        : [
+            {label: 'Writings', path: '/visitProfile', action: () => navigate(`/visitProfile?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
+            {label: 'Media', path: '/visitProfile/media', action: () => navigate(`/visitProfile/media?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
+            {label: 'Collections', path: '/visitProfile/visitedCollections', action: () => navigate(`/visitProfile/visitedCollections?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
+            {label: 'Opinions', path:'/visitProfile/visitedOpinions', action: () => navigate(`/visitProfile/visitedOpinions?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})}
+        ]
 
      const navigatePath = (path) => {
         return navigate(path)
@@ -178,11 +210,16 @@ const Visitprofile = () =>{
     const {data, isLoading} = useQuery({
         queryKey: ['visitedProfile', visitedUserId],
         queryFn:({queryKey}) => getUserData(queryKey[1]),
-        enabled: !!visitedUserId,
+        enabled: !!visitedUserId && !isUsernameRoute,
         refetchOnWindowFocus: false
     })
 
-    const userData = data?.userData?.[0]
+    // Use username-fetched data when on /@username route, otherwise use userId-fetched data
+    const userData = isUsernameRoute
+        ? usernameData?.userData?.[0]
+        : data?.userData?.[0]
+
+    useProfileSeo(userData, profileUsername);
     const getProfileSectionSize = () => 'md';
 
     const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
@@ -207,7 +244,7 @@ const Visitprofile = () =>{
     
     },[session, loading])
 
-    if(isLoading){
+    if(isLoading || isLoadingByUsername){
         return(
             <Loader/>
         )
