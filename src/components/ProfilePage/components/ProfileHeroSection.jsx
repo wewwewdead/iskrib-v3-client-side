@@ -48,7 +48,9 @@ const ProfileHeroSection = ({
                         </span>
                     )}
                 </div>
-                <p className="profile-user-email">{userData?.user_email}</p>
+                {userData?.username && (
+                    <p className="profile-user-handle">@{userData.username}</p>
+                )}
             </div>
 
             {userData?.bio && (

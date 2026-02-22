@@ -284,6 +284,9 @@ const Visitprofile = () =>{
                                     </span>
                                 )}
                             </div>
+                            {(profileUsername || userData?.username) && (
+                                <p className="visited-profile-handle">@{profileUsername || userData.username}</p>
+                            )}
                         </div>
 
                         <div className='visited-profile-layout-sections'>

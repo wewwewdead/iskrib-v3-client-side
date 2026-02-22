@@ -84,6 +84,7 @@ const App = () => {
           <AppAuthModal/>
           <Routes>
             <Route path='/' element={<Navigate to='/home' replace/>}/>
+            <Route path='/index.html' element={<Navigate to='/home' replace/>}/>
             <Route path='/profile' element={<MyProfile/>}>
               <Route index element={<ProfilePostCards/>} />
               <Route path='media' element={<ProfileMediaSection/>} />
