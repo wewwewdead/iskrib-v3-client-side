@@ -8,13 +8,13 @@ services:
     autoDeploy: true
     pullRequestPreviewsEnabled: true
     routes:
-      - type: proxy
+      - type: redirect
         source: /api/sitemap-index.xml
         destination: https://iskrib-v3-server-production.up.railway.app/api/sitemap-index.xml
-      - type: proxy
+      - type: redirect
         source: /api/sitemap-posts.xml
         destination: https://iskrib-v3-server-production.up.railway.app/api/sitemap-posts.xml
-      - type: proxy
+      - type: redirect
         source: /api/sitemap-profiles.xml
         destination: https://iskrib-v3-server-production.up.railway.app/api/sitemap-profiles.xml
       - type: rewrite
