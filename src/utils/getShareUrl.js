@@ -1,9 +1,16 @@
-const getShareUrl = (journalId) => {
+const getShareBase = () => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL?.trim();
-    const base = backendUrl
+    return backendUrl
         ? backendUrl.replace(/\/+$/, '')
         : `${window.location.origin}/api`;
-    return `${base}/share/post/${journalId}`;
+};
+
+const getShareUrl = (journalId) => {
+    return `${getShareBase()}/share/post/${journalId}`;
+};
+
+export const getProfileShareUrl = (username) => {
+    return `${getShareBase()}/share/u/${encodeURIComponent(username)}`;
 };
 
 export default getShareUrl;

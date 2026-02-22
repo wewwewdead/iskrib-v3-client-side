@@ -3,16 +3,19 @@ import { MoonLoader } from "react-spinners";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { getMonthlyHottestJournals, searchJournals } from "../../../../API/Api";
+import { getMonthlyHottestJournals, searchJournals, searchUsers } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
+import { handleClickProfile } from "../../../../helpers/handleClicks";
 import ParseContent from "../postCards/parseData";
 import CalculateText from "../postCards/calculateReadingTime";
 import formatPostDate from "../../../../helpers/formatDateString";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 import { handleImageFallback } from "../../../utils/handleImageFallback";
 import { useAddViewsMutation } from "../../../utils/useMutation";
+import UserSearchResults from "./UserSearchResults";
 import "../postCards/postcards.css";
 import "./explore.css";
+import "./userSearch.css";
 
 const getHotScore = (journal) => {
     if(typeof journal?.hot_score === "number"){
@@ -192,6 +195,8 @@ const ExplorePage = () => {
     const [debouncedSearchInput, setDebouncedSearchInput] = useState("");
     const [committedSearchQuery, setCommittedSearchQuery] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [searchType, setSearchType] = useState("posts");
+    const onClickProfile = handleClickProfile(navigate);
     const currentUtcMonthKey = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
 
     useEffect(() => {
@@ -230,14 +235,26 @@ const ExplorePage = () => {
     } = useQuery({
         queryKey: ["explore-suggestions", userId, debouncedSearchInput],
         queryFn: () => searchJournals(debouncedSearchInput, 6, userId),
-        enabled: debouncedSearchInput.length >= 2 && isSearchFocused,
+        enabled: debouncedSearchInput.length >= 2 && isSearchFocused && searchType === "posts",
+        refetchOnWindowFocus: false,
+        staleTime: 10 * 1000,
+    });
+
+    const {
+        data: userSuggestionData,
+        isLoading: isUserSuggestionsLoading,
+    } = useQuery({
+        queryKey: ["user-suggestions", debouncedSearchInput],
+        queryFn: () => searchUsers(debouncedSearchInput, 6),
+        enabled: debouncedSearchInput.length >= 2 && isSearchFocused && searchType === "people",
         refetchOnWindowFocus: false,
         staleTime: 10 * 1000,
     });
 
     const journals = isSearchMode ? (searchData?.data || []) : (feedData?.data || []);
-    const isLoading = isSearchMode ? isLoadingSearch : isLoadingFeed;
-    const suggestionItems = suggestionData?.data || [];
+    const isLoading = isSearchMode && searchType === "posts" ? isLoadingSearch : isLoadingFeed;
+    const suggestionItems = searchType === "people" ? (userSuggestionData?.data || []) : (suggestionData?.data || []);
+    const isSugLoading = searchType === "people" ? isUserSuggestionsLoading : isSuggestionsLoading;
     const showSuggestions = isSearchFocused && debouncedSearchInput.length >= 2;
 
     const handleSubmitSearch = (rawQuery) => {
@@ -257,6 +274,7 @@ const ExplorePage = () => {
         setDebouncedSearchInput("");
         setCommittedSearchQuery("");
         setIsSearchFocused(false);
+        setSearchType("posts");
     };
 
     const handleSearchInputKeyDown = (e) => {
@@ -314,10 +332,10 @@ const ExplorePage = () => {
         return () => window.removeEventListener("mousedown", handleOutsideSearchClick);
     }, []);
 
-    if(isLoading){
+    if(isLoading && searchType === "posts"){
         return (
             <div className="postcards-parent-loading-container">
-                <MoonLoader loading={isLoading} color="var(--loader-color)" speedMultiplier={1} size={20} />
+                <MoonLoader loading={true} color="var(--loader-color)" speedMultiplier={1} size={20} />
             </div>
         );
     }
@@ -339,9 +357,9 @@ const ExplorePage = () => {
                             onChange={(e) => setSearchInput(e.target.value)}
                             onFocus={() => setIsSearchFocused(true)}
                             onKeyDown={handleSearchInputKeyDown}
-                            placeholder="Search posts..."
+                            placeholder={searchType === "people" ? "Search people..." : "Search posts..."}
                             className="search-input"
-                            aria-label="Search posts"
+                            aria-label={searchType === "people" ? "Search people" : "Search posts"}
                         />
                     </div>
                     {searchInput ? (
@@ -361,27 +379,81 @@ const ExplorePage = () => {
                 </div>
                 {showSuggestions && (
                     <div className="search-suggestions-dropdown">
-                        {isSuggestionsLoading ? (
+                        {isSugLoading ? (
                             <div className="search-suggestion-item search-suggestion-muted">Searching...</div>
                         ) : suggestionItems.length > 0 ? (
-                            suggestionItems.map((item) => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    className="search-suggestion-item"
-                                    onClick={() => handleClickSuggestion(item)}
-                                >
-                                    <span className="search-suggestion-title">{item.title || "Untitled"}</span>
-                                    <span className="search-suggestion-meta">{item?.users?.name || "Unknown author"}</span>
-                                </button>
-                            ))
+                            searchType === "people" ? (
+                                suggestionItems.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        className="search-suggestion-user"
+                                        onClick={(e) => {
+                                            setIsSearchFocused(false);
+                                            onClickProfile(e, userId, item.id, item.username);
+                                        }}
+                                    >
+                                        <img
+                                            className="search-suggestion-user-avatar"
+                                            src={item.image_url || "/assets/profile.jpg"}
+                                            alt=""
+                                            loading="lazy"
+                                        />
+                                        <div className="search-suggestion-user-info">
+                                            <span className="search-suggestion-user-name">{item.name || "Unknown"}</span>
+                                            {item.username && (
+                                                <span className="search-suggestion-user-handle">@{item.username}</span>
+                                            )}
+                                        </div>
+                                    </button>
+                                ))
+                            ) : (
+                                suggestionItems.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        className="search-suggestion-item"
+                                        onClick={() => handleClickSuggestion(item)}
+                                    >
+                                        <span className="search-suggestion-title">{item.title || "Untitled"}</span>
+                                        <span className="search-suggestion-meta">{item?.users?.name || "Unknown author"}</span>
+                                    </button>
+                                ))
+                            )
                         ) : (
                             <div className="search-suggestion-item search-suggestion-muted">No suggestions</div>
                         )}
                     </div>
                 )}
+                {(isSearchFocused || searchInput.length > 0 || isSearchMode) && (
+                    <div className="search-type-toggle">
+                        <button
+                            type="button"
+                            className={`search-type-btn ${searchType === "posts" ? "search-type-btn--active" : ""}`}
+                            onClick={() => setSearchType("posts")}
+                        >
+                            Posts
+                        </button>
+                        <button
+                            type="button"
+                            className={`search-type-btn ${searchType === "people" ? "search-type-btn--active" : ""}`}
+                            onClick={() => setSearchType("people")}
+                        >
+                            People
+                        </button>
+                    </div>
+                )}
             </div>
 
+            {isSearchMode && searchType === "people" ? (
+                <>
+                    <div className="explore-section-title">
+                        People
+                    </div>
+                    <UserSearchResults searchQuery={committedSearchQuery} />
+                </>
+            ) : (
+            <>
             <div className="explore-section-title">
                 {isSearchMode ? "Search results" : "Hottest posts"}
             </div>
@@ -507,6 +579,8 @@ const ExplorePage = () => {
                         })}
                     </div>
                 </div>
+            )}
+            </>
             )}
         </div>
     );

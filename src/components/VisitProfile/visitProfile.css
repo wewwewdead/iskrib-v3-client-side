@@ -273,6 +273,29 @@
     font-weight: 500;
     opacity: 0.5;
 }
+.visit-profile-share-btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--bg-glass);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 0.5px solid var(--bg-glass-border);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.85;
+}
+.visit-profile-share-btn:hover{
+    background-color: var(--bg-glass-border);
+    transform: translateY(-1px);
+    opacity: 1;
+}
+.visit-profile-share-btn:active{
+    transform: translateY(0);
+}
 .visited-profile-layout-sections{
     display: flex;
     flex-direction: column;

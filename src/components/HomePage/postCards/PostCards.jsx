@@ -3,7 +3,8 @@ import { MoonLoader } from "react-spinners";
 import { motion, AnimatePresence,} from "framer-motion";
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import './postcards.css';
-import { getJournals, searchJournals } from "../../../../API/Api";
+import '../explore/userSearch.css';
+import { getJournals, searchJournals, searchUsers } from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
@@ -45,6 +46,7 @@ const PostCards = () => {
     const [debouncedSearchInput, setDebouncedSearchInput] = useState('');
     const [committedSearchQuery, setCommittedSearchQuery] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [searchType, setSearchType] = useState('posts');
     const [repostModalJournal, setRepostModalJournal] = useState(null);
     const [repostToastMessage, setRepostToastMessage] = useState('');
 
@@ -53,12 +55,12 @@ const PostCards = () => {
 
     const mutateViews = useAddViewsMutation(session)
 
-    const handleClickUserProfile = (e, loggedInUserId, clickedUserId) => {
+    const handleClickUserProfile = (e, loggedInUserId, clickedUserId, clickedUsername = null) => {
         e.stopPropagation();
         if(!session){
             return openAuthModal();
         }
-        handleClickUserProfileOriginal(e, loggedInUserId, clickedUserId);
+        handleClickUserProfileOriginal(e, loggedInUserId, clickedUserId, clickedUsername);
     }
 
     const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType = null, canvasDoc = null) =>{
@@ -201,6 +203,8 @@ const PostCards = () => {
 
     const userId = user?.userData?.[0]?.id || null;
     const isSearchMode = committedSearchQuery.length >= 2;
+    const isPostSearchMode = isSearchMode && searchType === 'posts';
+    const isPeopleSearchMode = isSearchMode && searchType === 'people';
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -237,7 +241,7 @@ const PostCards = () => {
     } = useQuery({
         queryKey: ['journals-search', userId, committedSearchQuery],
         queryFn: () => searchJournals(committedSearchQuery, 10, userId),
-        enabled: isSearchMode,
+        enabled: isPostSearchMode,
         refetchOnWindowFocus: false,
         staleTime: 15 * 1000,
     });
@@ -248,7 +252,31 @@ const PostCards = () => {
     } = useQuery({
         queryKey: ['journals-suggestions', userId, debouncedSearchInput],
         queryFn: () => searchJournals(debouncedSearchInput, 6, userId),
-        enabled: debouncedSearchInput.length >= 2 && isSearchFocused,
+        enabled: debouncedSearchInput.length >= 2 && isSearchFocused && searchType === 'posts',
+        refetchOnWindowFocus: false,
+        staleTime: 10 * 1000,
+    });
+
+    const {
+        data: userSearchData,
+        isLoading: isUserSearchLoading,
+        isFetching: isUserSearchFetching,
+        error: userSearchError,
+    } = useQuery({
+        queryKey: ['users-search', committedSearchQuery],
+        queryFn: () => searchUsers(committedSearchQuery, 10),
+        enabled: isPeopleSearchMode,
+        refetchOnWindowFocus: false,
+        staleTime: 10 * 1000,
+    });
+
+    const {
+        data: userSuggestionData,
+        isLoading: isUserSuggestionsLoading,
+    } = useQuery({
+        queryKey: ['users-suggestions', debouncedSearchInput],
+        queryFn: () => searchUsers(debouncedSearchInput, 6),
+        enabled: debouncedSearchInput.length >= 2 && isSearchFocused && searchType === 'people',
         refetchOnWindowFocus: false,
         staleTime: 10 * 1000,
     });
@@ -315,6 +343,7 @@ const PostCards = () => {
         setDebouncedSearchInput('');
         setCommittedSearchQuery('');
         setIsSearchFocused(false);
+        setSearchType('posts');
     };
 
     const handleSearchInputKeyDown = (e) => {
@@ -338,6 +367,14 @@ const PostCards = () => {
             setDebouncedSearchInput(journal.title);
         }
         navigate(`/home/post/${journal.id}`);
+    };
+
+    const handleClickUserSuggestion = (e, person) => {
+        if(!person?.id){
+            return;
+        }
+        setIsSearchFocused(false);
+        handleClickUserProfile(e, user?.userData?.[0]?.id, person.id, person.username);
     };
 
     const handleVisitFreedomWall = () => {
@@ -397,9 +434,20 @@ const PostCards = () => {
 
     const feedJournals = data?.pages?.flatMap((page) => page.data || []) || [];
     const searchedJournals = searchData?.data || [];
-    const suggestionItems = suggestionData?.data || [];
+    const searchedUsers = userSearchData?.data || [];
+    const suggestionItems = searchType === 'people'
+        ? (userSuggestionData?.data || [])
+        : (suggestionData?.data || []);
+    const isSuggestionsPending = searchType === 'people'
+        ? isUserSuggestionsLoading
+        : isSuggestionsLoading;
     const journals = isSearchMode ? searchedJournals : feedJournals;
-    const isLoading = isSearchMode ? isSearchLoading : isFeedLoading;
+    const isLoading = isPostSearchMode
+        ? isSearchLoading
+        : isPeopleSearchMode
+            ? isUserSearchLoading
+            : isFeedLoading;
+    const activeSearchError = searchType === 'people' ? userSearchError : searchError;
     const showSuggestions = isSearchFocused && debouncedSearchInput.length >= 2;
 
     if(isLoading) {
@@ -435,9 +483,9 @@ const PostCards = () => {
                     onChange={(e) => setSearchInput(e.target.value)}
                     onFocus={() => setIsSearchFocused(true)}
                     onKeyDown={handleSearchInputKeyDown}
-                    placeholder="Search writings by meaning or title..."
+                    placeholder={searchType === 'people' ? 'Search people...' : 'Search writings by meaning or title...'}
                     className="search-input"
-                    aria-label="Search journals"
+                    aria-label={searchType === 'people' ? 'Search people' : 'Search journals'}
                 />
             </div>
             {searchInput ? (
@@ -458,29 +506,72 @@ const PostCards = () => {
             )}
             {isSearchMode ? (
                 <span className="search-mode-pill">
-                    {isSearchFetching ? 'Searching...' : 'Matched'}
+                    {(searchType === 'people' ? isUserSearchFetching : isSearchFetching) ? 'Searching...' : 'Matched'}
                 </span>
             ) : null}
         </div>
         {showSuggestions && (
             <div className="search-suggestions-dropdown">
-                {isSuggestionsLoading ? (
+                {isSuggestionsPending ? (
                     <div className="search-suggestion-item search-suggestion-muted">Searching...</div>
                 ) : suggestionItems.length > 0 ? (
-                    suggestionItems.map((item) => (
-                        <button
-                            key={item.id}
-                            type="button"
-                            className="search-suggestion-item"
-                            onClick={() => handleClickSuggestion(item)}
-                        >
-                            <span className="search-suggestion-title">{item.title || 'Untitled'}</span>
-                            <span className="search-suggestion-meta">{item?.users?.name || 'Unknown author'}</span>
-                        </button>
-                    ))
+                    searchType === 'people' ? (
+                        suggestionItems.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                className="search-suggestion-user"
+                                onClick={(e) => handleClickUserSuggestion(e, item)}
+                            >
+                                <img
+                                    className="search-suggestion-user-avatar"
+                                    src={item.image_url || '/assets/profile.jpg'}
+                                    alt=""
+                                    loading="lazy"
+                                />
+                                <div className="search-suggestion-user-info">
+                                    <span className="search-suggestion-user-name">{item.name || 'Unknown'}</span>
+                                    {item.username && (
+                                        <span className="search-suggestion-user-handle">@{item.username}</span>
+                                    )}
+                                </div>
+                            </button>
+                        ))
+                    ) : (
+                        suggestionItems.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                className="search-suggestion-item"
+                                onClick={() => handleClickSuggestion(item)}
+                            >
+                                <span className="search-suggestion-title">{item.title || 'Untitled'}</span>
+                                <span className="search-suggestion-meta">{item?.users?.name || 'Unknown author'}</span>
+                            </button>
+                        ))
+                    )
                 ) : (
                     <div className="search-suggestion-item search-suggestion-muted">No suggestions</div>
                 )}
+            </div>
+        )}
+
+        {(isSearchFocused || searchInput.length > 0 || isSearchMode) && (
+            <div className="search-type-toggle">
+                <button
+                    type="button"
+                    className={`search-type-btn ${searchType === 'posts' ? 'search-type-btn--active' : ''}`}
+                    onClick={() => setSearchType('posts')}
+                >
+                    Posts
+                </button>
+                <button
+                    type="button"
+                    className={`search-type-btn ${searchType === 'people' ? 'search-type-btn--active' : ''}`}
+                    onClick={() => setSearchType('people')}
+                >
+                    People
+                </button>
             </div>
         )}
         </div>
@@ -519,9 +610,62 @@ const PostCards = () => {
 
         <AnimatePresence>
         <div className="postcards-parent-container">
+            {isPeopleSearchMode ? (
+                <>
+                    {searchedUsers.length === 0 && !isLoading && (
+                        <div className="search-empty-state">
+                            {activeSearchError ? 'Search failed. Please try again.' : 'No matching people found.'}
+                        </div>
+                    )}
+
+                    {searchedUsers.length > 0 && (
+                        <div className="user-search-results">
+                            {searchedUsers.map((person, index) => (
+                                <motion.div
+                                    key={person.id}
+                                    className="user-search-card"
+                                    onClick={(e) => handleClickUserProfile(e, user?.userData?.[0]?.id, person.id, person.username)}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if(e.key === 'Enter' || e.key === ' '){
+                                            e.preventDefault();
+                                            handleClickUserProfile(e, user?.userData?.[0]?.id, person.id, person.username);
+                                        }
+                                    }}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: 0.05 * index, ease: [0.22, 1, 0.36, 1] }}
+                                >
+                                    <div className="user-search-avatar-wrap">
+                                        <div className={`user-avatar-container ${person.badge === 'legend' ? 'avatar-ring-legend' : person.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                            <img
+                                                loading="lazy"
+                                                className="user-info-avatar"
+                                                src={person.image_url || '/assets/profile.jpg'}
+                                                alt={`${person.name || 'User'} profile picture`}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="user-search-info">
+                                        <div className="user-search-name-row">
+                                            <p className="user-search-name">{person.name || 'Unknown'}</p>
+                                            <VerifiedBadge badge={person.badge} size={14} />
+                                        </div>
+                                        {person.username && (
+                                            <p className="user-search-username">@{person.username}</p>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                </>
+            ) : (
+            <>
             {journals.length === 0 && !isLoading && (
                 <div className="search-empty-state">
-                    {searchError ? 'Search failed. Please try again.'
+                    {activeSearchError ? 'Search failed. Please try again.'
                      : isSearchMode ? 'No matching posts found.'
                      : 'No post available...'}
                 </div>
@@ -770,6 +914,8 @@ const PostCards = () => {
                     </motion.div>
                 )
             })}
+            </>
+            )}
 
             {!isSearchMode && (
                 <div className="inview" ref={ref}>

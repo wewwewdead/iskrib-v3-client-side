@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 import formatCounts from "../../../../helpers/fomatCounts";
+import ShareMenu from "../../ShareMenu/ShareMenu";
+import { getProfileShareUrl } from "../../../utils/getShareUrl";
 
 const ProfileHeroSection = ({
     userData,
@@ -11,6 +13,7 @@ const ProfileHeroSection = ({
     croppedImage,
     gradientPicked,
 }) => {
+    const [showShareMenu, setShowShareMenu] = useState(false);
     return (
         <div style={croppedImage || gradientPicked} className="hero-section">
             <div className="profile-top-row">
@@ -83,6 +86,30 @@ const ProfileHeroSection = ({
                         <path d="M80 0v-160h800V0H80Zm140-280 210-560h100l210 560h-96l-50-144H368l-52 144h-96Zm176-224h168l-82-232h-4l-82 232Z" />
                     </svg>
                 </div>
+                {userData?.username && (
+                    <div
+                        className="font-picker-container"
+                        style={{ position: 'relative' }}
+                        onClick={(e) => { e.stopPropagation(); setShowShareMenu((v) => !v); }}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            height="20px"
+                            viewBox="0 0 24 24"
+                            width="20px"
+                            fill={fontColor || userData?.profile_font_color}
+                        >
+                            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                        </svg>
+                        {showShareMenu && (
+                            <ShareMenu
+                                url={getProfileShareUrl(userData.username)}
+                                title={`${userData.name || userData.username}'s Profile`}
+                                onClose={() => setShowShareMenu(false)}
+                            />
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

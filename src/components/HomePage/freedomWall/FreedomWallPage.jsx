@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Konva from "konva";
 import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Shape, Stage, Text } from "react-konva";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -2205,7 +2206,11 @@ const FreedomWallPage = () => {
     if(weekError){
         return (
             <div className="freedom-wall-page">
-                <div className="freedom-wall-error">Failed to load Freedom Wall.</div>
+                <div className="fw-error-state">
+                    <span className="fw-error-icon">&#x26A0;</span>
+                    <span>Failed to load Freedom Wall.</span>
+                    <span className="fw-error-hint">Please refresh the page to try again.</span>
+                </div>
             </div>
         );
     }
@@ -2214,13 +2219,29 @@ const FreedomWallPage = () => {
         <div className={`freedom-wall-page ${isFocusMode ? "fw-focus-mode" : ""}`}>
             {!isFocusMode && <div className="freedom-wall-header">
                 <div className="freedom-wall-title-shell">
-                    <h2 className="freedom-wall-title">Freedom Wall</h2>
+                    <h2 className="freedom-wall-title"><span className="fw-title-chalk">Freedom Wall</span></h2>
                     <p className="freedom-wall-subtitle">
                         Public collaborative canvas. Resets weekly.
                     </p>
                     <div className="freedom-wall-countdown-pill">
-                        Wall resets in: {countdownText}
+                        <span className="fw-countdown-clock">&#x1F559;</span>
+                        <span className="fw-countdown-label">Wall resets in: </span>
+                        <motion.span
+                            className="fw-countdown-value"
+                            key={countdownText}
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.25 }}
+                        >
+                            {countdownText}
+                        </motion.span>
                     </div>
+                    {remoteCursorItems.length > 0 && (
+                        <div className="fw-active-users-pill">
+                            <span className="fw-active-dot" />
+                            {remoteCursorItems.length} active {remoteCursorItems.length === 1 ? "user" : "users"}
+                        </div>
+                    )}
                 </div>
                 <div className="freedom-wall-week-shell">
                     <div className="freedom-wall-week-pill">
@@ -2244,19 +2265,21 @@ const FreedomWallPage = () => {
             </div>}
 
             {!isFocusMode && (isMobileView && !isMobileToolbarOpen ? (
-                <button type="button" className="fw-fab-orb" onClick={() => setIsMobileToolbarOpen(true)}>
+                <button type="button" className="fw-fab-orb fw-fab-pulse" onClick={() => setIsMobileToolbarOpen(true)}>
                     {TOOL_EMOJIS[activeTool] || "\u270F\uFE0F"}
                 </button>
             ) : (
             <div className="freedom-wall-toolbar">
                 {isMobileView && <button type="button" className="fw-fab-close" onClick={() => setIsMobileToolbarOpen(false)}>&times;</button>}
                 <div className="freedom-wall-tool-group">
-                    <button type="button" className={`fw-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`} onClick={() => setActiveTool("doodle")} disabled={isTimeCapsuleMode}>Doodle</button>
-                    <button type="button" className={`fw-tool-btn ${activeTool === "sticker" ? "is-active" : ""}`} onClick={() => setActiveTool("sticker")} disabled={isTimeCapsuleMode}>Sticker</button>
-                    <button type="button" className={`fw-tool-btn ${activeTool === "stamp" ? "is-active" : ""}`} onClick={() => setActiveTool("stamp")} disabled={isTimeCapsuleMode}>Stamp</button>
-                    <button type="button" className={`fw-tool-btn ${activeTool === "note" ? "is-active" : ""}`} onClick={() => setActiveTool("note")} disabled={isTimeCapsuleMode}>Note</button>
-                    <button type="button" className={`fw-tool-btn ${activeTool === "eraser" ? "is-active" : ""}`} onClick={() => setActiveTool("eraser")} disabled={isTimeCapsuleMode}>Eraser</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "doodle" ? "is-active" : ""}`} onClick={() => setActiveTool("doodle")} disabled={isTimeCapsuleMode}><span className="fw-tool-emoji">{TOOL_EMOJIS.doodle}</span>Doodle</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "sticker" ? "is-active" : ""}`} onClick={() => setActiveTool("sticker")} disabled={isTimeCapsuleMode}><span className="fw-tool-emoji">{TOOL_EMOJIS.sticker}</span>Sticker</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "stamp" ? "is-active" : ""}`} onClick={() => setActiveTool("stamp")} disabled={isTimeCapsuleMode}><span className="fw-tool-emoji">{TOOL_EMOJIS.stamp}</span>Stamp</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "note" ? "is-active" : ""}`} onClick={() => setActiveTool("note")} disabled={isTimeCapsuleMode}><span className="fw-tool-emoji">{TOOL_EMOJIS.note}</span>Note</button>
+                    <button type="button" className={`fw-tool-btn ${activeTool === "eraser" ? "is-active" : ""}`} onClick={() => setActiveTool("eraser")} disabled={isTimeCapsuleMode}><span className="fw-tool-emoji">{TOOL_EMOJIS.eraser}</span>Eraser</button>
                     {!isMobileView && (
+                        <>
+                        <span className="fw-tool-divider" />
                         <button
                             type="button"
                             className={`fw-tool-btn fw-popover-toggle ${isDockPopoverOpen ? "is-active" : ""}`}
@@ -2265,10 +2288,18 @@ const FreedomWallPage = () => {
                         >
                             {isDockPopoverOpen ? "\u2715" : "\u2699"}
                         </button>
+                        </>
                     )}
                 </div>
 
-                {(isMobileView || isDockPopoverOpen) && <div className="fw-dock-controls-popover">
+                <AnimatePresence>
+                {(isMobileView || isDockPopoverOpen) && <motion.div
+                    className="fw-dock-controls-popover"
+                    initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 12, scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 22 }}
+                >
                 {!isTimeCapsuleMode && activeTool === "doodle" && (
                     <div className="freedom-wall-tool-controls">
                         <ColorSwatchPicker label="Color" value={doodleColor} onChange={setDoodleColor} />
@@ -2352,12 +2383,21 @@ const FreedomWallPage = () => {
                         <span className="fw-label">{myDoodleCount} yours</span>
                     </div>
                 )}
-                </div>}{/* end popover / controls wrapper */}
+                </motion.div>}
+                </AnimatePresence>{/* end popover / controls wrapper */}
             </div>
             ))}
 
+            <AnimatePresence mode="wait">
             {!isFocusMode && !isTimeCapsuleMode && draftNote && (
-                <div className="fw-draft-note-panel">
+                <motion.div
+                    key="draft-note"
+                    className="fw-draft-note-panel"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                >
                     <div className="fw-draft-note-header">
                         <h4>Design Your Note</h4>
                         <span className="fw-draft-note-charcount">{(draftNote.text || "").length}/200</span>
@@ -2422,11 +2462,20 @@ const FreedomWallPage = () => {
                         <button type="button" className="fw-apply-btn" onClick={handleDraftNoteSave} disabled={!draftNote.text?.trim()}>Place Note</button>
                         <button type="button" className="fw-delete-btn" onClick={() => setDraftNote(null)}>Cancel</button>
                     </div>
-                </div>
+                </motion.div>
             )}
+            </AnimatePresence>
 
+            <AnimatePresence mode="wait">
             {!isFocusMode && !isTimeCapsuleMode && draftSticker && (
-                <div className="fw-draft-note-panel">
+                <motion.div
+                    key="draft-sticker"
+                    className="fw-draft-note-panel"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                >
                     <div className="fw-draft-note-header">
                         <h4>Place Your Sticker</h4>
                         <span className="fw-draft-note-charcount">{STICKER_OPTIONS[draftSticker.sticker] || "🐶"}</span>
@@ -2459,11 +2508,20 @@ const FreedomWallPage = () => {
                         <button type="button" className="fw-apply-btn" onClick={handleDraftStickerSave}>Place Sticker</button>
                         <button type="button" className="fw-delete-btn" onClick={() => setDraftSticker(null)}>Cancel</button>
                     </div>
-                </div>
+                </motion.div>
             )}
+            </AnimatePresence>
 
+            <AnimatePresence mode="wait">
             {!isFocusMode && !isTimeCapsuleMode && draftStamp && (
-                <div className="fw-draft-note-panel">
+                <motion.div
+                    key="draft-stamp"
+                    className="fw-draft-note-panel"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                >
                     <div className="fw-draft-note-header">
                         <h4>Place Your Stamp</h4>
                         <span className="fw-draft-note-charcount">{STAMP_ICONS[draftStamp.stamp] || "✨"}</span>
@@ -2496,11 +2554,20 @@ const FreedomWallPage = () => {
                         <button type="button" className="fw-apply-btn" onClick={handleDraftStampSave}>Place Stamp</button>
                         <button type="button" className="fw-delete-btn" onClick={() => setDraftStamp(null)}>Cancel</button>
                     </div>
-                </div>
+                </motion.div>
             )}
+            </AnimatePresence>
 
+            <AnimatePresence mode="wait">
             {!isFocusMode && selectedNote && selectedItemCanEdit && activeTool !== "eraser" && !isTimeCapsuleMode && (
-                <div className="freedom-wall-note-editor">
+                <motion.div
+                    key="note-editor"
+                    className="freedom-wall-note-editor"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                >
                     <h4>Note Editor</h4>
                     <textarea
                         value={noteEditor.text}
@@ -2547,8 +2614,9 @@ const FreedomWallPage = () => {
                         <button type="button" className="fw-apply-btn" onClick={applyNoteChanges}>Apply style</button>
                         <button type="button" className="fw-delete-btn" onClick={handleDeleteSelectedItem}>Delete note</button>
                     </div>
-                </div>
+                </motion.div>
             )}
+            </AnimatePresence>
 
             {!isFocusMode && selectedItem && selectedItemCanEdit && selectedItem.item_type !== "note" && activeTool !== "eraser" && !isTimeCapsuleMode && (
                 <div className="freedom-wall-selected-actions">
@@ -2559,7 +2627,12 @@ const FreedomWallPage = () => {
 
             <div ref={shellRef} className={`freedom-wall-canvas-shell ${activeTool === "eraser" && !isTimeCapsuleMode ? "is-eraser-mode" : ""}`}>
                 {isItemsLoading ? (
-                    <div className="freedom-wall-loading">Loading wall...</div>
+                    <div className="fw-loading-skeleton">
+                        <div className="fw-skeleton-bar" />
+                        <div className="fw-skeleton-bar" />
+                        <div className="fw-skeleton-bar" />
+                        <span className="fw-skeleton-text">Loading wall...</span>
+                    </div>
                 ) : (
                     <Stage
                         ref={stageRef}
@@ -2586,7 +2659,7 @@ const FreedomWallPage = () => {
                                 <Line
                                     key={`fw-grid-v-${index}`}
                                     points={[index * GRID_SIZE, 0, index * GRID_SIZE, stageHeight]}
-                                    stroke="rgba(200, 195, 185, 0.04)"
+                                    stroke="rgba(200, 195, 185, 0.055)"
                                     strokeWidth={1}
                                 />
                             ))}
@@ -2594,7 +2667,7 @@ const FreedomWallPage = () => {
                                 <Line
                                     key={`fw-grid-h-${index}`}
                                     points={[0, index * GRID_SIZE, stageWidth, index * GRID_SIZE]}
-                                    stroke="rgba(200, 195, 185, 0.04)"
+                                    stroke="rgba(200, 195, 185, 0.055)"
                                     strokeWidth={1}
                                 />
                             ))}
@@ -2736,14 +2809,26 @@ const FreedomWallPage = () => {
                 <div className="freedom-wall-error-toast">{wallError}</div>
             )}
 
+            <AnimatePresence>
             {showClearDoodlesModal && (
-                <div className="fw-modal-backdrop" onClick={handleCancelClearMyDoodles}>
-                    <div
+                <motion.div
+                    className="fw-modal-backdrop"
+                    onClick={handleCancelClearMyDoodles}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    <motion.div
                         className="fw-modal-card"
                         role="dialog"
                         aria-modal="true"
                         aria-label="Clear My Doodles Confirmation"
                         onClick={(event) => event.stopPropagation()}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     >
                         <h4>Clear My Doodles?</h4>
                         <p>
@@ -2752,7 +2837,7 @@ const FreedomWallPage = () => {
                         <div className="fw-modal-actions">
                             <button
                                 type="button"
-                                className="fw-delete-btn"
+                                className="fw-delete-btn fw-modal-btn"
                                 onClick={handleConfirmClearMyDoodles}
                                 disabled={clearMyDoodlesMutation.isPending}
                             >
@@ -2760,25 +2845,26 @@ const FreedomWallPage = () => {
                             </button>
                             <button
                                 type="button"
-                                className="fw-apply-btn"
+                                className="fw-apply-btn fw-modal-btn"
                                 onClick={handleCancelClearMyDoodles}
                                 disabled={clearMyDoodlesMutation.isPending}
                             >
                                 Cancel
                             </button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
+            </AnimatePresence>
 
             {!isFocusMode && <div className="freedom-wall-footer">
-                <span>{sortedItems.length} {isTimeCapsuleMode ? "items in time capsule" : "items this week"}</span>
-                <span>
+                <span className="fw-footer-count"><strong>{sortedItems.length}</strong> {isTimeCapsuleMode ? "items in time capsule" : "items this week"}</span>
+                <span className="fw-sync-indicator">
                     {createItemMutation.isPending || updateItemMutation.isPending || deleteItemMutation.isPending
                     || reportItemMutation.isPending
                     || clearMyDoodlesMutation.isPending
-                        ? "Syncing..."
-                        : "Synced"}
+                        ? (<><span className="fw-sync-dot is-syncing" />Syncing...</>)
+                        : (<><span className="fw-sync-dot is-synced" />Synced</>)}
                 </span>
             </div>}
         </div>

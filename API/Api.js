@@ -298,6 +298,26 @@ export const getCanvasGallery = async(userId, limit = 36, sort = 'hottest', curs
     return await response.json();
 }
 
+export const searchUsers = async(query, limit = 10) => {
+    const normalizedQuery = typeof query === 'string' ? query.trim() : '';
+    if(!normalizedQuery){
+        return {data: [], hasMore: false};
+    }
+
+    const url = `${BASE_URL}/users/search?query=${encodeURIComponent(normalizedQuery)}&limit=${limit}`;
+
+    const response = await apiRequest(url, {
+        method: 'GET'
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to search users');
+    }
+
+    return await response.json();
+}
+
 export const searchJournals = async(query, limit = 10, userId) => {
     const normalizedQuery = typeof query === 'string' ? query.trim() : '';
     if(!normalizedQuery){
