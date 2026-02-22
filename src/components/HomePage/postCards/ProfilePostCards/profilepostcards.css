@@ -822,3 +822,10 @@
         width: 200px;
     }
 }
+
+/* ═══════════════════════════════════════════════════
+   Caption Editor — overrides for repost modal classes
+   ═══════════════════════════════════════════════════ */
+.caption-editor-save-btn{
+    background: var(--editor-accent);
+}

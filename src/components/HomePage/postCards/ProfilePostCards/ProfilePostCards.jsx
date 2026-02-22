@@ -1,8 +1,9 @@
 import './profilepostcards.css';
+import '../../../RepostModal/repostmodal.css';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../../../Context/useAuth';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { deleteJournal, deleteJournalImage, getUserJournals } from '../../../../../API/Api';
+import { deleteJournal, deleteJournalImage, getUserJournals, updateRepostCaption } from '../../../../../API/Api';
 import { useEffect, useCallback } from 'react';
 import { FadeLoader, MoonLoader } from 'react-spinners';
 import ParseContent from '../parseData';
@@ -81,6 +82,10 @@ const ProfilePostCards = () =>{
     const [isDeletingJournal, setIsDeletingJournal] = useState(false);
     const [journalIsDeleted, setJournalIsDeleted] = useState(false);
     const [viewMode, setViewMode] = useState('grid');
+    const [showCaptionEditor, setShowCaptionEditor] = useState(null);
+    const [captionData, setCaptionData] = useState(null);
+    const [captionText, setCaptionText] = useState('');
+    const [isSavingCaption, setIsSavingCaption] = useState(false);
     
     const {
         data,
@@ -216,6 +221,41 @@ const ProfilePostCards = () =>{
 
     const handleClickCloseEditor = () => {
         setShowEditor(null)
+    }
+
+    const handleClickEditRepostCaption = (e, journalId, currentCaption) => {
+        e.stopPropagation();
+        setShowSettings(null);
+        setCaptionData({id: journalId});
+        setCaptionText(currentCaption || '');
+        setShowCaptionEditor(journalId);
+    }
+
+    const handleSaveRepostCaption = async() => {
+        if(!captionData?.id || isSavingCaption) return;
+        try {
+            setIsSavingCaption(true);
+            await updateRepostCaption(session?.access_token, {
+                journalId: captionData.id,
+                caption: captionText
+            });
+            queryClient.invalidateQueries({queryKey: ['userJournals']});
+            queryClient.invalidateQueries({queryKey: ['journals']});
+            queryClient.invalidateQueries({queryKey: ['visitedProfileJournals']});
+            setShowCaptionEditor(null);
+            setCaptionData(null);
+            setCaptionText('');
+        } catch (error) {
+            console.error('failed to update repost caption:', error);
+        } finally {
+            setIsSavingCaption(false);
+        }
+    }
+
+    const handleCloseCaptionEditor = () => {
+        setShowCaptionEditor(null);
+        setCaptionData(null);
+        setCaptionText('');
     }
 
     useEffect(() =>{
@@ -394,10 +434,16 @@ const ProfilePostCards = () =>{
                                                             {setting.label}
                                                         </div>
                                                     )}
-                                                    {setting.actionEdit && journal?.post_type !== 'canvas' && (
+                                                    {setting.actionEdit && journal?.post_type !== 'canvas' && !journal?.is_repost && (
                                                         <div className={setting.className} onClick={(e) => setting.actionEdit(e, journal.content, journal.id, journal.title)}>
                                                             {setting.icon}
                                                             {setting.label}
+                                                        </div>
+                                                    )}
+                                                    {setting.actionEdit && journal?.is_repost && (
+                                                        <div className={setting.className} onClick={(e) => handleClickEditRepostCaption(e, journal.id, journal.repost_caption)}>
+                                                            {setting.icon}
+                                                            Edit caption
                                                         </div>
                                                     )}
                                                     {journal.privacy === 'public' && setting.actionOnlyMe && (
@@ -580,10 +626,16 @@ const ProfilePostCards = () =>{
                                                     </div>
                                                 )}
 
-                                                {setting.actionEdit && journal?.post_type !== 'canvas' &&(
+                                                {setting.actionEdit && journal?.post_type !== 'canvas' && !journal?.is_repost &&(
                                                     <div className={setting.className} onClick={(e) => setting.actionEdit(e, journal.content, journal.id, journal.title)}>
                                                         {setting.icon}
                                                         {setting.label}
+                                                    </div>
+                                                )}
+                                                {setting.actionEdit && journal?.is_repost && (
+                                                    <div className={setting.className} onClick={(e) => handleClickEditRepostCaption(e, journal.id, journal.repost_caption)}>
+                                                        {setting.icon}
+                                                        Edit caption
                                                     </div>
                                                 )}
                                                 {journal.privacy === 'public' && setting.actionOnlyMe &&(
@@ -628,6 +680,67 @@ const ProfilePostCards = () =>{
                 <EditJournal journalData={journalData ?? {}} onClose={handleClickCloseEditor} />
             </AnimatePresence>,
             document.querySelector('.profile-parent-container') || document.body
+        )}
+
+        {showCaptionEditor !== null && createPortal(
+            <AnimatePresence>
+                <motion.div
+                    className="repost-overlay"
+                    initial={{opacity: 0}}
+                    animate={{opacity: 1}}
+                    exit={{opacity: 0}}
+                    transition={{duration: 0.2}}
+                    onClick={handleCloseCaptionEditor}
+                >
+                    <motion.div
+                        className="repost-modal"
+                        initial={{opacity: 0, scale: 0.92, y: 20}}
+                        animate={{opacity: 1, scale: 1, y: 0}}
+                        exit={{opacity: 0, scale: 0.92, y: 20}}
+                        transition={{type: 'spring', stiffness: 400, damping: 30}}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="repost-modal-header">
+                            <h3 className="repost-modal-title">Edit caption</h3>
+                            <button className="repost-modal-close" onClick={handleCloseCaptionEditor}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.3 5.71a1 1 0 0 0-1.42 0L12 10.59 7.12 5.71a1 1 0 1 0-1.42 1.42L10.59 12l-4.88 4.88a1 1 0 1 0 1.42 1.42L12 13.41l4.88 4.88a1 1 0 0 0 1.42-1.42L13.41 12l4.88-4.88a1 1 0 0 0 0-1.41Z"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="repost-caption-container">
+                            <textarea
+                                className="repost-caption-input"
+                                value={captionText}
+                                onChange={(e) => {
+                                    if(e.target.value.length <= 280){
+                                        setCaptionText(e.target.value);
+                                    }
+                                }}
+                                maxLength={280}
+                                rows={4}
+                                placeholder="Add your thoughts..."
+                            />
+                            <span className={`repost-char-count ${captionText.length >= 280 ? 'at-limit' : ''}`}>
+                                {captionText.length}/280
+                            </span>
+                        </div>
+
+                        <div className="repost-modal-actions">
+                            <button className="repost-cancel-btn" onClick={handleCloseCaptionEditor}>Cancel</button>
+                            <button
+                                className="repost-submit-btn caption-editor-save-btn"
+                                onClick={handleSaveRepostCaption}
+                                disabled={isSavingCaption}
+                            >
+                                {isSavingCaption ? 'Saving...' : 'Save'}
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>,
+            document.body
         )}
         </>
     )

@@ -563,6 +563,24 @@ export const createCanvasRemix = async(token, payload) => {
     return await response.json();
 }
 
+export const updateRepostCaption = async(token, {journalId, caption}) => {
+    const headers = {'Content-Type': 'application/json'};
+    if(token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/update-repost-caption`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({journalId, caption})
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to update repost caption');
+    }
+
+    return await response.json();
+}
+
 export const createRepost = async(token, {sourceJournalId, caption}) => {
     const headers = {'Content-Type': 'application/json'};
     if(token) headers['Authorization'] = `Bearer ${token}`;

@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getOpinions } from "../../../API/Api";
 import { useAuth } from "../../Context/useAuth";
@@ -14,6 +14,7 @@ import VerifiedBadge from "../Badge/VerifiedBadge";
 const OpinionsPage = () =>{
     const [showHeaders, setShowHeaders] = useState(true);
     const [showWriteContainer, setShowWriteContainer] = useState(true);
+    const [scrollReady, setScrollReady] = useState(false);
     const {ref, inView} = useInView({threshold: 0.5, rootMargin: '200px'});
 
     const isMobile = useMediaQuery({query: '(max-width: 480px'});
@@ -89,6 +90,20 @@ const OpinionsPage = () =>{
         })
     }
 
+    useLayoutEffect(() =>{
+        const scrollContainer = document.querySelector('.home-parent-container');
+        if (scrollContainer) {
+            scrollContainer.scrollTop = 0;
+        } else {
+            window.scrollTo(0, 0);
+        }
+    }, [])
+
+    useEffect(() =>{
+        const id = requestAnimationFrame(() => setScrollReady(true));
+        return () => cancelAnimationFrame(id);
+    }, [])
+
     useEffect(() =>{
         const scroll = () =>{
             setShowHeaders(false);
@@ -112,10 +127,10 @@ const OpinionsPage = () =>{
     }, [])
 
     useEffect(() =>{
-        if(inView && hasNextPage && !isFetchingNextPage){
+        if(scrollReady && inView && hasNextPage && !isFetchingNextPage){
             fetchNextPage();
         }
-    }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
+    }, [scrollReady, inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
     const opinions = data?.pages.flatMap((page) => page.data) || [];
 
