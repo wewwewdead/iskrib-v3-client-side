@@ -36,6 +36,7 @@ const ExplorePage = lazy(() => import('./components/HomePage/explore/ExplorePage
 const GalleryPage = lazy(() => import('./components/HomePage/gallery/GalleryPage.jsx'));
 const FreedomWallPage = lazy(() => import('./components/HomePage/freedomWall/FreedomWallPage.jsx'));
 const Universe = lazy(() => import('./components/Universe/Universe.jsx'));
+const SettingsPage = lazy(() => import('./components/SettingsPage/SettingsPage.jsx'));
 
 const AppAuthModal = () => {
   const {showAuthModal, closeAuthModal} = useAuth();
@@ -120,7 +121,8 @@ const App = () => {
 
               <Route path='collections' element={<Collections/>}/>
               <Route path='collectionCards' element={<CollectionJournals/>}/>
-              
+              <Route path='settings' element={<SettingsPage/>}/>
+
               {/* route for nested notifications */}
               <Route path='notifications' element={<Notifications/>}>
                 <Route index element={<NotificationCards/>}/>

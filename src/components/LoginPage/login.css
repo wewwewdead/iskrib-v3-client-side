@@ -243,6 +243,18 @@
     background: var(--bg-primary);
 }
 
+/* Forgot password row */
+.forgot-password-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.forgot-password-row .link-button {
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+}
+
 /* Password field with toggle */
 .input-with-action {
     position: relative;
