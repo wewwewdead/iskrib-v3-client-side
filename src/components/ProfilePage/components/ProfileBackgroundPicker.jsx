@@ -8,6 +8,7 @@ const ProfileBackgroundPicker = ({
     handleBgOnchange,
     bgInputRef,
     gradients,
+    gradientPicked,
     handleSelectGradient,
     handleInsertBgImage,
     imageSrc,
@@ -45,14 +46,19 @@ const ProfileBackgroundPicker = ({
                 />
 
                 <div className="profile-bg-color-palette">
-                    {gradients.map((gradient, index) => (
-                        <div
-                            onClick={() => handleSelectGradient(gradient.style)}
-                            key={index}
-                            className="gradient-box"
-                            style={gradient.style}
-                        ></div>
-                    ))}
+                    {gradients.map((gradient, index) => {
+                        const isSelected =
+                            gradientPicked &&
+                            JSON.stringify(gradientPicked) === JSON.stringify(gradient.style);
+                        return (
+                            <div
+                                onClick={() => handleSelectGradient(gradient.style)}
+                                key={index}
+                                className={`gradient-box${isSelected ? " gradient-selected" : ""}`}
+                                style={gradient.style}
+                            ></div>
+                        );
+                    })}
                 </div>
 
                 <div className="profile-bg-preview">
@@ -103,12 +109,15 @@ const ProfileBackgroundPicker = ({
                     )}
                 </div>
 
-                <div className="canvel-save-container">
+                <div className="cancel-save-container">
                     <div onClick={(e) => handleHideGradientPicker(e)} className="cancel-button">
-                        cancel
+                        Cancel
                     </div>
-                    <div onClick={() => handleSaveProfileConfig()} className="save-button">
-                        save
+                    <div
+                        onClick={() => handleSaveProfileConfig()}
+                        className={`save-button${isUpdatingProfileConfig ? " is-saving" : ""}`}
+                    >
+                        {isUpdatingProfileConfig ? "Saving..." : "Save"}
                     </div>
                 </div>
 
@@ -116,7 +125,7 @@ const ProfileBackgroundPicker = ({
                     <BarLoader
                         loading={isUpdatingProfileConfig}
                         width={"100%"}
-                        color="rgb(40, 115, 255)"
+                        color="var(--accent-purple)"
                         speedMultiplier={0.7}
                     />
                 )}

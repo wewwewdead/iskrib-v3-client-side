@@ -37,6 +37,16 @@ const GalleryPage = lazy(() => import('./components/HomePage/gallery/GalleryPage
 const FreedomWallPage = lazy(() => import('./components/HomePage/freedomWall/FreedomWallPage.jsx'));
 const Universe = lazy(() => import('./components/Universe/Universe.jsx'));
 const SettingsPage = lazy(() => import('./components/SettingsPage/SettingsPage.jsx'));
+const StoryDashboard = lazy(() => import('./components/Stories/StoryDashboard/StoryDashboard.jsx'));
+const StoryEditor = lazy(() => import('./components/Stories/StoryEditor/StoryEditor.jsx'));
+const StoryChapterManager = lazy(() => import('./components/Stories/StoryChapterManager/StoryChapterManager.jsx'));
+const ChapterEditor = lazy(() => import('./components/Stories/ChapterEditor/ChapterEditor.jsx'));
+const StoryBrowser = lazy(() => import('./components/Stories/StoryBrowser/StoryBrowser.jsx'));
+const StoryLibrary = lazy(() => import('./components/Stories/StoryLibrary/StoryLibrary.jsx'));
+const StoryDetail = lazy(() => import('./components/Stories/StoryDetail/StoryDetail.jsx'));
+const ChapterReader = lazy(() => import('./components/Stories/ChapterReader/ChapterReader.jsx'));
+const ProfileStoriesSection = lazy(() => import('./components/ProfilePage/components/ProfileStoriesSection.jsx'));
+const VisitedProfileStoriesSection = lazy(() => import('./components/VisitProfile/components/VisitedProfileStoriesSection.jsx'));
 
 const AppAuthModal = () => {
   const {showAuthModal, closeAuthModal} = useAuth();
@@ -89,7 +99,8 @@ const App = () => {
             <Route path='/profile' element={<MyProfile/>}>
               <Route index element={<ProfilePostCards/>} />
               <Route path='media' element={<ProfileMediaSection/>} />
-              <Route path='myOpinions' element={<MyOpinions/>}/>         
+              <Route path='myOpinions' element={<MyOpinions/>}/>
+              <Route path='stories' element={<ProfileStoriesSection/>}/>
             </Route>
 
             <Route path='/visitProfile' element={<Visitprofile/>}>
@@ -97,6 +108,7 @@ const App = () => {
               <Route path='media' element={<VisitedProfileMediaSection/>}/>
               <Route path='visitedCollections' element={<CollectionViewer/>}/>
               <Route path='visitedOpinions' element={<VisitedProfileOpinions/>}/>
+              <Route path='stories' element={<VisitedProfileStoriesSection/>}/>
             </Route>
 
             <Route path='/u/:username' element={<Visitprofile/>}>
@@ -104,6 +116,7 @@ const App = () => {
               <Route path='media' element={<VisitedProfileMediaSection/>}/>
               <Route path='collections' element={<CollectionViewer/>}/>
               <Route path='opinions' element={<VisitedProfileOpinions/>}/>
+              <Route path='stories' element={<VisitedProfileStoriesSection/>}/>
             </Route>
 
             <Route path='/home' element={<HomePage/>}>
@@ -122,6 +135,17 @@ const App = () => {
               <Route path='collections' element={<Collections/>}/>
               <Route path='collectionCards' element={<CollectionJournals/>}/>
               <Route path='settings' element={<SettingsPage/>}/>
+
+              {/* Stories routes */}
+              <Route path='stories' element={<StoryBrowser/>}/>
+              <Route path='stories/library' element={<StoryLibrary/>}/>
+              <Route path='stories/dashboard' element={<StoryDashboard/>}/>
+              <Route path='stories/new' element={<StoryEditor/>}/>
+              <Route path='stories/:storyId' element={<StoryDetail/>}/>
+              <Route path='stories/:storyId/edit' element={<StoryEditor/>}/>
+              <Route path='stories/:storyId/manage' element={<StoryChapterManager/>}/>
+              <Route path='stories/:storyId/chapter/:chapterId' element={<ChapterReader/>}/>
+              <Route path='stories/:storyId/chapter/:chapterId/edit' element={<ChapterEditor/>}/>
 
               {/* route for nested notifications */}
               <Route path='notifications' element={<Notifications/>}>

@@ -58,6 +58,7 @@ const MyProfile = () => {
     const [isUpdatingFont, setIsUpdatingFont] = useState(false);
     const [isUpdatingProfileConfig, setIsUpdatingProfileConfig] = useState(false);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [saveError, setSaveError] = useState("");
 
     const navigate = useNavigate();
     const navigatePath = (path) => {
@@ -82,7 +83,12 @@ const MyProfile = () => {
         setFontColor(userData?.profile_font_color || "");
     }, [userData?.background, userData?.profile_font_color]);
 
-    const opendRichTextEditor = () => {
+    const showError = (msg) => {
+        setSaveError(msg);
+        setTimeout(() => setSaveError(""), 4000);
+    };
+
+    const openRichTextEditor = () => {
         setShowEditor(true);
     };
 
@@ -118,7 +124,6 @@ const MyProfile = () => {
 
     const handleImageOnChange = (e) => {
         const file = e.target.files[0];
-        setProfileEditAvatar(file);
         if (file) {
             setProfileEditAvatar(file);
             const reader = new FileReader();
@@ -153,6 +158,7 @@ const MyProfile = () => {
     };
 
     const handleSaveProfileEdit = async () => {
+        if (isSavingProfile) return;
         setIsSavingProfile(true);
         const data = {
             name: profileEditName,
@@ -178,19 +184,20 @@ const MyProfile = () => {
             });
 
             await updateProfileData(formdata, session?.access_token);
-        } catch {
-            throw new Error("error saving update");
-        } finally {
-            setIsSavingProfile(false);
             setProfileEditAvatar(null);
             queryClient.invalidateQueries({ queryKey: ["userData"] });
             setShowProfileEditor(false);
+        } catch {
+            showError("Failed to save profile. Please try again.");
+        } finally {
+            setIsSavingProfile(false);
         }
     };
 
     const handleSaveProfileConfig = async () => {
+        if (isUpdatingProfileConfig) return;
+        setIsUpdatingProfileConfig(true);
         try {
-            setIsUpdatingProfileConfig(true);
             if (imageSrc) {
                 const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels, userData.id, session?.access_token);
                 if (croppedImageUrl) {
@@ -204,14 +211,14 @@ const MyProfile = () => {
             } else if (gradientPicked) {
                 setCroppedImage(gradientPicked);
             }
-        } catch {
-            throw new Error("error updating profile");
-        } finally {
-            setIsUpdatingProfileConfig(false);
             setGradientPicked(null);
             setImageSrc(null);
             setShowBgPicker(false);
             queryClient.invalidateQueries({ queryKey: ["userData"] });
+        } catch {
+            showError("Failed to update background. Please try again.");
+        } finally {
+            setIsUpdatingProfileConfig(false);
         }
     };
 
@@ -270,23 +277,24 @@ const MyProfile = () => {
     };
 
     const handleClickSaveFontColor = async () => {
+        if (isUpdatingFont) return;
         setIsUpdatingFont(true);
         const formdata = new FormData();
         formdata.append("fontColor", fontColor);
         try {
             await updateFontColor(session?.access_token, formdata);
             queryClient.invalidateQueries({ queryKey: ["userData"] });
+            setShowFontColorSelector(false);
         } catch {
-            throw new Error("error updating font");
+            showError("Failed to update font color. Please try again.");
         } finally {
             setIsUpdatingFont(false);
-            setShowFontColorSelector(false);
         }
     };
 
-    const hancleClickCancelFontSelect = () => {
+    const handleClickCancelFontSelect = () => {
         setShowFontColorSelector(false);
-        setFontColor("");
+        setFontColor(userData?.profile_font_color || "");
     };
 
     useEffect(() => {
@@ -307,7 +315,7 @@ const MyProfile = () => {
                 fontColorInputRef={fontColorInputRef}
                 setFontColor={setFontColor}
                 handleClickInputColor={handleClickInputColor}
-                hancleClickCancelFontSelect={hancleClickCancelFontSelect}
+                handleClickCancelFontSelect={handleClickCancelFontSelect}
                 handleClickSaveFontColor={handleClickSaveFontColor}
                 isUpdatingFont={isUpdatingFont}
             />
@@ -316,6 +324,7 @@ const MyProfile = () => {
                 handleBgOnchange={handleBgOnchange}
                 bgInputRef={bgInputRef}
                 gradients={gradients}
+                gradientPicked={gradientPicked}
                 handleSelectGradient={handleSelectGradient}
                 handleInsertBgImage={handleInsertBgImage}
                 imageSrc={imageSrc}
@@ -386,9 +395,15 @@ const MyProfile = () => {
                     {showMobileSideBar && <MobileSidebarLink onclose={handleCloseSidebar} />}
 
                     <MobileNavlink clickOpenSidebar={handleClickOpenSidebar} />
-                    <WriteJournalButton onOpen={opendRichTextEditor} />
+                    <WriteJournalButton onOpen={openRichTextEditor} />
                 </div>
             </AnimatePresence>
+
+            {saveError && (
+                <div key={saveError} className="profile-save-error-toast">
+                    {saveError}
+                </div>
+            )}
         </>
     );
 };

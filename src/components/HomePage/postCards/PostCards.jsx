@@ -493,9 +493,6 @@ const PostCards = () => {
                     Clear
                 </button>
             ) : null}
-            <button type="button" className="search-freedom-wall-btn" onClick={handleVisitFreedomWall}>
-                Visit Freedom Wall
-            </button>
             {handleOpenTextEditor && (
                 <button type="button" className="mobile-write-btn" onClick={() => handleOpenTextEditor()}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -576,9 +573,22 @@ const PostCards = () => {
         )}
         </div>
 
-        <div className="mobile-fw-banner" onClick={handleVisitFreedomWall}>
-            <span>Freedom Wall</span>
-            <span className="mobile-fw-banner-sub">Speak freely</span>
+        <div className="search-nav-row">
+            <button type="button" className="search-nav-btn search-nav-fw" onClick={handleVisitFreedomWall}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7.2A3.2 3.2 0 0 1 7.2 4h9.6A3.2 3.2 0 0 1 20 7.2v9.6a3.2 3.2 0 0 1-3.2 3.2H7.2A3.2 3.2 0 0 1 4 16.8V7.2Z" stroke="currentColor" strokeWidth="1.6"/>
+                    <path d="M8 15.5c1.7-3 2.4-3 4 0 1.5-2.2 2.1-2.2 3.9 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                    <circle cx="9" cy="9.2" r="1.1" fill="currentColor" />
+                    <circle cx="14.2" cy="8.6" r="0.9" fill="currentColor" />
+                </svg>
+                Freedom Wall
+            </button>
+            <button type="button" className="search-nav-btn search-nav-stories" onClick={() => navigate('/home/stories')}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+                </svg>
+                Stories
+            </button>
         </div>
 
         <AnimatePresence>

@@ -18,7 +18,7 @@
     width: 400px;
     height: 400px;
     background-color: var(--bg-elevated);
-    z-index: 4;
+    z-index: 136;
     padding: 1.25rem;
     border-radius: 18px;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--border-light);
@@ -48,9 +48,14 @@
     height: 50px;
     border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, outline 0.2s ease;
     transform: scale(1) rotate(0deg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+.gradient-box.gradient-selected{
+    outline-color: var(--accent-dark);
 }
 .gradient-box:hover{
     transform: scale(1.08) rotate(1.5deg);
@@ -116,7 +121,7 @@
     transform: scale(1.1);
 }
 
-.canvel-save-container{
+.cancel-save-container{
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -402,9 +407,9 @@
     justify-content: flex-start;
     align-items: flex-start;
     width: 200px;
-    height: 120px;
+    height: fit-content;
     background-color: var(--bg-elevated);
-    z-index: 5;
+    z-index: 136;
     padding: 1rem;
     border-radius: 16px;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--border-light);
@@ -421,10 +426,23 @@
 .input-color{
     border: none;
     cursor: pointer;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    border-radius: 12px;
+    width: 60px;
+    height: 60px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.input-color:hover{
+    transform: scale(1.06);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+.font-color-hex-label{
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: -0.4rem;
 }
 .font-picker-container{
     display: flex;
@@ -788,6 +806,12 @@
     z-index: 2;
     border-radius: 50%;
     cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.profile-edit-image-child-container:hover + .profile-edit-image-bg,
+.profile-edit-image-container:hover .profile-edit-image-bg{
+    opacity: 1;
 }
 .my-profile-image-editable{
     position: relative;
@@ -959,6 +983,12 @@
     margin-top: 1rem;
     border-radius: 14px;
     border: 0.7px solid var(--border-light);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.my-profile-tablist::-webkit-scrollbar{
+    display: none;
 }
 .tab-container{
     position: relative;
@@ -969,6 +999,8 @@
     justify-content: center;
     align-items: center;
     padding: 0.5rem 1rem;
+    white-space: nowrap;
+    flex-shrink: 0;
     margin: 0;
     cursor: pointer;
     user-select: none;
@@ -1259,6 +1291,60 @@
 .profile-media-delete-confirm-btn:disabled{
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+.profile-editor-bg{
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--bg-backdrop);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 135;
+}
+.edit-profile-input-name-container:focus-within{
+    border-color: var(--accent-dark);
+    transition: border-color 0.2s ease;
+}
+.edit-profile-input-bio-container:focus-within{
+    border-color: var(--accent-dark);
+    transition: border-color 0.2s ease;
+}
+.profile-edit-save-bttn.is-saving{
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: default;
+}
+.save-button.is-saving{
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: default;
+}
+.profile-save-error-toast{
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    background-color: var(--color-danger, #d73a3a);
+    color: #fff;
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 3.7s forwards;
+}
+@keyframes toastSlideIn{
+    from{ opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to{ opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes toastFadeOut{
+    from{ opacity: 1; }
+    to{ opacity: 0; pointer-events: none; }
 }
 
 /* mobile responsive */

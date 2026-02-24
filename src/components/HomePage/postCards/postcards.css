@@ -5,9 +5,6 @@
 .mobile-write-btn{
     display: none;
 }
-.mobile-fw-banner{
-    display: none;
-}
 
 .newsfeed-header{
 }
@@ -95,27 +92,48 @@
     border-color: #D4A853;
     color: #D4A853;
 }
-.search-freedom-wall-btn{
-    border: 1.5px solid rgba(234, 179, 56, 0.35);
-    background: linear-gradient(135deg, rgba(234, 179, 56, 0.12), rgba(255, 204, 51, 0.08));
-    color: #e6a817;
-    border-radius: 8px;
+/* ── Nav row (Freedom Wall + Stories) ── */
+.search-nav-row{
+    display: flex;
+    gap: 6px;
+    padding: 0.4rem 0.75rem;
+}
+.search-nav-btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex: 1;
+    border-radius: 999px;
     font-family: var(--font-ui);
-    font-size: 0.68rem;
+    font-size: 0.74rem;
     font-weight: 700;
     letter-spacing: 0.01rem;
-    padding: 0.42rem 0.66rem;
+    padding: 0.48rem 0.7rem;
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
-.search-freedom-wall-btn:hover{
+.search-nav-btn:active{
+    transform: scale(0.97);
+}
+.search-nav-fw{
+    border: 1.5px solid rgba(234, 179, 56, 0.35);
+    background: linear-gradient(135deg, rgba(234, 179, 56, 0.12), rgba(255, 204, 51, 0.08));
+    color: #e6a817;
+}
+.search-nav-fw:hover{
     background: linear-gradient(135deg, rgba(234, 179, 56, 0.22), rgba(255, 204, 51, 0.16));
     box-shadow: 0 0 10px rgba(234, 179, 56, 0.15);
-    transform: translateY(-1px);
 }
-.search-freedom-wall-btn:active{
-    transform: translateY(0);
+.search-nav-stories{
+    border: 1.5px solid rgba(234, 179, 56, 0.35);
+    background: linear-gradient(135deg, rgba(234, 179, 56, 0.12), rgba(255, 204, 51, 0.08));
+    color: #e6a817;
+}
+.search-nav-stories:hover{
+    background: linear-gradient(135deg, rgba(234, 179, 56, 0.22), rgba(255, 204, 51, 0.16));
+    box-shadow: 0 0 10px rgba(234, 179, 56, 0.15);
 }
 .search-mode-pill{
     display: flex;
@@ -870,8 +888,13 @@
         padding: 0.32rem 0.52rem;
         border-radius: 6px;
     }
-    .search-freedom-wall-btn{
-        display: none;
+    .search-nav-row{
+        padding: 0.35rem 0.5rem;
+        gap: 5px;
+    }
+    .search-nav-btn{
+        font-size: 0.68rem;
+        padding: 0.42rem 0.5rem;
     }
     .search-mode-pill{
         font-size: 0.58rem;
@@ -928,35 +951,6 @@
         flex-shrink: 0;
     }
 
-    /* ── Freedom Wall banner pill ── */
-    .mobile-fw-banner{
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.4rem;
-        margin: 0.5rem 0.75rem 0;
-        padding: 0.55rem 1rem;
-        background: linear-gradient(135deg, rgba(234, 179, 56, 0.18), rgba(255, 204, 51, 0.1));
-        border: 1px solid rgba(234, 179, 56, 0.3);
-        border-radius: 999px;
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: background 0.15s ease;
-    }
-    .mobile-fw-banner:active{
-        background: linear-gradient(135deg, rgba(234, 179, 56, 0.28), rgba(255, 204, 51, 0.18));
-    }
-    .mobile-fw-banner span{
-        font-family: var(--font-ui);
-        font-size: 0.76rem;
-        font-weight: 700;
-        color: #e6a817;
-    }
-    .mobile-fw-banner .mobile-fw-banner-sub{
-        font-weight: 500;
-        font-size: 0.68rem;
-        color: var(--text-faint);
-    }
 
     .postcards-parent-container {
         position: relative;

@@ -25,12 +25,13 @@ const ProfileEditModal = ({
     }
 
     return (
-        <div key={"profile-editor"} className="profile-editor-bg">
+        <div key={"profile-editor"} className="profile-editor-bg" onClick={(e) => closeEditor(e)}>
             <Motion.div
                 className="profile-editor-container"
-                initial={{ scale: 0, opacity: 0.8 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 10 }}
                 transition={{ type: "spring", stiffness: 250, damping: 25 }}
             >
                 <div className="profile-editor-close-button-container">
@@ -147,15 +148,18 @@ const ProfileEditModal = ({
                     </div>
                 </div>
 
-                <div onClick={() => handleSaveProfileEdit()} className="profile-edit-save-bttn">
-                    Save
+                <div
+                    onClick={() => handleSaveProfileEdit()}
+                    className={`profile-edit-save-bttn${isSavingProfile ? " is-saving" : ""}`}
+                >
+                    {isSavingProfile ? "Saving..." : "Save"}
                 </div>
 
                 {isSavingProfile && (
                     <BarLoader
                         width={"100%"}
                         loading={isSavingProfile}
-                        color="rgb(40, 115, 255)"
+                        color="var(--accent-purple)"
                         speedMultiplier={0.7}
                     />
                 )}

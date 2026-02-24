@@ -63,7 +63,7 @@ const ProfileHeroSection = ({
             )}
 
             <div className="profile-actions-row">
-                <div onClick={(e) => handleClickEdit(e)} className="edit-profile-bttn">
+                <div onClick={(e) => handleClickEdit(e)} className="edit-profile-bttn" title="Edit your profile">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         height="20px"
@@ -75,7 +75,7 @@ const ProfileHeroSection = ({
                     </svg>
                     Edit Profile
                 </div>
-                <div onClick={(e) => handleClickFontColorSelector(e)} className="font-picker-container">
+                <div onClick={(e) => handleClickFontColorSelector(e)} className="font-picker-container" title="Change font color">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         height="20px"
@@ -90,6 +90,7 @@ const ProfileHeroSection = ({
                     <div
                         className="font-picker-container"
                         style={{ position: 'relative' }}
+                        title="Share profile"
                         onClick={(e) => { e.stopPropagation(); setShowShareMenu((v) => !v); }}
                     >
                         <svg
