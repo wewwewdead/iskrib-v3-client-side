@@ -30,7 +30,8 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
             return undefined;
         },
         enabled: !!opinionId,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5
     });
 
     const handleSubmitReplyOpinion = async (reply, receiver_id, sender_id, parent_id) => {

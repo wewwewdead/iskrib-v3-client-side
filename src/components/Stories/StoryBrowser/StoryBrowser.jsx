@@ -86,6 +86,7 @@ const StoryBrowser = () => {
         },
         initialPageParam: null,
         refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5,
     });
 
     const stories = data?.pages?.flatMap(p => p.data) || [];

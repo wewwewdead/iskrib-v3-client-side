@@ -9,7 +9,9 @@ const FormatNotificationType = (type) => {
         repost: 'Reposted your post',
         opinion_reply: 'Replied to your opinion',
         constellation_request: 'Wants to link stars with you',
-        constellation_accepted: 'Accepted your constellation link'
+        constellation_accepted: 'Accepted your constellation link',
+        hottest_post: 'Your post is #1 Hottest!',
+        hottest_post_replaced: 'Your post is no longer #1 Hottest'
     }
 
     return notificationTypeArray[type] || 'Unknown notification'

@@ -58,7 +58,8 @@ const CommentsCards = ({comments, postId}) =>{
             }
         },
         refetchOnWindowFocus: false,
-        enabled: showReplies
+        enabled: showReplies,
+        staleTime: 1000 * 60 * 5
     })
 
     const handleClickReplyButton = (e) =>{

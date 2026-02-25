@@ -85,6 +85,20 @@ const NotificationCards = () =>{
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30px" height="30px" fill="#5fffb0">
                     <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
                 </svg>,
+        },
+        {
+            type: 'hottest_post',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30px" height="30px" fill="#ff6b35">
+                    <path d="M12 23c-3.866 0-7-3.134-7-7 0-2.812 1.865-5.345 3.5-7.092C10.14 7.21 11.5 5.5 12 3c.5 2.5 1.86 4.21 3.5 5.908C17.135 10.655 19 13.188 19 16c0 3.866-3.134 7-7 7zm0-2c2.761 0 5-2.239 5-5 0-1.875-1.244-3.57-2.634-5.088C13.391 9.84 12.5 8.9 12 7.5c-.5 1.4-1.391 2.34-2.366 3.412C8.244 12.43 7 14.125 7 16c0 2.761 2.239 5 5 5z"/>
+                </svg>,
+        },
+        {
+            type: 'hottest_post_replaced',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30px" height="30px" fill="#888">
+                    <path d="M12 23c-3.866 0-7-3.134-7-7 0-2.812 1.865-5.345 3.5-7.092C10.14 7.21 11.5 5.5 12 3c.5 2.5 1.86 4.21 3.5 5.908C17.135 10.655 19 13.188 19 16c0 3.866-3.134 7-7 7zm0-2c2.761 0 5-2.239 5-5 0-1.875-1.244-3.57-2.634-5.088C13.391 9.84 12.5 8.9 12 7.5c-.5 1.4-1.391 2.34-2.366 3.412C8.244 12.43 7 14.125 7 16c0 2.761 2.239 5 5 5z"/>
+                </svg>,
         }
     ]
 
@@ -138,7 +152,8 @@ const NotificationCards = () =>{
             return undefined;
         },
         enabled: !!session?.access_token,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 2
     })
 
     useEffect(() =>{

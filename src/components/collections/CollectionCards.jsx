@@ -82,7 +82,8 @@ const CollectionCards = () =>{
             }
         },
         enabled: !!user?.userData?.[0].id,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5
     })
 
     const handleClickCards = (e, collectionId, collectionName, collectionDescription) =>{

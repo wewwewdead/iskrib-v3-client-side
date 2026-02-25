@@ -55,6 +55,7 @@ const OlderPost = ({onSave, onClose}) =>{
         },
         enabled: !!user?.userData?.[0].id,
         refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5,
     })
 
     useEffect(() =>{

@@ -27,7 +27,8 @@ const MyOpinions = () =>{
             }
         },
         refetchOnWindowFocus: false,
-        enabled: !!session
+        enabled: !!session,
+        staleTime: 1000 * 60 * 5
     })
 
     const handleClickContent = (e, opinionId, userId) =>{

@@ -23,6 +23,7 @@ const ProfileMediaSection = () => {
         getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage?.nextCursor : undefined),
         enabled: Boolean(userId && session?.access_token),
         refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 10,
     });
 
     const pages = data?.pages ?? [];

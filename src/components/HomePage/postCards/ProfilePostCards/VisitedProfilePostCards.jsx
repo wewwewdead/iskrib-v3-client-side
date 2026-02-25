@@ -38,7 +38,8 @@ const VisitedProfilePostCards = () =>{
             }
         },
         enabled: !!userId,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5
     })
 
     const clickContent = handleCLickContent(navigate);

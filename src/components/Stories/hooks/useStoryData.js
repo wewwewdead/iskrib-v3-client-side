@@ -14,7 +14,7 @@ export const useMyStories = (token) => {
             return undefined;
         },
         enabled: !!token,
-        staleTime: 30000,
+        staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
 };
@@ -32,7 +32,7 @@ export const useMyLibrary = (token) => {
             return undefined;
         },
         enabled: !!token,
-        staleTime: 30000,
+        staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
 };
@@ -42,7 +42,7 @@ export const useStoryDetail = (storyId, token) => {
         queryKey: ['story', storyId],
         queryFn: () => getStoryById(storyId, token),
         enabled: !!storyId,
-        staleTime: 30000,
+        staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
 };
@@ -52,7 +52,7 @@ export const useChapter = (storyId, chapterId, token) => {
         queryKey: ['chapter', storyId, chapterId],
         queryFn: () => getChapter(storyId, chapterId, token),
         enabled: !!storyId && !!chapterId,
-        staleTime: 60000,
+        staleTime: 1000 * 60 * 10,
         refetchOnWindowFocus: false,
     });
 };
@@ -62,7 +62,7 @@ export const useChapterCommentCounts = (chapterId, token) => {
         queryKey: ['chapterCommentCounts', chapterId],
         queryFn: () => getChapterCommentCounts(chapterId, token),
         enabled: !!chapterId,
-        staleTime: 30000,
+        staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
 };
@@ -80,7 +80,7 @@ export const useUserStories = (userId, token) => {
             return undefined;
         },
         enabled: !!userId,
-        staleTime: 30000,
+        staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
     });
 };
@@ -90,7 +90,7 @@ export const useChapterComments = (chapterId, paragraphIndex, token) => {
         queryKey: ['chapterComments', chapterId, paragraphIndex],
         queryFn: () => getChapterComments(chapterId, paragraphIndex, token),
         enabled: !!chapterId && paragraphIndex !== null && paragraphIndex !== undefined,
-        staleTime: 30000,
+        staleTime: 1000 * 60 * 2,
         refetchOnWindowFocus: false,
     });
 };

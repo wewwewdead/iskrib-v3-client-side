@@ -29,7 +29,7 @@ const UserSearchResults = ({ searchQuery }) => {
         queryFn: () => searchUsers(searchQuery, 10),
         enabled: searchQuery.length >= 2,
         refetchOnWindowFocus: false,
-        staleTime: 10 * 1000,
+        staleTime: 1000 * 60 * 2,
     });
 
     const users = searchData?.data || [];

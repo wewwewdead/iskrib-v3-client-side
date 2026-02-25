@@ -28,7 +28,8 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
             }
         },
         enabled: !!collectionId,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5
     })
 
     const handleClick = (e, collected, journal) =>{

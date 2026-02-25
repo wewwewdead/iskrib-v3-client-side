@@ -51,7 +51,8 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                 return undefined;
             }
         },
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5
     })
 
     const handleSeeMoreComments = (e) =>{

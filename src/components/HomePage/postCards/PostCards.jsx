@@ -230,7 +230,8 @@ const PostCards = () => {
             }
             return undefined;
         } ,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5
     })
 
     const {
@@ -243,7 +244,7 @@ const PostCards = () => {
         queryFn: () => searchJournals(committedSearchQuery, 10, userId),
         enabled: isPostSearchMode,
         refetchOnWindowFocus: false,
-        staleTime: 15 * 1000,
+        staleTime: 1000 * 60 * 2,
     });
 
     const {
@@ -254,7 +255,7 @@ const PostCards = () => {
         queryFn: () => searchJournals(debouncedSearchInput, 6, userId),
         enabled: debouncedSearchInput.length >= 2 && isSearchFocused && searchType === 'posts',
         refetchOnWindowFocus: false,
-        staleTime: 10 * 1000,
+        staleTime: 1000 * 60 * 2,
     });
 
     const {
@@ -267,7 +268,7 @@ const PostCards = () => {
         queryFn: () => searchUsers(committedSearchQuery, 10),
         enabled: isPeopleSearchMode,
         refetchOnWindowFocus: false,
-        staleTime: 10 * 1000,
+        staleTime: 1000 * 60 * 2,
     });
 
     const {
@@ -278,7 +279,7 @@ const PostCards = () => {
         queryFn: () => searchUsers(debouncedSearchInput, 6),
         enabled: debouncedSearchInput.length >= 2 && isSearchFocused && searchType === 'people',
         refetchOnWindowFocus: false,
-        staleTime: 10 * 1000,
+        staleTime: 1000 * 60 * 2,
     });
 
     const handleClickSettings = (e, postId) =>{

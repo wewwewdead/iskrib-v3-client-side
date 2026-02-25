@@ -140,7 +140,8 @@ const Visitprofile = () =>{
         queryKey: ['visitedProfile', visitedUserId],
         queryFn:({queryKey}) => getUserData(queryKey[1]),
         enabled: !!visitedUserId && !isUsernameRoute,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 10
     })
 
     // Use username-fetched data when on /@username route, otherwise use userId-fetched data

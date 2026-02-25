@@ -44,6 +44,7 @@ const CollectionJournals = () =>{
         },
         enabled: !!collectionData?.collectionId,
         refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5,
     })
 
     const handleClickBack = (e) =>{

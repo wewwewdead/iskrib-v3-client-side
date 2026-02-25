@@ -213,7 +213,7 @@ const ExplorePage = () => {
         queryKey: ["explore-hottest-monthly-feed", userId, currentUtcMonthKey],
         queryFn: () => getMonthlyHottestJournals(userId, 10),
         refetchOnWindowFocus: false,
-        staleTime: 15 * 1000,
+        staleTime: 1000 * 60 * 5,
     });
 
     const {
@@ -226,7 +226,7 @@ const ExplorePage = () => {
         queryFn: () => searchJournals(committedSearchQuery, 10, userId),
         enabled: isSearchMode,
         refetchOnWindowFocus: false,
-        staleTime: 10 * 1000,
+        staleTime: 1000 * 60 * 2,
     });
 
     const {
@@ -237,7 +237,7 @@ const ExplorePage = () => {
         queryFn: () => searchJournals(debouncedSearchInput, 6, userId),
         enabled: debouncedSearchInput.length >= 2 && isSearchFocused && searchType === "posts",
         refetchOnWindowFocus: false,
-        staleTime: 10 * 1000,
+        staleTime: 1000 * 60 * 2,
     });
 
     const {
@@ -248,7 +248,7 @@ const ExplorePage = () => {
         queryFn: () => searchUsers(debouncedSearchInput, 6),
         enabled: debouncedSearchInput.length >= 2 && isSearchFocused && searchType === "people",
         refetchOnWindowFocus: false,
-        staleTime: 10 * 1000,
+        staleTime: 1000 * 60 * 2,
     });
 
     const journals = isSearchMode ? (searchData?.data || []) : (feedData?.data || []);

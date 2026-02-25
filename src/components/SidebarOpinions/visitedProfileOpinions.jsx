@@ -31,7 +31,8 @@ const VisitedProfileOpinions = () =>{
             }
         },
         refetchOnWindowFocus: false,
-        enabled: !!userId
+        enabled: !!userId,
+        staleTime: 1000 * 60 * 5
     })
 
 

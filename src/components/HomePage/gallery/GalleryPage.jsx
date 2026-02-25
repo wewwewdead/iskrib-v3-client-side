@@ -36,7 +36,7 @@ const GalleryPage = () => {
         initialPageParam: null,
         getNextPageParam: (lastPage) => (lastPage?.hasMore ? lastPage?.nextCursor : undefined),
         refetchOnWindowFocus: false,
-        staleTime: 1000 * 45
+        staleTime: 1000 * 60 * 5
     });
 
     useEffect(() => {
