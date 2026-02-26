@@ -11,7 +11,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MoonLoader } from "react-spinners";
 import CalculateText from "../postCards/calculateReadingTime";
 import ParseContent from "../postCards/parseData";
-import { useBookMarkMutation, useFollowMutation, useLikeMutation, useAddViewsMutation } from "../../../utils/useMutation";
+import { useBookMarkMutation, useFollowMutation, useLikeMutation, useAddViewsMutation, useReactionMutation } from "../../../utils/useMutation";
+import ReactionButton from "../../Reactions/ReactionButton";
+import ReactionSummary from "../../Reactions/ReactionSummary";
 import { useAuth } from "../../../Context/useAuth";
 import CommentSection from "../../comments/comments";
 import CanvasViewer from "../Canvas/CanvasViewer";
@@ -26,6 +28,7 @@ import RepostModal from "../../RepostModal/RepostModal";
 import ShareMenu from "../../ShareMenu/ShareMenu";
 import getShareUrl from "../../../utils/getShareUrl";
 import usePostSeo from "../../../seo/usePostSeo";
+import RelatedPosts from "../../Discovery/RelatedPosts";
 
 const normalizeInteractionFlag = (value) => {
     if(typeof value === 'boolean') return value;
@@ -67,6 +70,8 @@ const ContentView = () => {
     const [showCommentsContainer, setShowCommentsContainer] = useState(false);
     const [isLiked, setIsliked] = useState(false);
     const [likesCount, setLikesCount] = useState(0);
+    const [userReaction, setUserReaction] = useState(null);
+    const [reactionCount, setReactionCount] = useState(0);
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [bookmarkCounts, setBookmarkCounts] = useState(0);
 
@@ -133,7 +138,9 @@ const ContentView = () => {
                 badge: journal?.users?.badge,
                 isRepost: journal?.is_repost === true,
                 repostCaption: journal?.repost_caption || '',
-                repostSource: journal?.repost_source || null
+                repostSource: journal?.repost_source || null,
+                userReaction: journal?.user_reaction || null,
+                reactionCount: journal?.reaction_count?.[0]?.count || 0
             };
         }
 
@@ -166,7 +173,9 @@ const ContentView = () => {
             badge: statePostData?.badge,
             isRepost: statePostData?.isRepost === true,
             repostCaption: statePostData?.repostCaption || '',
-            repostSource: statePostData?.repostSource || null
+            repostSource: statePostData?.repostSource || null,
+            userReaction: statePostData?.userReaction || null,
+            reactionCount: statePostData?.reactionCount || 0
         };
     }, [fetchedJournalData, statePostData]);
 
@@ -185,6 +194,25 @@ const ContentView = () => {
 
     const mutateViews = useAddViewsMutation(session);
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
+    const mutationReaction = useReactionMutation(session, user?.userData?.[0]?.id);
+
+    const handleReaction = (e, journalId, receiverId, reactionType) => {
+        e.stopPropagation();
+        if (!session) { openAuthModal?.(); return; }
+
+        const wasReacted = userReaction;
+        if (wasReacted === reactionType) {
+            setUserReaction(null);
+            setReactionCount((c) => Math.max(c - 1, 0));
+        } else if (wasReacted) {
+            setUserReaction(reactionType);
+        } else {
+            setUserReaction(reactionType);
+            setReactionCount((c) => c + 1);
+        }
+        mutationReaction.mutate({ journalId, receiverId, reactionType });
+    };
+
     const handleClickLike = async (e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => {
         e.stopPropagation();
         if(likeInFlightRef.current){
@@ -299,7 +327,9 @@ const ContentView = () => {
         setBookmarkCounts(normalizeCount(postData?.bookmarksCount));
         setIsliked(normalizeInteractionFlag(postData?.isLiked));
         setIsBookmarked(normalizeInteractionFlag(postData?.isBookmarked));
-    }, [postData?.likesCount, postData?.bookmarksCount, postData?.isLiked, postData?.isBookmarked]);
+        setUserReaction(postData?.userReaction || null);
+        setReactionCount(normalizeCount(postData?.reactionCount));
+    }, [postData?.likesCount, postData?.bookmarksCount, postData?.isLiked, postData?.isBookmarked, postData?.userReaction, postData?.reactionCount]);
 
     useEffect(() => {
         const hideBackBttn = () => {
@@ -460,18 +490,19 @@ const ContentView = () => {
                                 </div>
                             )}
 
+                            {/* Reaction summary */}
+                            <ReactionSummary journalId={postData?.journalId} />
+
                             {/* Action bar */}
                             <div className="cv-actions">
-                                <button
-                                    className="cv-action-btn"
-                                    onClick={(e) => handleClickLike(e, postData?.journalId, postData?.userId, user?.userData?.[0]?.image_url, user?.userData?.[0]?.name, user?.userData?.[0]?.user_email)}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-                                        <path fillRule="evenodd" clipRule="evenodd" d="M15.9977 5.63891C16.2695 4.34931 15.433 3.00969 14.2102 2.59462C13.6171 2.37633 12.9892 2.4252 12.4662 2.60499C11.9449 2.78419 11.4461 3.12142 11.1369 3.58441L11.136 3.58573L7.49506 9.00272C8.05104 9.29585 8.43005 9.87954 8.43005 10.5518V21.3018H6.91003V21.3018H16.6801C18.2938 21.3018 19.2028 20.2977 19.8943 19.202C20.6524 18.0009 21.1453 16.7211 21.5116 15.5812C21.6808 15.0546 21.8252 14.5503 21.9547 14.0984L21.9863 13.9881C22.126 13.5007 22.2457 13.0904 22.366 12.7549C22.698 11.8292 22.5933 10.9072 22.067 10.2072C21.5476 9.5166 20.7005 9.15175 19.76 9.15175H15.76C15.6702 9.15175 15.6017 9.11544 15.5599 9.06803C15.5238 9.02716 15.4831 8.95058 15.502 8.81171L15.9977 5.63891Z" fill={isLiked ? 'rgb(235, 87, 87)' : "var(--icon-default)"} />
-                                        <path d="M2.18005 10.6199C2.18005 10.03 2.62777 9.55176 3.18005 9.55176H6.68005C7.23234 9.55176 7.68005 10.03 7.68005 10.6199V21.3018H3.18005C2.62777 21.3018 2.18005 20.8235 2.18005 20.2336V10.6199Z" fill={isLiked ? 'rgb(235, 87, 87)' : "var(--icon-default)"} />
-                                    </svg>
-                                    <span>{formatCounts(likesCount)}</span>
-                                </button>
+                                <div className="cv-action-btn">
+                                    <ReactionButton
+                                        userReaction={userReaction}
+                                        reactionCount={reactionCount || likesCount}
+                                        onReact={(reactionType) => handleReaction({ stopPropagation: () => {} }, postData?.journalId, postData?.userId, reactionType)}
+                                        disabled={!session}
+                                    />
+                                </div>
 
                                 <button className="cv-action-btn" onClick={hanldeClickComments}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--icon-default)">
@@ -550,17 +581,18 @@ const ContentView = () => {
                                 </div>
                             </div>
 
+                            {/* Reaction summary */}
+                            <ReactionSummary journalId={postData?.journalId} />
+
                             <div className="cv-actions">
-                                <button
-                                    className="cv-action-btn"
-                                    onClick={(e) => handleClickLike(e, postData?.journalId, postData?.userId, user?.userData?.[0]?.image_url, user?.userData?.[0]?.name, user?.userData?.[0]?.user_email)}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-                                        <path fillRule="evenodd" clipRule="evenodd" d="M15.9977 5.63891C16.2695 4.34931 15.433 3.00969 14.2102 2.59462C13.6171 2.37633 12.9892 2.4252 12.4662 2.60499C11.9449 2.78419 11.4461 3.12142 11.1369 3.58441L11.136 3.58573L7.49506 9.00272C8.05104 9.29585 8.43005 9.87954 8.43005 10.5518V21.3018H6.91003V21.3018H16.6801C18.2938 21.3018 19.2028 20.2977 19.8943 19.202C20.6524 18.0009 21.1453 16.7211 21.5116 15.5812C21.6808 15.0546 21.8252 14.5503 21.9547 14.0984L21.9863 13.9881C22.126 13.5007 22.2457 13.0904 22.366 12.7549C22.698 11.8292 22.5933 10.9072 22.067 10.2072C21.5476 9.5166 20.7005 9.15175 19.76 9.15175H15.76C15.6702 9.15175 15.6017 9.11544 15.5599 9.06803C15.5238 9.02716 15.4831 8.95058 15.502 8.81171L15.9977 5.63891Z" fill={isLiked ? 'rgb(235, 87, 87)' : "var(--icon-default)"} />
-                                        <path d="M2.18005 10.6199C2.18005 10.03 2.62777 9.55176 3.18005 9.55176H6.68005C7.23234 9.55176 7.68005 10.03 7.68005 10.6199V21.3018H3.18005C2.62777 21.3018 2.18005 20.8235 2.18005 20.2336V10.6199Z" fill={isLiked ? 'rgb(235, 87, 87)' : "var(--icon-default)"} />
-                                    </svg>
-                                    <span>{formatCounts(likesCount)}</span>
-                                </button>
+                                <div className="cv-action-btn">
+                                    <ReactionButton
+                                        userReaction={userReaction}
+                                        reactionCount={reactionCount || likesCount}
+                                        onReact={(reactionType) => handleReaction({ stopPropagation: () => {} }, postData?.journalId, postData?.userId, reactionType)}
+                                        disabled={!session}
+                                    />
+                                </div>
 
                                 <button className="cv-action-btn" onClick={hanldeClickComments}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--icon-default)">
@@ -647,6 +679,8 @@ const ContentView = () => {
                         </>
                     )}
                 </article>
+
+                <RelatedPosts journalId={postData?.journalId} />
 
                 {/* Toast notification */}
             <AnimatePresence>

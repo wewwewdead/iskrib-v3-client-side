@@ -4,22 +4,17 @@ import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from '../../Context/useAuth';
 import { useTheme } from '../../Context/useTheme';
 import VerifiedBadge from '../Badge/VerifiedBadge';
+import StreakBadge from '../Streak/StreakBadge';
+import useStreakData from '../Streak/useStreakData';
 
 const Sidebar = ({links}) =>{
     const {user, session, signOut} = useAuth();
     const {theme, toggleTheme} = useTheme();
     const navigate = useNavigate(null)
     const location = useLocation();
-    
-    // const extractPath = (path) =>{
-    //     let segments = path.split('/');
-    //     segments.shift();
 
-    //     const segment = segments[0];
-    //     return `/${segment}`;
-    // }
-    // const path = extractPath(location.pathname)
     const userData = user?.userData?.[0];
+    const { data: streakData } = useStreakData(userData?.id);
     return(
         <>
         <div className='side-bar-container'>
@@ -53,7 +48,7 @@ const Sidebar = ({links}) =>{
                         <img loading='lazy' className='sidebar-avatar' src={userData.image_url || '/assets/profile.jpg'} alt={`${userData?.name || "User"} profile picture`} />
 
                         <div className='sidebar-metadata-container'>
-                            <span className='sidebar-name'>{userData.name}<VerifiedBadge badge={userData.badge} size={14} /></span>
+                            <span className='sidebar-name'>{userData.name}<VerifiedBadge badge={userData.badge} size={14} /><StreakBadge count={streakData?.current_streak} size={14} /></span>
                             <span className='sidebar-email'>{session?.user.email}</span>
                         </div>
                     </div>

@@ -21,7 +21,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const Editor=({onClose, initialMode = 'text', initialTitle = '', initialCanvasDoc = null, remixSource = null}) =>{
+const Editor=({onClose, initialMode = 'text', initialTitle = '', initialCanvasDoc = null, remixSource = null, promptId = null, promptText = null}) =>{
     const {session} = useAuth();
 
     const [editorMode, setEditorMode] = useState(initialMode === 'canvas' ? 'canvas' : 'text');
@@ -124,6 +124,7 @@ const Editor=({onClose, initialMode = 'text', initialTitle = '', initialCanvasDo
                                 setWordCount={setWordCount}
                                 wordCount={wordCount}
                                 onSwitchToCanvas={() => setEditorMode('canvas')}
+                                promptId={promptId}
                             />
                         ) : (
                             <CanvasEditor

@@ -12,7 +12,8 @@ import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 
 import { useAuth } from "../../../Context/useAuth";
-import { useAddViewsMutation, useBookMarkMutation, useLikeMutation } from "../../../utils/useMutation";
+import { useAddViewsMutation, useBookMarkMutation, useLikeMutation, useReactionMutation } from "../../../utils/useMutation";
+import ReactionButton from "../../Reactions/ReactionButton";
 import formatCounts from "../../../../helpers/fomatCounts";
 import debounce from "../../../../helpers/debounce";
 import { handleClickProfile, handleCLickContent } from "../../../../helpers/handleClicks";
@@ -21,6 +22,8 @@ import { handleImageFallback } from "../../../utils/handleImageFallback";
 import { getCanvasPreview } from "../../../utils/canvasDoc";
 import CanvasPreview from "./CanvasPreview/CanvasPreview";
 import RepostModal from "../../RepostModal/RepostModal";
+import PromptBadge from "../../DailyPrompt/PromptBadge";
+import DashboardBriefing from "../../DashboardBriefing/DashboardBriefing";
 
 
 const PostCards = () => {
@@ -63,14 +66,14 @@ const PostCards = () => {
         handleClickUserProfileOriginal(e, loggedInUserId, clickedUserId, clickedUsername);
     }
 
-    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType = null, canvasDoc = null) =>{
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType = null, canvasDoc = null, userReaction = null, reactionCount = 0) =>{
         e.stopPropagation();
         if(session){
             const formadata = new FormData();
             formadata.append('journalId', journalId);
             mutateViews.mutate(formadata);
         }
-        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType, canvasDoc )
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType, canvasDoc, userReaction, reactionCount)
     }
 
     const header_links = [
@@ -101,7 +104,9 @@ const PostCards = () => {
             journal.bookmark_count?.[0]?.count,
             journal.users.badge,
             journal?.post_type,
-            journal?.canvas_doc
+            journal?.canvas_doc,
+            journal?.user_reaction,
+            journal?.reaction_count?.[0]?.count || 0
         );
     }
 
@@ -162,7 +167,7 @@ const PostCards = () => {
                 </g>
             </svg>,
             className: 'comment-button',
-            commentAction: (e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount, badge, postType, canvasDoc) => viewContent(e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount, badge, postType, canvasDoc ),
+            commentAction: (e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount, badge, postType, canvasDoc, userReaction, reactionCount) => viewContent(e, jsonbContent, wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likeCount, bookmarkCount, badge, postType, canvasDoc, userReaction, reactionCount),
             countComments: (count) => <p style={{padding: '0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
         },
         {
@@ -288,11 +293,17 @@ const PostCards = () => {
     }
 
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
+    const mutationReaction = useReactionMutation(session, user?.userData?.[0]?.id);
 
     const handleClickLike = async (journalId, receiverId) => {
         if(!session) return openAuthModal();
         console.log(journalId)
         mutationLike.mutate({journalId, receiverId}) //passing this into mutationFn {journalId: the id}
+    }
+
+    const handleReaction = (journalId, receiverId, reactionType) => {
+        if(!session) return openAuthModal();
+        mutationReaction.mutate({ journalId, receiverId, reactionType });
     }
 
 
@@ -674,6 +685,14 @@ const PostCards = () => {
                 </>
             ) : (
             <>
+            {!isSearchMode && session && (
+                <DashboardBriefing onWriteResponse={(prompt) => {
+                    if (handleOpenTextEditor) {
+                        handleOpenTextEditor({ promptId: prompt.id, promptText: prompt.prompt_text });
+                    }
+                }} />
+            )}
+
             {journals.length === 0 && !isLoading && (
                 <div className="search-empty-state">
                     {activeSearchError ? 'Search failed. Please try again.'
@@ -790,12 +809,12 @@ const PostCards = () => {
                                         alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                         loading="lazy"
                                         onError={handleImageFallback}
-                                        onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)}
+                                        onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                                     />
                                 )}
 
                                 <div className="card-content">
-                                    <div onClick={isCanvasPost ? undefined : (e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)} className="content-container">
+                                    <div onClick={isCanvasPost ? undefined : (e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} className="content-container">
                                         <div className="feed-text-content-container">
                                             <div className="feed-title-content">
                                                 {isCanvasPost && (
@@ -810,7 +829,7 @@ const PostCards = () => {
                                                         Canvas
                                                     </span>
                                                 )}
-                                                <h2 className="feed-title">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
+                                                <h2 className="feed-title">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}<PromptBadge promptId={journal.prompt_id} /></h2>
                                             </div>
                                             <p className="feed-text-content">{previewText}</p>
                                         </div>
@@ -848,13 +867,18 @@ const PostCards = () => {
                                             <div key={index} className="icon-container">
 
                                                 {icon.likeAction && (
-                                                    <div onClick={(e) => icon.action(e, journal.id, journal.users.id, user?.userData?.[0].image_url, user?.userData?.[0].name, user?.userData?.[0].user_email)} id="card-icons" className={icon.className}>
-                                                        {icon.likeAction && icon.likeAction(isLiked)}
+                                                    <div id="card-icons" className={icon.className}>
+                                                        <ReactionButton
+                                                            userReaction={journal?.user_reaction}
+                                                            reactionCount={journal?.reaction_count?.[0]?.count || journal?.like_count?.[0]?.count || 0}
+                                                            onReact={(reactionType) => handleReaction(journal.id, journal.users.id, reactionType)}
+                                                            disabled={!session}
+                                                        />
                                                     </div>
                                                 )}
 
                                                 {icon.commentAction && (
-                                                    <div onClick={(e) => icon.commentAction(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc)} id="card-icons" className={icon.className}>
+                                                    <div onClick={(e) => icon.commentAction(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} id="card-icons" className={icon.className}>
                                                         {icon.label}
                                                     </div>
                                                 )}
@@ -885,7 +909,7 @@ const PostCards = () => {
                                                 </div>
                                             )}
 
-                                            {icon.countLike && icon.countLike(journal.like_count?.[0].count)}
+                                            {/* countLike now handled by ReactionButton */}
                                             {icon.countComments && icon.countComments(journal.comment_count?.[0]?.count)}
                                             {icon.countBookmarks && icon.countBookmarks(journal.bookmark_count?.[0].count)}
                                             {icon.iconCount && icon.iconCount(journal?.views)}

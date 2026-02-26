@@ -13,6 +13,7 @@ import { useReadNotificationMutation, useUserDeleteNotificationMutation, useResp
 import { AnimatePresence, motion} from "framer-motion";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import { handleImageFallback } from "../../utils/handleImageFallback";
+import { getReactionEmoji } from "../../utils/reactionConfig";
 
 const NotificationCards = () =>{
     const {user, session} = useAuth();
@@ -37,6 +38,10 @@ const NotificationCards = () =>{
                 </g>
                 </g>
             </svg>,
+        },
+        {
+            type: 'reaction',
+            icon: null, // rendered dynamically based on reaction_type
         },
         {
             type: 'comment',
@@ -241,11 +246,17 @@ const NotificationCards = () =>{
                     <div className="notification-cards-child-container">
 
                         <div className="notification-icon-container">
-                            {iconArray.map((icon, index) => (
-                                <div className="notification-icon" key={index}>
-                                    {icon.type === displayType ? icon.icon : null}
+                            {displayType === 'reaction' ? (
+                                <div className="notification-icon">
+                                    <span style={{ fontSize: '26px', lineHeight: 1 }}>{getReactionEmoji(notification?.reaction_type) || '❤️'}</span>
                                 </div>
-                            ))}
+                            ) : (
+                                iconArray.map((icon, index) => (
+                                    <div className="notification-icon" key={index}>
+                                        {icon.type === displayType ? icon.icon : null}
+                                    </div>
+                                ))
+                            )}
                         </div>
 
                         <div className="notification-contents-container">
@@ -259,7 +270,7 @@ const NotificationCards = () =>{
                                     <div className="notif-sender-name-container">
                                         <p className="notif-sender-name">{notification?.users?.name}</p>
                                         <VerifiedBadge badge={notification?.users?.badge} size={14} />
-                                        <p className="notif-type">{FormatNotificationType(displayType)}</p>
+                                        <p className="notif-type">{FormatNotificationType(displayType, notification?.reaction_type)}</p>
                                     </div>
 
                                     <div className="notification-date-container">

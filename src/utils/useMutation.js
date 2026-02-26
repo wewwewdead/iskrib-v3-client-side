@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, addJournalViews, clickLike, createRepost, deleteNotification, readNotification, respondConstellation, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
+import {addBookmark, addFollows, addJournalViews, clickLike, createRepost, deleteNotification, readNotification, respondConstellation, toggleReaction, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
 
 const updateInfiniteJournalsCache = (old, updater) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -463,4 +463,91 @@ export const useRepostMutation = (session) => {
             queryClient.invalidateQueries({ queryKey: ['userJournals'] });
         }
     });
+}
+
+export const useReactionMutation = (session, userId) => {
+    const queryClient = useQueryClient();
+    const inFlightRef = useRef(new Set());
+
+    const mutation = useMutation({
+        mutationFn: (data) => toggleReaction(session?.access_token, data),
+
+        onMutate: async (data) => {
+            queryClient.cancelQueries({ queryKey: ['journals'] });
+            queryClient.cancelQueries({ queryKey: ['userJournals'] });
+            queryClient.cancelQueries({ queryKey: ['visitedProfileJournals'] });
+
+            const previousData = [
+                ...queryClient.getQueriesData({ queryKey: ['journals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['userJournals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['visitedProfileJournals'] }),
+            ];
+
+            const updater = (journal) => {
+                if (journal.id !== data.journalId) return journal;
+
+                const currentReaction = journal?.user_reaction;
+                const currentCount = normalizeCount(journal?.reaction_count?.[0]?.count);
+
+                let nextReaction;
+                let nextCount;
+
+                if (currentReaction === data.reactionType) {
+                    // Toggle off
+                    nextReaction = null;
+                    nextCount = Math.max(currentCount - 1, 0);
+                } else if (currentReaction) {
+                    // Switch reaction (count stays same)
+                    nextReaction = data.reactionType;
+                    nextCount = currentCount;
+                } else {
+                    // New reaction
+                    nextReaction = data.reactionType;
+                    nextCount = currentCount + 1;
+                }
+
+                return {
+                    ...journal,
+                    user_reaction: nextReaction,
+                    reaction_count: [{ count: nextCount }],
+                };
+            };
+
+            queryClient.setQueriesData({ queryKey: ['journals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['userJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['visitedProfileJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+
+            return { previousData };
+        },
+
+        onError: (err, data, context) => {
+            context?.previousData?.forEach(([key, value]) => {
+                queryClient.setQueryData(key, value);
+            });
+        },
+
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['journals'] });
+            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
+            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
+            queryClient.invalidateQueries({ queryKey: ['postReactions'] });
+        },
+    });
+
+    const guardedMutate = (variables, options) => {
+        const journalKey = toJournalKey(variables?.journalId);
+        if (journalKey && inFlightRef.current.has(journalKey)) return;
+
+        if (journalKey) inFlightRef.current.add(journalKey);
+
+        mutation.mutate(variables, {
+            ...options,
+            onSettled: (data, error, vars, context) => {
+                if (journalKey) inFlightRef.current.delete(journalKey);
+                options?.onSettled?.(data, error, vars, context);
+            },
+        });
+    };
+
+    return { ...mutation, mutate: guardedMutate };
 }

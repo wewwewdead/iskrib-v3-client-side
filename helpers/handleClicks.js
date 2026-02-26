@@ -26,7 +26,9 @@ export const handleCLickContent = (navigate) => {
         bookmarksCount,
         badge,
         postType = null,
-        canvasDoc = null
+        canvasDoc = null,
+        userReaction = null,
+        reactionCount = 0
     ) => {
     e.stopPropagation()
 
@@ -46,18 +48,20 @@ export const handleCLickContent = (navigate) => {
             avatar: avatar,
             created_at: created_at,
             journalId: journalId,
-            isLiked: isLiked, 
+            isLiked: isLiked,
             commentsCount: commentsCount,
             isBookmarked: isBookmarked,
             likesCount: likesCount,
             bookmarksCount: bookmarksCount,
             badge: badge,
             postType: postType,
-            canvasDoc: canvasDoc
+            canvasDoc: canvasDoc,
+            userReaction: userReaction,
+            reactionCount: reactionCount
         }
     })
     }
-    
+
 }
 
 export const handleClickOpinion = (navigate) => {

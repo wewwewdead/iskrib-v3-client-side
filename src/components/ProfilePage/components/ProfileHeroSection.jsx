@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
+import StreakBadge from "../../Streak/StreakBadge";
+import useStreakData from "../../Streak/useStreakData";
 import formatCounts from "../../../../helpers/fomatCounts";
 import ShareMenu from "../../ShareMenu/ShareMenu";
 import { getProfileShareUrl } from "../../../utils/getShareUrl";
@@ -14,6 +16,7 @@ const ProfileHeroSection = ({
     gradientPicked,
 }) => {
     const [showShareMenu, setShowShareMenu] = useState(false);
+    const { data: streakData } = useStreakData(userData?.id);
     return (
         <div style={croppedImage || gradientPicked} className="hero-section">
             <div className="profile-top-row">
@@ -43,6 +46,7 @@ const ProfileHeroSection = ({
                 <div className="profile-name-row">
                     <p className="profile-name">{userData?.name}</p>
                     <VerifiedBadge badge={userData?.badge} size={22} />
+                    <StreakBadge count={streakData?.current_streak} size={18} />
                     {userData?.badge && (
                         <span
                             className={`badge-pill ${userData.badge === "legend" ? "badge-pill-legend" : "badge-pill-og"}`}

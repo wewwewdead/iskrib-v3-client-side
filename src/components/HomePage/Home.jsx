@@ -25,7 +25,9 @@ const DEFAULT_EDITOR_LAUNCH_CONFIG = {
     initialMode: 'text',
     initialTitle: '',
     initialCanvasDoc: null,
-    remixSource: null
+    remixSource: null,
+    promptId: null,
+    promptText: null
 };
 
 const HomePage = () => {
@@ -422,6 +424,8 @@ const HomePage = () => {
                 initialTitle={editorLaunchConfig.initialTitle}
                 initialCanvasDoc={editorLaunchConfig.initialCanvasDoc}
                 remixSource={editorLaunchConfig.remixSource}
+                promptId={editorLaunchConfig.promptId}
+                promptText={editorLaunchConfig.promptText}
             />
         )}
 

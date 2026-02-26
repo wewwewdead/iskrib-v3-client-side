@@ -37,7 +37,7 @@ const theme = {
     heading: 'editor-heading',
 }
 
-const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWordCount, wordCount, onSwitchToCanvas}) => {
+const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWordCount, wordCount, onSwitchToCanvas, promptId = null}) => {
     const [editor] = useLexicalComposerContext();
     const [editorState, setEditorState] = useState(null);
     const [hasContent, setHasContent] = useState(false);
@@ -55,6 +55,9 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
             if(title && editorState){
                 formdata.append('title', title)
                 formdata.append('content', editorState)
+            }
+            if(promptId){
+                formdata.append('prompt_id', promptId);
             }
             const saveData = await saveJournal(session?.access_token, formdata)
 

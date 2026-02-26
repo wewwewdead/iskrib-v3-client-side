@@ -316,7 +316,7 @@
     background-color: var(--bg-card);
     border: 1px solid var(--border-card);
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
     cursor: pointer;
     transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
@@ -346,6 +346,7 @@
     object-fit: cover;
     display: block;
     border-bottom: 1px solid var(--border-card);
+    border-radius: 12px 12px 0 0;
     transition: opacity 0.2s ease;
 }
 .cards:hover .card-image-banner{
@@ -1032,7 +1033,7 @@
         gap: 0.4rem;
         row-gap: 0.5rem;
         box-sizing: border-box;
-        overflow: hidden;
+        overflow: visible;
     }
 
     /* Row 1: Author info — full width, forces wrap */

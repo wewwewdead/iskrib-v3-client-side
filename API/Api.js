@@ -1414,3 +1414,99 @@ export const getUniversePosts = async(minX, maxX, minY, maxY, limit = 200) => {
 //     }
 // }
 
+export const getRelatedPosts = async (journalId) => {
+    if (!journalId) return { posts: [], confidence: 'none', topSimilarity: 0 };
+
+    const response = await apiRequest(`${BASE_URL}/journal/${encodeURIComponent(journalId)}/related`, {
+        method: 'GET',
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch related posts');
+    }
+
+    return await response.json();
+}
+
+// ─── Streaks ───
+export const getStreak = async (userId) => {
+    if (!userId) return null;
+    const response = await apiRequest(`${BASE_URL}/streak/${encodeURIComponent(userId)}`, {
+        method: 'GET',
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch streak');
+    }
+    return await response.json();
+}
+
+// ─── Daily Prompts ───
+export const getTodaysPrompt = async () => {
+    const response = await apiRequest(`${BASE_URL}/prompt/today`, {
+        method: 'GET',
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch prompt');
+    }
+    return await response.json();
+}
+
+export const getPromptResponses = async (promptId) => {
+    if (!promptId) return { responses: [] };
+    const response = await apiRequest(`${BASE_URL}/prompt/${encodeURIComponent(promptId)}/responses`, {
+        method: 'GET',
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch prompt responses');
+    }
+    return await response.json();
+}
+
+// ─── Reactions ───
+export const toggleReaction = async (token, body) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/reaction`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+        throw new Error('error toggling reaction');
+    }
+    return await response.json();
+}
+
+export const getPostReactions = async (journalId) => {
+    if (!journalId) return { reactions: [] };
+    const response = await apiRequest(`${BASE_URL}/reactions/${encodeURIComponent(journalId)}`, {
+        method: 'GET',
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch reactions');
+    }
+    return await response.json();
+}
+
+// ─── Weekly Recap ───
+export const getWeeklyRecap = async (token) => {
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/recap/weekly`, {
+        method: 'GET',
+        headers,
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch weekly recap');
+    }
+    return await response.json();
+}
+

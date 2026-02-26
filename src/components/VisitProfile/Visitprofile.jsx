@@ -21,6 +21,8 @@ import useProfileSeo from '../../seo/useProfileSeo';
 import { createProfileSidebarLinks } from '../ProfilePage/constants/profileSidebarLinks';
 import ShareMenu from '../ShareMenu/ShareMenu';
 import { getProfileShareUrl } from '../../utils/getShareUrl';
+import StreakBadge from '../Streak/StreakBadge';
+import useStreakData from '../Streak/useStreakData';
 
 const Visitprofile = () =>{
     const location = useLocation();
@@ -53,6 +55,7 @@ const Visitprofile = () =>{
     const [opendRichTextEditor, setOpenRichTextEditor] = useState(false);
     const [showShareMenu, setShowShareMenu] = useState(false);
 
+    const { data: visitedStreakData } = useStreakData(visitedUserId);
     const buttonRef = useRef();
 
     const navigate = useNavigate();
@@ -208,6 +211,7 @@ const Visitprofile = () =>{
                             <div className='visited-profile-name-row'>
                                 <p className='visited-profile-name'>{userData?.name}</p>
                                 <VerifiedBadge badge={userData?.badge} size={22} />
+                                <StreakBadge count={visitedStreakData?.current_streak} size={18} />
                                 {userData?.badge && (
                                     <span className={`badge-pill ${userData.badge === 'legend' ? 'badge-pill-legend' : 'badge-pill-og'}`}>
                                         {userData.badge === 'legend' ? 'Legend' : 'OG'}
