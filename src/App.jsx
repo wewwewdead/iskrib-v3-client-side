@@ -16,7 +16,7 @@ const MyProfile = lazy(() => import('./components/ProfilePage/MyProfile.jsx'));
 const PostCards = lazy(() => import('./components/HomePage/postCards/PostCards.jsx'));
 const ContentView = lazy(() => import('./components/HomePage/ContentViewer/ContentView.jsx'));
 const Bookmarks = lazy(() => import('./components/Bookmarks/Bookmarks.jsx'));
-const Visitprofile = lazy(() => import('./components/VisitProfile/VisitProfile.jsx'));
+const Visitprofile = lazy(() => import('./components/VisitProfile/Visitprofile.jsx'));
 const ProfilePostCards = lazy(() => import('./components/HomePage/postCards/ProfilePostCards/ProfilePostCards.jsx'));
 const ProfileMediaSection = lazy(() => import('./components/ProfilePage/components/ProfileMediaSection.jsx'));
 const VisitedProfilePostCards = lazy(() => import('./components/HomePage/postCards/ProfilePostCards/VisitedProfilePostCards.jsx'));
