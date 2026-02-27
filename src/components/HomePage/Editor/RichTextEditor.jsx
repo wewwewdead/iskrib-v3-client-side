@@ -65,6 +65,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
                 console.log(saveData)
                 queryClient.invalidateQueries({queryKey: ['journals']});
                 queryClient.invalidateQueries({queryKey: ['userJournals', user?.userData?.[0].id]})
+                queryClient.invalidateQueries({queryKey: ['streak', user?.userData?.[0]?.id]});
             }
 
             setIsSending(false)

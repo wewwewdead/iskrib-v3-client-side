@@ -121,6 +121,7 @@ const App = () => {
 
             <Route path='/home' element={<HomePage/>}>
               <Route index element={<PostCards/>}/>
+              <Route path='following' element={<PostCards/>}/>
               <Route path='explore' element={<ExplorePage/>}/>
               <Route path='gallery' element={<GalleryPage/>}/>
               <Route path='freedom-wall' element={<FreedomWallPage/>}/>

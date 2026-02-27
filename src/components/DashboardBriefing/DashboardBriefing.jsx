@@ -29,7 +29,7 @@ const DashboardBriefing = ({ onWriteResponse }) => {
     const { session, user } = useAuth();
     const weekKey = getWeekKey();
 
-    const [recapDismissed, setRecapDismissed] = useState(() => {
+    const [recapCollapsed, setRecapCollapsed] = useState(() => {
         try { return localStorage.getItem(weekKey) === 'true'; }
         catch { return false; }
     });
@@ -39,7 +39,7 @@ const DashboardBriefing = ({ onWriteResponse }) => {
     const { data: recapData, isLoading: recapLoading } = useQuery({
         queryKey: ['weeklyRecap', session?.access_token],
         queryFn: () => getWeeklyRecap(session?.access_token),
-        enabled: !!session?.access_token && !recapDismissed,
+        enabled: !!session?.access_token,
         staleTime: 1000 * 60 * 10,
         refetchOnWindowFocus: false,
     });
@@ -67,18 +67,19 @@ const DashboardBriefing = ({ onWriteResponse }) => {
     const personal = recap?.personal || {};
     const group = recap?.group || {};
 
-    const hasRecap = !recapDismissed && !recapLoading && recap &&
+    const hasRecap = !recapLoading && recap &&
         (personal.posts_written > 0 || group.total_posts > 0);
     const hasPrompt = !promptLoading && !!prompt;
 
     // Nothing to show
     if (!hasRecap && !hasPrompt) return null;
 
-    const handleDismissRecap = (e) => {
+    const handleToggleRecap = (e) => {
         e.stopPropagation();
-        try { localStorage.setItem(weekKey, 'true'); }
+        const next = !recapCollapsed;
+        try { localStorage.setItem(weekKey, next ? 'true' : 'false'); }
         catch { /* no-op */ }
-        setRecapDismissed(true);
+        setRecapCollapsed(next);
     };
 
     const streakCount = streakData?.current_streak || 0;
@@ -101,23 +102,34 @@ const DashboardBriefing = ({ onWriteResponse }) => {
                     </div>
                     {hasRecap && (
                         <button
-                            className="dashboard-briefing-dismiss"
-                            onClick={handleDismissRecap}
-                            title="Dismiss recap"
+                            className={`dashboard-briefing-toggle ${recapCollapsed ? 'is-collapsed' : ''}`}
+                            onClick={handleToggleRecap}
+                            title={recapCollapsed ? 'Show stats' : 'Hide stats'}
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                         </button>
                     )}
                 </div>
 
                 <div className="dashboard-briefing-body">
-                    {hasRecap && (
-                        <RecapSection personal={personal} group={group} />
-                    )}
+                    <AnimatePresence initial={false}>
+                        {hasRecap && !recapCollapsed && (
+                            <motion.div
+                                key="recap"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25, ease: 'easeOut' }}
+                                style={{ overflow: 'hidden' }}
+                            >
+                                <RecapSection personal={personal} group={group} streakCount={streakCount} freezeAvailable={streakData?.freeze_available} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                    {hasRecap && hasPrompt && (
+                    {hasRecap && hasPrompt && !recapCollapsed && (
                         <div className="dashboard-divider" />
                     )}
 

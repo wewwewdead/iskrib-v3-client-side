@@ -9,9 +9,11 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
     const leaveTimerRef = useRef(null);
     const longPressTimerRef = useRef(null);
     const longPressOpenedRef = useRef(false);
+    const isTouchRef = useRef(false);
     const containerRef = useRef(null);
 
     const handleMouseEnter = useCallback(() => {
+        if (isTouchRef.current) return;
         if (leaveTimerRef.current) {
             clearTimeout(leaveTimerRef.current);
             leaveTimerRef.current = null;
@@ -22,6 +24,7 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
     }, []);
 
     const handleMouseLeave = useCallback(() => {
+        if (isTouchRef.current) return;
         if (hoverTimerRef.current) {
             clearTimeout(hoverTimerRef.current);
             hoverTimerRef.current = null;
@@ -32,6 +35,7 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
     }, []);
 
     const handleTouchStart = useCallback(() => {
+        isTouchRef.current = true;
         longPressTimerRef.current = setTimeout(() => {
             longPressOpenedRef.current = true;
             setShowPicker(true);
@@ -44,6 +48,21 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
             longPressTimerRef.current = null;
         }
     }, []);
+
+    // Tap-outside-to-close for mobile
+    useEffect(() => {
+        if (!showPicker || !isTouchRef.current) return;
+
+        const handleOutsideTouch = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setShowPicker(false);
+                isTouchRef.current = false;
+            }
+        };
+
+        document.addEventListener('touchstart', handleOutsideTouch);
+        return () => document.removeEventListener('touchstart', handleOutsideTouch);
+    }, [showPicker]);
 
     useEffect(() => {
         return () => {
@@ -65,6 +84,7 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
 
         if (showPicker) {
             setShowPicker(false);
+            isTouchRef.current = false;
             return;
         }
 
@@ -78,6 +98,7 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
 
     const handlePickerSelect = useCallback((reactionType) => {
         setShowPicker(false);
+        isTouchRef.current = false;
         onReact(reactionType);
     }, [onReact]);
 

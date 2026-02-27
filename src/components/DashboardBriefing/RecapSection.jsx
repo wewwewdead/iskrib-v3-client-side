@@ -1,100 +1,77 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
+import StatTile from './StatTile';
+import BestPostCard from './BestPostCard';
+import CommunityHighlights from './CommunityHighlights';
+import {
+    getPostsCopy,
+    getWordsCopy,
+    getReactionsCopy,
+    getViewsCopy,
+    getOverallEncouragement,
+} from './recapCopy';
 
-const fmt = (n) => {
-    if (!n || n === 0) return '0';
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-    return String(n);
-};
+const PenIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+);
 
-const RecapSection = ({ personal, group }) => {
-    const [expanded, setExpanded] = useState(false);
+const TypeIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="4 7 4 4 20 4 20 7"/>
+        <line x1="9" y1="20" x2="15" y2="20"/>
+        <line x1="12" y1="4" x2="12" y2="20"/>
+    </svg>
+);
 
-    const bestPost = personal?.best_post;
-    const mostActive = group?.most_active_writer;
-    const mostReacted = group?.most_reacted_post;
+const HeartIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+);
+
+const EyeIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+    </svg>
+);
+
+const RecapSection = ({ personal, group, streakCount, freezeAvailable }) => {
+    const posts = personal?.posts_written || 0;
+    const words = personal?.total_words || 0;
+    const reactions = personal?.reactions_received || 0;
+    const views = personal?.views_received || 0;
+
+    const tiles = [
+        { icon: <PenIcon />, value: posts, label: 'posts', microCopy: getPostsCopy(posts) },
+        { icon: <TypeIcon />, value: words, label: 'words', microCopy: getWordsCopy(words) },
+        { icon: <HeartIcon />, value: reactions, label: 'reactions', microCopy: getReactionsCopy(reactions) },
+        { icon: <EyeIcon />, value: views, label: 'views', microCopy: getViewsCopy(views) },
+    ];
 
     return (
-        <div className="dashboard-recap">
-            <div className="dashboard-stat-row" onClick={() => setExpanded((v) => !v)}>
-                <span className="dashboard-stat-line">
-                    <strong>{personal?.posts_written || 0}</strong> posts
-                    {' · '}
-                    <strong>{fmt(personal?.total_words)}</strong> words
-                    {' · '}
-                    <strong>{fmt(personal?.reactions_received)}</strong> reactions
-                    {' · '}
-                    <strong>{fmt(personal?.views_received)}</strong> views
-                </span>
+        <div className="dashboard-recap-v2">
+            <motion.p
+                className="recap-encouragement"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.05 }}
+            >
+                {getOverallEncouragement(personal, streakCount, freezeAvailable)}
+            </motion.p>
 
-                <button className={`dashboard-recap-expand ${expanded ? 'is-expanded' : ''}`}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                </button>
+            <div className="recap-tiles-grid">
+                {tiles.map((tile, i) => (
+                    <StatTile key={tile.label} {...tile} index={i} />
+                ))}
             </div>
 
-            <AnimatePresence>
-                {expanded && (
-                    <motion.div
-                        className="dashboard-recap-details"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
-                    >
-                        <div className="dashboard-recap-details-inner">
-                            {bestPost && bestPost.journal_id && (
-                                <div className="dashboard-recap-detail">
-                                    <span className="dashboard-recap-detail-heading">Your best post</span>
-                                    <p className="dashboard-recap-detail-text">
-                                        {bestPost.title || 'Untitled'} — {bestPost.reaction_count || 0} reactions
-                                    </p>
-                                </div>
-                            )}
+            <BestPostCard bestPost={personal?.best_post} />
 
-                            <div className="dashboard-recap-detail">
-                                <span className="dashboard-recap-detail-heading">Community</span>
-                                <p className="dashboard-recap-detail-text">
-                                    {group?.total_posts || 0} posts written this week
-                                </p>
-                            </div>
-
-                            {mostActive && mostActive.name && (
-                                <div className="dashboard-recap-detail">
-                                    <span className="dashboard-recap-detail-heading">Most active writer</span>
-                                    <div className="dashboard-recap-detail-user">
-                                        <img
-                                            src={mostActive.avatar || '/assets/profile.jpg'}
-                                            alt={mostActive.name}
-                                            className="dashboard-recap-detail-avatar"
-                                        />
-                                        <span className="dashboard-recap-detail-text">
-                                            {mostActive.name} — {mostActive.post_count} posts
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            {mostReacted && mostReacted.title && (
-                                <div className="dashboard-recap-detail">
-                                    <span className="dashboard-recap-detail-heading">Most reacted post</span>
-                                    <div className="dashboard-recap-detail-user">
-                                        <img
-                                            src={mostReacted.author_avatar || '/assets/profile.jpg'}
-                                            alt={mostReacted.author_name}
-                                            className="dashboard-recap-detail-avatar"
-                                        />
-                                        <span className="dashboard-recap-detail-text">
-                                            {mostReacted.title} by {mostReacted.author_name} — {mostReacted.reaction_count || 0} reactions
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <CommunityHighlights group={group} />
         </div>
     );
 };

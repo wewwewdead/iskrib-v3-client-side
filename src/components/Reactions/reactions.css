@@ -2,7 +2,7 @@
 .reaction-picker {
     position: absolute;
     bottom: calc(100% + 8px);
-    left: 50%;
+    left: calc(50% + 2rem);
     display: flex;
     gap: 4px;
     padding: 6px 10px;

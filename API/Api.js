@@ -219,6 +219,26 @@ export const deleteJournalImage = async(token, url) => {
 
 }
 
+export const getFollowingFeed = async(token, cursor = null, limit = 5) => {
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    let url = cursor
+        ? `${BASE_URL}/journals/following?limit=${limit}&before=${cursor}`
+        : `${BASE_URL}/journals/following?limit=${limit}`;
+
+    const response = await apiRequest(url, {
+        method: 'GET',
+        headers: headers
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch following feed');
+    }
+
+    return await response.json();
+}
+
 export const getJournals = async(cursor = null, limit = 5, userId) =>{
     // console.log(userId)
     try {
@@ -1454,9 +1474,12 @@ export const getTodaysPrompt = async () => {
     return await response.json();
 }
 
-export const getPromptResponses = async (promptId) => {
+export const getPromptResponses = async (promptId, cursor = null, limit = 5) => {
     if (!promptId) return { responses: [] };
-    const response = await apiRequest(`${BASE_URL}/prompt/${encodeURIComponent(promptId)}/responses`, {
+    const url = cursor
+        ? `${BASE_URL}/prompt/${encodeURIComponent(promptId)}/responses?limit=${limit}&before=${cursor}`
+        : `${BASE_URL}/prompt/${encodeURIComponent(promptId)}/responses?limit=${limit}`;
+    const response = await apiRequest(url, {
         method: 'GET',
     });
     if (!response.ok) {

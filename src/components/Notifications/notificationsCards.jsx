@@ -92,6 +92,13 @@ const NotificationCards = () =>{
                 </svg>,
         },
         {
+            type: 'follow',
+            icon:
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30px" height="30px" fill="var(--accent-amber)">
+                    <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>,
+        },
+        {
             type: 'hottest_post',
             icon:
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30px" height="30px" fill="#ff6b35">
@@ -118,6 +125,8 @@ const NotificationCards = () =>{
 
         if(source === 'opinion'){
             handleClickOpinionNotif(e, notification?.opinions?.id, notification?.opinions?.user_id)
+        } else if(notification?.type === 'follow'){
+            navigate(`/visitProfile?userId=${notification?.sender_id}`);
         } else if(notification?.type === 'repost' && notification?.repost_journal_id){
             // Navigate to the repost post (quote + embedded original)
             const repostId = notification.repost_journal_id;
@@ -372,6 +381,10 @@ const NotificationCards = () =>{
                                 ) : displayType === 'constellation_accepted' ? (
                                     <div className="notification-content-text">
                                         <p className="notif-content-sliced-text">Your constellation link has been accepted!</p>
+                                    </div>
+                                ) : displayType === 'follow' ? (
+                                    <div className="notification-content-text">
+                                        <p className="notif-content-sliced-text">started following you</p>
                                     </div>
                                 ) : isOpinion ? (
                                     <div className="notification-content-text">

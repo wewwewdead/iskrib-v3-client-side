@@ -19,6 +19,7 @@ import WelcomeMessage from "../WelcomeMessage/WelcomeMessage";
 import Loader from "../loadingComponent/BgLoader";
 import SidebarOpinions from "../SidebarOpinions/SidebarOpinions";
 import OpinionEditor from "../SidebarOpinions/OpinionsEditor";
+
 import { useMediaQuery } from 'react-responsive';
 
 const DEFAULT_EDITOR_LAUNCH_CONFIG = {
@@ -396,11 +397,6 @@ const HomePage = () => {
 
     },[session, loading])
 
-    // useEffect(() => {
-    //     if(user){
-    //         console.log(user?.userData?.[0]?.id)
-    //     }
-    // }, [user])
     
 
     if(isLoading && !isGuest){

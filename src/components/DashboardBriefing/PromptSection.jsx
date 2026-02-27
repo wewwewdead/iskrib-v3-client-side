@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
+import PromptResponsesModal from './PromptResponsesModal';
 
 const PromptSection = ({ prompt, responsesData, onWriteResponse }) => {
-    const responseCount = responsesData?.count || 0;
-    const avatars = (responsesData?.responses || []).slice(0, 5);
+    const responseCount = responsesData?.uniqueCount || responsesData?.count || 0;
+    const seen = new Set();
+    const avatars = (responsesData?.responses || []).filter(r => {
+        if (seen.has(r.user_id)) return false;
+        seen.add(r.user_id);
+        return true;
+    }).slice(0, 10);
+    const [showModal, setShowModal] = useState(false);
 
     return (
         <div className="dashboard-prompt">
@@ -21,19 +28,29 @@ const PromptSection = ({ prompt, responsesData, onWriteResponse }) => {
                     className="dashboard-prompt-write-btn"
                     onClick={() => onWriteResponse?.(prompt)}
                 >
-                    Write your take
+                    Write your take <span style={{ marginLeft: '6px' }}>→</span>
                 </button>
                 {responseCount > 0 && (
-                    <div className="dashboard-prompt-responses">
+                    <div
+                        className="dashboard-prompt-responses"
+                        onClick={() => setShowModal(true)}
+                    >
                         <div className="dashboard-prompt-avatars">
                             {avatars.map((r, i) => (
-                                <img
+                                <div
                                     key={r.id}
-                                    src={r.users?.image_url || '/assets/profile.jpg'}
-                                    alt=""
-                                    className="dashboard-prompt-avatar"
+                                    className={`dashboard-prompt-avatar-wrap${
+                                        r.users?.badge === 'legend' ? ' pr-ring-legend' :
+                                        r.users?.badge === 'og' ? ' pr-ring-og' : ''
+                                    }`}
                                     style={{ zIndex: avatars.length - i }}
-                                />
+                                >
+                                    <img
+                                        src={r.users?.image_url || '/assets/profile.jpg'}
+                                        alt=""
+                                        className="dashboard-prompt-avatar"
+                                    />
+                                </div>
                             ))}
                         </div>
                         <span className="dashboard-prompt-count">
@@ -42,6 +59,15 @@ const PromptSection = ({ prompt, responsesData, onWriteResponse }) => {
                     </div>
                 )}
             </div>
+
+            {showModal && (
+                <PromptResponsesModal
+                    promptId={prompt.id}
+                    count={responseCount}
+                    promptText={prompt.prompt_text}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
         </div>
     );
 };

@@ -1154,11 +1154,12 @@ const CanvasEditor = ({title, onCloseOnSave, addUploadedImagePath, initialCanvas
                 formdata.append("remix_source_journal_id", remixSource.journalId);
                 formdata.append("is_remix", "true");
             }
-            await saveJournal(session?.access_token, formdata);
+            const saveData = await saveJournal(session?.access_token, formdata);
 
             queryClient.invalidateQueries({queryKey: ["journals"]});
             queryClient.invalidateQueries({queryKey: ["userJournals", user?.userData?.[0]?.id]});
             queryClient.invalidateQueries({queryKey: ["canvasGallery"]});
+            queryClient.invalidateQueries({queryKey: ["streak", user?.userData?.[0]?.id]});
             onCloseOnSave();
         } catch (error) {
             console.error("Error saving canvas journal:", error);

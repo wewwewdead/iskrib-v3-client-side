@@ -4,7 +4,7 @@ import { motion, AnimatePresence,} from "framer-motion";
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import './postcards.css';
 import '../explore/userSearch.css';
-import { getJournals, searchJournals, searchUsers } from "../../../../API/Api";
+import { getJournals, getFollowingFeed, searchJournals, searchUsers } from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
@@ -207,6 +207,7 @@ const PostCards = () => {
     ]
 
     const userId = user?.userData?.[0]?.id || null;
+    const isFollowingFeed = location.pathname === '/home/following';
     const isSearchMode = committedSearchQuery.length >= 2;
     const isPostSearchMode = isSearchMode && searchType === 'posts';
     const isPeopleSearchMode = isSearchMode && searchType === 'people';
@@ -237,6 +238,27 @@ const PostCards = () => {
         } ,
         refetchOnWindowFocus: false,
         staleTime: 1000 * 60 * 5
+    })
+
+    const {
+        data: followingData,
+        fetchNextPage: fetchNextFollowingPage,
+        hasNextPage: hasNextFollowingPage,
+        isFetchingNextPage: isFetchingNextFollowingPage,
+        isLoading: isFollowingLoading,
+    } = useInfiniteQuery({
+        queryKey: ['journals-following', session?.access_token],
+        queryFn: ({ pageParam = null }) => getFollowingFeed(session?.access_token, pageParam, 5),
+        getNextPageParam: (lastPage) => {
+            if (lastPage?.hasMore) {
+                const lastJournal = lastPage?.data[lastPage?.data?.length - 1];
+                return new Date(lastJournal.created_at).toISOString();
+            }
+            return undefined;
+        },
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5,
+        enabled: isFollowingFeed && !!session?.access_token,
     })
 
     const {
@@ -404,11 +426,17 @@ const PostCards = () => {
         return () => window.removeEventListener('mousedown', handleOutsideSearchClick);
     }, []);
 
+    const activeFeedData = isFollowingFeed ? followingData : data;
+    const activeFetchNextPage = isFollowingFeed ? fetchNextFollowingPage : fetchNextPage;
+    const activeHasNextPage = isFollowingFeed ? hasNextFollowingPage : hasNextPage;
+    const activeIsFetchingNextPage = isFollowingFeed ? isFetchingNextFollowingPage : isFetchingNextPage;
+    const activeIsLoading = isFollowingFeed ? isFollowingLoading : isFeedLoading;
+
     useEffect(() =>{
-        if(!isSearchMode && inView && hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+        if(!isSearchMode && inView && activeHasNextPage && !activeIsFetchingNextPage) {
+            activeFetchNextPage();
         }
-    }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage, isSearchMode])
+    }, [inView, activeFetchNextPage, activeHasNextPage, activeIsFetchingNextPage, isSearchMode])
 
 
     useEffect(() => {
@@ -444,7 +472,7 @@ const PostCards = () => {
         }
     }, [])
 
-    const feedJournals = data?.pages?.flatMap((page) => page.data || []) || [];
+    const feedJournals = activeFeedData?.pages?.flatMap((page) => page.data || []) || [];
     const searchedJournals = searchData?.data || [];
     const searchedUsers = userSearchData?.data || [];
     const suggestionItems = searchType === 'people'
@@ -458,7 +486,7 @@ const PostCards = () => {
         ? isSearchLoading
         : isPeopleSearchMode
             ? isUserSearchLoading
-            : isFeedLoading;
+            : activeIsLoading;
     const activeSearchError = searchType === 'people' ? userSearchError : searchError;
     const showSuggestions = isSearchFocused && debouncedSearchInput.length >= 2;
 
@@ -586,6 +614,12 @@ const PostCards = () => {
         </div>
 
         <div className="search-nav-row">
+            <button type="button" className={`search-nav-btn search-nav-following${isFollowingFeed ? ' search-nav-active' : ''}`} onClick={() => navigate('/home/following')}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+                Following
+            </button>
             <button type="button" className="search-nav-btn search-nav-fw" onClick={handleVisitFreedomWall}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M4 7.2A3.2 3.2 0 0 1 7.2 4h9.6A3.2 3.2 0 0 1 20 7.2v9.6a3.2 3.2 0 0 1-3.2 3.2H7.2A3.2 3.2 0 0 1 4 16.8V7.2Z" stroke="currentColor" strokeWidth="1.6"/>
@@ -693,7 +727,14 @@ const PostCards = () => {
                 }} />
             )}
 
-            {journals.length === 0 && !isLoading && (
+            {isFollowingFeed && !activeIsLoading && journals.length === 0 && !isSearchMode && (
+                <div className="following-empty-state" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
+                    <p>Your Following feed is empty</p>
+                    <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Follow writers to see their posts here</p>
+                </div>
+            )}
+
+            {journals.length === 0 && !isLoading && !isFollowingFeed && (
                 <div className="search-empty-state">
                     {activeSearchError ? 'Search failed. Please try again.'
                      : isSearchMode ? 'No matching posts found.'
@@ -954,7 +995,7 @@ const PostCards = () => {
 
             {!isSearchMode && (
                 <div className="inview" ref={ref}>
-                    <MoonLoader loading={isFetchingNextPage} color="rgba(255, 255, 255, 0.64)" speedMultiplier={1} size={20}/>
+                    <MoonLoader loading={activeIsFetchingNextPage} color="rgba(255, 255, 255, 0.64)" speedMultiplier={1} size={20}/>
                 </div>
             )}
         </div>
