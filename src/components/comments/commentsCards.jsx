@@ -125,7 +125,7 @@ const CommentsCards = ({comments, postId}) =>{
 
             const message = await addReply(userId, postId, parent_id, formdata, receiver_id, session?.access_token);
             if(message){
-                console.log(message);
+                // console.log(message);
             }
             queryClient.invalidateQueries({ queryKey: ['getPostReplies', parent_id] });
             queryClient.invalidateQueries({ queryKey: ['postComments', postId] });

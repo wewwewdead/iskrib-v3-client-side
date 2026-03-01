@@ -70,7 +70,7 @@ const NotCollectedJournalList = ({collectionId, onClose}) =>{
             const message = await addJournalCollection(session?.access_token, formdata);
 
             if(message){
-                console.log(message);
+                // console.log(message);
             }
             setIsSaving(false);
             queryClient.invalidateQueries(['getCollectionJournals', collectionId, session?.access_token])

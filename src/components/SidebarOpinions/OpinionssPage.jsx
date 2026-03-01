@@ -41,7 +41,7 @@ const OpinionsPage = () =>{
     })
 
     useEffect(() =>{
-        console.log(data);
+        // console.log(data);
     }, [data])
 
     const getUserHandle = (opinionUser) => {

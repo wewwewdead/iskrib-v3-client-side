@@ -53,7 +53,7 @@ const VisitedProfilePostCards = () =>{
     }
 
     useEffect(() =>{
-        console.log(userId)
+        // console.log(userId)
     },[userId])
 
     const [viewMode, setViewMode] = useState('grid');

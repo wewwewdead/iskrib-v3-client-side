@@ -35,7 +35,7 @@ const UnreadNotification = () =>{
         try {
             const message = deleteNotifMutation.mutateAsync({notifId, source});
             if(message){
-                console.log(message)
+                // console.log(message)
             }
         } catch (error) {
             console.error('error deleting notification',error)

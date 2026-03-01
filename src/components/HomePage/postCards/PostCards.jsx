@@ -319,7 +319,7 @@ const PostCards = () => {
 
     const handleClickLike = async (journalId, receiverId) => {
         if(!session) return openAuthModal();
-        console.log(journalId)
+        // console.log(journalId)
         mutationLike.mutate({journalId, receiverId}) //passing this into mutationFn {journalId: the id}
     }
 
@@ -333,7 +333,7 @@ const PostCards = () => {
 
     const handleClickBookmark = async (journalId) => {
         if(!session) return openAuthModal();
-        console.log(journalId)
+        // console.log(journalId)
         // mutationBookmark.mutate({journalId});
         const response = await mutationBookmark.mutateAsync({journalId})
 
@@ -355,7 +355,7 @@ const PostCards = () => {
                 setBookmarkedMessage('')
             }, 2500)
         }
-        console.log(response.message);
+        // console.log(response.message);
     }
 
     const debounceClickBookmark = debounce(handleClickBookmark, 100);

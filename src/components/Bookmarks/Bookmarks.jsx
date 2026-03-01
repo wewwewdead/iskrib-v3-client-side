@@ -89,7 +89,7 @@ const Bookmarks = () =>{
     }, [])
 
     useEffect(() =>{
-        console.log(data)
+        // console.log(data)
     }, [data])
 
     useEffect(() => {

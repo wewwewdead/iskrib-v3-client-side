@@ -200,7 +200,7 @@ const NotificationCards = () =>{
     }, [])
 
      useEffect(() =>{
-         console.log(data)
+         // console.log(data)
     }, [data])
 
     const handleClickSettings = (e, notifId) =>{

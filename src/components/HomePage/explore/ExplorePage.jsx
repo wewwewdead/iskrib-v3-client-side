@@ -459,13 +459,21 @@ const ExplorePage = () => {
             </div>
 
             {journals.length === 0 && (
-                <div className="search-empty-state">
-                    {searchError
-                        ? "Search failed. Please try again."
-                        : isSearchMode
-                            ? "No matching posts found."
-                            : "No posts available right now."}
-                </div>
+                searchError ? (
+                    <div className="search-empty-state">Search failed. Please try again.</div>
+                ) : isSearchMode ? (
+                    <div className="search-empty-state">No matching posts found.</div>
+                ) : (
+                    <div className="explore-empty-state">
+                        <div className="explore-empty-icon-ring">
+                            <FlameIcon className="explore-empty-flame" />
+                        </div>
+                        <h3 className="explore-empty-title">No hot posts yet this month</h3>
+                        <p className="explore-empty-description">
+                            Be the first to publish something — your post could take the #1 spot.
+                        </p>
+                    </div>
+                )
             )}
 
             {heroJournal && (() => {

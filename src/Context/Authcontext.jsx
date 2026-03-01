@@ -77,7 +77,7 @@ export const AuthProvider = ({children}) => {
         .on('postgres_changes',
         {event: 'INSERT', schema: 'public', table: 'notifications', filter: `receiver_id=eq.${userData?.userData?.[0]?.id}`},
         (payload) => {
-            console.log('new notification:', payload)
+            // console.log('new notification:', payload)
             queryClient.setQueryData(['notifcounts', authData?.user?.id], (old) => ({count: (old?.count ? old?.count : 0) + 1}));
         }
 
@@ -100,7 +100,7 @@ export const AuthProvider = ({children}) => {
         .on('postgres_changes',
         {event: 'INSERT', schema: 'public', table: 'notification_opinions', filter: `receiver_id=eq.${userData?.userData?.[0]?.id}`},
         (payload) => {
-            console.log('new notification:', payload)
+            // console.log('new notification:', payload)
             queryClient.setQueryData(['notifcounts', authData?.user?.id], (old) => ({count: (old?.count ? old?.count : 0) + 1}));
         }
 

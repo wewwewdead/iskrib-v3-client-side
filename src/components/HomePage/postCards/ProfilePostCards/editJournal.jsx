@@ -63,7 +63,7 @@ const EditJournal = ({onClose, journalData}) => {
             setIsUpdatingJournal(true)
             const message = await updateJournal(session?.access_token, formdata);
             if(message){
-                console.log(message)
+                // console.log(message)
             }
 
             queryClient.invalidateQueries(['userJournals', user?.userData?.[0].id])

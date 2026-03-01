@@ -29,7 +29,7 @@ const OpinionEditor = ({onClose}) =>{
 
             const message = await addOpinion(formdata, session?.access_token);
             if(message){
-                console.log(message)
+                // console.log(message)
             }
             setIsSaving(false)
             queryClient.invalidateQueries({ queryKey: ['getOpinions'] });

@@ -135,7 +135,7 @@ const CollectionCards = () =>{
             setIsDeleting(true);
             const message = await deleteCollection(session?.access_token, collectionId);
             if(message){
-                console.log(message)
+                // console.log(message)
             }
             queryClient.invalidateQueries(['getCollectionJournals', collectionId, session?.access_token])
             clearTimeout(timer);

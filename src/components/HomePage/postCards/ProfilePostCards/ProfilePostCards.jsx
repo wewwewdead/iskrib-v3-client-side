@@ -180,7 +180,7 @@ const ProfilePostCards = () =>{
                 deleteImageJournalPromise,
             ])
             if(deletePostJournal || deletePostJournalImage){
-                console.log({deletePostJournal: deletePostJournal, deletePostJournalImage: deletePostJournalImage})
+                // console.log({deletePostJournal: deletePostJournal, deletePostJournalImage: deletePostJournalImage})
             }
 
             if(deletePostJournal.status !== 'fulfilled'){
@@ -260,7 +260,7 @@ const ProfilePostCards = () =>{
     }
 
     useEffect(() =>{
-        console.log(data)
+        // console.log(data)
     }, [data])
 
     useEffect(() =>{

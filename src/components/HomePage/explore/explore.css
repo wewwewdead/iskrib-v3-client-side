@@ -446,6 +446,56 @@
 }
 
 
+/* ── Explore empty state ── */
+.explore-empty-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 200px;
+    gap: 0.6rem;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    border-radius: 14px;
+}
+
+.explore-empty-icon-ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: var(--bg-glass);
+    border: 0.5px solid var(--bg-glass-border);
+    color: var(--text-faint);
+    margin-bottom: 0.25rem;
+}
+
+.explore-empty-flame {
+    width: 26px;
+    height: 26px;
+}
+
+.explore-empty-title {
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.explore-empty-description {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    max-width: 260px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+
 /* ══════════════════════════════════════════
    MOBILE
    ══════════════════════════════════════════ */

@@ -45,13 +45,13 @@ const Editor=({onClose, initialMode = 'text', initialTitle = '', initialCanvasDo
       if(uploadedImagePaths.length > 0){
         const message = await deleteJournalImage(session?.access_token, uploadedImagePaths)
         if(message){
-          console.log(message.message)
+          // console.log(message.message)
         }
 
       }
         editor.update(() => {
             const state = editor.getEditorState().toJSON();
-            console.log(state)
+            // console.log(state)
 
             const root = $getRoot();
             root.clear();
@@ -62,7 +62,7 @@ const Editor=({onClose, initialMode = 'text', initialTitle = '', initialCanvasDo
     const handleCloseEditorOnSave = useCallback(async() => {
       editor.update(() => {
             const state = editor.getEditorState().toJSON();
-            console.log(state)
+            // console.log(state)
 
             const root = $getRoot();
             root.clear();

@@ -24,7 +24,7 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
     try {
       const message = await deleteJournalImage(session?.access_token, imgUrl);
       if(message){
-        console.log(message.message)
+        // console.log(message.message)
       }
     } catch (error) {
       console.error("Failed to delete image from storage:", error);

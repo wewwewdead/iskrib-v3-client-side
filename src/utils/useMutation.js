@@ -368,7 +368,7 @@ export const useUpdateJournalPrivacyMutation = (session) =>{
                     }))
                 }
             })
-            console.log(previousData)
+            // console.log(previousData)
             return {previousData};
             
         },

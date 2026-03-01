@@ -57,7 +57,7 @@ const VisitedProfileOpinions = () =>{
     }
 
     useEffect(() =>{
-        console.log(userId)
+        // console.log(userId)
     }, [userId])
 
     useEffect(() =>{

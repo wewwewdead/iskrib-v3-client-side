@@ -62,7 +62,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
             const saveData = await saveJournal(session?.access_token, formdata)
 
             if(saveData){
-                console.log(saveData)
+                // console.log(saveData)
                 queryClient.invalidateQueries({queryKey: ['journals']});
                 queryClient.invalidateQueries({queryKey: ['userJournals', user?.userData?.[0].id]})
                 queryClient.invalidateQueries({queryKey: ['streak', user?.userData?.[0]?.id]});

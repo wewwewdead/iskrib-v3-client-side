@@ -64,15 +64,17 @@ function RelatedPostCard({ post, index }) {
                 {excerpt && <p className="rp-card-excerpt">{excerpt}</p>}
                 <div className="rp-card-meta">
                     <div className="rp-card-author">
-                        {post.user_image_url ? (
-                            <img
-                                src={post.user_image_url}
-                                alt=""
-                                className="rp-card-avatar"
-                            />
-                        ) : (
-                            <div className="rp-card-avatar rp-card-avatar-placeholder" />
-                        )}
+                        <div className={`rp-card-avatar-container ${post.user_badge === 'legend' ? 'rp-avatar-ring-legend' : post.user_badge === 'og' ? 'rp-avatar-ring-og' : ''}`}>
+                            {post.user_image_url ? (
+                                <img
+                                    src={post.user_image_url}
+                                    alt=""
+                                    className="rp-card-avatar"
+                                />
+                            ) : (
+                                <div className="rp-card-avatar rp-card-avatar-placeholder" />
+                            )}
+                        </div>
                         <span className="rp-card-name">
                             {post.user_name || 'Anonymous'}
                         </span>

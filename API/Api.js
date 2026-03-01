@@ -28,13 +28,13 @@ export const submitProfileData = async(body, token)=>{
         throw new Error(error || 'Failed to upload data');
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 
 export const updateProfileData = async(body, token) => {
     if(body){
-        console.log(body)
+        // console.log(body)
     }
     const headers = {};
     if(token) headers['Authorization'] = `Bearer ${token}`;
@@ -49,7 +49,7 @@ export const updateProfileData = async(body, token) => {
         throw new Error(error || 'failed to update profile data')
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
 }
 export const getUserByUsername = async(username) => {
     const response = await apiRequest(`${BASE_URL}/user/${encodeURIComponent(username)}`, {
@@ -134,12 +134,12 @@ export const saveJournalImage = async(token, body) => {
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 
 export const saveJournal = async(token, body) => {
-    console.log(body)
+    // console.log(body)
     const headers = {}
     if(token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -153,7 +153,7 @@ export const saveJournal = async(token, body) => {
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 
@@ -173,19 +173,19 @@ export const updateJournal = async(token, body) => {
     }
 
     const message = await response.json();
-    console.log(message)
+    // console.log(message)
     return message;
 }
 
 export const deleteJournalImage = async(token, url) => {
-    console.log(url)
+    // console.log(url)
     let img_url = ''
     let data = {
         filepath: []
     };
     
     if(url.length){
-        console.log(url.length)
+        // console.log(url.length)
         url.forEach(element => {
             data.filepath.push(element.split('/journal-images/').pop());
     });
@@ -201,7 +201,7 @@ export const deleteJournalImage = async(token, url) => {
         //in that case i can get the fileName e.g https://hufaxmqdofaycnhdzrxf.supabase.co/storage/v1/object/public/journal-images/user_id_7ceaa0ad-0266-4966-bfe6-ec152b2d9f75/1760963803951_4720148b-c85b-4af3-99e0-dd2ce87c10b0.webp
     }
 
-    console.log(data.filepath)
+    // console.log(data.filepath)
     const headers = {'Content-Type': 'application/json',}
     if(token) headers['Authorization'] = `Bearer ${token}`;
     const response = await apiRequest(`${BASE_URL}/delete-journal-images`, {
@@ -214,7 +214,7 @@ export const deleteJournalImage = async(token, url) => {
         throw new Error(error);
     }
     const message = await response.json();
-    console.log(message)
+    // console.log(message)
     return message;
 
 }
@@ -476,7 +476,7 @@ export const deleteProfileMediaImage = async(token, payload) => {
 }
 
 export const getVisitedUserJournals = async(cursor = null, limit = 5, userId, loggedInUserId) =>{
-    console.log('getVisit');
+    // console.log('getVisit');
     try {
         const url = cursor ? `${BASE_URL}/visitedUserJournals?limit=${limit}&before=${cursor}&userId=${userId}&loggedInUserId=${loggedInUserId}` : `${BASE_URL}/visitedUserJournals?limit=${limit}&userId=${userId}&loggedInUserId=${loggedInUserId}`;
 
@@ -510,7 +510,7 @@ export const deleteJournal = async(journalId, token) =>{
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 
@@ -527,7 +527,7 @@ export const clickLike = async(token, body) => {
         throw new Error('error adding like')
     }
     const message = await response.json();
-    console.log(message)
+    // console.log(message)
     return message;
 }
 
@@ -635,7 +635,7 @@ export const addBookmark = async(token, journalId) =>{
     }
 
     const message = await response.json();
-    console.log(message);
+    // console.log(message);
     return message;
 }
 
@@ -653,7 +653,7 @@ export const getBookmarks = async(cursor= null, limit= 5, userId, token) =>{
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 
@@ -671,7 +671,7 @@ export const addFollows = async(followsData, token) => {
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data);
+    // console.log(data);
     return data;
 }
 
@@ -733,7 +733,7 @@ export const readNotification = async(token, notifId, source) =>{
         throw new Error(error);
     }
     const message = await response.json();
-    console.log(message)
+    // console.log(message)
     return message;
 }
 
@@ -752,7 +752,7 @@ export const deleteNotification = async(token, notifId, source) =>{
         throw new Error(error);
     }
     const message = await response.json();
-    console.log(message)
+    // console.log(message)
     return message;
 }
 
@@ -791,7 +791,7 @@ export const addJournalViews = async(token, body) =>{
     }
 
     const message = await response.json();
-    console.log(message);
+    // console.log(message);
     return message;
 }
 
@@ -811,7 +811,7 @@ export const updatePrivacy = async(token, body) =>{
     }
 
     const message = await response.json();
-    console.log(message);
+    // console.log(message);
     return message;
 }
 
@@ -831,7 +831,7 @@ export const addCollections = async(token, body) => {
     }
 
     const message = await response.json();
-    console.log(message)
+    // console.log(message)
     return message;
 }
 
@@ -851,7 +851,7 @@ export const getCollections = async(userId, cursor, limit, token) =>{
     }
 
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data
 }
 
@@ -889,7 +889,7 @@ export const getNotCollectedJournals = async(cursor, limit, userId, collectionId
     }
 
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 export const addJournalCollection = async(token, body) => {
@@ -908,7 +908,7 @@ export const addJournalCollection = async(token, body) => {
     }
 
     const message = response.json();
-    console.log(message);
+    // console.log(message);
     return message;
 }
 
@@ -926,7 +926,7 @@ export const deleteCollection = async(token, collectionId) =>{
     }
 
     const message = await response.json();
-    console.log(message)
+    // console.log(message)
     return message;
 }
 
@@ -946,7 +946,7 @@ export const updateCollectionPrivacy = async(body, token) =>{
 
     const message = await response.json();
 
-    console.log(message);
+    // console.log(message);
     return message;
 }
 
@@ -965,7 +965,7 @@ export const addOpinion = async(body, token) =>{
         throw new Error(error);
     }
     const data = await response.json();
-    console.log(data)
+    // console.log(data)
     return data;
 }
 
@@ -982,7 +982,7 @@ export const getOpinions = async(cursor, limit) =>{
     }
 
     const data = await response.json()
-    console.log(data);
+    // console.log(data);
     return data;
 }
 
@@ -999,12 +999,12 @@ export const getUserOpinions = async(cursor, limit, userId) =>{
     }
 
     const data = await response.json();
-    console.log(data);
+    // console.log(data);
     return data;
 }
 
 export const getMyOpinions = async(cursor, limit, token) => {
-    console.log(cursor)
+    // console.log(cursor)
     const headers ={}
     if(token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -1021,7 +1021,7 @@ export const getMyOpinions = async(cursor, limit, token) => {
     }
 
     const data = await response.json();
-    console.log(data);
+    // console.log(data);
     return data;
 }
 
@@ -1040,7 +1040,7 @@ export const addReply = async(userId, postId, parentId, body, receiverId, token)
     }
     
     const messsage = await response.json();
-    console.log(messsage)
+    // console.log(messsage)
     return messsage;
 }
 
@@ -1057,7 +1057,7 @@ export const getPostReplies = async(parent_id, limit, cursor) =>{
     }
 
     const data = await response.json();
-    console.log(data);
+    // console.log(data);
     return data;
 }
 
@@ -1074,7 +1074,7 @@ export const getViewOpinion = async(postId, userId) =>{
     }
 
     const data = await response.json();
-    console.log(data);
+    // console.log(data);
     return data;
 }
 

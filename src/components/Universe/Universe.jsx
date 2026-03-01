@@ -352,7 +352,7 @@ const Universe = () => {
                     console.warn('[universe] wormhole fetch error:', error.message);
                     return;
                 }
-                console.log('[universe] wormhole pairs:', data);
+                // console.log('[universe] wormhole pairs:', data);
                 if (Array.isArray(data) && data.length > 0) {
                     setWormholes(data);
                 }

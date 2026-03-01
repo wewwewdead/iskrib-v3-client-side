@@ -63,7 +63,7 @@ const OpinionViewer = () => {
 
     const opinionData = data?.data;
 
-    console.log(opinionData)
+    // console.log(opinionData)
 
     return (
         <>

@@ -144,7 +144,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
             setIsSubmittingComment(true)
             const message = await addComment(session?.access_token, body);
             if(message){
-                console.log(message)
+                // console.log(message)
             }
             queryClient.invalidateQueries({ queryKey: ['postComments', postId] });
             queryClient.invalidateQueries({ queryKey: ['journals'] });

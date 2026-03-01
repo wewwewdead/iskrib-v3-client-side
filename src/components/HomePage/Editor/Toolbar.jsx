@@ -280,7 +280,7 @@ const ToolBar = ({addUploadedImagePath, onSwitchToCanvas}) =>{
             try {
                 const data_url = await saveJournalImage(session?.access_token, formdata);
                 if(!data_url){
-                    console.log('error: no image_url');
+                    // console.log('error: no image_url');
                     return;
                 }
 

@@ -146,6 +146,28 @@
     border: 1px solid var(--border-light);
 }
 
+/* ── Avatar Ring Badge ── */
+
+.rp-card-avatar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    height: fit-content;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.rp-avatar-ring-legend {
+    border: 2px solid #FFD700;
+    box-shadow: 0 0 8px 1px rgba(255, 215, 0, 0.3);
+}
+
+.rp-avatar-ring-og {
+    border: 2px solid #9B59FF;
+    box-shadow: 0 0 8px 1px rgba(155, 89, 255, 0.3);
+}
+
 .rp-card-name {
     font-size: 0.75rem;
     color: var(--text-secondary);

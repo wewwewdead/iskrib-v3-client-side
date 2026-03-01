@@ -166,7 +166,7 @@ const Visitprofile = () =>{
 
 
     useEffect(() =>{
-        console.log(data)
+        // console.log(data)
     }, [data])
 
     useEffect(() => {
