@@ -24,6 +24,8 @@ import CanvasPreview from "./CanvasPreview/CanvasPreview";
 import RepostModal from "../../RepostModal/RepostModal";
 import PromptBadge from "../../DailyPrompt/PromptBadge";
 import DashboardBriefing from "../../DashboardBriefing/DashboardBriefing";
+import ShareMenu from "../../ShareMenu/ShareMenu";
+import getShareUrl from "../../../utils/getShareUrl";
 
 
 const PostCards = () => {
@@ -33,14 +35,13 @@ const PostCards = () => {
     const { clickOpenSidebar, handleOpenTextEditor } = outletContext;
 
     const navigate = useNavigate();
-    const modalRef = useRef(null);
     const searchShellRef = useRef(null);
     const timeOutRef = useRef();
     const {ref, inView} = useInView({
         threshold: 0,
         rootMargin: '800px'
     })
-    const [postIdSettings, setPostIdSettings] = useState('');
+    const [shareMenuPostId, setShareMenuPostId] = useState(null);
     const [showHeaders, setShowHeaders] = useState(true);
 
     const [bookmarkedMessage, setBookmarkedMessage] = useState('');
@@ -309,11 +310,6 @@ const PostCards = () => {
         staleTime: 1000 * 60 * 2,
     });
 
-    const handleClickSettings = (e, postId) =>{
-        e.stopPropagation();
-        setPostIdSettings(postId === postIdSettings ? null : postId)
-    }
-
     const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
     const mutationReaction = useReactionMutation(session, user?.userData?.[0]?.id);
 
@@ -434,19 +430,6 @@ const PostCards = () => {
         }
     }, [inView, activeFetchNextPage, activeHasNextPage, activeIsFetchingNextPage, isSearchMode])
 
-
-    useEffect(() => {
-       const handleClickOutside = (e) =>{
-        if(modalRef.current && !modalRef.current.contains(e.target)){
-            setPostIdSettings(null)
-        }
-       }
-       window.addEventListener('click', handleClickOutside)
-
-       return() => {
-        window.removeEventListener('click', handleClickOutside)
-       }
-    }, [])
 
     useEffect(() =>{
         const scroll = (e) =>{
@@ -953,16 +936,25 @@ const PostCards = () => {
                             </div>
 
                             <div className="user-post-settings">
-                                <svg onClick={(e) => handleClickSettings(e, journal.id)} xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"/></svg>
-                                {postIdSettings === journal.id && (
-                                    <motion.div
-                                    initial={{opacity:0 ,scale:0}}
-                                    animate={{opacity:1, scale:1, transition: {type: "tween", duration: 0.3}}}
-                                    exit={{opacity:0, scale:0, transition: {type: "tween", duration: 0.3}}}
-                                    ref={modalRef} className="setting-modal"
-                                    >
-                                        <p onClick={() => console.log('clicked')}>{journal.title}</p>
-                                    </motion.div>
+                                <svg
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShareMenuPostId(shareMenuPostId === journal.id ? null : journal.id);
+                                    }}
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    height="24px"
+                                    viewBox="0 0 24 24"
+                                    width="24px"
+                                    fill="currentColor"
+                                >
+                                    <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                                </svg>
+                                {shareMenuPostId === journal.id && (
+                                    <ShareMenu
+                                        url={getShareUrl(journal.id)}
+                                        title={journal.title || ''}
+                                        onClose={() => setShareMenuPostId(null)}
+                                    />
                                 )}
                             </div>
                         </div>
