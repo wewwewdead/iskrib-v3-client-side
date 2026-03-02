@@ -69,14 +69,12 @@ const Visitprofile = () =>{
         ? [
             {label: 'Writings', path: `/u/${profileUsername}`, action: () => navigate(`/u/${profileUsername}`, {state: visitedProfileNavState})},
             {label: 'Media', path: `/u/${profileUsername}/media`, action: () => navigate(`/u/${profileUsername}/media`, {state: visitedProfileNavState})},
-            {label: 'Collections', path: `/u/${profileUsername}/collections`, action: () => navigate(`/u/${profileUsername}/collections`, {state: visitedProfileNavState})},
             {label: 'Opinions', path: `/u/${profileUsername}/opinions`, action: () => navigate(`/u/${profileUsername}/opinions`, {state: visitedProfileNavState})},
             {label: 'Stories', path: `/u/${profileUsername}/stories`, action: () => navigate(`/u/${profileUsername}/stories`, {state: visitedProfileNavState})}
         ]
         : [
             {label: 'Writings', path: '/visitProfile', action: () => navigate(`/visitProfile?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
             {label: 'Media', path: '/visitProfile/media', action: () => navigate(`/visitProfile/media?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
-            {label: 'Collections', path: '/visitProfile/visitedCollections', action: () => navigate(`/visitProfile/visitedCollections?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
             {label: 'Opinions', path:'/visitProfile/visitedOpinions', action: () => navigate(`/visitProfile/visitedOpinions?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
             {label: 'Stories', path:'/visitProfile/stories', action: () => navigate(`/visitProfile/stories?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})}
         ]

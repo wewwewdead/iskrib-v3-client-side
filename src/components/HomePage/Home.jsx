@@ -91,25 +91,6 @@ const HomePage = () => {
         </svg>
     };
 
-    const universeLink = {
-        path: '/universe',
-        label: 'Universe',
-        action: () => navigate('/universe'),
-        icon:
-        <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"}>
-            <circle cx="6" cy="6" r="2"/>
-            <circle cx="18" cy="8" r="1.5"/>
-            <circle cx="12" cy="4" r="1"/>
-            <circle cx="10" cy="14" r="2.5"/>
-            <circle cx="17" cy="17" r="1.8"/>
-            <circle cx="5" cy="19" r="1.2"/>
-            <line x1="6" y1="6" x2="12" y2="4" stroke={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"} strokeWidth="0.5" opacity="0.4"/>
-            <line x1="12" y1="4" x2="18" y2="8" stroke={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"} strokeWidth="0.5" opacity="0.4"/>
-            <line x1="6" y1="6" x2="10" y2="14" stroke={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"} strokeWidth="0.5" opacity="0.4"/>
-            <line x1="10" y1="14" x2="17" y2="17" stroke={location.pathname === '/universe' ? "#5f92ff" : "#b6b6b6"} strokeWidth="0.5" opacity="0.4"/>
-        </svg>
-    };
-
     const authLinks = [
         {
             path: '/profile',
@@ -153,22 +134,6 @@ const HomePage = () => {
             </svg>
         },
         {
-            path: '/home/collections',
-            label: 'Collections',
-            action: () => {navigatePath('/home/collections')},
-            icon:
-            <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" width="28px" height="28px" viewBox="0 0 24 24" version="1.1">
-                <title>ic_fluent_book_formula_recent_24_filled</title>
-                <desc>Created with Sketch.</desc>
-                <g id="🔍-System-Icons" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-                    <g id="ic_fluent_book_formula_recent_24_filled" fill={location.pathname === '/home/collections' ? "#5f92ffff" : "#b6b6b6ff"} fillRule="nonzero">
-                    <path d="M18,2 C19.3807,2 20.5,3.11929 20.5,4.5 L20.5,18.75 C20.5,19.1642 20.1642,19.5 19.75,19.5 L5.5,19.5 C5.5,20.0523 5.94772,20.5 6.5,20.5 L19.75,20.5 C20.1642,20.5 20.5,20.8358 20.5,21.25 C20.5,21.6642 20.1642,22 19.75,22 L6.5,22 C5.11929,22 4,20.8807 4,19.5 L4,4.5 C4,3.11929 5.11929,2 6.5,2 L18,2 Z M12.8581,6.37799 C12.62598,5.90759933 11.9844378,5.87623996 11.6977281,6.28391187 L11.642,6.37799 L10.5416,8.60759 L8.08108,8.96512 C7.55966125,9.04088875 7.33187629,9.64635672 7.63705678,10.0449565 L7.70527,10.1217 L9.48571,11.8572 L9.06541,14.3078 C8.97598882,14.8291176 9.48575824,15.2340394 9.96079283,15.0617758 L10.0493,15.0226 L12.25,13.8656 L14.4508,15.0226 C14.9189412,15.2688118 15.4615792,14.9090388 15.444597,14.4040705 L15.4347,14.3078 L15.0143,11.8572 L16.7948,10.1217 C17.17205,9.75395625 17.0005109,9.13023984 16.5193002,8.98711816 L16.419,8.96512 L13.9585,8.60759 L12.8581,6.37799 Z M12.25,8.21029 L12.9001,9.52747 C12.9847857,9.69901857 13.1371367,9.82544224 13.3180464,9.87827058 L13.4107,9.89842 L14.8643,10.1096 L13.8124,11.1349 C13.6792333,11.2647333 13.6064139,11.442275 13.6076569,11.625106 L13.6174,11.7351 L13.8657,13.1829 L12.5656,12.4993 C12.4009333,12.4128 12.2096,12.3983833 12.0361023,12.45605 L11.9345,12.4993 L10.6343,13.1829 L10.8826,11.7351 C10.9141,11.55185 10.8686556,11.3654056 10.7601556,11.2181856 L10.6876,11.1349 L9.6358,10.1096 L11.0894,9.89842 C11.2787429,9.87091429 11.4460449,9.76506816 11.5521994,9.60935207 L11.6,9.52747 L12.25,8.21029 Z" id="🎨-Color">
-                    </path>
-                    </g>
-                </g>
-            </svg>,
-        },
-        {
             path: '/home/settings',
             label: 'Settings',
             action: () => navigatePath('/home/settings'),
@@ -196,8 +161,8 @@ const HomePage = () => {
     ];
 
     const links = isGuest
-        ? [homeLink, exploreLink, galleryLink, universeLink, ...guestLinks]
-        : [homeLink, exploreLink, galleryLink, universeLink, ...authLinks];
+        ? [homeLink, exploreLink, galleryLink, ...guestLinks]
+        : [homeLink, exploreLink, galleryLink, ...authLinks];
 
     const imgRef = useRef(null)
     const [showProfileEditor, setShowProfileEditor] = useState(false);
@@ -443,25 +408,22 @@ const HomePage = () => {
         {!isGuest && showProfileEditor && (
         <div className="profile-editor-bg">
 
-            <motion.div 
+            <motion.div
             className="profile-editor"
-            initial={{scale: 0, opacity: 0}}
-            animate={{scale: 1, opacity: 1, transition: {type: 'tween', duration: 0.3}}}
+            initial={{opacity: 0, y: 16}}
+            animate={{opacity: 1, y: 0, transition: {type: 'tween', duration: 0.4, ease: [0.16, 1, 0.3, 1]}}}
             exit={{
-                y: '100%',
                 opacity: 0,
-                transition:{type:'tween', duration: 0.25}
+                y: 16,
+                transition:{type:'tween', duration: 0.2}
             }}
             >
-                
+
                 <div className="edit-profile-header">
                     <div className="edit-profile-title-container">
-                            Edit profile
+                            Welcome to Iskrib
                     </div>
-
-                    <button disabled={!bio || !name} onClick={(e) => handleSubmit(e)} className={!bio || !name ? "save-bttn-disabled" : 'save-bttn'}>
-                        Save
-                    </button>      
+                    <p className="setup-subtitle">Set up your writing identity.</p>
                 </div>
 
                 <div className="profile-edit-container">
@@ -478,31 +440,29 @@ const HomePage = () => {
                     <div className="name-input-container">
                         <div className="input-title-container">
                             <span className="input-title">Name</span>
-                            <span className="input-title" style={name?.length > 19 ? {color: 'red'} : {}}>
+                            <span className="input-title" style={name?.length > 19 ? {color: 'var(--color-danger)'} : {}}>
                                 {`${name?.length}/20`}
                             </span>
                         </div>
-                        
-                        <input value={name} maxLength={20} onChange={handleNameChangeForSetup} className="edit-profile-name-input" type="text" />
+
+                        <input value={name} maxLength={20} onChange={handleNameChangeForSetup} className="edit-profile-name-input" type="text" placeholder="Your name" />
                     </div>
                     <div className="bio-input-container">
                         <div className="input-title-container">
-                            <div className="input-title-container">
-                                <span className="input-title">Bio</span>
-                                <span style={bio.length > 149 ? {color: 'red'} : {}} className="input-title">
-                                    {`${bio?.length}/150`}
-                                </span>
-                            </div>
+                            <span className="input-title">Bio</span>
+                            <span style={bio.length > 149 ? {color: 'var(--color-danger)'} : {}} className="input-title">
+                                {`${bio?.length}/150`}
+                            </span>
                         </div>
-                        
-                        <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={150} className="edit-profile-bio-input" type="text" />
+
+                        <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={150} className="edit-profile-bio-input" type="text" placeholder="A few words about you..." />
                     </div>
 
                     <div className="name-input-container">
                         <div className="input-title-container">
                             <span className="input-title">Username</span>
-                            <span className="input-title" style={setupUsername.length > 0 && setupUsername.length < 3 ? {color: 'red'} : {}}>
-                                {usernameChecking ? 'Checking...' : usernameAvailable === true ? 'Available' : usernameAvailable === false ? 'Taken' : ''}
+                            <span className={`input-title ${usernameChecking ? 'username-status-checking' : usernameAvailable === true ? 'username-status-available' : usernameAvailable === false ? 'username-status-taken' : ''}`}>
+                                {usernameChecking ? 'Checking...' : usernameAvailable === true ? '\u2713 Available' : usernameAvailable === false ? '\u2717 Taken' : ''}
                             </span>
                         </div>
                         <input
@@ -516,6 +476,10 @@ const HomePage = () => {
                     </div>
 
                 </div>
+
+                <button disabled={!bio || !name || uploadingUserData} onClick={(e) => handleSubmit(e)} className={!bio || !name || uploadingUserData ? "save-bttn-disabled" : 'save-bttn'}>
+                    {uploadingUserData ? 'Saving...' : 'Save'}
+                </button>
 
             </motion.div>
 

@@ -7,7 +7,7 @@ export const DEFAULT_OG_IMAGE_HEIGHT = 630;
 export const DEFAULT_SEO = {
   title: `${SITE_NAME} | Social Journaling and Opinions`,
   description:
-    "Iskryb is a social journaling platform where you can publish journals, share opinions, and organize collections.",
+    "Iskryb is a social journaling platform where you can publish journals, share opinions, and read stories.",
   canonicalPath: "/",
   robots: "index,follow",
 };
@@ -17,7 +17,7 @@ export const SEO_ROUTES = [
     path: "/",
     title: `${SITE_NAME} | Social Journaling and Opinions`,
     description:
-      "Publish journals, share opinions, and build collections in one social writing platform.",
+      "Publish journals, share opinions, and read stories in one social writing platform.",
     canonicalPath: "/",
     robots: "index,follow",
     prerender: true,
@@ -75,7 +75,7 @@ export const SEO_ROUTES = [
     path: "/signUp",
     title: `Sign Up | ${SITE_NAME}`,
     description:
-      "Create an Iskryb account to publish journals, share opinions, and curate collections.",
+      "Create an Iskryb account to publish journals, share opinions, and read stories.",
     canonicalPath: "/signUp",
     robots: "noindex,follow",
     prerender: true,

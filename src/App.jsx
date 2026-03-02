@@ -24,17 +24,12 @@ const VisitedProfileMediaSection = lazy(() => import('./components/VisitProfile/
 const Notifications = lazy(() => import('./components/Notifications/Notifications.jsx'));
 const NotificationCards = lazy(() => import('./components/Notifications/notificationsCards.jsx'));
 const UnreadNotification = lazy(() => import('./components/Notifications/UnreadNotificationCard.jsx'));
-const Collections = lazy(() => import('./components/collections/Collection.jsx'));
-const CollectionJournals = lazy(() => import('./components/collections/CollectionJournalCards.jsx'));
-const CollectionViewer = lazy(() => import('./components/collections/CollectionViewer.jsx'));
-const ViewUserCollection = lazy(() => import('./components/collections/ViewUserCollections.jsx'));
 const OpinionsPage = lazy(() => import('./components/SidebarOpinions/OpinionssPage.jsx'));
 const VisitedProfileOpinions = lazy(() => import('./components/SidebarOpinions/visitedProfileOpinions.jsx'));
 const MyOpinions = lazy(() => import('./components/SidebarOpinions/MyOpinions.jsx'));
 const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionViewer.jsx'));
 const ExplorePage = lazy(() => import('./components/HomePage/explore/ExplorePage.jsx'));
 const GalleryPage = lazy(() => import('./components/HomePage/gallery/GalleryPage.jsx'));
-const Universe = lazy(() => import('./components/Universe/Universe.jsx'));
 const SettingsPage = lazy(() => import('./components/SettingsPage/SettingsPage.jsx'));
 const StoryDashboard = lazy(() => import('./components/Stories/StoryDashboard/StoryDashboard.jsx'));
 const StoryEditor = lazy(() => import('./components/Stories/StoryEditor/StoryEditor.jsx'));
@@ -105,7 +100,6 @@ const App = () => {
             <Route path='/visitProfile' element={<Visitprofile/>}>
               <Route index element={<VisitedProfilePostCards/>}/>
               <Route path='media' element={<VisitedProfileMediaSection/>}/>
-              <Route path='visitedCollections' element={<CollectionViewer/>}/>
               <Route path='visitedOpinions' element={<VisitedProfileOpinions/>}/>
               <Route path='stories' element={<VisitedProfileStoriesSection/>}/>
             </Route>
@@ -113,7 +107,6 @@ const App = () => {
             <Route path='/u/:username' element={<Visitprofile/>}>
               <Route index element={<VisitedProfilePostCards/>}/>
               <Route path='media' element={<VisitedProfileMediaSection/>}/>
-              <Route path='collections' element={<CollectionViewer/>}/>
               <Route path='opinions' element={<VisitedProfileOpinions/>}/>
               <Route path='stories' element={<VisitedProfileStoriesSection/>}/>
             </Route>
@@ -127,12 +120,9 @@ const App = () => {
               <Route path='post/:journalId' element={<ContentView/>}/>
               <Route path='post/:journalId/:slug' element={<ContentView/>}/>
               <Route path='bookmark' element={<Bookmarks/>}/>
-              <Route path='userCollections' element={<ViewUserCollection/>}/>
               <Route path='opinions'element={<OpinionsPage/>}/>
               <Route path='opinionsViewer' element={<OpinionViewer/>}/>
 
-              <Route path='collections' element={<Collections/>}/>
-              <Route path='collectionCards' element={<CollectionJournals/>}/>
               <Route path='settings' element={<SettingsPage/>}/>
 
               {/* Stories routes */}
@@ -152,8 +142,6 @@ const App = () => {
                 <Route path='unreadNotification' element={<UnreadNotification/>}/>
               </Route>  
             </Route>   
-
-            <Route path='/universe' element={<Universe/>}/>
 
             <Route path='/login' element={<LoginPage/>}/>
             <Route path='/signUp' element={<SignUp/>}/>

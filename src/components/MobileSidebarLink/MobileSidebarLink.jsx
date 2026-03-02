@@ -57,8 +57,8 @@ const MobileSidebarLink = ({onclose}) => {
                     <p style={{fontWeight: 500, fontSize: '0.8rem'}}>{userData?.user_email}</p>
                 </div>
 
-                <div onClick={() => navigatePath('/home/notifications')} className='sidebar-mycollection-container'>
-                    <div className={location.pathname === '/home/notifications' ? 'sidebar-my-collection-bttn-active' : 'sidebar-my-collection-bttn'}>
+                <div onClick={() => navigatePath('/home/notifications')} className='sidebar-nav-container'>
+                    <div className={location.pathname === '/home/notifications' ? 'sidebar-nav-bttn-active' : 'sidebar-nav-bttn'}>
                         <div className="sidebar-notif-label">
                             Notifications
                             {notifCount > 0 && (
@@ -72,8 +72,8 @@ const MobileSidebarLink = ({onclose}) => {
                     </div>
                 </div>
 
-                <div onClick={() => navigatePath('/home/bookmark')} className='sidebar-mycollection-container'>
-                    <div className={location.pathname === '/home/bookmark' ? 'sidebar-my-collection-bttn-active' : 'sidebar-my-collection-bttn'}>
+                <div onClick={() => navigatePath('/home/bookmark')} className='sidebar-nav-container'>
+                    <div className={location.pathname === '/home/bookmark' ? 'sidebar-nav-bttn-active' : 'sidebar-nav-bttn'}>
                         Bookmarks
                         <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill="none">
                             <path fillRule="evenodd" clipRule="evenodd" d="M8 1.25C5.37665 1.25 3.25 3.37665 3.25 6V20.4648C3.25 21.7269 4.27311 22.75 5.53518 22.75C5.98634 22.75 6.42739 22.6165 6.80278 22.3662L11.3066 19.3636C11.7265 19.0837 12.2735 19.0837 12.6934 19.3636L17.1972 22.3662C17.5726 22.6165 18.0137 22.75 18.4648 22.75C19.7269 22.75 20.75 21.7269 20.75 20.4648V6C20.75 3.37665 18.6234 1.25 16 1.25H8ZM9 6.75C8.58579 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 8.58579 8.25 9 8.25H15C15.4142 8.25 15.75 7.91421 15.75 7.5C15.75 7.08579 15.4142 6.75 15 6.75H9Z" fill={location.pathname === '/home/bookmark' ? "#D4A853" : "#b6b6b6"} />
@@ -81,24 +81,9 @@ const MobileSidebarLink = ({onclose}) => {
                     </div>
                 </div>
 
-                <div onClick={() => navigatePath('/home/collections')} className='sidebar-mycollection-container'>
-                    <div className={location.pathname === '/home/collections' ? 'sidebar-my-collection-bttn-active' : 'sidebar-my-collection-bttn'}>
-                        My collections
-                        <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" width="28px" height="28px" viewBox="0 0 24 24" version="1.1">
-                            <title>ic_fluent_book_formula_recent_24_filled</title>
-                            <desc>Created with Sketch.</desc>
-                            <g id="🔍-System-Icons" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-                                <g id="ic_fluent_book_formula_recent_24_filled" fill={location.pathname === '/home/collections' ? "#000000ff" : "#b6b6b6ff"} fillRule="nonzero">
-                                    <path d="M18,2 C19.3807,2 20.5,3.11929 20.5,4.5 L20.5,18.75 C20.5,19.1642 20.1642,19.5 19.75,19.5 L5.5,19.5 C5.5,20.0523 5.94772,20.5 6.5,20.5 L19.75,20.5 C20.1642,20.5 20.5,20.8358 20.5,21.25 C20.5,21.6642 20.1642,22 19.75,22 L6.5,22 C5.11929,22 4,20.8807 4,19.5 L4,4.5 C4,3.11929 5.11929,2 6.5,2 L18,2 Z M12.8581,6.37799 C12.62598,5.90759933 11.9844378,5.87623996 11.6977281,6.28391187 L11.642,6.37799 L10.5416,8.60759 L8.08108,8.96512 C7.55966125,9.04088875 7.33187629,9.64635672 7.63705678,10.0449565 L7.70527,10.1217 L9.48571,11.8572 L9.06541,14.3078 C8.97598882,14.8291176 9.48575824,15.2340394 9.96079283,15.0617758 L10.0493,15.0226 L12.25,13.8656 L14.4508,15.0226 C14.9189412,15.2688118 15.4615792,14.9090388 15.444597,14.4040705 L15.4347,14.3078 L15.0143,11.8572 L16.7948,10.1217 C17.17205,9.75395625 17.0005109,9.13023984 16.5193002,8.98711816 L16.419,8.96512 L13.9585,8.60759 L12.8581,6.37799 Z M12.25,8.21029 L12.9001,9.52747 C12.9847857,9.69901857 13.1371367,9.82544224 13.3180464,9.87827058 L13.4107,9.89842 L14.8643,10.1096 L13.8124,11.1349 C13.6792333,11.2647333 13.6064139,11.442275 13.6076569,11.625106 L13.6174,11.7351 L13.8657,13.1829 L12.5656,12.4993 C12.4009333,12.4128 12.2096,12.3983833 12.0361023,12.45605 L11.9345,12.4993 L10.6343,13.1829 L10.8826,11.7351 C10.9141,11.55185 10.8686556,11.3654056 10.7601556,11.2181856 L10.6876,11.1349 L9.6358,10.1096 L11.0894,9.89842 C11.2787429,9.87091429 11.4460449,9.76506816 11.5521994,9.60935207 L11.6,9.52747 L12.25,8.21029 Z" id="🎨-Color">
-                                    </path>
-                                </g>
-                            </g>
-                        </svg>
-                    </div>
-                </div>
 
-                <div onClick={() => navigatePath('/home/settings')} className='sidebar-mycollection-container'>
-                    <div className={location.pathname === '/home/settings' ? 'sidebar-my-collection-bttn-active' : 'sidebar-my-collection-bttn'}>
+                <div onClick={() => navigatePath('/home/settings')} className='sidebar-nav-container'>
+                    <div className={location.pathname === '/home/settings' ? 'sidebar-nav-bttn-active' : 'sidebar-nav-bttn'}>
                         Settings
                         <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill={location.pathname === '/home/settings' ? "#D4A853" : "#b6b6b6"}>
                             <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Z"/>

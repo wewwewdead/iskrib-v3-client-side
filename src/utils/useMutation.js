@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, addJournalViews, clickLike, createRepost, deleteNotification, readNotification, respondConstellation, toggleReaction, updateCollectionPrivacy, updatePrivacy } from "../../API/Api";
+import {addBookmark, addFollows, addJournalViews, clickLike, createRepost, deleteNotification, readNotification, toggleReaction, updatePrivacy } from "../../API/Api";
 
 const updateInfiniteJournalsCache = (old, updater) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -378,80 +378,6 @@ export const useUpdateJournalPrivacyMutation = (session) =>{
         onSuccess: (data) => console.log(data),
         retry: 1,
     })
-}
-export const useUpdateCollectionPrivacyMutation = (session) => {
-    const queryClient= useQueryClient();
-    return useMutation({
-        mutationFn: (data) => updateCollectionPrivacy(data, session?.access_token),
-        onMutate: async(data) =>{
-            const userId = data.get('userId')
-            const collectionId = data.get('collectionId')
-            await queryClient.cancelQueries(['getCollections', userId])
-
-            const previousData = queryClient.getQueryData(['getCollections', userId])
-            const isPublic = data.get('isPublic');
-
-            queryClient.setQueryData(['getCollections', userId], (old) => {
-                if(!old) return old;
-
-                return{
-                    ...old,
-                    pages: old.pages.map((page) =>({
-                        ...page,
-                        data: page.data.map((collection) => {
-                            if(collection.id !== collectionId) return collection;
-
-                            return {
-                                ...collection,
-                                is_public: isPublic
-                            }
-                        })
-                    }))
-                }
-            })
-            return {previousData};
-        },
-        onError: (err, data, context) =>{
-            queryClient.setQueryData(['getCollections', session?.user?.id], context.previousData)
-        },
-        retry: 1,
-        onSucces: (data) => console.log(data)
-    })
-}
-
-export const useRespondConstellationMutation = (session) => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (data) => respondConstellation(session?.access_token, data?.constellationId, data?.accept),
-        onMutate: async (data) => {
-            await queryClient.cancelQueries(['getNotifications']);
-            const previousData = queryClient.getQueryData(['getNotifications']);
-            queryClient.setQueryData(['getNotifications'], (old) => {
-                if (!old || !Array.isArray(old.pages)) return old;
-                return {
-                    ...old,
-                    pages: old.pages.map((page) => ({
-                        ...page,
-                        data: Array.isArray(page?.data) ? page.data.map((notif) => {
-                            if (notif.constellation_id === data.constellationId) {
-                                return { ...notif, constellations: { status: data.accept ? 'accepted' : 'declined' } };
-                            }
-                            return notif;
-                        }) : page?.data,
-                    })),
-                };
-            });
-            return { previousData };
-        },
-        onError: (err, data, context) => {
-            if (context?.previousData) {
-                queryClient.setQueryData(['getNotifications'], context.previousData);
-            }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries(['getNotifications']);
-        }
-    });
 }
 
 export const useRepostMutation = (session) => {

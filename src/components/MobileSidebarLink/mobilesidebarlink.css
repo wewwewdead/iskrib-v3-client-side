@@ -168,7 +168,7 @@
         padding: 0;
         margin: 0;
     }
-    .sidebar-mycollection-container{
+    .sidebar-nav-container{
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -176,14 +176,14 @@
         padding: 0.5rem;
         font-weight: 660;
     }
-    .sidebar-my-collection-bttn{
+    .sidebar-nav-bttn{
         display: flex;
         justify-content: flex-start;
         align-items: center;
         padding: 0.2rem 0.1rem;
         color: var(--text-body);
     }
-    .sidebar-my-collection-bttn-active{
+    .sidebar-nav-bttn-active{
         display: flex;
         justify-content: flex-start;
         align-items: center;
