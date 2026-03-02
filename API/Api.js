@@ -1036,6 +1036,25 @@ export const getPostReactions = async (journalId) => {
 }
 
 // ─── Weekly Recap ───
+// ─── Onboarding ───
+export const completeOnboarding = async (token, { writingInterests, writingGoal }) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/complete-onboarding`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ writingInterests, writingGoal }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to complete onboarding');
+    }
+
+    return await response.json();
+}
+
 export const getWeeklyRecap = async (token) => {
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;

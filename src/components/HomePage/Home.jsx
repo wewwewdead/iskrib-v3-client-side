@@ -1,21 +1,18 @@
-import React, { useEffect, useState, useRef} from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import './home.css'
 import { useAuth } from "../../Context/useAuth";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
-import { MoonLoader, BeatLoader, BarLoader } from "react-spinners";
-import { checkUser, getUserData, submitProfileData, checkUsernameAvailability } from "../../../API/Api";
-import { motion, AnimatePresence } from "framer-motion";
+import { checkUser } from "../../../API/Api";
+import { AnimatePresence } from "framer-motion";
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import Editor from "./Editor/Editor";
-import { useCallback } from "react";
-import PostCards from "./postCards/PostCards";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import MobileNavlink from "../mobileNavLink/MobileNavLink";
 import WriteJournalButton from "../WriteJournalButton/WriteJournalButton";
 import MobileSidebarLink from "../MobileSidebarLink/MobileSidebarLink";
-import WelcomeMessage from "../WelcomeMessage/WelcomeMessage";
+import OnboardingWizard from "../Onboarding/OnboardingWizard";
 import Loader from "../loadingComponent/BgLoader";
 import SidebarOpinions from "../SidebarOpinions/SidebarOpinions";
 import OpinionEditor from "../SidebarOpinions/OpinionsEditor";
@@ -151,82 +148,12 @@ const HomePage = () => {
         ? [homeLink, exploreLink, ...guestLinks]
         : [homeLink, exploreLink, ...authLinks];
 
-    const imgRef = useRef(null)
-    const [showProfileEditor, setShowProfileEditor] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [onboardingUserExists, setOnboardingUserExists] = useState(false);
     const [showEditor, setShowEditor] = useState(false);
     const [editorLaunchConfig, setEditorLaunchConfig] = useState(DEFAULT_EDITOR_LAUNCH_CONFIG);
-    const [profilePreview, setProfilePreview] = useState(null);
-    const [imageFile, setImageFile] = useState(null);
-
-    const [name, setName] = useState('')
-    const [bio, setBio] = useState('')
-    const [setupUsername, setSetupUsername] = useState('')
-    const [usernameAvailable, setUsernameAvailable] = useState(null)
-    const [usernameChecking, setUsernameChecking] = useState(false)
-    const usernameCheckTimer = useRef(null)
-    const [uploadingUserData, setUploadingUserData] = useState(false)
-
-    const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
 
     const [showOpinionEditor, setShowOpinionEditor] = useState(false);
-
-
-    const handleClickUploadPhoto = (e) =>{
-        e.stopPropagation();
-        if(imgRef.current){
-            imgRef.current.click();
-        }
-    }
-    const handleImageChange = (e) =>{
-        const file = e.target.files[0];
-        if(file){
-            setImageFile(file)
-            const reader = new FileReader();
-            reader.onloadend = () =>{
-                setProfilePreview(reader.result)
-            }
-            reader.readAsDataURL(file)
-        }
-    }
-
-    const slugifyForUsername = (val) =>
-        String(val || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-
-    const handleNameChangeForSetup = (e) => {
-        const newName = e.target.value;
-        setName(newName);
-        // Auto-suggest username from name if user hasn't manually edited username
-        if (!setupUsername || setupUsername === slugifyForUsername(name)) {
-            const suggested = slugifyForUsername(newName);
-            setSetupUsername(suggested);
-            checkUsernameDebounced(suggested);
-        }
-    };
-
-    const handleUsernameChange = (e) => {
-        const raw = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-        setSetupUsername(raw);
-        checkUsernameDebounced(raw);
-    };
-
-    const checkUsernameDebounced = (uname) => {
-        if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current);
-        if (!uname || uname.length < 3) {
-            setUsernameAvailable(null);
-            return;
-        }
-        setUsernameChecking(true);
-        usernameCheckTimer.current = setTimeout(async () => {
-            try {
-                const result = await checkUsernameAvailability(uname);
-                setUsernameAvailable(result.available);
-            } catch {
-                setUsernameAvailable(null);
-            } finally {
-                setUsernameChecking(false);
-            }
-        }, 400);
-    };
 
     const handleOpenTextEditor = useCallback((config = {}) => {
         editor.setEditable(true)
@@ -241,54 +168,22 @@ const HomePage = () => {
         setEditorLaunchConfig(DEFAULT_EDITOR_LAUNCH_CONFIG);
     }, [])
 
-    const handleSubmit = async(e) =>{
-        e.stopPropagation();
-        e.preventDefault();
-        try {
-            setUploadingUserData(true)
-            const formdata = new FormData();
-            if(imageFile){
-                formdata.append('image', imageFile);
-            }
-            if(bio && name){
-                formdata.append('name', name)
-                formdata.append('bio', bio)
-                if(setupUsername && setupUsername.length >= 3){
-                    formdata.append('username', setupUsername)
-                }
-            }
-            const {data} = await submitProfileData(formdata, session?.access_token);
-            // if(data){
-            //     console.log(data)
-            // }
-            setShowWelcomeMessage(true)
-        } catch (error) {
-            throw new Error('error uploading data')
-        } finally {
-            setBio('')
-            setName('')
-            setSetupUsername('')
-            setUsernameAvailable(null)
-            setImageFile(null)
-            setProfilePreview('')
-            setUploadingUserData(false)
-            setShowProfileEditor(false)
-            queryClient.invalidateQueries({ queryKey: ['userData', session?.user?.id] });
-            
+    const handleOnboardingComplete = useCallback((action) => {
+        setShowOnboarding(false);
+        queryClient.invalidateQueries({ queryKey: ['userData', session?.user?.id] });
+        if (action === 'write') {
+            handleOpenTextEditor();
+        } else if (action === 'story') {
+            navigate('/home/stories/new');
         }
-        
-    }
+        // 'explore' → just close, user lands on feed
+    }, [queryClient, session, handleOpenTextEditor, navigate]);
 
     const handleClickMobileProfileLink = () =>{
         setShowMobileSideBar(true)
     }
     const handleClickCloseSidebar = () =>{
         setShowMobileSideBar(false)
-    }
-
-    //close welcome message modal
-    const handleCloseWelcomeMessage = () =>{
-        setShowWelcomeMessage(false)
     }
 
     const handleOpenOpinionTextEditor = () =>{
@@ -331,17 +226,17 @@ const HomePage = () => {
     // }, [])
 
     useEffect(() => {
-        const getUserData = async() => {   
-            const userData = await checkUser(session?.user.id)   
+        const checkOnboarding = async() => {
+            const userData = await checkUser(session?.user.id)
             if(userData){
-                const exist = userData.exist;
-                if(!exist){
-                    setShowProfileEditor(true)
+                if(!userData.exist || !userData.onboardingCompleted){
+                    setOnboardingUserExists(userData.exist);
+                    setShowOnboarding(true);
                 }
             }
         }
         if(session && !loading){
-            getUserData();
+            checkOnboarding();
         }
 
     },[session, loading])
@@ -356,8 +251,11 @@ const HomePage = () => {
 
     return(
         <>
-        {!isGuest && showWelcomeMessage && (
-            <WelcomeMessage onClose={handleCloseWelcomeMessage}/>
+        {!isGuest && showOnboarding && (
+            <OnboardingWizard
+                onComplete={handleOnboardingComplete}
+                userExists={onboardingUserExists}
+            />
         )}
 
         <AnimatePresence>
@@ -375,97 +273,6 @@ const HomePage = () => {
             <OpinionEditor onClose={handleCloseOpiniionTextEditor}/>
         )}
 
-        </AnimatePresence>
-
-        {!isGuest && uploadingUserData && (
-            <>
-            <div className="uploading-bg">
-                <BeatLoader loading={uploadingUserData} size={20} speedMultiplier={2}/>
-            </div>
-            </>
-        )}
-
-        <AnimatePresence>
-        {!isGuest && showProfileEditor && (
-        <div className="profile-editor-bg">
-
-            <motion.div
-            className="profile-editor"
-            initial={{opacity: 0, y: 16}}
-            animate={{opacity: 1, y: 0, transition: {type: 'tween', duration: 0.4, ease: [0.16, 1, 0.3, 1]}}}
-            exit={{
-                opacity: 0,
-                y: 16,
-                transition:{type:'tween', duration: 0.2}
-            }}
-            >
-
-                <div className="edit-profile-header">
-                    <div className="edit-profile-title-container">
-                            Welcome to Iskrib
-                    </div>
-                    <p className="setup-subtitle">Set up your writing identity.</p>
-                </div>
-
-                <div className="profile-edit-container">
-                    <div className="profile-edit-backdrop-filter">
-                        <div onClick={(e) => handleClickUploadPhoto(e)} className="camera-icon-container">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M480-260q75 0 127.5-52.5T660-440q0-75-52.5-127.5T480-620q-75 0-127.5 52.5T300-440q0 75 52.5 127.5T480-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29ZM160-120q-33 0-56.5-23.5T80-200v-480q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5 23.5T880-680v480q0 33-23.5 56.5T800-120H160Zm0-80h640v-480H638l-73-80H395l-73 80H160v480Zm320-240Z"/></svg>
-                        </div>
-                        <input onChange={(e) => handleImageChange(e)} ref={imgRef} type="file" accept="image/*" style={{display: "none"}} />
-                    </div>
-                    <img className="profile-img-edit-preview" src={profilePreview || '/assets/profile.jpg'} alt="profile-photo" />
-                </div>
-
-                <div className="profile-edit-metadata-container">
-                    <div className="name-input-container">
-                        <div className="input-title-container">
-                            <span className="input-title">Name</span>
-                            <span className="input-title" style={name?.length > 19 ? {color: 'var(--color-danger)'} : {}}>
-                                {`${name?.length}/20`}
-                            </span>
-                        </div>
-
-                        <input value={name} maxLength={20} onChange={handleNameChangeForSetup} className="edit-profile-name-input" type="text" placeholder="Your name" />
-                    </div>
-                    <div className="bio-input-container">
-                        <div className="input-title-container">
-                            <span className="input-title">Bio</span>
-                            <span style={bio.length > 149 ? {color: 'var(--color-danger)'} : {}} className="input-title">
-                                {`${bio?.length}/150`}
-                            </span>
-                        </div>
-
-                        <textarea value={bio} onChange={(e) => setBio(e.target.value)} maxLength={150} className="edit-profile-bio-input" type="text" placeholder="A few words about you..." />
-                    </div>
-
-                    <div className="name-input-container">
-                        <div className="input-title-container">
-                            <span className="input-title">Username</span>
-                            <span className={`input-title ${usernameChecking ? 'username-status-checking' : usernameAvailable === true ? 'username-status-available' : usernameAvailable === false ? 'username-status-taken' : ''}`}>
-                                {usernameChecking ? 'Checking...' : usernameAvailable === true ? '\u2713 Available' : usernameAvailable === false ? '\u2717 Taken' : ''}
-                            </span>
-                        </div>
-                        <input
-                            value={setupUsername}
-                            maxLength={50}
-                            onChange={handleUsernameChange}
-                            className="edit-profile-name-input"
-                            type="text"
-                            placeholder="e.g. john-doe"
-                        />
-                    </div>
-
-                </div>
-
-                <button disabled={!bio || !name || uploadingUserData} onClick={(e) => handleSubmit(e)} className={!bio || !name || uploadingUserData ? "save-bttn-disabled" : 'save-bttn'}>
-                    {uploadingUserData ? 'Saving...' : 'Save'}
-                </button>
-
-            </motion.div>
-
-        </div>
-        )}
         </AnimatePresence>
         
         <div className="home-parent-container">
