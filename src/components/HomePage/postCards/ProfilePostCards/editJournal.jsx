@@ -5,11 +5,13 @@ import { motion } from 'framer-motion';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import ImageNode from '../../Editor/nodes/ImageNode';
+import MentionNode from '../../Editor/nodes/MentionNode';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import ToolBar from '../../Editor/Toolbar';
 import ImagePlugin from '../../Editor/nodes/Plugins/ImagePlugin';
+import MentionPlugin from '../../Editor/nodes/Plugins/MentionPlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { updateJournal } from '../../../../../API/Api';
@@ -122,7 +124,7 @@ const EditJournal = ({onClose, journalData}) => {
                     editable: true,
                     editorState: typeof journalData?.content === 'string'
                     ? journalData.content : JSON.stringify(journalData?.content),
-                    nodes: [HeadingNode, ImageNode, QuoteNode],
+                    nodes: [HeadingNode, ImageNode, QuoteNode, MentionNode],
                     onError(error){
                         throw error
                     },
@@ -150,6 +152,7 @@ const EditJournal = ({onClose, journalData}) => {
                         />
 
                         <ImagePlugin addUploadedImagePath={addUploadedImagePath}/>
+                        <MentionPlugin/>
                         <HistoryPlugin/>
                         <OnChangePlugin onChange={onChange}/>
                     </div>

@@ -1,6 +1,7 @@
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import ImageNode from "../Editor/nodes/ImageNode";
+import MentionNode from "../Editor/nodes/MentionNode";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
@@ -11,7 +12,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MoonLoader } from "react-spinners";
 import CalculateText from "../postCards/calculateReadingTime";
 import ParseContent from "../postCards/parseData";
-import { useBookMarkMutation, useFollowMutation, useLikeMutation, useAddViewsMutation, useReactionMutation } from "../../../utils/useMutation";
+import { useBookMarkMutation, useFollowMutation, useAddViewsMutation, useReactionMutation } from "../../../utils/useMutation";
 import ReactionButton from "../../Reactions/ReactionButton";
 import ReactionSummary from "../../Reactions/ReactionSummary";
 import { useAuth } from "../../../Context/useAuth";
@@ -64,12 +65,9 @@ const ContentView = () => {
 
     const timeOutRef = useRef();
     const timeOutRefBookmark = useRef();
-    const likeInFlightRef = useRef(false);
     const bookmarkInFlightRef = useRef(false);
 
     const [showCommentsContainer, setShowCommentsContainer] = useState(false);
-    const [isLiked, setIsliked] = useState(false);
-    const [likesCount, setLikesCount] = useState(0);
     const [userReaction, setUserReaction] = useState(null);
     const [reactionCount, setReactionCount] = useState(0);
     const [isBookmarked, setIsBookmarked] = useState(false);
@@ -185,7 +183,6 @@ const ContentView = () => {
     const viewContent = handleCLickContent(navigate);
 
     const mutateViews = useAddViewsMutation(session);
-    const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
     const mutationReaction = useReactionMutation(session, user?.userData?.[0]?.id);
 
     const handleReaction = (e, journalId, receiverId, reactionType) => {
@@ -204,29 +201,6 @@ const ContentView = () => {
         }
         mutationReaction.mutate({ journalId, receiverId, reactionType });
     };
-
-    const handleClickLike = async (e, journalId, receiverId, senderImageUrl, sendername, senderEmail) => {
-        e.stopPropagation();
-        if(likeInFlightRef.current){
-            return;
-        }
-        if(!session){
-            openAuthModal?.();
-            return;
-        }
-        const wasLiked = normalizeInteractionFlag(isLiked);
-        likeInFlightRef.current = true;
-        setIsliked(!wasLiked);
-        setLikesCount((prevCount) => getNextToggleCount(wasLiked, normalizeCount(prevCount)));
-        mutationLike.mutate(
-            { journalId, receiverId, senderImageUrl, sendername, senderEmail },
-            {
-                onSettled: () => {
-                    likeInFlightRef.current = false;
-                }
-            }
-        );
-    }
 
     const mutationBookmark = useBookMarkMutation(session, user?.userData?.[0]?.id);
     const handleClickBookmark = async (e, journalId) => {
@@ -290,13 +264,11 @@ const ContentView = () => {
 
     useEffect(() => {
         if (!postData) return;
-        setLikesCount(normalizeCount(postData?.likesCount));
         setBookmarkCounts(normalizeCount(postData?.bookmarksCount));
-        setIsliked(normalizeInteractionFlag(postData?.isLiked));
         setIsBookmarked(normalizeInteractionFlag(postData?.isBookmarked));
         setUserReaction(postData?.userReaction || null);
         setReactionCount(normalizeCount(postData?.reactionCount));
-    }, [postData?.likesCount, postData?.bookmarksCount, postData?.isLiked, postData?.isBookmarked, postData?.userReaction, postData?.reactionCount]);
+    }, [postData?.bookmarksCount, postData?.isBookmarked, postData?.userReaction, postData?.reactionCount]);
 
     useEffect(() => {
         const hideBackBttn = () => {
@@ -438,7 +410,7 @@ const ContentView = () => {
                                                 theme: theme,
                                                 editable: false,
                                                 editorState: postData.repostSource.content,
-                                                nodes: [HeadingNode, ImageNode, QuoteNode],
+                                                nodes: [HeadingNode, ImageNode, QuoteNode, MentionNode],
                                                 onError(error) { throw error; },
                                             }}>
                                                 <RichTextPlugin
@@ -463,7 +435,7 @@ const ContentView = () => {
                                 <div className="cv-action-btn">
                                     <ReactionButton
                                         userReaction={userReaction}
-                                        reactionCount={reactionCount || likesCount}
+                                        reactionCount={reactionCount}
                                         onReact={(reactionType) => handleReaction({ stopPropagation: () => {} }, postData?.journalId, postData?.userId, reactionType)}
                                         disabled={!session}
                                     />
@@ -553,7 +525,7 @@ const ContentView = () => {
                                 <div className="cv-action-btn">
                                     <ReactionButton
                                         userReaction={userReaction}
-                                        reactionCount={reactionCount || likesCount}
+                                        reactionCount={reactionCount}
                                         onReact={(reactionType) => handleReaction({ stopPropagation: () => {} }, postData?.journalId, postData?.userId, reactionType)}
                                         disabled={!session}
                                     />
@@ -614,7 +586,7 @@ const ContentView = () => {
                                     theme: theme,
                                     editable: false,
                                     editorState: postData?.content,
-                                    nodes: [HeadingNode, ImageNode, QuoteNode],
+                                    nodes: [HeadingNode, ImageNode, QuoteNode, MentionNode],
                                     onError(error) { throw error; },
                                 }}>
                                     <RichTextPlugin

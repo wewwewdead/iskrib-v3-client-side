@@ -4,7 +4,7 @@ import { motion, AnimatePresence,} from "framer-motion";
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import './postcards.css';
 import '../explore/userSearch.css';
-import { getJournals, getFollowingFeed, searchJournals, searchUsers } from "../../../../API/Api";
+import { getJournals, getFollowingFeed, getForYouFeed, searchJournals, searchUsers } from "../../../../API/Api";
 import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
@@ -12,7 +12,7 @@ import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 
 import { useAuth } from "../../../Context/useAuth";
-import { useAddViewsMutation, useBookMarkMutation, useLikeMutation, useReactionMutation } from "../../../utils/useMutation";
+import { useAddViewsMutation, useBookMarkMutation, useReactionMutation } from "../../../utils/useMutation";
 import ReactionButton from "../../Reactions/ReactionButton";
 import formatCounts from "../../../../helpers/fomatCounts";
 import debounce from "../../../../helpers/debounce";
@@ -90,27 +90,21 @@ const PostCards = () => {
                 <svg className="svg-like" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
                     <g id="style=fill">
                     <g id="like">
-                    <path id="Subtract" fillRule="evenodd" clipRule="evenodd" d="M15.9977 5.63891C16.2695 4.34931 15.433 3.00969 14.2102 2.59462C13.6171 2.37633 12.9892 2.4252 12.4662 2.60499C11.9449 2.78419 11.4461 3.12142 11.1369 3.58441L11.136 3.58573L7.49506 9.00272C8.05104 9.29585 8.43005 9.87954 8.43005 10.5518V21.3018H6.91003V21.3018H16.6801C18.2938 21.3018 19.2028 20.2977 19.8943 19.202C20.6524 18.0009 21.1453 16.7211 21.5116 15.5812C21.6808 15.0546 21.8252 14.5503 21.9547 14.0984L21.9863 13.9881C22.126 13.5007 22.2457 13.0904 22.366 12.7549C22.698 11.8292 22.5933 10.9072 22.067 10.2072C21.5476 9.5166 20.7005 9.15175 19.76 9.15175H15.76C15.6702 9.15175 15.6017 9.11544 15.5599 9.06803C15.5238 9.02716 15.4831 8.95058 15.502 8.81171L15.9977 5.63891Z" fill={isLiked ? 'rgb(255, 116, 116)' : "#5e5e5eff"}/>
-                    <path id="rec" d="M2.18005 10.6199C2.18005 10.03 2.62777 9.55176 3.18005 9.55176H6.68005C7.23234 9.55176 7.68005 10.03 7.68005 10.6199V21.3018H3.18005C2.62777 21.3018 2.18005 20.8235 2.18005 20.2336V10.6199Z" fill={isLiked ? 'rgb(255, 116, 116)' : "#5e5e5eff"}/>
+                    <path id="Subtract" fillRule="evenodd" clipRule="evenodd" d="M15.9977 5.63891C16.2695 4.34931 15.433 3.00969 14.2102 2.59462C13.6171 2.37633 12.9892 2.4252 12.4662 2.60499C11.9449 2.78419 11.4461 3.12142 11.1369 3.58441L11.136 3.58573L7.49506 9.00272C8.05104 9.29585 8.43005 9.87954 8.43005 10.5518V21.3018H6.91003V21.3018H16.6801C18.2938 21.3018 19.2028 20.2977 19.8943 19.202C20.6524 18.0009 21.1453 16.7211 21.5116 15.5812C21.6808 15.0546 21.8252 14.5503 21.9547 14.0984L21.9863 13.9881C22.126 13.5007 22.2457 13.0904 22.366 12.7549C22.698 11.8292 22.5933 10.9072 22.067 10.2072C21.5476 9.5166 20.7005 9.15175 19.76 9.15175H15.76C15.6702 9.15175 15.6017 9.11544 15.5599 9.06803C15.5238 9.02716 15.4831 8.95058 15.502 8.81171L15.9977 5.63891Z" fill={isLiked ? 'rgb(255, 116, 116)' : "var(--icon-default)"}/>
+                    <path id="rec" d="M2.18005 10.6199C2.18005 10.03 2.62777 9.55176 3.18005 9.55176H6.68005C7.23234 9.55176 7.68005 10.03 7.68005 10.6199V21.3018H3.18005C2.62777 21.3018 2.18005 20.8235 2.18005 20.2336V10.6199Z" fill={isLiked ? 'rgb(255, 116, 116)' : "var(--icon-default)"}/>
                     </g>
                     </g>
                 </svg>
             ),
 
-            className: 'like-button',
-            action: (e, journalId, receiverId) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleClickLike(journalId, receiverId);
-            },
-            countLike: (count) => <p style={{padding:'0', margin: '0', fontSize: '0.78rem'}}>{formatCounts(count)}</p>
+            className: 'like-button'
         },
         {
             label:
-            <svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="#5e5e5eff">
+            <svg className="svg-comment" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="var(--icon-default)">
                 <g id="style=fill">
                 <g id="comment">
-                <path id="Subtract" fillRule="evenodd" clipRule="evenodd" d="M11.9862 0.763672C6.07454 0.763672 1.23621 5.36133 1.23621 11.1034C1.23621 13.5057 2.10188 15.7237 3.55066 17.4735C5.46882 19.8566 8.48271 21.3843 11.8522 21.4238L11.8878 21.4367C11.9902 21.4735 12.1385 21.5265 12.3236 21.5916C12.6936 21.7216 13.2115 21.9001 13.8035 22.0941C14.9799 22.4797 16.4767 22.9358 17.6892 23.1894C18.303 23.3178 18.9306 23.1718 19.4096 22.8608C19.8872 22.5507 20.3019 22.0126 20.3019 21.3173C20.3019 20.9046 20.1354 20.4987 19.9732 20.1857C19.8007 19.8529 19.5794 19.5251 19.371 19.2448C19.2691 19.1076 19.1676 18.9782 19.0724 18.8609C21.3193 16.9815 22.7362 14.2061 22.7362 11.1034C22.7362 7.55126 20.8865 4.4319 18.073 2.58609C16.3321 1.4227 14.2426 0.763672 11.9862 0.763672ZM18.3637 6.03728C18.1546 5.67972 17.6953 5.55937 17.3377 5.76847C16.9801 5.97757 16.8598 6.43694 17.0689 6.7945C17.8131 8.0671 18.2362 9.53599 18.2362 11.1034C18.2362 12.6662 17.8138 14.1316 17.0693 15.4016C16.8598 15.7589 16.9797 16.2184 17.337 16.4279C17.6943 16.6374 18.1538 16.5175 18.3633 16.1602C19.2385 14.6673 19.7362 12.941 19.7362 11.1034C19.7362 9.26158 19.238 7.53236 18.3637 6.03728Z" fill="#5e5e5eff"/>
+                <path id="Subtract" fillRule="evenodd" clipRule="evenodd" d="M11.9862 0.763672C6.07454 0.763672 1.23621 5.36133 1.23621 11.1034C1.23621 13.5057 2.10188 15.7237 3.55066 17.4735C5.46882 19.8566 8.48271 21.3843 11.8522 21.4238L11.8878 21.4367C11.9902 21.4735 12.1385 21.5265 12.3236 21.5916C12.6936 21.7216 13.2115 21.9001 13.8035 22.0941C14.9799 22.4797 16.4767 22.9358 17.6892 23.1894C18.303 23.3178 18.9306 23.1718 19.4096 22.8608C19.8872 22.5507 20.3019 22.0126 20.3019 21.3173C20.3019 20.9046 20.1354 20.4987 19.9732 20.1857C19.8007 19.8529 19.5794 19.5251 19.371 19.2448C19.2691 19.1076 19.1676 18.9782 19.0724 18.8609C21.3193 16.9815 22.7362 14.2061 22.7362 11.1034C22.7362 7.55126 20.8865 4.4319 18.073 2.58609C16.3321 1.4227 14.2426 0.763672 11.9862 0.763672ZM18.3637 6.03728C18.1546 5.67972 17.6953 5.55937 17.3377 5.76847C16.9801 5.97757 16.8598 6.43694 17.0689 6.7945C17.8131 8.0671 18.2362 9.53599 18.2362 11.1034C18.2362 12.6662 17.8138 14.1316 17.0693 15.4016C16.8598 15.7589 16.9797 16.2184 17.337 16.4279C17.6943 16.6374 18.1538 16.5175 18.3633 16.1602C19.2385 14.6673 19.7362 12.941 19.7362 11.1034C19.7362 9.26158 19.238 7.53236 18.3637 6.03728Z" fill="var(--icon-default)"/>
                 </g>
                 </g>
             </svg>,
@@ -123,7 +117,7 @@ const PostCards = () => {
             <svg className="svg-bookmark" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="none">
                 <g id="style=fill">
                     <g id="bookmark">
-                    <path id="Subtract" fillRule="evenodd" clipRule="evenodd" d="M8 1.25C5.37665 1.25 3.25 3.37665 3.25 6V20.4648C3.25 21.7269 4.27311 22.75 5.53518 22.75C5.98634 22.75 6.42739 22.6165 6.80278 22.3662L11.3066 19.3636C11.7265 19.0837 12.2735 19.0837 12.6934 19.3636L17.1972 22.3662C17.5726 22.6165 18.0137 22.75 18.4648 22.75C19.7269 22.75 20.75 21.7269 20.75 20.4648V6C20.75 3.37665 18.6234 1.25 16 1.25H8ZM9 6.75C8.58579 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 8.58579 8.25 9 8.25H15C15.4142 8.25 15.75 7.91421 15.75 7.5C15.75 7.08579 15.4142 6.75 15 6.75H9Z" fill={isBookmarked ? "rgb(72, 208, 135)" : "#5e5e5eff"}/>
+                    <path id="Subtract" fillRule="evenodd" clipRule="evenodd" d="M8 1.25C5.37665 1.25 3.25 3.37665 3.25 6V20.4648C3.25 21.7269 4.27311 22.75 5.53518 22.75C5.98634 22.75 6.42739 22.6165 6.80278 22.3662L11.3066 19.3636C11.7265 19.0837 12.2735 19.0837 12.6934 19.3636L17.1972 22.3662C17.5726 22.6165 18.0137 22.75 18.4648 22.75C19.7269 22.75 20.75 21.7269 20.75 20.4648V6C20.75 3.37665 18.6234 1.25 16 1.25H8ZM9 6.75C8.58579 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 8.58579 8.25 9 8.25H15C15.4142 8.25 15.75 7.91421 15.75 7.5C15.75 7.08579 15.4142 6.75 15 6.75H9Z" fill={isBookmarked ? "rgb(72, 208, 135)" : "var(--icon-default)"}/>
                     </g>
                 </g>
             </svg>),
@@ -138,7 +132,7 @@ const PostCards = () => {
         {
             repostAction: true,
             repostIcon:
-                <svg className="svg-repost" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="#5e5e5eff">
+                <svg className="svg-repost" xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24" fill="var(--icon-default)">
                     <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
                 </svg>,
             className: 'repost-button',
@@ -156,6 +150,9 @@ const PostCards = () => {
 
     const userId = user?.userData?.[0]?.id || null;
     const isFollowingFeed = location.pathname === '/home/following';
+    const isForYouFeed = location.pathname === '/home/for-you';
+    const userWritingInterests = user?.userData?.[0]?.writing_interests;
+    const hasInterests = Array.isArray(userWritingInterests) && userWritingInterests.length > 0;
     const isSearchMode = committedSearchQuery.length >= 2;
     const isPostSearchMode = isSearchMode && searchType === 'posts';
     const isPeopleSearchMode = isSearchMode && searchType === 'people';
@@ -210,6 +207,27 @@ const PostCards = () => {
     })
 
     const {
+        data: forYouData,
+        fetchNextPage: fetchNextForYouPage,
+        hasNextPage: hasNextForYouPage,
+        isFetchingNextPage: isFetchingNextForYouPage,
+        isLoading: isForYouLoading,
+    } = useInfiniteQuery({
+        queryKey: ['journals-for-you', session?.access_token],
+        queryFn: ({ pageParam = 0 }) => getForYouFeed(session?.access_token, pageParam, 5),
+        getNextPageParam: (lastPage, allPages) => {
+            if (lastPage?.hasMore) {
+                const totalLoaded = allPages.reduce((sum, page) => sum + (page?.data?.length || 0), 0);
+                return totalLoaded;
+            }
+            return undefined;
+        },
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5,
+        enabled: isForYouFeed && !!session?.access_token,
+    })
+
+    const {
         data: searchData,
         isLoading: isSearchLoading,
         isFetching: isSearchFetching,
@@ -257,14 +275,7 @@ const PostCards = () => {
         staleTime: 1000 * 60 * 2,
     });
 
-    const mutationLike = useLikeMutation(session, user?.userData?.[0]?.id);
     const mutationReaction = useReactionMutation(session, user?.userData?.[0]?.id);
-
-    const handleClickLike = async (journalId, receiverId) => {
-        if(!session) return openAuthModal();
-        // console.log(journalId)
-        mutationLike.mutate({journalId, receiverId}) //passing this into mutationFn {journalId: the id}
-    }
 
     const handleReaction = (journalId, receiverId, reactionType) => {
         if(!session) return openAuthModal();
@@ -365,11 +376,11 @@ const PostCards = () => {
         return () => window.removeEventListener('mousedown', handleOutsideSearchClick);
     }, []);
 
-    const activeFeedData = isFollowingFeed ? followingData : data;
-    const activeFetchNextPage = isFollowingFeed ? fetchNextFollowingPage : fetchNextPage;
-    const activeHasNextPage = isFollowingFeed ? hasNextFollowingPage : hasNextPage;
-    const activeIsFetchingNextPage = isFollowingFeed ? isFetchingNextFollowingPage : isFetchingNextPage;
-    const activeIsLoading = isFollowingFeed ? isFollowingLoading : isFeedLoading;
+    const activeFeedData = isForYouFeed ? forYouData : isFollowingFeed ? followingData : data;
+    const activeFetchNextPage = isForYouFeed ? fetchNextForYouPage : isFollowingFeed ? fetchNextFollowingPage : fetchNextPage;
+    const activeHasNextPage = isForYouFeed ? hasNextForYouPage : isFollowingFeed ? hasNextFollowingPage : hasNextPage;
+    const activeIsFetchingNextPage = isForYouFeed ? isFetchingNextForYouPage : isFollowingFeed ? isFetchingNextFollowingPage : isFetchingNextPage;
+    const activeIsLoading = isForYouFeed ? isForYouLoading : isFollowingFeed ? isFollowingLoading : isFeedLoading;
 
     useEffect(() =>{
         if(!isSearchMode && inView && activeHasNextPage && !activeIsFetchingNextPage) {
@@ -546,6 +557,14 @@ const PostCards = () => {
                 </svg>
                 Following
             </button>
+            {hasInterests && (
+                <button type="button" className={`search-nav-btn search-nav-for-you${isForYouFeed ? ' search-nav-active' : ''}`} onClick={() => navigate('/home/for-you')}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                    </svg>
+                    For You
+                </button>
+            )}
             <button type="button" className="search-nav-btn search-nav-stories" onClick={() => navigate('/home/stories')}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
@@ -651,7 +670,14 @@ const PostCards = () => {
                 </div>
             )}
 
-            {journals.length === 0 && !isLoading && !isFollowingFeed && (
+            {isForYouFeed && !activeIsLoading && journals.length === 0 && !isSearchMode && (
+                <div className="following-empty-state" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
+                    <p>No recommendations yet</p>
+                    <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>We're still learning your taste — check back soon as more posts are published</p>
+                </div>
+            )}
+
+            {journals.length === 0 && !isLoading && !isFollowingFeed && !isForYouFeed && (
                 <div className="search-empty-state">
                     {activeSearchError ? 'Search failed. Please try again.'
                      : isSearchMode ? 'No matching posts found.'

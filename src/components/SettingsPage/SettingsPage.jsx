@@ -1,11 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../Context/useAuth.js';
+import { useQueryClient } from '@tanstack/react-query';
 import supabase from '../../utils/supabaseClient.js';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { updateInterests } from '../../../API/Api.js';
 import './SettingsPage.css';
 
+const TOPICS = [
+    'Poetry', 'Fiction', 'Journals', 'Essays',
+    'Philosophy', 'Self-Reflection', 'Creative Nonfiction', 'Short Stories',
+    'Science', 'Nature', 'Music', 'Art',
+    'Travel', 'Technology', 'Mental Health', 'Spirituality',
+];
+
+const GOALS = [
+    { id: 'journal', label: 'Keep a journal', icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-.75L9 9V4zm9 16H6V4h1v9l3-2.25L13 13V4h5v16z"/></svg>
+    )},
+    { id: 'publish', label: 'Publish & share', icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+    )},
+    { id: 'stories', label: 'Write long stories', icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg>
+    )},
+    { id: 'explore', label: 'Just explore', icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z"/></svg>
+    )},
+];
+
 const SettingsPage = () => {
-    const { session } = useAuth();
+    const { session, user } = useAuth();
+    const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const isRecovery = searchParams.get('recovery') === 'true';
@@ -25,6 +50,51 @@ const SettingsPage = () => {
     const [emailLoading, setEmailLoading] = useState(false);
     const [emailError, setEmailError] = useState('');
     const [emailSuccess, setEmailSuccess] = useState('');
+
+    // Interests state
+    const userData = user?.userData?.[0];
+    const [interests, setInterests] = useState([]);
+    const [goal, setGoal] = useState('');
+    const [interestsLoading, setInterestsLoading] = useState(false);
+    const [interestsError, setInterestsError] = useState('');
+    const [interestsSuccess, setInterestsSuccess] = useState('');
+
+    useEffect(() => {
+        if(userData){
+            setInterests(Array.isArray(userData.writing_interests) ? userData.writing_interests : []);
+            setGoal(userData.writing_goal || '');
+        }
+    }, [userData]);
+
+    const toggleTopic = (topic) => {
+        setInterests((prev) =>
+            prev.includes(topic)
+                ? prev.filter((t) => t !== topic)
+                : [...prev, topic]
+        );
+        setInterestsSuccess('');
+    };
+
+    const handleSaveInterests = async (e) => {
+        e.preventDefault();
+        setInterestsError('');
+        setInterestsSuccess('');
+        setInterestsLoading(true);
+
+        try {
+            await updateInterests(session?.access_token, {
+                writingInterests: interests,
+                writingGoal: goal || undefined,
+            });
+            setInterestsSuccess('Writing preferences updated.');
+            queryClient.invalidateQueries({ queryKey: ['userData', session?.user?.id] });
+            queryClient.removeQueries({ queryKey: ['journals-for-you'] });
+        } catch (err) {
+            setInterestsError(err?.message || 'Something went wrong. Please try again.');
+        } finally {
+            setInterestsLoading(false);
+        }
+    };
 
     const handleChangePassword = async (e) => {
         e.preventDefault();
@@ -238,6 +308,63 @@ const SettingsPage = () => {
                 )}
                 {emailSuccess && (
                     <div className="form-message success" role="status">{emailSuccess}</div>
+                )}
+            </section>
+
+            {/* Writing Preferences Section */}
+            <section className="settings-section">
+                <h2 className="settings-section-title">Writing Preferences</h2>
+                <p className="settings-current-value">
+                    Choose topics you enjoy and your main writing goal. This personalizes your For You feed and Explore sections.
+                </p>
+
+                <div className="settings-field">
+                    <label>Topics</label>
+                    <div className="settings-interests-grid">
+                        {TOPICS.map((topic) => (
+                            <button
+                                key={topic}
+                                type="button"
+                                className={`settings-interest-chip ${interests.includes(topic) ? 'selected' : ''}`}
+                                onClick={() => toggleTopic(topic)}
+                            >
+                                {topic}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="settings-field">
+                    <label>Writing Goal</label>
+                    <div className="settings-goal-grid">
+                        {GOALS.map((g) => (
+                            <button
+                                key={g.id}
+                                type="button"
+                                className={`settings-goal-card ${goal === g.id ? 'selected' : ''}`}
+                                onClick={() => { setGoal(g.id); setInterestsSuccess(''); }}
+                            >
+                                <span className="settings-goal-icon">{g.icon}</span>
+                                <span className="settings-goal-label">{g.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <button
+                    className="primary-button"
+                    onClick={handleSaveInterests}
+                    disabled={interestsLoading}
+                >
+                    <span className="button-label">Save Preferences</span>
+                    {interestsLoading && <span className="button-spinner" aria-hidden="true" />}
+                </button>
+
+                {interestsError && (
+                    <div className="form-message error" role="alert">{interestsError}</div>
+                )}
+                {interestsSuccess && (
+                    <div className="form-message success" role="status">{interestsSuccess}</div>
                 )}
             </section>
         </div>

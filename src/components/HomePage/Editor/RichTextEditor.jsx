@@ -6,6 +6,7 @@ import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import ImagePlugin from "./nodes/Plugins/ImagePlugin";
+import MentionPlugin from "./nodes/Plugins/MentionPlugin";
 
 
 import ToolBar from "./Toolbar";
@@ -129,6 +130,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
             />
 
             <ImagePlugin addUploadedImagePath={addUploadImagesPath}/>
+            <MentionPlugin/>
             <HistoryPlugin/>
             <OnChangePlugin onChange={onchange}/>
 

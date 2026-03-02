@@ -26,7 +26,6 @@ export const handleCLickContent = (navigate) => {
         bookmarksCount,
         badge,
         postType = null,
-        canvasDoc = null,
         userReaction = null,
         reactionCount = 0
     ) => {
@@ -55,7 +54,6 @@ export const handleCLickContent = (navigate) => {
             bookmarksCount: bookmarksCount,
             badge: badge,
             postType: postType,
-            canvasDoc: canvasDoc,
             userReaction: userReaction,
             reactionCount: reactionCount
         }

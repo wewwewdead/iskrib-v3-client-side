@@ -5,6 +5,7 @@ import { useAuth } from './Context/useAuth.js';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
+import MentionNode from './components/HomePage/Editor/nodes/MentionNode.jsx';
 import Loader from './components/loadingComponent/BgLoader.jsx';
 import SeoManager from './seo/SeoManager.jsx';
 
@@ -72,7 +73,7 @@ const App = () => {
   namespace: "MyLexicalEditor",
   theme,
   //register nodes
-  nodes: [ImageNode, HeadingNode, QuoteNode],
+  nodes: [ImageNode, HeadingNode, QuoteNode, MentionNode],
   onError(error){
   throw error;
   },
@@ -113,6 +114,7 @@ const App = () => {
             <Route path='/home' element={<HomePage/>}>
               <Route index element={<PostCards/>}/>
               <Route path='following' element={<PostCards/>}/>
+              <Route path='for-you' element={<PostCards/>}/>
               <Route path='explore' element={<ExplorePage/>}/>
               <Route path='contentViewer' element={<ContentView/>}/>
               <Route path='post/:journalId' element={<ContentView/>}/>

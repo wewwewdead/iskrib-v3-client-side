@@ -239,6 +239,40 @@ export const getFollowingFeed = async(token, cursor = null, limit = 5) => {
     return await response.json();
 }
 
+export const getForYouFeed = async(token, offset = 0, limit = 5) => {
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const url = `${BASE_URL}/journals/for-you?limit=${limit}&offset=${offset}`;
+
+    const response = await apiRequest(url, {
+        method: 'GET',
+        headers: headers
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch for-you feed');
+    }
+
+    return await response.json();
+}
+
+export const getInterestSections = async(token) => {
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/explore/interests`, {
+        method: 'GET',
+        headers: headers
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch interest sections');
+    }
+
+    return await response.json();
+}
+
 export const getJournals = async(cursor = null, limit = 5, userId) =>{
     // console.log(userId)
     try {
@@ -303,6 +337,25 @@ export const searchUsers = async(query, limit = 10) => {
     if(!response.ok){
         const error = await response.json().catch(() => ({}));
         throw new Error(error?.error || 'failed to search users');
+    }
+
+    return await response.json();
+}
+
+export const searchFollowingUsers = async(token, query = '', limit = 10) => {
+    const params = new URLSearchParams({limit: String(limit)});
+    if(query) params.set('query', query);
+
+    const url = `${BASE_URL}/users/following/search?${params.toString()}`;
+
+    const response = await apiRequest(url, {
+        method: 'GET',
+        headers: {Authorization: `Bearer ${token}`}
+    });
+
+    if(!response.ok){
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to search following users');
     }
 
     return await response.json();
@@ -1036,6 +1089,25 @@ export const getPostReactions = async (journalId) => {
 }
 
 // ─── Weekly Recap ───
+// ─── Interests ───
+export const updateInterests = async (token, { writingInterests, writingGoal }) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await apiRequest(`${BASE_URL}/update-interests`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ writingInterests, writingGoal }),
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to update interests');
+    }
+
+    return await response.json();
+}
+
 // ─── Onboarding ───
 export const completeOnboarding = async (token, { writingInterests, writingGoal }) => {
     const headers = { 'Content-Type': 'application/json' };

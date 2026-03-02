@@ -3,7 +3,7 @@ import { MoonLoader } from "react-spinners";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { getMonthlyHottestJournals, searchJournals, searchUsers } from "../../../../API/Api";
+import { getMonthlyHottestJournals, getInterestSections, searchJournals, searchUsers } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
 import { handleClickProfile } from "../../../../helpers/handleClicks";
 import ParseContent from "../postCards/parseData";
@@ -13,6 +13,7 @@ import VerifiedBadge from "../../Badge/VerifiedBadge";
 import { handleImageFallback } from "../../../utils/handleImageFallback";
 import { useAddViewsMutation } from "../../../utils/useMutation";
 import UserSearchResults from "./UserSearchResults";
+import InterestSections from "./InterestSections";
 import "../postCards/postcards.css";
 import "./explore.css";
 import "./userSearch.css";
@@ -214,6 +215,14 @@ const ExplorePage = () => {
         queryFn: () => getMonthlyHottestJournals(userId, 10),
         refetchOnWindowFocus: false,
         staleTime: 1000 * 60 * 5,
+    });
+
+    const { data: interestData } = useQuery({
+        queryKey: ["explore-interest-sections", session?.access_token],
+        queryFn: () => getInterestSections(session?.access_token),
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 10,
+        enabled: !!session?.access_token && !isSearchMode,
     });
 
     const {
@@ -490,6 +499,13 @@ const ExplorePage = () => {
                     </div>
                 );
             })()}
+
+            {!isSearchMode && interestData?.sections?.length > 0 && (
+                <InterestSections
+                    sections={interestData.sections}
+                    onPostClick={handleClickPost}
+                />
+            )}
 
             {runnerJournals.length > 0 && (
                 <div className={`explore-runners-section ${isSearchMode ? "explore-runners-section--search" : ""}`}>

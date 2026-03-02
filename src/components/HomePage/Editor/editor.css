@@ -1,3 +1,83 @@
+/* ── Mention node ── */
+.mention-node {
+    display: inline;
+}
+.mention-chip {
+    color: var(--accent-purple);
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 1px 2px;
+    transition: background-color 0.15s ease;
+}
+.mention-chip:hover {
+    background-color: rgba(139, 92, 246, 0.1);
+    text-decoration: underline;
+}
+.mention-chip--editing {
+    cursor: default;
+    background-color: rgba(139, 92, 246, 0.08);
+}
+.mention-chip--editing:hover {
+    text-decoration: none;
+}
+
+/* ── Mention autocomplete dropdown ── */
+.mention-dropdown {
+    position: fixed;
+    z-index: 200;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    max-height: 280px;
+    overflow-y: auto;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 4px;
+    backdrop-filter: blur(12px);
+}
+.mention-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+.mention-dropdown-item:hover,
+.mention-dropdown-item--selected {
+    background-color: var(--bg-secondary, rgba(139, 92, 246, 0.08));
+}
+.mention-dropdown-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.mention-dropdown-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.mention-dropdown-name {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mention-dropdown-username {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* ── Editor text formats ── */
 .editor-text-bold {
     font-weight: bold;
