@@ -27,7 +27,7 @@ const DEFAULT_ACTIVE_STATES = {
     highlightColor: '',
 };
 
-const ToolBar = ({addUploadedImagePath, onSwitchToCanvas}) =>{
+const ToolBar = ({addUploadedImagePath}) =>{
     const [editor] = useLexicalComposerContext();
     const {session} = useAuth();
     const colorPickerRef = useRef(null);
@@ -324,11 +324,6 @@ const ToolBar = ({addUploadedImagePath, onSwitchToCanvas}) =>{
                 <div onMouseDown={(e) => e.preventDefault()} onClick={() => insertImageFromFile()} className="toolbar-bttns" title="Insert image">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
                 </div>
-                {typeof onSwitchToCanvas === 'function' && (
-                    <div onMouseDown={(e) => e.preventDefault()} onClick={onSwitchToCanvas} className="toolbar-bttns" title="Switch to Canvas">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q63 0 121.5 18.5T709-807q-17 19-26 44t-9 52q0 53 37.5 90.5T802-583q27 0 52-9t44-26q36 49 54 107.5T970-480q0 83-31.5 156T853-197q-54 54-127 85.5T570-80H480Zm-12-196q30 0 51-21t21-51q0-30-21-51t-51-21q-30 0-51 21t-21 51q0 30 21 51t51 21Zm-153-84q24 0 42-18t18-42q0-24-18-42t-42-18q-24 0-42 18t-18 42q0 24 18 42t42 18Zm6-189q17 0 28.5-11.5T361-589q0-17-11.5-28.5T321-629q-17 0-28.5 11.5T281-589q0 17 11.5 28.5T321-549Zm183-66q36 0 60-24t24-60q0-36-24-60t-60-24q-36 0-60 24t-24 60q0 36 24 60t60 24Z"/></svg>
-                    </div>
-                )}
             </div>
 
             <div className="toolbar-divider" />

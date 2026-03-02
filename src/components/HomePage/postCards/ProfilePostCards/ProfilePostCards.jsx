@@ -16,8 +16,6 @@ import EditJournal from './editJournal';
 import { useAddViewsMutation, useUpdateJournalPrivacyMutation } from '../../../../utils/useMutation';
 import VerifiedBadge from '../../../Badge/VerifiedBadge';
 import { handleImageFallback } from '../../../../utils/handleImageFallback';
-import { getCanvasPreview } from '../../../../utils/canvasDoc';
-import CanvasPreview from '../CanvasPreview/CanvasPreview';
 
 const ProfilePostCards = () =>{
     const queryClient = useQueryClient();
@@ -112,12 +110,12 @@ const ProfilePostCards = () =>{
     
     const clickContent = handleCLickContent(navigate);
     const mutateViews = useAddViewsMutation(session);
-    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType = null, canvasDoc = null, userReaction = null, reactionCount = 0) => {
+    const viewContent = (e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType = null, userReaction = null, reactionCount = 0) => {
         const formadata = new FormData();
 
         formadata.append('journalId', journalId);
         mutateViews.mutate(formadata);
-        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType, canvasDoc, userReaction, reactionCount)
+        clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType, userReaction, reactionCount)
     }
 
     const mutatePrivacy = useUpdateJournalPrivacyMutation(session);
@@ -333,20 +331,18 @@ const ProfilePostCards = () =>{
             {viewMode === 'grid' ? (
                 <div className="postcards-grid-view">
                     {journals.map((journal) => {
-                        const isCanvasPost = journal?.post_type === 'canvas';
                         const parsedContent = ParseContent(journal?.content);
-                        const canvasPreview = isCanvasPost ? getCanvasPreview(journal?.canvas_doc) : null;
-                        const wholeText = isCanvasPost ? canvasPreview?.wholeText || '' : parsedContent?.wholeText || '';
-                        const previewText = isCanvasPost ? canvasPreview?.slicedText || '' : parsedContent?.slicedText || '';
-                        const thumbnail = isCanvasPost ? null : parsedContent?.firstImage?.src;
+                        const wholeText = parsedContent?.wholeText || '';
+                        const previewText = parsedContent?.slicedText || '';
+                        const thumbnail = parsedContent?.firstImage?.src;
                         return (
                             <motion.div
                                 key={journal.id}
-                                className={`postcards-grid-item${isCanvasPost ? ' is-canvas-card' : ''}`}
+                                className="postcards-grid-item"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.25, ease: 'easeOut' }}
-                                onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
+                                onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                             >
                                 {showConfirmationBttn === journal.id && (
                                     <AnimatePresence>
@@ -388,11 +384,7 @@ const ProfilePostCards = () =>{
                                     </AnimatePresence>
                                 )}
 
-                                {isCanvasPost ? (
-                                    <div className="postcards-grid-img-wrap">
-                                        <CanvasPreview canvasDoc={journal?.canvas_doc} />
-                                    </div>
-                                ) : thumbnail ? (
+                                {thumbnail ? (
                                     <div className="postcards-grid-img-wrap">
                                         <img className="postcards-grid-thumb" src={thumbnail} alt={journal?.title ? `${journal.title} cover image` : "Post cover image"} loading="lazy" onError={handleImageFallback} />
                                     </div>
@@ -435,7 +427,7 @@ const ProfilePostCards = () =>{
                                                             {setting.label}
                                                         </div>
                                                     )}
-                                                    {setting.actionEdit && journal?.post_type !== 'canvas' && !journal?.is_repost && (
+                                                    {setting.actionEdit && !journal?.is_repost && (
                                                         <div className={setting.className} onClick={(e) => setting.actionEdit(e, journal.content, journal.id, journal.title)}>
                                                             {setting.icon}
                                                             {setting.label}
@@ -471,12 +463,10 @@ const ProfilePostCards = () =>{
             ) : (
             <div className="postcards-list-view">
             {journals.map((journal, index) => {
-                const isCanvasPost = journal?.post_type === 'canvas';
                 const parsedContent =  ParseContent(journal?.content);
-                const canvasPreview = isCanvasPost ? getCanvasPreview(journal?.canvas_doc) : null;
-                const wholeText = isCanvasPost ? canvasPreview?.wholeText || '' : parsedContent?.wholeText || '';
-                const previewText = isCanvasPost ? canvasPreview?.slicedText || '' : parsedContent?.slicedText || '';
-                const thumbnail = isCanvasPost ? null : parsedContent?.firstImage?.src;
+                const wholeText = parsedContent?.wholeText || '';
+                const previewText = parsedContent?.slicedText || '';
+                const thumbnail = parsedContent?.firstImage?.src;
                 return (
                     <motion.div
                         key={journal.id}
@@ -486,11 +476,7 @@ const ProfilePostCards = () =>{
                         transition={{duration: 0.3, ease: 'easeOut'}}
                     >
 
-                        <div className={`profile-postcards${isCanvasPost ? ' is-canvas-card' : ''}`}>
-
-                            {isCanvasPost && (
-                                <CanvasPreview canvasDoc={journal?.canvas_doc} />
-                            )}
+                        <div className="profile-postcards">
 
                             {showConfirmationBttn === journal.id && (
                                 <AnimatePresence>
@@ -541,7 +527,7 @@ const ProfilePostCards = () =>{
                                     alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                     loading="lazy"
                                     onError={handleImageFallback}
-                                    onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.canvas_doc, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
+                                    onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                                 />
                             )}
 
@@ -563,7 +549,6 @@ const ProfilePostCards = () =>{
                                     journal.bookmark_count?.[0].count,
                                     journal.users.badge,
                                     journal?.post_type,
-                                    journal?.canvas_doc,
                                     journal?.user_reaction,
                                     journal?.reaction_count?.[0]?.count || 0
                                 )}
@@ -629,7 +614,7 @@ const ProfilePostCards = () =>{
                                                     </div>
                                                 )}
 
-                                                {setting.actionEdit && journal?.post_type !== 'canvas' && !journal?.is_repost &&(
+                                                {setting.actionEdit && !journal?.is_repost &&(
                                                     <div className={setting.className} onClick={(e) => setting.actionEdit(e, journal.content, journal.id, journal.title)}>
                                                         {setting.icon}
                                                         {setting.label}

@@ -47,15 +47,6 @@
     box-shadow: var(--shadow-modal);
 }
 
-.editor-container.is-canvas-mode{
-    max-width: 1100px;
-    height: 92%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-}
-
 .editor-mode-shell {
     position: relative;
     display: flex;
@@ -63,13 +54,6 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
-}
-
-.editor-mode-shell.is-canvas-mode {
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
 }
 
 /* ── Close button row ── */
@@ -397,13 +381,6 @@
 }
 .editor-save-bttn-disabled:focus {
     outline: none;
-}
-
-.composer-mode-btn{
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-weight: 600;
 }
 
 /* ── Image upload icon (inside toolbar) ── */

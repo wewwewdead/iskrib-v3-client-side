@@ -274,11 +274,6 @@
     border-radius: 4px;
 }
 
-.cv-canvas-actions{
-    margin: 12px 0 14px;
-    display: flex;
-    justify-content: flex-start;
-}
 
 .cv-remix-btn{
     border: 1px solid color-mix(in srgb, var(--accent-purple) 42%, var(--border-card));
@@ -506,9 +501,7 @@
         line-height: 1.7;
         margin-bottom: 60px;
     }
-    .cv-canvas-actions{
-        margin: 10px 0 12px;
-    }
+
     .cv-toast {
         bottom: 160px;
         left: 90px;

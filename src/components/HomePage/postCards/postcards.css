@@ -155,25 +155,7 @@
     padding: 0.35rem 0.6rem;
     white-space: nowrap;
 }
-.search-gallery-hint{
-    margin: 0 0.75rem 0.45rem 0.75rem;
-    width: fit-content;
-    border: 1.5px solid var(--border-card);
-    background: var(--bg-secondary);
-    color: var(--accent-sage);
-    border-radius: 8px;
-    font-family: var(--font-ui);
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.01rem;
-    padding: 0.34rem 0.62rem;
-    cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease;
-}
-.search-gallery-hint:hover{
-    background: var(--bg-hover);
-    border-color: var(--accent-sage);
-}
+
 .search-empty-state{
     display: flex;
     justify-content: center;
@@ -186,10 +168,7 @@
     color: var(--text-faint);
     letter-spacing: 0.01rem;
 }
-.search-empty-state.is-canvas-only{
-    flex-wrap: wrap;
-    gap: 0.28rem;
-}
+
 .search-empty-link{
     border: none;
     background: transparent;
@@ -561,11 +540,7 @@
     justify-content: center;
     align-items: center;
 }
-.cards.is-canvas-card .feed-title-content{
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 0.45rem;
-}
+
 .feed-title{
     margin: 0;
     padding: 0;
@@ -587,35 +562,6 @@
     letter-spacing: 0.005rem;
 }
 
-.canvas-card-actions{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.42rem;
-    width: 100%;
-    margin-top: -0.1rem;
-}
-
-.canvas-card-action-btn{
-    border: 1px solid var(--border-card);
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    border-radius: 999px;
-    padding: 0.3rem 0.65rem;
-    font-size: 0.68rem;
-    font-weight: 620;
-    cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-}
-
-.canvas-card-action-btn:hover{
-    border-color: var(--accent-sage);
-    color: var(--accent-sage);
-}
-
-.canvas-card-action-btn.is-remix{
-    border-color: color-mix(in srgb, var(--accent-purple) 42%, var(--border-card));
-    color: var(--accent-purple);
-}
 
 /* ── Icon bar ── */
 .card-icons-container{
@@ -907,12 +853,7 @@
         padding: 0.28rem 0.44rem;
         border-radius: 6px;
     }
-    .search-gallery-hint{
-        margin: 0 0.5rem 0.42rem 0.5rem;
-        font-size: 0.6rem;
-        padding: 0.3rem 0.5rem;
-        border-radius: 6px;
-    }
+
     .search-suggestions-dropdown{
         left: 0.5rem;
         right: 0.5rem;
@@ -1016,13 +957,6 @@
         font-size: 0.78rem;
         color: var(--text-body);
         line-height: 1.5;
-    }
-    .canvas-card-actions{
-        gap: 0.34rem;
-    }
-    .canvas-card-action-btn{
-        font-size: 0.64rem;
-        padding: 0.26rem 0.55rem;
     }
 
     /* Footer: two explicit rows — author top, actions bottom */

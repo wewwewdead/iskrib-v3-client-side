@@ -16,14 +16,14 @@ import ReactionButton from "../../Reactions/ReactionButton";
 import ReactionSummary from "../../Reactions/ReactionSummary";
 import { useAuth } from "../../../Context/useAuth";
 import CommentSection from "../../comments/comments";
-import CanvasViewer from "../Canvas/CanvasViewer";
+
 import debounce from "../../../../helpers/debounce";
 import formatCounts from "../../../../helpers/fomatCounts";
 import { handleClickProfile, handleCLickContent } from "../../../../helpers/handleClicks";
 import { getFollowsData, getJournalById } from "../../../../API/Api";
 import { useQuery } from "@tanstack/react-query";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
-import { getCanvasWholeText, parseCanvasDoc } from "../../../utils/canvasDoc";
+
 import RepostModal from "../../RepostModal/RepostModal";
 import ShareMenu from "../../ShareMenu/ShareMenu";
 import getShareUrl from "../../../utils/getShareUrl";
@@ -114,15 +114,11 @@ const ContentView = () => {
         if(journal){
             const postType = journal?.post_type || 'text';
             const parsedContent = ParseContent(journal?.content);
-            const canvasDoc = postType === 'canvas' ? parseCanvasDoc(journal?.canvas_doc) : null;
-            const wholeText = postType === 'canvas'
-                ? getCanvasWholeText(canvasDoc)
-                : (parsedContent?.wholeText || '');
+            const wholeText = parsedContent?.wholeText || '';
 
             return {
                 postType: postType,
                 content: journal?.content,
-                canvasDoc: canvasDoc,
                 wholeText: wholeText,
                 title: journal?.title,
                 userId: journal?.users?.id || journal?.user_id,
@@ -148,17 +144,13 @@ const ContentView = () => {
             return null;
         }
 
-        const inferredPostType = statePostData?.postType || (statePostData?.canvasDoc ? 'canvas' : 'text');
+        const inferredPostType = statePostData?.postType || 'text';
         const parsedContent = ParseContent(statePostData?.content);
-        const canvasDoc = inferredPostType === 'canvas' ? parseCanvasDoc(statePostData?.canvasDoc) : null;
 
         return {
             postType: inferredPostType,
             content: statePostData?.content,
-            canvasDoc: canvasDoc,
-            wholeText: inferredPostType === 'canvas'
-                ? (statePostData?.wholeText || getCanvasWholeText(canvasDoc))
-                : (statePostData?.wholeText || parsedContent?.wholeText || ''),
+            wholeText: statePostData?.wholeText || parsedContent?.wholeText || '',
             title: statePostData?.title,
             userId: statePostData?.userId,
             name: statePostData?.name,
@@ -290,31 +282,6 @@ const ContentView = () => {
         e.stopPropagation();
         if(!session) return openAuthModal();
         setShowCommentsContainer(true);
-    }
-
-    const handleRemixCanvas = (e) => {
-        e.stopPropagation();
-        if(!session){
-            return;
-        }
-
-        const sourceTitle = typeof postData?.title === 'string' ? postData.title.trim() : '';
-        const remixTitle = sourceTitle.toLowerCase().startsWith('remix:')
-            ? sourceTitle
-            : `Remix: ${sourceTitle || 'Canvas'}`;
-
-        navigate('/home', {
-            state: {
-                openEditor: true,
-                editorMode: 'canvas',
-                initialTitle: remixTitle,
-                initialCanvasDoc: postData?.canvasDoc || null,
-                remixSource: {
-                    journalId: postData?.journalId,
-                    authorName: postData?.name || 'Unknown'
-                }
-            }
-        });
     }
 
     const handleCLoseComments = () => {
@@ -465,9 +432,7 @@ const ContentView = () => {
                                     </div>
                                     <h2 className="cv-repost-embedded-title">{postData.repostSource.title}</h2>
                                     <div className="cv-repost-embedded-content">
-                                        {postData.repostSource.post_type === 'canvas' ? (
-                                            <CanvasViewer canvasDoc={parseCanvasDoc(postData.repostSource.canvas_doc)} />
-                                        ) : postData.repostSource.content ? (
+                                        {postData.repostSource.content ? (
                                             <LexicalComposer initialConfig={{
                                                 namespace: "RepostSourceViewer",
                                                 theme: theme,
@@ -643,38 +608,20 @@ const ContentView = () => {
                                 </div>
                             </div>
 
-                            {postData?.postType === 'canvas' && (
-                                <div className="cv-canvas-actions">
-                                    <button
-                                        type="button"
-                                        className="cv-remix-btn"
-                                        onClick={handleRemixCanvas}
-                                        disabled={!session}
-                                        title={session ? "Remix this canvas" : "Sign in to remix"}
-                                    >
-                                        Remix this Canvas
-                                    </button>
-                                </div>
-                            )}
-
                             <div className="cv-body">
-                                {postData?.postType === 'canvas' ? (
-                                    <CanvasViewer canvasDoc={postData?.canvasDoc} />
-                                ) : (
-                                    <LexicalComposer initialConfig={{
-                                        namespace: "ContentViewer",
-                                        theme: theme,
-                                        editable: false,
-                                        editorState: postData?.content,
-                                        nodes: [HeadingNode, ImageNode, QuoteNode],
-                                        onError(error) { throw error; },
-                                    }}>
-                                        <RichTextPlugin
-                                            contentEditable={<ContentEditable />}
-                                            ErrorBoundary={LexicalErrorBoundary}
-                                        />
-                                    </LexicalComposer>
-                                )}
+                                <LexicalComposer initialConfig={{
+                                    namespace: "ContentViewer",
+                                    theme: theme,
+                                    editable: false,
+                                    editorState: postData?.content,
+                                    nodes: [HeadingNode, ImageNode, QuoteNode],
+                                    onError(error) { throw error; },
+                                }}>
+                                    <RichTextPlugin
+                                        contentEditable={<ContentEditable />}
+                                        ErrorBoundary={LexicalErrorBoundary}
+                                    />
+                                </LexicalComposer>
                             </div>
                         </>
                     )}

@@ -288,36 +288,6 @@ export const getMonthlyHottestJournals = async(userId, limit = 10) => {
     return data;
 }
 
-export const getCanvasGallery = async(userId, limit = 36, sort = 'hottest', cursor = null) => {
-    const parsedLimit = Number(limit);
-    if(Number.isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 72){
-        throw new Error('limit should be an integer between 1 and 72');
-    }
-
-    const normalizedSort = typeof sort === 'string' && sort.trim().toLowerCase() === 'newest'
-        ? 'newest'
-        : 'hottest';
-
-    let url = `${BASE_URL}/journals/canvas/gallery?limit=${parsedLimit}&sort=${encodeURIComponent(normalizedSort)}`;
-    if(userId){
-        url += `&userId=${encodeURIComponent(userId)}`;
-    }
-    if(cursor){
-        url += `&cursor=${encodeURIComponent(cursor)}`;
-    }
-
-    const response = await apiRequest(url, {
-        method: 'GET'
-    });
-
-    if(!response.ok){
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.error || 'failed to fetch canvas gallery');
-    }
-
-    return await response.json();
-}
-
 export const searchUsers = async(query, limit = 10) => {
     const normalizedQuery = typeof query === 'string' ? query.trim() : '';
     if(!normalizedQuery){
@@ -563,24 +533,6 @@ export const getComments = async(cursor= null, limit= 10, postId) =>{
         console.error('Error fetching comments:', error);
         throw error;
     }
-}
-
-export const createCanvasRemix = async(token, payload) => {
-    const headers = {'Content-Type': 'application/json'};
-    if(token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/canvas/remix`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload || {})
-    });
-
-    if(!response.ok){
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error?.error || 'failed to create canvas remix');
-    }
-
-    return await response.json();
 }
 
 export const updateRepostCaption = async(token, {journalId, caption}) => {
