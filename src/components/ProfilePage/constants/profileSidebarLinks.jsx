@@ -33,19 +33,6 @@ export const createProfileSidebarLinks = ({ location, navigatePath, navigate, no
             </svg>
         },
         {
-            path: '/home/freedom-wall',
-            label: 'Freedom Wall',
-            action: () => navigatePath('/home/freedom-wall'),
-            className: location.pathname === '/home/freedom-wall' ? 'sidebar-freedom-wall-cta-active' : 'sidebar-freedom-wall-cta',
-            icon:
-            <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill="none">
-                <path d="M4 7.2A3.2 3.2 0 0 1 7.2 4h9.6A3.2 3.2 0 0 1 20 7.2v9.6a3.2 3.2 0 0 1-3.2 3.2H7.2A3.2 3.2 0 0 1 4 16.8V7.2Z" stroke={location.pathname === '/home/freedom-wall' ? "#ffffff" : "#e6a817"} strokeWidth="1.6"/>
-                <path d="M8 15.5c1.7-3 2.4-3 4 0 1.5-2.2 2.1-2.2 3.9 0" stroke={location.pathname === '/home/freedom-wall' ? "#ffffff" : "#e6a817"} strokeWidth="1.6" strokeLinecap="round"/>
-                <circle cx="9" cy="9.2" r="1.1" fill={location.pathname === '/home/freedom-wall' ? "#ffffff" : "#e6a817"} />
-                <circle cx="14.2" cy="8.6" r="0.9" fill={location.pathname === '/home/freedom-wall' ? "#ffffff" : "#e6a817"} />
-            </svg>
-        },
-        {
             path: '/universe',
             label: 'Universe',
             action: () => navigate('/universe'),

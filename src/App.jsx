@@ -34,7 +34,6 @@ const MyOpinions = lazy(() => import('./components/SidebarOpinions/MyOpinions.js
 const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionViewer.jsx'));
 const ExplorePage = lazy(() => import('./components/HomePage/explore/ExplorePage.jsx'));
 const GalleryPage = lazy(() => import('./components/HomePage/gallery/GalleryPage.jsx'));
-const FreedomWallPage = lazy(() => import('./components/HomePage/freedomWall/FreedomWallPage.jsx'));
 const Universe = lazy(() => import('./components/Universe/Universe.jsx'));
 const SettingsPage = lazy(() => import('./components/SettingsPage/SettingsPage.jsx'));
 const StoryDashboard = lazy(() => import('./components/Stories/StoryDashboard/StoryDashboard.jsx'));
@@ -124,7 +123,6 @@ const App = () => {
               <Route path='following' element={<PostCards/>}/>
               <Route path='explore' element={<ExplorePage/>}/>
               <Route path='gallery' element={<GalleryPage/>}/>
-              <Route path='freedom-wall' element={<FreedomWallPage/>}/>
               <Route path='contentViewer' element={<ContentView/>}/>
               <Route path='post/:journalId' element={<ContentView/>}/>
               <Route path='post/:journalId/:slug' element={<ContentView/>}/>

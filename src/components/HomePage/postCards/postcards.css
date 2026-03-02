@@ -92,7 +92,7 @@
     border-color: #D4A853;
     color: #D4A853;
 }
-/* ── Nav row (Freedom Wall + Stories) ── */
+/* ── Nav row (Stories) ── */
 .search-nav-row{
     display: flex;
     gap: 6px;
@@ -116,15 +116,6 @@
 }
 .search-nav-btn:active{
     transform: scale(0.97);
-}
-.search-nav-fw{
-    border: 1.5px solid rgba(234, 179, 56, 0.35);
-    background: linear-gradient(135deg, rgba(234, 179, 56, 0.12), rgba(255, 204, 51, 0.08));
-    color: #e6a817;
-}
-.search-nav-fw:hover{
-    background: linear-gradient(135deg, rgba(234, 179, 56, 0.22), rgba(255, 204, 51, 0.16));
-    box-shadow: 0 0 10px rgba(234, 179, 56, 0.15);
 }
 .search-nav-stories{
     border: 1.5px solid rgba(234, 179, 56, 0.35);

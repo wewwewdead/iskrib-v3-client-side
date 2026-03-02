@@ -63,20 +63,6 @@ const MobileNavlink = () => {
         },
         {
             type: 'icon',
-            label: 'Freedom Wall',
-            path: '/home/freedom-wall',
-            action: (path) => handleNavigatePath(path),
-            icon: (isActive) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 7.2A3.2 3.2 0 0 1 7.2 4h9.6A3.2 3.2 0 0 1 20 7.2v9.6a3.2 3.2 0 0 1-3.2 3.2H7.2A3.2 3.2 0 0 1 4 16.8V7.2Z" stroke={isActive ? activeColor : inactiveColor} strokeWidth="1.6" />
-                    <path d="M8 15.5c1.7-3 2.4-3 4 0 1.5-2.2 2.1-2.2 3.9 0" stroke={isActive ? activeColor : inactiveColor} strokeWidth="1.6" strokeLinecap="round" />
-                    <circle cx="9" cy="9.2" r="1.1" fill={isActive ? activeColor : inactiveColor} />
-                    <circle cx="14.2" cy="8.6" r="0.9" fill={isActive ? activeColor : inactiveColor} />
-                </svg>
-            ),
-        },
-        {
-            type: 'icon',
             label: 'Universe',
             path: '/universe',
             action: (path) => handleNavigatePath(path),
