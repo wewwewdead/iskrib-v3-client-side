@@ -4,7 +4,6 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useState, useCallback } from 'react';
 import { MoonLoader } from 'react-spinners';
 import { motion } from 'framer-motion';
-import ParseContent from '../parseData';
 import { useInView } from 'react-intersection-observer';
 import { handleCLickContent } from '../../../../../helpers/handleClicks';
 import { useAuth } from '../../../../Context/useAuth';
@@ -113,10 +112,8 @@ const VisitedProfilePostCards = () =>{
             {viewMode === 'grid' ? (
                 <div className="postcards-grid-view">
                     {journals.map((journal) => {
-                        const parsedContent = ParseContent(journal.content);
-                        const wholeText = parsedContent?.wholeText || '';
-                        const previewText = parsedContent?.slicedText || '';
-                        const thumbnail = parsedContent?.firstImage?.src;
+                        const previewText = journal?.preview_text || '';
+                        const thumbnail = journal?.thumbnail_url || null;
                         return (
                             <motion.div
                                 key={journal.id}
@@ -124,7 +121,7 @@ const VisitedProfilePostCards = () =>{
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.25, ease: 'easeOut' }}
-                                onClick={(e) => viewContent(e, journal?.content, wholeText, journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
+                                onClick={(e) => viewContent(e, null, '', journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                             >
                                 {thumbnail ? (
                                     <div className="postcards-grid-img-wrap">
@@ -144,10 +141,8 @@ const VisitedProfilePostCards = () =>{
             ) : (
             <div className="postcards-list-view">
             {journals.map((journal, index) => {
-                const parsedContent = ParseContent(journal.content);
-                const wholeText = parsedContent?.wholeText || '';
-                const previewText = parsedContent?.slicedText || '';
-                const thumbnail = parsedContent?.firstImage?.src;
+                const previewText = journal?.preview_text || '';
+                const thumbnail = journal?.thumbnail_url || null;
                 const badgeClass = journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : '';
 
                 return(
@@ -165,12 +160,12 @@ const VisitedProfilePostCards = () =>{
                                 alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                 loading="lazy"
                                 onError={handleImageFallback}
-                                onClick={(e) => viewContent(e, journal?.content, wholeText, journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
+                                onClick={(e) => viewContent(e, null, '', journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                             />
                         )}
 
                         <div className='user-profile-card-content'>
-                            <div onClick={(e) => viewContent(e, journal?.content, wholeText, journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} className="content-container">
+                            <div onClick={(e) => viewContent(e, null, '', journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} className="content-container">
                                 <div className='feed-text-content-container'>
                                     <div className='feed-title-content'>
                                         <h2 className="feed-title-profile-page">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>

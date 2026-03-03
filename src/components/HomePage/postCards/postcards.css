@@ -709,11 +709,37 @@
     align-items: center;
     gap: 0.35rem;
 }
-.repost-embedded-avatar{
+.repost-embedded-avatar-wrap{
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 18px;
     height: 18px;
     border-radius: 50%;
+    flex-shrink: 0;
+}
+.repost-embedded-avatar-wrap.avatar-ring-legend{
+    width: 22px;
+    height: 22px;
+    border-width: 1.5px;
+    box-shadow:
+        0 0 3px 0.5px rgba(255, 215, 0, 0.4),
+        0 0 6px 1px rgba(255, 215, 0, 0.25);
+}
+.repost-embedded-avatar-wrap.avatar-ring-og{
+    width: 22px;
+    height: 22px;
+    border-width: 1.5px;
+    box-shadow:
+        0 0 3px 0.5px rgba(155, 89, 255, 0.4),
+        0 0 6px 1px rgba(155, 89, 255, 0.25);
+}
+.repost-embedded-avatar{
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
     object-fit: cover;
+    display: block;
 }
 .repost-embedded-name{
     font-family: var(--font-ui);
@@ -850,12 +876,7 @@
         border-radius: 6px;
     }
     .search-nav-row{
-        padding: 0.35rem 0.5rem;
-        gap: 5px;
-    }
-    .search-nav-btn{
-        font-size: 0.68rem;
-        padding: 0.42rem 0.5rem;
+        display: none;
     }
     .search-mode-pill{
         font-size: 0.58rem;

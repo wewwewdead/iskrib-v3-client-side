@@ -97,11 +97,11 @@ const ContentView = () => {
     const location = useLocation();
     const { journalId } = useParams();
     const statePostData = location.state;
-    const shouldFetchPost = !!journalId && (!statePostData || !statePostData?.postType);
+    const shouldFetchPost = !!journalId && (!statePostData || !statePostData?.postType || !statePostData?.content);
 
     const { data: fetchedJournalData, isLoading: isLoadingJournalById } = useQuery({
         queryKey: ['journalById', journalId, user?.userData?.[0]?.id],
-        queryFn: ({ queryKey }) => getJournalById(queryKey[1], queryKey[2]),
+        queryFn: ({ queryKey }) => getJournalById(queryKey[1], queryKey[2], { includeRepostContent: false }),
         enabled: shouldFetchPost,
         staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,
@@ -378,10 +378,10 @@ const ContentView = () => {
                                             mutateViews.mutate(formadata);
                                         }
                                         const src = postData.repostSource;
-                                        const srcParsed = ParseContent(src.content);
+                                        const srcParsed = src.content ? ParseContent(src.content) : null;
                                         viewContent(
                                             e,
-                                            src.content,
+                                            src.content || null,
                                             srcParsed?.wholeText || '',
                                             src.title,
                                             src.users?.id,
@@ -418,7 +418,11 @@ const ContentView = () => {
                                                     ErrorBoundary={LexicalErrorBoundary}
                                                 />
                                             </LexicalComposer>
-                                        ) : null}
+                                        ) : postData.repostSource.preview_text ? (
+                                            <p className="cv-repost-embedded-preview">{postData.repostSource.preview_text}</p>
+                                        ) : (
+                                            <p className="cv-repost-embedded-preview">Open the original post to read the full entry.</p>
+                                        )}
                                     </div>
                                 </div>
                             ) : (

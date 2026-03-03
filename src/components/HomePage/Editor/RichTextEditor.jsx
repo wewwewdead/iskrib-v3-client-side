@@ -13,7 +13,7 @@ import ToolBar from "./Toolbar";
 
 import { saveJournal } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { BarLoader } from "react-spinners";
 import { $getRoot } from "lexical";
@@ -47,6 +47,26 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
     const {session, user} = useAuth();
 
     const queryClient = useQueryClient();
+    const userId = user?.userData?.[0]?.id || null;
+
+    const invalidateCreatedJournalQueries = useCallback(async() => {
+        const invalidations = [
+            queryClient.invalidateQueries({queryKey: ['journals'], refetchType: 'active'}),
+            queryClient.invalidateQueries({queryKey: ['journals-following'], refetchType: 'active'}),
+            queryClient.invalidateQueries({queryKey: ['journals-for-you'], refetchType: 'active'}),
+            queryClient.invalidateQueries({queryKey: ['journals-search'], refetchType: 'active'}),
+            queryClient.invalidateQueries({queryKey: ['journals-suggestions'], refetchType: 'active'}),
+        ];
+
+        if(userId){
+            invalidations.push(
+                queryClient.invalidateQueries({queryKey: ['userJournals', userId], refetchType: 'active'}),
+                queryClient.invalidateQueries({queryKey: ['streak', userId], refetchType: 'active'})
+            );
+        }
+
+        await Promise.allSettled(invalidations);
+    }, [queryClient, userId]);
 
     const handleClickSave = async(e, title) =>{
         e.stopPropagation();
@@ -63,20 +83,15 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
             const saveData = await saveJournal(session?.access_token, formdata)
 
             if(saveData){
-                // console.log(saveData)
-                queryClient.invalidateQueries({queryKey: ['journals']});
-                queryClient.invalidateQueries({queryKey: ['userJournals', user?.userData?.[0].id]})
-                queryClient.invalidateQueries({queryKey: ['streak', user?.userData?.[0]?.id]});
+                await invalidateCreatedJournalQueries();
+                setHasContent(false)
+                onCloseOnSave();
+                addUploadImagesPath([])
             }
-
-            setIsSending(false)
         } catch (error) {
             console.error("Error saving journal:", error);
         }finally {
             setIsSending(false)
-            setHasContent(false)
-            onCloseOnSave();
-            addUploadImagesPath([])
         }
 
     }

@@ -146,10 +146,9 @@ const CommentSection = ({onclose, postId, receiverId})=>{
             if(message){
                 // console.log(message)
             }
+            // Only refetch this post's comments — feed comment counts were
+            // already updated optimistically via setQueriesData above.
             queryClient.invalidateQueries({ queryKey: ['postComments', postId] });
-            queryClient.invalidateQueries({ queryKey: ['journals'] });
-            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
-            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
         } catch (error) {
             queryClient.setQueryData(['postComments', postId], previousComments);
             previousJournalCaches.forEach(([key, value]) => {

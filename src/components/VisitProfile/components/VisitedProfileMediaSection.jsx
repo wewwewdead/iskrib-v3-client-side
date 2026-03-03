@@ -87,7 +87,12 @@ const VisitedProfileMediaSection = () => {
                                 onClick={() => setSelectedMedia(item)}
                                 title={`View ${item.bucket} image full size`}
                             >
-                                <img className="profile-media-image" src={item.url} alt={`${item.bucket} media`} loading="lazy" />
+                                <img
+                                    className="profile-media-image"
+                                    src={item.cardUrl || item.url}
+                                    alt={`${item.bucket} media`}
+                                    loading="lazy"
+                                />
                             </button>
                         </div>
                     ))}
@@ -121,7 +126,11 @@ const VisitedProfileMediaSection = () => {
                                     <path d="m291-240-51-51 189-189-189-189 51-51 189 189 189-189 51 51-189 189 189 189-51 51-189-189-189 189Z" />
                                 </svg>
                             </button>
-                            <img className="profile-media-lightbox-image" src={selectedMedia.url} alt={`${selectedMedia.bucket} media full size`} />
+                            <img
+                                className="profile-media-lightbox-image"
+                                src={selectedMedia.originalUrl || selectedMedia.detailUrl || selectedMedia.url}
+                                alt={`${selectedMedia.bucket} media full size`}
+                            />
                         </div>
                     </div>,
                     profileParentContainer

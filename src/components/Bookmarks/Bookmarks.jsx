@@ -3,7 +3,6 @@ import { getBookmarks } from '../../../API/Api';
 import { useAuth } from '../../Context/useAuth';
 import './bookmarks.css';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import ParseContent from '../HomePage/postCards/parseData';
 import CalculateText from '../HomePage/postCards/calculateReadingTime';
 import { MoonLoader } from 'react-spinners';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -151,24 +150,25 @@ const Bookmarks = () =>{
 
         <div className='bookmark-parent-container'>
             {journals?.map((journal, index) => {
-                const parsedContent = ParseContent(journal.journals.content);
+                const previewText = journal.journals.preview_text || '';
+                const thumbnail = journal.journals.thumbnail_url || null;
                 return(
                     <motion.div
                         className='bookmark-card'
                         key={journal.journals.id || index}
                     >
 
-                        {parsedContent.firstImage && (
+                        {thumbnail && (
                             <img
                                 className="bookmark-card-image-banner"
-                                src={parsedContent.firstImage.src}
+                                src={thumbnail}
                                 alt={journal?.journals?.title ? `${journal.journals.title} cover image` : "Bookmarked post cover image"}
                                 loading="lazy"
                                 onError={handleImageFallback}
                                 onClick={(e) => handleClick(
                                     e,
-                                    journal.journals.content,
-                                    parsedContent.wholeText,
+                                    null,
+                                    '',
                                     journal.journals.title,
                                     journal.journals.user_id,
                                     journal.journals.users.name,
@@ -188,8 +188,8 @@ const Bookmarks = () =>{
                         <div className="card-content">
                             <div onClick={(e) => handleClick(
                                 e,
-                                journal.journals.content,
-                                parsedContent.wholeText,
+                                null,
+                                '',
                                 journal.journals.title,
                                 journal.journals.user_id,
                                 journal.journals.users.name,
@@ -209,7 +209,7 @@ const Bookmarks = () =>{
                                     <div className='feed-title-content'>
                                         <h2 className="feed-title">{journal.journals.title.length > 55 ? `${journal.journals.title.substring(0, 55)}...` : journal.journals.title}</h2>
                                     </div>
-                                    <p className="feed-text-content">{parsedContent.slicedText}</p>
+                                    <p className="feed-text-content">{previewText}</p>
                                 </div>
                             </div>
                         </div>
@@ -229,7 +229,7 @@ const Bookmarks = () =>{
 
                             <div className="bookmark-card-footer-right">
                                 <div className="reading-time-container">
-                                    <p className="reading-time-text">{CalculateText(parsedContent.wholeText)}</p>
+                                    <p className="reading-time-text">{CalculateText(previewText)}</p>
                                 </div>
 
                                 <div className="user-post-settings">

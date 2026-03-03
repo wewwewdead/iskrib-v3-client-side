@@ -16,8 +16,8 @@ const MyOpinions = () =>{
     const {ref, inView} = useInView({threshold: 0, rootMargin: '200px'})
 
     const {data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} = useInfiniteQuery({
-        queryKey: ['getMyOpinions', session?.access_token],
-        queryFn: ({pageParam = null, queryKey}) => getMyOpinions(pageParam, 5, queryKey[1]),
+        queryKey: ['getMyOpinions', session?.user?.id],
+        queryFn: ({pageParam = null}) => getMyOpinions(pageParam, 5, session?.access_token),
         getNextPageParam: (lastPage) => {
             if(lastPage.hasMore){
                 const lastOpinion = lastPage?.data[lastPage.data.length - 1];

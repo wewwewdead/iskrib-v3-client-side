@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { getMonthlyHottestJournals, getInterestSections, searchJournals, searchUsers } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
 import { handleClickProfile } from "../../../../helpers/handleClicks";
-import ParseContent from "../postCards/parseData";
 import CalculateText from "../postCards/calculateReadingTime";
 import formatPostDate from "../../../../helpers/formatDateString";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
@@ -38,7 +37,10 @@ const FlameIcon = ({ className }) => (
     </svg>
 );
 
-const HeroCard = ({ journal, parsedContent, hotScore, onClick }) => (
+const HeroCard = ({ journal, hotScore, onClick }) => {
+    const thumbnail = journal?.thumbnail_url || null;
+    const previewText = journal?.preview_text || '';
+    return (
     <motion.div
         className="explore-hero-wrap"
         initial={{ opacity: 0, y: 20 }}
@@ -59,11 +61,11 @@ const HeroCard = ({ journal, parsedContent, hotScore, onClick }) => (
             }}
         >
 
-        {parsedContent?.firstImage && (
+        {thumbnail && (
             <div className="explore-hero-image-wrap">
                 <img
                     className="explore-hero-image"
-                    src={parsedContent.firstImage.src}
+                    src={thumbnail}
                     alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                     loading="eager"
                     onError={handleImageFallback}
@@ -72,7 +74,7 @@ const HeroCard = ({ journal, parsedContent, hotScore, onClick }) => (
             </div>
         )}
 
-        <div className={`explore-hero-body ${parsedContent?.firstImage ? "explore-hero-body--has-image" : ""}`}>
+        <div className={`explore-hero-body ${thumbnail ? "explore-hero-body--has-image" : ""}`}>
             <div className="explore-hero-badge">
                 <FlameIcon className="explore-hero-flame" />
                 <span className="explore-hero-badge-text">#1 Hottest</span>
@@ -82,7 +84,7 @@ const HeroCard = ({ journal, parsedContent, hotScore, onClick }) => (
                 {journal?.title?.length > 80 ? `${journal.title.substring(0, 80)}...` : (journal?.title || "Untitled")}
             </h2>
 
-            <p className="explore-hero-excerpt">{parsedContent?.slicedText}</p>
+            <p className="explore-hero-excerpt">{previewText}</p>
 
             <div className="explore-hero-footer">
                 <div className="explore-hero-author">
@@ -108,16 +110,20 @@ const HeroCard = ({ journal, parsedContent, hotScore, onClick }) => (
                         {hotScore}
                     </div>
                     <div className="reading-time-container">
-                        <p className="reading-time-text">{CalculateText(parsedContent?.wholeText)}</p>
+                        <p className="reading-time-text">{CalculateText(previewText)}</p>
                     </div>
                 </div>
             </div>
         </div>
         </div>
     </motion.div>
-);
+    );
+};
 
-const RunnerCard = ({ journal, index, parsedContent, hotScore, onClick }) => (
+const RunnerCard = ({ journal, index, hotScore, onClick }) => {
+    const thumbnail = journal?.thumbnail_url || null;
+    const previewText = journal?.preview_text || '';
+    return (
     <motion.div
         className="explore-runner-card"
         onClick={() => onClick(journal.id)}
@@ -143,7 +149,7 @@ const RunnerCard = ({ journal, index, parsedContent, hotScore, onClick }) => (
             <h3 className="explore-runner-title">
                 {journal?.title?.length > 60 ? `${journal.title.substring(0, 60)}...` : (journal?.title || "Untitled")}
             </h3>
-            <p className="explore-runner-excerpt">{parsedContent?.slicedText}</p>
+            <p className="explore-runner-excerpt">{previewText}</p>
             <div className="explore-runner-meta">
                 <div className="explore-runner-author">
                     <div className={`user-avatar-container ${journal?.users?.badge === "legend" ? "avatar-ring-legend" : journal?.users?.badge === "og" ? "avatar-ring-og" : ""}`}>
@@ -165,17 +171,17 @@ const RunnerCard = ({ journal, index, parsedContent, hotScore, onClick }) => (
                         {hotScore}
                     </div>
                     <div className="reading-time-container">
-                        <p className="reading-time-text">{CalculateText(parsedContent?.wholeText)}</p>
+                        <p className="reading-time-text">{CalculateText(previewText)}</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        {parsedContent?.firstImage && (
+        {thumbnail && (
             <div className="explore-runner-thumb-wrap">
                 <img
                     className="explore-runner-thumb"
-                    src={parsedContent.firstImage.src}
+                    src={thumbnail}
                     alt=""
                     loading="lazy"
                     onError={handleImageFallback}
@@ -183,7 +189,8 @@ const RunnerCard = ({ journal, index, parsedContent, hotScore, onClick }) => (
             </div>
         )}
     </motion.div>
-);
+    );
+};
 
 const ExplorePage = () => {
     const navigate = useNavigate();
@@ -218,10 +225,10 @@ const ExplorePage = () => {
     });
 
     const { data: interestData } = useQuery({
-        queryKey: ["explore-interest-sections", session?.access_token],
+        queryKey: ["explore-interest-sections", session?.user?.id],
         queryFn: () => getInterestSections(session?.access_token),
         refetchOnWindowFocus: false,
-        staleTime: 1000 * 60 * 10,
+        staleTime: 1000 * 60 * 30,
         enabled: !!session?.access_token && !isSearchMode,
     });
 
@@ -486,13 +493,11 @@ const ExplorePage = () => {
             )}
 
             {heroJournal && (() => {
-                const parsedContent = ParseContent(heroJournal?.content);
                 const hotScore = getHotScore(heroJournal);
                 return (
                     <div className="explore-hero-section">
                         <HeroCard
                             journal={heroJournal}
-                            parsedContent={parsedContent}
                             hotScore={hotScore}
                             onClick={handleClickPost}
                         />
@@ -516,9 +521,10 @@ const ExplorePage = () => {
                     )}
                     <div className="explore-runners-list">
                         {runnerJournals.map((journal, i) => {
-                            const parsedContent = ParseContent(journal?.content);
                             const hotScore = getHotScore(journal);
                             const displayIndex = isSearchMode ? i : i + 1;
+                            const previewText = journal?.preview_text || '';
+                            const thumbnail = journal?.thumbnail_url || null;
 
                             return isSearchMode ? (
                                 <motion.div
@@ -539,10 +545,10 @@ const ExplorePage = () => {
                                 >
                                     <div className="explore-rank">#{i + 1}</div>
 
-                                    {parsedContent?.firstImage && (
+                                    {thumbnail && (
                                         <img
                                             className="card-image-banner"
-                                            src={parsedContent.firstImage.src}
+                                            src={thumbnail}
                                             alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                             loading="lazy"
                                             onError={handleImageFallback}
@@ -557,7 +563,7 @@ const ExplorePage = () => {
                                                         {journal?.title?.length > 55 ? `${journal.title.substring(0, 55)}...` : (journal?.title || "Untitled")}
                                                     </h2>
                                                 </div>
-                                                <p className="feed-text-content">{parsedContent?.slicedText}</p>
+                                                <p className="feed-text-content">{previewText}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -585,7 +591,7 @@ const ExplorePage = () => {
                                                 Hot score: {hotScore}
                                             </div>
                                             <div className="reading-time-container">
-                                                <p className="reading-time-text">{CalculateText(parsedContent?.wholeText)}</p>
+                                                <p className="reading-time-text">{CalculateText(previewText)}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -595,7 +601,6 @@ const ExplorePage = () => {
                                     key={journal.id}
                                     journal={journal}
                                     index={displayIndex}
-                                    parsedContent={parsedContent}
                                     hotScore={hotScore}
                                     onClick={handleClickPost}
                                 />

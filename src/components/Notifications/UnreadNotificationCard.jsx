@@ -2,7 +2,6 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "../../Context/useAuth";
 import { getUnreadNotification } from "../../../API/Api";
 import { useEffect, useRef, useState } from "react";
-import ParseContent from "../HomePage/postCards/parseData";
 import FormatNotificationType from "../../../helpers/formatNoficationType";
 import formatPostDate from "../../../helpers/formatDateString";
 import { useReadNotificationMutation, useUserDeleteNotificationMutation } from "../../utils/useMutation";
@@ -106,8 +105,8 @@ const UnreadNotification = () =>{
     ]
 
     const {data, isLoading, isFetchinNextPage, hasNextPage, fetchNextPage} = useInfiniteQuery({
-        queryKey: ['unreadNotification', session?.access_token],
-        queryFn: ({pageParam = null, queryKey}) => getUnreadNotification(queryKey[1], pageParam, 5),
+        queryKey: ['unreadNotification', session?.user?.id],
+        queryFn: ({pageParam = null}) => getUnreadNotification(session?.access_token, pageParam, 5),
         getNextPageParam: (lastPage) => {
             if(lastPage.hasMore){
                 const lastJournal = lastPage?.data[lastPage?.data?.length - 1];
@@ -138,11 +137,10 @@ const UnreadNotification = () =>{
         if(source === 'opinion'){
             handleClickOpinionNotif(e, notification?.opinions?.id, notification?.opinions?.user_id)
         } else {
-            const parsedContent = ParseContent(notification?.journals?.content);
             handleClickNotif(
                 e,
-                notification?.journals?.content,
-                parsedContent?.wholeText,
+                null,
+                '',
                 notification?.journals?.title,
                 notification?.journals?.users?.id,
                 notification?.journals?.users?.name,
@@ -150,10 +148,10 @@ const UnreadNotification = () =>{
                 notification?.journals?.created_at,
                 notification?.journal_id,
                 notification?.hasLiked,
-                notification?.journals?.comments?.[0]?.count,
+                0,
                 notification?.hasBookMarked,
-                notification?.journals?.likes?.[0]?.count,
-                notification?.journals?.bookmarks?.[0]?.count
+                0,
+                0
             )
         }
     }
@@ -198,7 +196,8 @@ const UnreadNotification = () =>{
             {unreadNotifications?.map((unreadNotification) => {
                 const isOpinion = unreadNotification?.source === 'opinion';
                 const displayType = isOpinion ? 'opinion_reply' : unreadNotification?.type;
-                const parsedContent = !isOpinion ? ParseContent(unreadNotification?.journals?.content) : null;
+                const previewText = !isOpinion ? (unreadNotification?.journals?.preview_text || '') : '';
+                const thumbnailUrl = !isOpinion ? (unreadNotification?.journals?.thumbnail_url || null) : null;
 
                 return(
                     <div key={`${unreadNotification.source}-${unreadNotification.id}`} className={unreadNotification?.read ? "notification-cards" : "notification-cards-unread"}>
@@ -280,10 +279,10 @@ const UnreadNotification = () =>{
                                         <>
                                         <div className="notification-content-text">
                                             <p className="notif-content-title">{unreadNotification?.journals?.title?.length > 40 ? unreadNotification?.journals?.title?.substring(0, 39) : unreadNotification?.journals?.title}</p>
-                                            <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
+                                            <p className="notif-content-sliced-text">{previewText}</p>
                                         </div>
                                         <div className="notif-content-image-container">
-                                            <img className="notif-content-image" loading="lazy" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt={unreadNotification?.journals?.title ? `${unreadNotification.journals.title} cover image` : "Notification post cover image"} onError={handleImageFallback} />
+                                            <img className="notif-content-image" loading="lazy" src={thumbnailUrl || '/assets/no-image.png'} alt={unreadNotification?.journals?.title ? `${unreadNotification.journals.title} cover image` : "Notification post cover image"} onError={handleImageFallback} />
                                         </div>
                                         </>
                                     )}

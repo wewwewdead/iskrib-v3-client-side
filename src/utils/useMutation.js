@@ -57,11 +57,15 @@ export const useBookMarkMutation = (session, userId) => {
 
         onMutate: async(data) =>{
             queryClient.cancelQueries({ queryKey: ['journals'] });
+            queryClient.cancelQueries({ queryKey: ['journals-following'] });
+            queryClient.cancelQueries({ queryKey: ['journals-for-you'] });
             queryClient.cancelQueries({ queryKey: ['userJournals'] });
             queryClient.cancelQueries({ queryKey: ['visitedProfileJournals'] });
 
             const previousData = [
                 ...queryClient.getQueriesData({ queryKey: ['journals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['journals-following'] }),
+                ...queryClient.getQueriesData({ queryKey: ['journals-for-you'] }),
                 ...queryClient.getQueriesData({ queryKey: ['userJournals'] }),
                 ...queryClient.getQueriesData({ queryKey: ['visitedProfileJournals'] }),
             ];
@@ -81,6 +85,8 @@ export const useBookMarkMutation = (session, userId) => {
             };
 
             queryClient.setQueriesData({ queryKey: ['journals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['journals-following'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['journals-for-you'] }, (old) => updateInfiniteJournalsCache(old, updater));
             queryClient.setQueriesData({ queryKey: ['userJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
             queryClient.setQueriesData({ queryKey: ['visitedProfileJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
 
@@ -91,11 +97,6 @@ export const useBookMarkMutation = (session, userId) => {
                 queryClient.setQueryData(key, value);
             });
         },
-        onSettled: () =>{
-            queryClient.invalidateQueries({ queryKey: ['journals'] });
-            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
-            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
-        }
     });
 
     const guardedMutate = (variables, options) => {
@@ -157,11 +158,15 @@ export const useLikeMutation = (session, userId) =>{
 
         onMutate: async(data) => {
             queryClient.cancelQueries({ queryKey: ['journals'] });
+            queryClient.cancelQueries({ queryKey: ['journals-following'] });
+            queryClient.cancelQueries({ queryKey: ['journals-for-you'] });
             queryClient.cancelQueries({ queryKey: ['userJournals'] });
             queryClient.cancelQueries({ queryKey: ['visitedProfileJournals'] });
 
             const previousData = [
                 ...queryClient.getQueriesData({ queryKey: ['journals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['journals-following'] }),
+                ...queryClient.getQueriesData({ queryKey: ['journals-for-you'] }),
                 ...queryClient.getQueriesData({ queryKey: ['userJournals'] }),
                 ...queryClient.getQueriesData({ queryKey: ['visitedProfileJournals'] }),
             ];
@@ -181,6 +186,8 @@ export const useLikeMutation = (session, userId) =>{
             };
 
             queryClient.setQueriesData({ queryKey: ['journals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['journals-following'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['journals-for-you'] }, (old) => updateInfiniteJournalsCache(old, updater));
             queryClient.setQueriesData({ queryKey: ['userJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
             queryClient.setQueriesData({ queryKey: ['visitedProfileJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
 
@@ -190,11 +197,6 @@ export const useLikeMutation = (session, userId) =>{
       context?.previousData?.forEach(([key, value]) => {
           queryClient.setQueryData(key, value);
       });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['journals'] });
-      queryClient.invalidateQueries({ queryKey: ['userJournals'] });
-      queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
     },
 });
 
@@ -384,9 +386,15 @@ export const useRepostMutation = (session) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data) => createRepost(session?.access_token, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['journals'] });
-            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
+        onSuccess: async () => {
+            await Promise.allSettled([
+                queryClient.invalidateQueries({ queryKey: ['userJournals'], refetchType: 'active' }),
+                queryClient.invalidateQueries({ queryKey: ['journals'], refetchType: 'active' }),
+                queryClient.invalidateQueries({ queryKey: ['journals-following'], refetchType: 'active' }),
+                queryClient.invalidateQueries({ queryKey: ['journals-for-you'], refetchType: 'active' }),
+                queryClient.invalidateQueries({ queryKey: ['journals-search'], refetchType: 'active' }),
+                queryClient.invalidateQueries({ queryKey: ['journals-suggestions'], refetchType: 'active' }),
+            ]);
         }
     });
 }
@@ -400,11 +408,15 @@ export const useReactionMutation = (session, userId) => {
 
         onMutate: async (data) => {
             queryClient.cancelQueries({ queryKey: ['journals'] });
+            queryClient.cancelQueries({ queryKey: ['journals-following'] });
+            queryClient.cancelQueries({ queryKey: ['journals-for-you'] });
             queryClient.cancelQueries({ queryKey: ['userJournals'] });
             queryClient.cancelQueries({ queryKey: ['visitedProfileJournals'] });
 
             const previousData = [
                 ...queryClient.getQueriesData({ queryKey: ['journals'] }),
+                ...queryClient.getQueriesData({ queryKey: ['journals-following'] }),
+                ...queryClient.getQueriesData({ queryKey: ['journals-for-you'] }),
                 ...queryClient.getQueriesData({ queryKey: ['userJournals'] }),
                 ...queryClient.getQueriesData({ queryKey: ['visitedProfileJournals'] }),
             ];
@@ -440,6 +452,8 @@ export const useReactionMutation = (session, userId) => {
             };
 
             queryClient.setQueriesData({ queryKey: ['journals'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['journals-following'] }, (old) => updateInfiniteJournalsCache(old, updater));
+            queryClient.setQueriesData({ queryKey: ['journals-for-you'] }, (old) => updateInfiniteJournalsCache(old, updater));
             queryClient.setQueriesData({ queryKey: ['userJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
             queryClient.setQueriesData({ queryKey: ['visitedProfileJournals'] }, (old) => updateInfiniteJournalsCache(old, updater));
 
@@ -452,12 +466,6 @@ export const useReactionMutation = (session, userId) => {
             });
         },
 
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['journals'] });
-            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
-            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
-            queryClient.invalidateQueries({ queryKey: ['postReactions'] });
-        },
     });
 
     const guardedMutate = (variables, options) => {

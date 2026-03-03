@@ -3,10 +3,9 @@ import '../../../RepostModal/repostmodal.css';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../../../Context/useAuth';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { deleteJournal, deleteJournalImage, getUserJournals, updateRepostCaption } from '../../../../../API/Api';
+import { deleteJournal, deleteJournalImage, getJournalContent, getUserJournals, updateRepostCaption } from '../../../../../API/Api';
 import { useEffect, useCallback } from 'react';
 import { FadeLoader, MoonLoader } from 'react-spinners';
-import ParseContent from '../parseData';
 import { useInView } from 'react-intersection-observer';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -187,9 +186,11 @@ const ProfilePostCards = () =>{
             }
 
             setJournalIsDeleted(true)
+            // Only refetch the user's own journal list immediately.
+            // Mark other feeds as stale — they'll refetch on next visit.
             queryClient.invalidateQueries({ queryKey: queryKey });
-            queryClient.invalidateQueries({ queryKey: ['journals'] });
-            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'] });
+            queryClient.invalidateQueries({ queryKey: ['journals'], refetchType: 'none' });
+            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'], refetchType: 'none' });
 
             setTimeout(() =>{
                 setIsDeletingJournal(false)
@@ -206,11 +207,21 @@ const ProfilePostCards = () =>{
         }
     }
 
-    const handleClickEdit = (e, journalContent, journalId, journalTitle) =>{
+    const handleClickEdit = async (e, journalContent, journalId, journalTitle) =>{
         e.stopPropagation();
-        setShowSettings(null)
+        setShowSettings(null);
+        let content = journalContent;
+        if (!content) {
+            try {
+                const result = await getJournalContent(journalId);
+                content = result?.journal?.content;
+            } catch (err) {
+                console.error('failed to fetch journal for edit:', err);
+                return;
+            }
+        }
         const data = {
-            content: journalContent,
+            content,
             id: journalId,
             title: journalTitle
         }
@@ -238,9 +249,10 @@ const ProfilePostCards = () =>{
                 journalId: captionData.id,
                 caption: captionText
             });
+            // Only refetch user's journals immediately; mark others stale.
             queryClient.invalidateQueries({queryKey: ['userJournals']});
-            queryClient.invalidateQueries({queryKey: ['journals']});
-            queryClient.invalidateQueries({queryKey: ['visitedProfileJournals']});
+            queryClient.invalidateQueries({queryKey: ['journals'], refetchType: 'none'});
+            queryClient.invalidateQueries({queryKey: ['visitedProfileJournals'], refetchType: 'none'});
             setShowCaptionEditor(null);
             setCaptionData(null);
             setCaptionText('');
@@ -331,10 +343,8 @@ const ProfilePostCards = () =>{
             {viewMode === 'grid' ? (
                 <div className="postcards-grid-view">
                     {journals.map((journal) => {
-                        const parsedContent = ParseContent(journal?.content);
-                        const wholeText = parsedContent?.wholeText || '';
-                        const previewText = parsedContent?.slicedText || '';
-                        const thumbnail = parsedContent?.firstImage?.src;
+                        const previewText = journal?.preview_text || '';
+                        const thumbnail = journal?.thumbnail_url || null;
                         return (
                             <motion.div
                                 key={journal.id}
@@ -342,7 +352,7 @@ const ProfilePostCards = () =>{
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.25, ease: 'easeOut' }}
-                                onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
+                                onClick={(e) => viewContent(e, null, '', journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                             >
                                 {showConfirmationBttn === journal.id && (
                                     <AnimatePresence>
@@ -376,7 +386,7 @@ const ProfilePostCards = () =>{
                                                 Do you want to delete the journal?
                                             </div>
                                             <div className="confirm-buttons-container">
-                                                <div onClick={(e) => handleConfirmDeleteJournal(e, journal.id, session?.access_token, parsedContent?.firstImage?.src)} className="confirm-buttons-yes">Yes</div>
+                                                <div onClick={(e) => handleConfirmDeleteJournal(e, journal.id, session?.access_token, thumbnail)} className="confirm-buttons-yes">Yes</div>
                                                 <div onClick={() => setShowConfirmationBttn(null)} className="confirm-buttons-cancel">Cancel</div>
                                             </div>
                                         </motion.div>
@@ -463,10 +473,8 @@ const ProfilePostCards = () =>{
             ) : (
             <div className="postcards-list-view">
             {journals.map((journal, index) => {
-                const parsedContent =  ParseContent(journal?.content);
-                const wholeText = parsedContent?.wholeText || '';
-                const previewText = parsedContent?.slicedText || '';
-                const thumbnail = parsedContent?.firstImage?.src;
+                const previewText = journal?.preview_text || '';
+                const thumbnail = journal?.thumbnail_url || null;
                 return (
                     <motion.div
                         key={journal.id}
@@ -511,7 +519,7 @@ const ProfilePostCards = () =>{
                                                 Do you want to delete the journal?
                                             </div>
                                             <div className="confirm-buttons-container">
-                                                <div onClick={(e) => handleConfirmDeleteJournal(e, journal.id, session?.access_token, parsedContent?.firstImage?.src)} className="confirm-buttons-yes">Yes</div>
+                                                <div onClick={(e) => handleConfirmDeleteJournal(e, journal.id, session?.access_token, thumbnail)} className="confirm-buttons-yes">Yes</div>
                                                 <div onClick={() => setShowConfirmationBttn(null)} className="confirm-buttons-cancel">Cancel</div>
                                             </div>
                                         </motion.div>
@@ -527,15 +535,15 @@ const ProfilePostCards = () =>{
                                     alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                     loading="lazy"
                                     onError={handleImageFallback}
-                                    onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
+                                    onClick={(e) => viewContent(e, null, '', journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0].count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                                 />
                             )}
 
                             <div className='user-profile-card-content'>
                                 <div onClick={(e) => viewContent(
                                     e,
-                                    journal.content,
-                                    wholeText,
+                                    null,
+                                    '',
                                     journal.title,
                                     journal.users.id,
                                     journal.users.name,

@@ -5,7 +5,6 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import './postcards.css';
 import '../explore/userSearch.css';
 import { getJournals, getFollowingFeed, getForYouFeed, searchJournals, searchUsers } from "../../../../API/Api";
-import ParseContent from "./parseData";
 import { useInView } from 'react-intersection-observer';
 import CalculateText from "./calculateReadingTime";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
@@ -192,7 +191,7 @@ const PostCards = () => {
         isFetchingNextPage: isFetchingNextFollowingPage,
         isLoading: isFollowingLoading,
     } = useInfiniteQuery({
-        queryKey: ['journals-following', session?.access_token],
+        queryKey: ['journals-following', session?.user?.id],
         queryFn: ({ pageParam = null }) => getFollowingFeed(session?.access_token, pageParam, 5),
         getNextPageParam: (lastPage) => {
             if (lastPage?.hasMore) {
@@ -213,7 +212,7 @@ const PostCards = () => {
         isFetchingNextPage: isFetchingNextForYouPage,
         isLoading: isForYouLoading,
     } = useInfiniteQuery({
-        queryKey: ['journals-for-you', session?.access_token],
+        queryKey: ['journals-for-you', session?.user?.id],
         queryFn: ({ pageParam = 0 }) => getForYouFeed(session?.access_token, pageParam, 5),
         getNextPageParam: (lastPage, allPages) => {
             if (lastPage?.hasMore) {
@@ -686,17 +685,14 @@ const PostCards = () => {
             )}
             {journals.map((journal, index) => {
                 const isRepost = journal?.is_repost === true;
-                const parsedContent = !isRepost ? ParseContent(journal.content) : null;
-                const wholeText = parsedContent?.wholeText || '';
-                const previewText = parsedContent?.slicedText || '';
-                const thumbnail = parsedContent?.firstImage?.src;
+                const previewText = !isRepost ? (journal.preview_text || '') : '';
+                const thumbnail = !isRepost ? (journal.thumbnail_url || null) : null;
                 const isLiked = journal?.has_liked;
                 const isBookmarked = journal?.has_bookmarked;
 
-                // For repost cards: parse original post content for preview
+                // For repost cards: use preview_text from repost source
                 const repostSource = isRepost ? journal?.repost_source : null;
-                const repostSourceParsed = repostSource ? ParseContent(repostSource.content) : null;
-                const repostSourcePreviewText = repostSourceParsed?.slicedText || '';
+                const repostSourcePreviewText = repostSource?.preview_text || '';
 
                 return(
                     <motion.div
@@ -754,7 +750,9 @@ const PostCards = () => {
                                 {repostSource ? (
                                     <div className="repost-embedded-card">
                                         <div className="repost-embedded-author">
-                                            <img className="repost-embedded-avatar" src={repostSource.users?.image_url || '/assets/profile.jpg'} alt="original author" />
+                                            <div className={`repost-embedded-avatar-wrap ${repostSource.users?.badge === 'legend' ? 'avatar-ring-legend' : repostSource.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                                <img className="repost-embedded-avatar" src={repostSource.users?.image_url || '/assets/profile.jpg'} alt="original author" />
+                                            </div>
                                             <span className="repost-embedded-name">{repostSource.users?.name}</span>
                                             <VerifiedBadge badge={repostSource.users?.badge} size={12} />
                                         </div>
@@ -778,12 +776,12 @@ const PostCards = () => {
                                         alt={journal?.title ? `${journal.title} cover image` : "Post cover image"}
                                         loading="lazy"
                                         onError={handleImageFallback}
-                                        onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
+                                        onClick={(e) => viewContent(e, null, '', journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                                     />
                                 )}
 
                                 <div className="card-content">
-                                    <div onClick={(e) => viewContent(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} className="content-container">
+                                    <div onClick={(e) => viewContent(e, null, '', journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} className="content-container">
                                         <div className="feed-text-content-container">
                                             <div className="feed-title-content">
                                                 <h2 className="feed-title">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}<PromptBadge promptId={journal.prompt_id} /></h2>
@@ -823,7 +821,7 @@ const PostCards = () => {
                                                 )}
 
                                                 {icon.commentAction && (
-                                                    <div onClick={(e) => icon.commentAction(e, journal.content, wholeText, journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} id="card-icons" className={icon.className}>
+                                                    <div onClick={(e) => icon.commentAction(e, null, '', journal.title, journal.users.id, journal.users.name, journal.users.image_url, journal.created_at, journal.id, journal.has_liked, journal.comment_count?.[0]?.count, journal.has_bookmarked, journal.like_count?.[0].count, journal.bookmark_count?.[0].count, journal.users.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} id="card-icons" className={icon.className}>
                                                         {icon.label}
                                                     </div>
                                                 )}
@@ -866,7 +864,7 @@ const PostCards = () => {
 
 
                             <div className="reading-time-container">
-                                <p className="reading-time-text">{CalculateText(wholeText)}</p>
+                                <p className="reading-time-text">{CalculateText(previewText)}</p>
                             </div>
 
                             <div className="user-post-settings">

@@ -30,7 +30,7 @@ const WeeklyRecapCard = () => {
     const [expanded, setExpanded] = useState(false);
 
     const { data, isLoading } = useQuery({
-        queryKey: ['weeklyRecap', session?.access_token],
+        queryKey: ['weeklyRecap', session?.user?.id],
         queryFn: () => getWeeklyRecap(session?.access_token),
         enabled: !!session?.access_token && !dismissed,
         staleTime: 1000 * 60 * 10,

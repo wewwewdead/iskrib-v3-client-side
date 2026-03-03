@@ -185,7 +185,7 @@ const MyProfile = () => {
 
             await updateProfileData(formdata, session?.access_token);
             setProfileEditAvatar(null);
-            queryClient.invalidateQueries({ queryKey: ["userData"] });
+            queryClient.invalidateQueries({ queryKey: ["userData", session?.user?.id] });
             setShowProfileEditor(false);
         } catch {
             showError("Failed to save profile. Please try again.");
@@ -214,7 +214,7 @@ const MyProfile = () => {
             setGradientPicked(null);
             setImageSrc(null);
             setShowBgPicker(false);
-            queryClient.invalidateQueries({ queryKey: ["userData"] });
+            queryClient.invalidateQueries({ queryKey: ["userData", session?.user?.id] });
         } catch {
             showError("Failed to update background. Please try again.");
         } finally {
@@ -283,7 +283,7 @@ const MyProfile = () => {
         formdata.append("fontColor", fontColor);
         try {
             await updateFontColor(session?.access_token, formdata);
-            queryClient.invalidateQueries({ queryKey: ["userData"] });
+            queryClient.invalidateQueries({ queryKey: ["userData", session?.user?.id] });
             setShowFontColorSelector(false);
         } catch {
             showError("Failed to update font color. Please try again.");

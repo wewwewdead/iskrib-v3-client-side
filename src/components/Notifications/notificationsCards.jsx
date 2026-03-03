@@ -5,7 +5,6 @@ import { MoonLoader } from "react-spinners";
 import { getNotifications } from "../../../API/Api";
 import { useEffect, useRef, useState } from "react";
 import FormatNotificationType from "../../../helpers/formatNoficationType";
-import ParseContent from "../HomePage/postCards/parseData";
 import formatPostDate from "../../../helpers/formatDateString";
 import { handleCLickContent, handleClickOpinion } from "../../../helpers/handleClicks";
 import { useNavigate } from "react-router-dom";
@@ -126,11 +125,10 @@ const NotificationCards = () =>{
             const encodedId = encodeURIComponent(repostId);
             navigate(`/home/post/${encodedId}`);
         } else {
-            const parsedContent = ParseContent(notification?.journals?.content);
             handleClickNotif(
                 e,
-                notification?.journals?.content,
-                parsedContent.wholeText,
+                null,
+                '',
                 notification?.journals?.title,
                 notification?.journals?.users.id,
                 notification?.journals?.users?.name,
@@ -138,18 +136,18 @@ const NotificationCards = () =>{
                 notification?.journals?.created_at,
                 notification?.journal_id,
                 notification?.hasLiked,
-                notification?.journals?.comments[0].count,
+                0,
                 notification?.hasBookMarked,
-                notification?.journals?.likes[0].count,
-                notification?.journals?.bookmarks[0].count,
+                0,
+                0,
                 notification?.journals?.users?.badge,
             )
         }
     }
 
     const {data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} = useInfiniteQuery({
-        queryKey: ['getNotifications', session?.access_token],
-        queryFn: ({pageParam = null, queryKey}) => getNotifications(queryKey[1], pageParam, 5),
+        queryKey: ['getNotifications', session?.user?.id],
+        queryFn: ({pageParam = null}) => getNotifications(session?.access_token, pageParam, 5),
         getNextPageParam: (lastpage) =>{
             if(lastpage?.hasMore){
                 const lastNotification = lastpage?.data[lastpage?.data.length - 1];
@@ -239,7 +237,8 @@ const NotificationCards = () =>{
             {notifications?.map((notification) => {
                 const isOpinion = notification?.source === 'opinion';
                 const displayType = isOpinion ? 'opinion_reply' : notification?.type;
-                const parsedContent = !isOpinion ? ParseContent(notification?.journals?.content) : null;
+                const previewText = !isOpinion ? (notification?.journals?.preview_text || '') : '';
+                const thumbnailUrl = !isOpinion ? (notification?.journals?.thumbnail_url || null) : null;
 
                 return(
                 <div key={`${notification.source}-${notification.id}`} className={notification?.read ? "notification-cards" : "notification-cards-unread"}>
@@ -337,10 +336,10 @@ const NotificationCards = () =>{
                                     <>
                                     <div className="notification-content-text">
                                         <p className="notif-content-title">{notification?.journals?.title?.length > 40 ? notification?.journals?.title?.substring(0, 39) : notification?.journals?.title}</p>
-                                        <p className="notif-content-sliced-text">{parsedContent?.slicedText}</p>
+                                        <p className="notif-content-sliced-text">{previewText}</p>
                                     </div>
                                     <div className="notif-content-image-container">
-                                        <img loading="lazy" className="notif-content-image" src={parsedContent?.firstImage?.src || '/assets/no-image.png'} alt={notification?.journals?.title ? `${notification.journals.title} cover image` : "Notification post cover image"} onError={handleImageFallback} />
+                                        <img loading="lazy" className="notif-content-image" src={thumbnailUrl || '/assets/no-image.png'} alt={notification?.journals?.title ? `${notification.journals.title} cover image` : "Notification post cover image"} onError={handleImageFallback} />
                                     </div>
                                     </>
                                 )}

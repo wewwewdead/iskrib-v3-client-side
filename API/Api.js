@@ -385,15 +385,23 @@ export const searchJournals = async(query, limit = 10, userId) => {
     return data;
 }
 
-export const getJournalById = async(journalId, userId) => {
+export const getJournalById = async(journalId, userId, options = {}) => {
     if (!journalId) {
         throw new Error('journalId is required');
     }
 
-    let url = `${BASE_URL}/journal/${encodeURIComponent(journalId)}`;
+    const params = new URLSearchParams();
     if (userId) {
-        url += `?userId=${encodeURIComponent(userId)}`;
+        params.set('userId', String(userId));
     }
+    if (options.includeRepostContent) {
+        params.set('includeRepostContent', 'true');
+    }
+
+    const queryString = params.toString();
+    const url = queryString
+        ? `${BASE_URL}/journal/${encodeURIComponent(journalId)}?${queryString}`
+        : `${BASE_URL}/journal/${encodeURIComponent(journalId)}`;
 
     const response = await apiRequest(url, {
         method: 'GET'
@@ -402,6 +410,23 @@ export const getJournalById = async(journalId, userId) => {
     if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error?.error || 'failed to fetch journal');
+    }
+
+    const data = await response.json();
+    return data;
+}
+export const getJournalContent = async(journalId) => {
+    if (!journalId) {
+        throw new Error('journalId is required');
+    }
+
+    const response = await apiRequest(`${BASE_URL}/journal/${encodeURIComponent(journalId)}/content`, {
+        method: 'GET'
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error?.error || 'failed to fetch journal content');
     }
 
     const data = await response.json();
@@ -1141,4 +1166,3 @@ export const getWeeklyRecap = async (token) => {
     }
     return await response.json();
 }
-

@@ -63,7 +63,7 @@ const ProfileMediaSection = () => {
             queryClient.invalidateQueries({ queryKey: ["profileMedia", userId] });
 
             if (response?.clearedAvatar || response?.clearedBackground) {
-                queryClient.invalidateQueries({ queryKey: ["userData"] });
+                queryClient.invalidateQueries({ queryKey: ["userData", session?.user?.id] });
             }
         },
     });
@@ -169,7 +169,12 @@ const ProfileMediaSection = () => {
                                 onClick={() => handleOpenMedia(item)}
                                 title={`View ${item.bucket} image full size`}
                             >
-                                <img className="profile-media-image" src={item.url} alt={`${item.bucket} media`} loading="lazy" />
+                                <img
+                                    className="profile-media-image"
+                                    src={item.cardUrl || item.url}
+                                    alt={`${item.bucket} media`}
+                                    loading="lazy"
+                                />
                             </button>
                             <div className="profile-media-item-actions">
                                 <button
@@ -211,7 +216,11 @@ const ProfileMediaSection = () => {
                                 <path d="m291-240-51-51 189-189-189-189 51-51 189 189 189-189 51 51-189 189 189 189-51 51-189-189-189 189Z" />
                             </svg>
                         </button>
-                        <img className="profile-media-lightbox-image" src={selectedMedia.url} alt={`${selectedMedia.bucket} media full size`} />
+                        <img
+                            className="profile-media-lightbox-image"
+                            src={selectedMedia.originalUrl || selectedMedia.detailUrl || selectedMedia.url}
+                            alt={`${selectedMedia.bucket} media full size`}
+                        />
                     </div>
                 </div>
                 , profileParentContainer)}

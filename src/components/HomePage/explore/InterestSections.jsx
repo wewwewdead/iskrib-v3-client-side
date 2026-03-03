@@ -1,4 +1,3 @@
-import ParseContent from "../postCards/parseData";
 import formatPostDate from "../../../../helpers/formatDateString";
 import { handleImageFallback } from "../../../utils/handleImageFallback";
 import "./interestSections.css";
@@ -17,9 +16,8 @@ const InterestSections = ({ sections, onPostClick }) => {
                     </div>
                     <div className="interest-section-scroll">
                         {section.posts.map((post) => {
-                            const parsed = ParseContent(post.content);
-                            const thumbnail = parsed?.firstImage?.src;
-                            const excerpt = parsed?.slicedText || '';
+                            const thumbnail = post.thumbnail_url || null;
+                            const excerpt = post.preview_text || '';
                             const title = post.title || 'Untitled';
                             const displayTitle = title.length > 50 ? title.slice(0, 50) + '...' : title;
 

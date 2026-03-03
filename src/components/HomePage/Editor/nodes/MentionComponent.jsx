@@ -9,7 +9,7 @@ export default function MentionComponent({ mentionName, mentionUserId, mentionUs
     const handleClick = (e) => {
         if (isEditable) return;
         e.stopPropagation();
-        handleClickProfile(navigate)(e, user?.id, mentionUserId, mentionUsername);
+        handleClickProfile(navigate)(e, user?.userData?.[0]?.id, mentionUserId, mentionUsername);
     };
 
     return (

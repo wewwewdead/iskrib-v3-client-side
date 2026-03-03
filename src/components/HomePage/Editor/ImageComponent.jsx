@@ -19,7 +19,7 @@ function ImageComponent({ src, nodeKey }){
   return (
     
     <div className="image-wrapper">
-      <img src={src} alt="content image" className="content_images" />
+      <img src={src} alt="content image" className="content_images" loading="lazy" />
       <div className="image-delete" onClick={handleDelete}>
         <svg
           xmlns="http://www.w3.org/2000/svg"

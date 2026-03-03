@@ -3,7 +3,6 @@ import './home.css'
 import { useAuth } from "../../Context/useAuth";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
-import { checkUser } from "../../../API/Api";
 import { AnimatePresence } from "framer-motion";
 
 import { useQueryClient } from '@tanstack/react-query';
@@ -226,20 +225,16 @@ const HomePage = () => {
     // }, [])
 
     useEffect(() => {
-        const checkOnboarding = async() => {
-            const userData = await checkUser(session?.user.id)
-            if(userData){
-                if(!userData.exist || !userData.onboardingCompleted){
-                    setOnboardingUserExists(userData.exist);
-                    setShowOnboarding(true);
-                }
+        if(session && !loading && user){
+            const profileData = user?.userData?.[0];
+            const exists = !!profileData;
+            const onboarded = profileData?.onboarding_completed ?? true;
+            if(!exists || !onboarded){
+                setOnboardingUserExists(exists);
+                setShowOnboarding(true);
             }
         }
-        if(session && !loading){
-            checkOnboarding();
-        }
-
-    },[session, loading])
+    },[session, loading, user])
 
     
 

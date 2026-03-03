@@ -6,22 +6,11 @@ import formatPostDate from "../../../helpers/formatDateString";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import './RelatedPosts.css';
 
-function extractExcerpt(content, maxLen = 120) {
-    if (!content) return '';
-    try {
-        const root = typeof content === 'string' ? JSON.parse(content) : content;
-        const texts = [];
-        const walk = (node) => {
-            if (node.text) texts.push(node.text);
-            if (node.children) node.children.forEach(walk);
-        };
-        walk(root.root || root);
-        const full = texts.join(' ').replace(/\s+/g, ' ').trim();
-        if (full.length <= maxLen) return full;
-        return full.slice(0, maxLen).replace(/\s+\S*$/, '') + '…';
-    } catch {
-        return '';
-    }
+function extractExcerpt(previewText, maxLen = 120) {
+    if (!previewText) return '';
+    const trimmed = previewText.replace(/\s+/g, ' ').trim();
+    if (trimmed.length <= maxLen) return trimmed;
+    return trimmed.slice(0, maxLen).replace(/\s+\S*$/, '') + '…';
 }
 
 const CONFIDENCE_LABELS = {
@@ -38,7 +27,7 @@ function RelatedPostCard({ post, index }) {
     };
 
     const title = post.title || 'Untitled';
-    const excerpt = extractExcerpt(post.content);
+    const excerpt = extractExcerpt(post.preview_text);
 
     // Map similarity to accent opacity (higher = brighter accent line)
     const accentOpacity = Math.min(1, Math.max(0.3, (post.semantic_similarity - 0.25) / 0.5));
