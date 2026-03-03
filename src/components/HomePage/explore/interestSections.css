@@ -27,6 +27,54 @@
     color: var(--text-secondary);
 }
 
+/* ── Scroll track wrapper (for arrow positioning) ── */
+.interest-section-track{
+    position: relative;
+}
+
+/* ── Scroll arrows ── */
+.interest-scroll-arrow{
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(80, 60, 40, 0.1);
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.interest-section-track:hover .interest-scroll-arrow{
+    opacity: 1;
+}
+.interest-scroll-arrow:hover{
+    background: var(--bg-primary);
+    color: rgba(212, 168, 83, 1);
+    border-color: rgba(212, 168, 83, 0.3);
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: 0 3px 12px rgba(80, 60, 40, 0.14);
+}
+.interest-scroll-arrow:active{
+    transform: translateY(-50%) scale(0.95);
+}
+.interest-scroll-arrow-left{
+    left: 4px;
+}
+.interest-scroll-arrow-right{
+    right: 4px;
+}
+[data-theme="dark"] .interest-scroll-arrow{
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
 /* ── Horizontal scroll track ── */
 .interest-section-scroll{
     display: flex;
@@ -35,11 +83,32 @@
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     padding: 0.25rem 0.85rem 0.5rem 0.85rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.2s ease;
+}
+.interest-section-scroll:hover{
+    scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+[data-theme="dark"] .interest-section-scroll:hover{
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
 }
 .interest-section-scroll::-webkit-scrollbar{
-    display: none;
+    height: 4px;
+}
+.interest-section-scroll::-webkit-scrollbar-track{
+    background: transparent;
+}
+.interest-section-scroll::-webkit-scrollbar-thumb{
+    background: transparent;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+.interest-section-scroll:hover::-webkit-scrollbar-thumb{
+    background: rgba(0,0,0,0.15);
+}
+[data-theme="dark"] .interest-section-scroll:hover::-webkit-scrollbar-thumb{
+    background: rgba(255,255,255,0.15);
 }
 
 /* ── Card ── */
@@ -128,6 +197,16 @@
 
 /* ── Mobile ── */
 @media(max-width: 600px){
+    .interest-scroll-arrow{
+        display: none;
+    }
+    .interest-section-scroll{
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .interest-section-scroll::-webkit-scrollbar{
+        display: none;
+    }
     .interest-card{
         flex: 0 0 180px;
     }
