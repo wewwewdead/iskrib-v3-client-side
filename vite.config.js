@@ -16,6 +16,24 @@ export default defineConfig(({ mode }) => {
         "this-is-undefined-in-esm": "silent",
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            "vendor-react": ["react", "react-dom", "react-router-dom"],
+            "vendor-query": ["@tanstack/react-query"],
+            "vendor-lexical": [
+              "lexical",
+              "@lexical/rich-text",
+              "@lexical/selection",
+              "@lexical/utils",
+            ],
+            "vendor-motion": ["framer-motion"],
+            "vendor-supabase": ["@supabase/supabase-js"],
+          },
+        },
+      },
+    },
     server: {
       proxy: {
         "/api": {

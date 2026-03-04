@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../../Context/useAuth';
 import { useStoryDetail } from '../hooks/useStoryData';
@@ -65,7 +65,7 @@ const StoryDetail = () => {
     const author = story.users;
     const chapters = story.chapters || [];
     const hasProgress = !!story.reading_progress;
-    const totalWords = chapters.reduce((sum, ch) => sum + (ch.word_count || 0), 0);
+    const totalWords = useMemo(() => chapters.reduce((sum, ch) => sum + (ch.word_count || 0), 0), [chapters]);
 
     return (
         <motion.div

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { MoonLoader } from "react-spinners";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -110,7 +110,7 @@ const HeroCard = ({ journal, hotScore, onClick }) => {
                         {hotScore}
                     </div>
                     <div className="reading-time-container">
-                        <p className="reading-time-text">{CalculateText(previewText)}</p>
+                        <p className="reading-time-text">{journal?.reading_time ? `${journal.reading_time} ${journal.reading_time > 1 ? 'mins' : 'min'} read` : CalculateText(previewText)}</p>
                     </div>
                 </div>
             </div>
@@ -171,7 +171,7 @@ const RunnerCard = ({ journal, index, hotScore, onClick }) => {
                         {hotScore}
                     </div>
                     <div className="reading-time-container">
-                        <p className="reading-time-text">{CalculateText(previewText)}</p>
+                        <p className="reading-time-text">{journal?.reading_time ? `${journal.reading_time} ${journal.reading_time > 1 ? 'mins' : 'min'} read` : CalculateText(previewText)}</p>
                     </div>
                 </div>
             </div>
@@ -205,7 +205,7 @@ const ExplorePage = () => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [searchType, setSearchType] = useState("posts");
     const onClickProfile = handleClickProfile(navigate);
-    const currentUtcMonthKey = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
+    const currentUtcMonthKey = useMemo(() => `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`, []);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -591,7 +591,7 @@ const ExplorePage = () => {
                                                 Hot score: {hotScore}
                                             </div>
                                             <div className="reading-time-container">
-                                                <p className="reading-time-text">{CalculateText(previewText)}</p>
+                                                <p className="reading-time-text">{journal?.reading_time ? `${journal.reading_time} ${journal.reading_time > 1 ? 'mins' : 'min'} read` : CalculateText(previewText)}</p>
                                             </div>
                                         </div>
                                     </div>

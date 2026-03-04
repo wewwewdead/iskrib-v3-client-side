@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInView } from 'react-intersection-observer';
 import { useAuth } from '../../../Context/useAuth';
@@ -20,7 +20,7 @@ const StoryLibrary = () => {
     const navigate = useNavigate();
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useMyLibrary(token);
-    const stories = data?.pages?.flatMap(page => page.data) || [];
+    const stories = useMemo(() => data?.pages?.flatMap(page => page.data) || [], [data]);
     const toggleLibrary = useToggleLibrary(token);
 
     const { ref: sentinelRef, inView } = useInView();

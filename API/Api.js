@@ -653,7 +653,7 @@ export const addBookmark = async(token, journalId) =>{
     const headers = {'Content-Type': 'application/json'};
     if(token) headers['Authorization'] = `Bearer ${token}`;
 
-    const response = await apiRequest(`${BASE_URL}/addBoorkmark`, {
+    const response = await apiRequest(`${BASE_URL}/addBookmark`, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(journalId),
@@ -740,9 +740,9 @@ export const getNotifications = async(token, cursor = null, limit = 5) =>{
         method: 'GET',
         headers: headers
     })
-    if(!response){
+    if(!response.ok){
         const error = await response.json();
-        throw new Error(error);
+        throw new Error(error?.error || 'failed to fetch notifications');
     }
     const data = await response.json();
     return data;

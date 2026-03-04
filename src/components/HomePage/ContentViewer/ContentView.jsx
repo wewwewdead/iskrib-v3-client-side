@@ -175,7 +175,7 @@ const ContentView = () => {
         queryKey: ['followsData', user?.userData?.[0]?.id, postData?.userId],
         queryFn: ({ queryKey }) => getFollowsData(queryKey[1], queryKey[2]),
         staleTime: 1000 * 60 * 60,
-        cacheTime: 1000 * 60 * 60,
+        gcTime: 1000 * 60 * 60,
         enabled: !!user?.userData?.[0]?.id && !!postData?.userId,
     });
 

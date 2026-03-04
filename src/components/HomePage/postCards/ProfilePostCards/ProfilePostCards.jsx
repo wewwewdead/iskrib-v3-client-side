@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '../../../../Context/useAuth';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteJournal, deleteJournalImage, getJournalContent, getUserJournals, updateRepostCaption } from '../../../../../API/Api';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { FadeLoader, MoonLoader } from 'react-spinners';
 import { useInView } from 'react-intersection-observer';
 import { useState } from 'react';
@@ -301,7 +301,7 @@ const ProfilePostCards = () =>{
     }, []);
 
 
-    const journals = data?.pages.flatMap((page) => page.data) || [];
+    const journals = useMemo(() => data?.pages.flatMap((page) => page.data) || [], [data]);
     if(isLoading){
         return(
             <>

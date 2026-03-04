@@ -22,7 +22,7 @@ const OpinionViewer = () => {
         queryKey: ['getViewOpinion', opinionId, userId],
         queryFn: ({ queryKey }) => getViewOpinion(queryKey[1], queryKey[2]),
         staleTime: 1000 * 60 * 60,
-        cacheTime: 1000 * 60 * 60,
+        gcTime: 1000 * 60 * 60,
         enabled: !!opinionId && !!userId,
         refetchOnWindowFocus: false
     });

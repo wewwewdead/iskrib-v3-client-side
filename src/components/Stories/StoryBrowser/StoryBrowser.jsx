@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../Context/useAuth';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -89,7 +89,7 @@ const StoryBrowser = () => {
         staleTime: 1000 * 60 * 5,
     });
 
-    const stories = data?.pages?.flatMap(p => p.data) || [];
+    const stories = useMemo(() => data?.pages?.flatMap(p => p.data) || [], [data]);
 
     return (
         <div className="story-browser">

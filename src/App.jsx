@@ -8,6 +8,9 @@ import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
 import MentionNode from './components/HomePage/Editor/nodes/MentionNode.jsx';
 import Loader from './components/loadingComponent/BgLoader.jsx';
 import SeoManager from './seo/SeoManager.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+
+const NotFound = lazy(() => import('./components/NotFound.jsx'));
 
 const AuthModal = lazy(() => import('./components/AuthModal/AuthModal.jsx'));
 const HomePage = lazy(() => import('./components/HomePage/Home.jsx'));
@@ -42,6 +45,30 @@ const ChapterReader = lazy(() => import('./components/Stories/ChapterReader/Chap
 const ProfileStoriesSection = lazy(() => import('./components/ProfilePage/components/ProfileStoriesSection.jsx'));
 const VisitedProfileStoriesSection = lazy(() => import('./components/VisitProfile/components/VisitedProfileStoriesSection.jsx'));
 
+const editorTheme = {
+  paragraph: 'editor-paragraph',
+  heading: {
+    h1: 'editor-heading-h1',
+    h2: 'editor-heading-h2',
+    h3: 'editor-heading-h3',
+  },
+  quote: 'editor-quote',
+  text: {
+    bold: 'editor-text-bold',
+    italic: 'editor-text-italic',
+    underline: 'editor-text-underline',
+  }
+};
+
+const editorConfig = {
+  namespace: "MyLexicalEditor",
+  theme: editorTheme,
+  nodes: [ImageNode, HeadingNode, QuoteNode, MentionNode],
+  onError(error){
+    throw error;
+  },
+};
+
 const AppAuthModal = () => {
   const {showAuthModal, closeAuthModal} = useAuth();
   return <AuthModal isOpen={showAuthModal} onClose={closeAuthModal}/>;
@@ -52,45 +79,31 @@ const AppSplash = () => {
   return <Loader isLoading={loading} />;
 }
 
-const App = () => {
+const HomeWithEditor = () => (
+  <LexicalComposer initialConfig={editorConfig}>
+    <HomePage/>
+  </LexicalComposer>
+);
 
-  const theme = {
-    paragraph: 'editor-paragraph',
-    heading: {
-      h1: 'editor-heading-h1',
-      h2: 'editor-heading-h2',
-      h3: 'editor-heading-h3',
-    },
-    quote: 'editor-quote',
-    text: {
-      bold: 'editor-text-bold',
-      italic: 'editor-text-italic',
-      underline: 'editor-text-underline',
-    }
-  }
-  
-  const initaConfig = {
-  namespace: "MyLexicalEditor",
-  theme,
-  //register nodes
-  nodes: [ImageNode, HeadingNode, QuoteNode, MentionNode],
-  onError(error){
-  throw error;
-  },
-}
+const SuspenseFallback = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <Loader />
+  </div>
+);
+
+const App = () => {
 
   return (
     <>
-    <LexicalComposer initialConfig={initaConfig}>
       <BrowserRouter>
         <SeoManager />
         <AppSplash />
-        <Suspense fallback={null}>
+        <Suspense fallback={<SuspenseFallback />}>
           <AppAuthModal/>
           <Routes>
             <Route path='/' element={<Navigate to='/home' replace/>}/>
             <Route path='/index.html' element={<Navigate to='/home' replace/>}/>
-            <Route path='/profile' element={<MyProfile/>}>
+            <Route path='/profile' element={<ProtectedRoute><MyProfile/></ProtectedRoute>}>
               <Route index element={<ProfilePostCards/>} />
               <Route path='media' element={<ProfileMediaSection/>} />
               <Route path='myOpinions' element={<MyOpinions/>}/>
@@ -111,7 +124,7 @@ const App = () => {
               <Route path='stories' element={<VisitedProfileStoriesSection/>}/>
             </Route>
 
-            <Route path='/home' element={<HomePage/>}>
+            <Route path='/home' element={<HomeWithEditor/>}>
               <Route index element={<PostCards/>}/>
               <Route path='following' element={<PostCards/>}/>
               <Route path='for-you' element={<PostCards/>}/>
@@ -140,15 +153,15 @@ const App = () => {
               <Route path='notifications' element={<Notifications/>}>
                 <Route index element={<NotificationCards/>}/>
                 <Route path='unreadNotification' element={<UnreadNotification/>}/>
-              </Route>  
-            </Route>   
+              </Route>
+            </Route>
 
             <Route path='/login' element={<LoginPage/>}/>
             <Route path='/signUp' element={<SignUp/>}/>
+            <Route path='*' element={<NotFound/>}/>
           </Routes>
         </Suspense>
       </BrowserRouter>
-    </LexicalComposer>
     </>
   )
 }

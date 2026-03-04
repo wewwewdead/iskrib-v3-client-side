@@ -1,7 +1,7 @@
 import {useLocation, useNavigate } from 'react-router-dom';
 import './profilepostcards.css';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { MoonLoader } from 'react-spinners';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
@@ -65,7 +65,7 @@ const VisitedProfilePostCards = () =>{
         setViewMode((prev) => (prev === 'list' ? 'grid' : 'list'));
     }, []);
 
-    const journals = journalData?.pages.flatMap((page) => page.data) || [];
+    const journals = useMemo(() => journalData?.pages.flatMap((page) => page.data) || [], [journalData]);
 
 
    if(isLoadingJournals){

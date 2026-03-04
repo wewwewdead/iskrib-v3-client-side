@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getBookmarks } from '../../../API/Api';
 import { useAuth } from '../../Context/useAuth';
 import './bookmarks.css';
@@ -103,8 +103,10 @@ const Bookmarks = () =>{
         }
     }, [])
 
-    const journals = data?.pages?.flatMap((journal) => journal.bookmarks|| []);
-    const totalBookmarks = data?.pages?.flatMap((journal) => journal.totalBookmarks)
+    const { journals, totalBookmarks } = useMemo(() => ({
+        journals: data?.pages?.flatMap((journal) => journal.bookmarks || []),
+        totalBookmarks: data?.pages?.flatMap((journal) => journal.totalBookmarks),
+    }), [data]);
 
     useEffect(() => {
         if(!isLoading && scrollToTop.current){
@@ -229,7 +231,7 @@ const Bookmarks = () =>{
 
                             <div className="bookmark-card-footer-right">
                                 <div className="reading-time-container">
-                                    <p className="reading-time-text">{CalculateText(previewText)}</p>
+                                    <p className="reading-time-text">{journal.journals.reading_time ? `${journal.journals.reading_time} ${journal.journals.reading_time > 1 ? 'mins' : 'min'} read` : CalculateText(previewText)}</p>
                                 </div>
 
                                 <div className="user-post-settings">

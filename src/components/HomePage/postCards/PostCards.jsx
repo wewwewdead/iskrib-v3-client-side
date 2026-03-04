@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { MoonLoader } from "react-spinners";
 import { motion, AnimatePresence,} from "framer-motion";
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -408,12 +408,12 @@ const PostCards = () => {
         }
     }, [])
 
-    const feedJournals = activeFeedData?.pages?.flatMap((page) => page.data || []) || [];
+    const feedJournals = useMemo(() => activeFeedData?.pages?.flatMap((page) => page.data || []) || [], [activeFeedData]);
     const searchedJournals = searchData?.data || [];
     const searchedUsers = userSearchData?.data || [];
-    const suggestionItems = searchType === 'people'
+    const suggestionItems = useMemo(() => searchType === 'people'
         ? (userSuggestionData?.data || [])
-        : (suggestionData?.data || []);
+        : (suggestionData?.data || []), [searchType, userSuggestionData, suggestionData]);
     const isSuggestionsPending = searchType === 'people'
         ? isUserSuggestionsLoading
         : isSuggestionsLoading;
@@ -864,7 +864,7 @@ const PostCards = () => {
 
 
                             <div className="reading-time-container">
-                                <p className="reading-time-text">{CalculateText(previewText)}</p>
+                                <p className="reading-time-text">{journal.reading_time ? `${journal.reading_time} ${journal.reading_time > 1 ? 'mins' : 'min'} read` : CalculateText(previewText)}</p>
                             </div>
 
                             <div className="user-post-settings">

@@ -284,17 +284,17 @@ export const useReadNotificationMutation = (session) =>{
         mutationFn: (data) => readNotification(session?.access_token, data?.notifId, data?.source),
         onMutate: async(data) => {
             await queryClient.cancelQueries(['notifcounts', session?.user?.id]);
-            const previousData = queryClient.getQueryData(['notifcount', session?.user?.id])
+            const previousData = queryClient.getQueryData(['notifcounts', session?.user?.id])
 
-            queryClient.setQueryData(['notifcount', session?.user?.id], (old) => ({count: (old?.count ? old?.count : 0) - 1}));
+            queryClient.setQueryData(['notifcounts', session?.user?.id], (old) => ({count: (old?.count ? old?.count : 0) - 1}));
 
             return{previousData};
         },
          onError: (err, data, context) => {
-            queryClient.setQueryData(['notifcount', session?.user?.id], context.previousData)
+            queryClient.setQueryData(['notifcounts', session?.user?.id], context.previousData)
          },
          onSettled: () => {
-            queryClient.invalidateQueries(['notifcount', session?.user?.id]);
+            queryClient.invalidateQueries(['notifcounts', session?.user?.id]);
          }
     })
 }
@@ -334,7 +334,7 @@ export const useUserDeleteNotificationMutation = (session) =>{
 export const useAddViewsMutation = (session) =>{
     return useMutation({
         mutationFn: (data) => addJournalViews(session?.access_token, data),
-        onerror: (err) => console.error(err),
+        onError: (err) => console.error(err),
         retry: 2,
     })
 }
