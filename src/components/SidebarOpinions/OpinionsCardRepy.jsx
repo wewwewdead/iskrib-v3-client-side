@@ -5,8 +5,11 @@ import { useAuth } from "../../Context/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import formatPostDate from "../../../helpers/formatDateString";
 import VerifiedBadge from "../Badge/VerifiedBadge";
+import MentionText from "../mentions/MentionText";
+import useTextareaMention from "../mentions/useTextareaMention";
+import MentionDropdown from "../mentions/MentionDropdown";
 
-const MAX_VISUAL_DEPTH = 4;
+const MAX_VISUAL_DEPTH = 3;
 
 const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
     const queryClient = useQueryClient();
@@ -18,6 +21,8 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
     const [showReplyButtonId, setShowReplyButtonId] = useState('');
 
     const textAreaRef = useRef(null);
+
+    const { textareaProps: mentionTextareaProps, dropdownProps: mentionDropdownProps } = useTextareaMention(replyOpinion, setReplyOpinion, textAreaRef, 280, user?.userData?.[0]?.id);
 
     const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery({
         queryKey: ['getReplyOpinion', opinionId],
@@ -43,15 +48,11 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
             queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
             queryClient.invalidateQueries({ queryKey: ['getViewOpinion'] });
             setReplyOpinion('');
-            if (textAreaRef.current) {
-                textAreaRef.current.innerText = '';
-            }
+            setShowReplyButtonId('');
+            setIsTypingId('');
         } catch (error) {
             console.error(error);
             setReplyOpinion('');
-            if (textAreaRef.current) {
-                textAreaRef.current.innerText = '';
-            }
             queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
             queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
             queryClient.invalidateQueries({ queryKey: ['getViewOpinion'] });
@@ -62,7 +63,6 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
         setIsTypingId('');
         setReplyOpinion('');
         if (textAreaRef.current) {
-            textAreaRef.current.innerText = '';
             textAreaRef.current.blur();
         }
         setShowReplyButtonId('');
@@ -76,65 +76,58 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
             className="rc-thread"
             style={{ '--depth': visualDepth }}
         >
-            {opinioData?.map((opinion, index) => (
-                <motion.div
-                    className="so-card-wrapper rc-card"
-                    key={opinion.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, delay: index * 0.03, ease: "easeOut" }}
-                >
-                    {depth > 0 && <div className="rc-thread-line" />}
+            {opinioData?.map((opinion, index) => {
+                const isLast = index === opinioData.length - 1;
+                const hideConnector = isLast && !hasNextPage && opinion.reply_count === 0;
 
-                    <div className="so-card so-card--flat">
-                        <div className="so-card-content">
-                            <div className="so-user-row">
-                                <div className="so-user-meta">
-                                    <div className={`so-avatar-outer ${opinion.users?.badge === 'legend' ? 'avatar-ring-legend' : opinion.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                        <img
-                                            className="so-avatar"
-                                            src={opinion.users?.image_url || '../assets/profile.jpg'}
-                                            alt={`${opinion?.users?.name || "User"} profile picture`}
-                                        />
-                                    </div>
-                                    <div className="so-name-block">
-                                        <div className="so-name-line">
-                                            <span className="so-username">{opinion.users?.name}</span>
-                                            <VerifiedBadge badge={opinion.users?.badge} size={14}/>
-                                        </div>
-                                        <span className="so-handle">{formatPostDate(opinion.created_at)}</span>
-                                    </div>
-                                </div>
+                return (
+                    <motion.div
+                        className="rc-reply"
+                        key={opinion.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, delay: index * 0.03, ease: "easeOut" }}
+                    >
+                        <div className="rc-avatar-col">
+                            <div className={`so-avatar-outer so-avatar-outer--sm ${opinion.users?.badge === 'legend' ? 'avatar-ring-legend' : opinion.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                <img
+                                    className="so-avatar so-avatar--sm"
+                                    src={opinion.users?.image_url || '../assets/profile.jpg'}
+                                    alt={`${opinion?.users?.name || "User"} profile picture`}
+                                />
+                            </div>
+                            <div className={`rc-connector ${hideConnector ? 'rc-connector--hidden' : ''}`} />
+                        </div>
+
+                        <div className="rc-content">
+                            <div className="so-header-row">
+                                <span className="so-username" style={{ fontSize: '0.8rem' }}>{opinion.users?.name}</span>
+                                <VerifiedBadge badge={opinion.users?.badge} size={12}/>
+                                <span className="so-dot">·</span>
+                                <span className="so-date" style={{ fontSize: '0.7rem' }}>{formatPostDate(opinion.created_at)}</span>
                             </div>
 
-                            <div className="so-body">
-                                {opinion.opinion}
+                            <div className="rc-body">
+                                <MentionText text={opinion.opinion} />
                             </div>
 
-                            <div className="so-meta-bar">
+                            <div className="rc-actions">
                                 {opinion.reply_count > 0 && (
-                                    <span
-                                        className="so-reply-pill"
+                                    <button
+                                        className="rc-show-replies"
                                         onClick={() => setShowReply(prev => !prev)}
                                     >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                        </svg>
                                         {showReply ? 'Hide' : 'Show'} {opinion.reply_count} {opinion.reply_count === 1 ? 'reply' : 'replies'}
-                                    </span>
+                                    </button>
                                 )}
-                                <span
-                                    className="so-reply-pill"
+                                <button
+                                    className="rc-reply-btn"
                                     onClick={() => setShowReplyButtonId(
                                         showReplyButtonId === opinion.id ? '' : opinion.id
                                     )}
                                 >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="9 17 4 12 9 7" />
-                                        <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
-                                    </svg>
                                     Reply
-                                </span>
+                                </button>
                             </div>
 
                             <AnimatePresence>
@@ -144,28 +137,37 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
                                         animate={{ height: "auto", opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
                                         transition={{ duration: 0.2 }}
-                                        className="rc-reply-input-wrapper"
+                                        className="rc-inline-composer"
                                     >
-                                        <div
-                                            className="ov-reply-input"
-                                            onFocus={() => setIsTypingId(opinion.id)}
+                                        <textarea
                                             ref={textAreaRef}
-                                            onInput={(e) => setReplyOpinion(e.currentTarget.innerText.trim())}
-                                            data-placeholder={`Add a reply to '${opinion.users?.name}'`}
-                                            contentEditable="true"
-                                            role="textbox"
+                                            maxLength={280}
+                                            value={replyOpinion}
+                                            onChange={(e) => { setReplyOpinion(e.target.value); mentionTextareaProps.onChange(e); }}
+                                            onKeyDown={mentionTextareaProps.onKeyDown}
+                                            onKeyUp={mentionTextareaProps.onKeyUp}
+                                            onFocus={() => setIsTypingId(opinion.id)}
+                                            className="ov-reply-input"
+                                            placeholder={`Reply to ${opinion.users?.name}...`}
+                                            rows={1}
                                         />
+                                        <MentionDropdown {...mentionDropdownProps} />
 
                                         {isTypingId === opinion.id && (
-                                            <div className="ov-btn-row">
-                                                <button onClick={cancelTyping} className="ov-btn-cancel">Cancel</button>
-                                                <button
-                                                    disabled={replyOpinion.trim().length === 0}
-                                                    onClick={() => handleSubmitReplyOpinion(replyOpinion, opinion.users.id, user?.userData[0].id, opinion.id)}
-                                                    className={`ov-btn-submit ${replyOpinion.trim().length === 0 ? 'ov-btn-disabled' : ''}`}
-                                                >
-                                                    Submit
-                                                </button>
+                                            <div className="ov-composer-actions">
+                                                <span className="ov-char-count">
+                                                    {replyOpinion.length > 0 ? `${replyOpinion.length}/280` : ''}
+                                                </span>
+                                                <div className="ov-btn-row">
+                                                    <button onClick={cancelTyping} className="ov-btn-cancel">Cancel</button>
+                                                    <button
+                                                        disabled={replyOpinion.trim().length === 0}
+                                                        onClick={() => handleSubmitReplyOpinion(replyOpinion, opinion.users.id, user?.userData[0].id, opinion.id)}
+                                                        className={`ov-btn-submit ${replyOpinion.trim().length === 0 ? 'ov-btn-disabled' : ''}`}
+                                                    >
+                                                        Reply
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </motion.div>
@@ -185,9 +187,9 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
                                 )}
                             </AnimatePresence>
                         </div>
-                    </div>
-                </motion.div>
-            ))}
+                    </motion.div>
+                );
+            })}
 
             {hasNextPage && (
                 <button className="rc-load-more" onClick={() => fetchNextPage()}>

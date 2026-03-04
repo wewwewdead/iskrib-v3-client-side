@@ -44,6 +44,9 @@ const StoryDetail = () => {
         }
     };
 
+    const chapters = story?.chapters || [];
+    const totalWords = useMemo(() => chapters.reduce((sum, ch) => sum + (ch.word_count || 0), 0), [chapters]);
+
     if (isLoading) {
         return (
             <div className="story-detail">
@@ -63,9 +66,7 @@ const StoryDetail = () => {
     }
 
     const author = story.users;
-    const chapters = story.chapters || [];
     const hasProgress = !!story.reading_progress;
-    const totalWords = useMemo(() => chapters.reduce((sum, ch) => sum + (ch.word_count || 0), 0), [chapters]);
 
     return (
         <motion.div

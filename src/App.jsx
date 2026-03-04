@@ -34,6 +34,8 @@ const MyOpinions = lazy(() => import('./components/SidebarOpinions/MyOpinions.js
 const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionViewer.jsx'));
 const ExplorePage = lazy(() => import('./components/HomePage/explore/ExplorePage.jsx'));
 const SettingsPage = lazy(() => import('./components/SettingsPage/SettingsPage.jsx'));
+const DraftList = lazy(() => import('./components/HomePage/Editor/DraftList/DraftList.jsx'));
+const AnalyticsDashboard = lazy(() => import('./components/Analytics/AnalyticsDashboard.jsx'));
 const StoryDashboard = lazy(() => import('./components/Stories/StoryDashboard/StoryDashboard.jsx'));
 const StoryEditor = lazy(() => import('./components/Stories/StoryEditor/StoryEditor.jsx'));
 const StoryChapterManager = lazy(() => import('./components/Stories/StoryChapterManager/StoryChapterManager.jsx'));
@@ -136,6 +138,8 @@ const App = () => {
               <Route path='opinions'element={<OpinionsPage/>}/>
               <Route path='opinionsViewer' element={<OpinionViewer/>}/>
 
+              <Route path='drafts' element={<DraftList/>}/>
+              <Route path='analytics' element={<AnalyticsDashboard/>}/>
               <Route path='settings' element={<SettingsPage/>}/>
 
               {/* Stories routes */}

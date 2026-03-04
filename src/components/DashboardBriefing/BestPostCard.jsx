@@ -20,8 +20,8 @@ const BestPostCard = ({ bestPost }) => {
     return (
         <motion.div
             className="recap-best-post"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.35, delay: 0.45, ease: 'easeOut' }}
             onClick={handleClick}
             role="button"

@@ -88,9 +88,9 @@ const DashboardBriefing = ({ onWriteResponse }) => {
         <AnimatePresence>
             <motion.div
                 className="dashboard-briefing"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15, transition: { duration: 0.25 } }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.25 } }}
                 transition={{ duration: 0.35, ease: 'easeOut' }}
                 key="dashboard-briefing"
             >

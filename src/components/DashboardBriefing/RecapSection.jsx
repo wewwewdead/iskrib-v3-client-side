@@ -3,13 +3,7 @@ import { motion } from 'framer-motion';
 import StatTile from './StatTile';
 import BestPostCard from './BestPostCard';
 import CommunityHighlights from './CommunityHighlights';
-import {
-    getPostsCopy,
-    getWordsCopy,
-    getReactionsCopy,
-    getViewsCopy,
-    getOverallEncouragement,
-} from './recapCopy';
+import { getOverallEncouragement } from './recapCopy';
 
 const PenIcon = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -46,10 +40,10 @@ const RecapSection = ({ personal, group, streakCount, freezeAvailable }) => {
     const views = personal?.views_received || 0;
 
     const tiles = [
-        { icon: <PenIcon />, value: posts, label: 'posts', microCopy: getPostsCopy(posts) },
-        { icon: <TypeIcon />, value: words, label: 'words', microCopy: getWordsCopy(words) },
-        { icon: <HeartIcon />, value: reactions, label: 'reactions', microCopy: getReactionsCopy(reactions) },
-        { icon: <EyeIcon />, value: views, label: 'views', microCopy: getViewsCopy(views) },
+        { icon: <PenIcon />, value: posts, label: 'posts' },
+        { icon: <TypeIcon />, value: words, label: 'words' },
+        { icon: <HeartIcon />, value: reactions, label: 'reactions' },
+        { icon: <EyeIcon />, value: views, label: 'views' },
     ];
 
     return (

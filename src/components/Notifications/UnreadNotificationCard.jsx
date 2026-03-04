@@ -197,7 +197,9 @@ const UnreadNotification = () =>{
         <div className="unread-notification-component-container">
             {unreadNotifications?.map((unreadNotification) => {
                 const isOpinion = unreadNotification?.source === 'opinion';
-                const displayType = isOpinion ? 'opinion_reply' : unreadNotification?.type;
+                const displayType = isOpinion
+                    ? (unreadNotification?.type === 'mention' ? 'mention' : 'opinion_reply')
+                    : unreadNotification?.type;
                 const previewText = !isOpinion ? (unreadNotification?.journals?.preview_text || '') : '';
                 const thumbnailUrl = !isOpinion ? (unreadNotification?.journals?.thumbnail_url || null) : null;
 

@@ -21,7 +21,9 @@ import { useMediaQuery } from 'react-responsive';
 const DEFAULT_EDITOR_LAUNCH_CONFIG = {
     initialTitle: '',
     promptId: null,
-    promptText: null
+    promptText: null,
+    draftId: null,
+    draftContent: null,
 };
 
 const HomePage = () => {
@@ -149,6 +151,31 @@ const HomePage = () => {
                 </svg>
             },
             {
+                path: '/home/drafts',
+                label: 'Drafts',
+                action: () => navigatePath('/home/drafts'),
+                icon:
+                <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill={pathname === '/home/drafts' ? activeColor : inactiveColor}>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                    <polyline points="14 2 14 8 20 8" fill="none" stroke={pathname === '/home/drafts' ? activeColor : inactiveColor} strokeWidth="1"/>
+                    <line x1="16" y1="13" x2="8" y2="13" stroke={pathname === '/home/drafts' ? '#fff' : inactiveColor} strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="16" y1="17" x2="8" y2="17" stroke={pathname === '/home/drafts' ? '#fff' : inactiveColor} strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+            },
+            {
+                path: '/home/analytics',
+                label: 'Analytics',
+                action: () => navigatePath('/home/analytics'),
+                icon:
+                <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill={pathname === '/home/analytics' ? activeColor : inactiveColor}>
+                    <path d="M3 3v18h18" stroke={pathname === '/home/analytics' ? activeColor : inactiveColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <path d="M7 17V13" stroke={pathname === '/home/analytics' ? activeColor : inactiveColor} strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M11 17V9" stroke={pathname === '/home/analytics' ? activeColor : inactiveColor} strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M15 17V5" stroke={pathname === '/home/analytics' ? activeColor : inactiveColor} strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M19 17V11" stroke={pathname === '/home/analytics' ? activeColor : inactiveColor} strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+            },
+            {
                 path: '/home/settings',
                 label: 'Settings',
                 action: () => navigatePath('/home/settings'),
@@ -259,6 +286,8 @@ const HomePage = () => {
                 initialTitle={editorLaunchConfig.initialTitle}
                 promptId={editorLaunchConfig.promptId}
                 promptText={editorLaunchConfig.promptText}
+                draftId={editorLaunchConfig.draftId}
+                draftContent={editorLaunchConfig.draftContent}
             />
         )}
 

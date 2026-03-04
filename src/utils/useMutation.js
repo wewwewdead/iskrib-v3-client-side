@@ -247,17 +247,21 @@ export const useLikeMutation = (session, userId) =>{
     };
 }
 
-export const useFollowMutation = (session) =>{
+export const useFollowMutation = (session, followingId) =>{
     const queryClient = useQueryClient();
+    const queryFilter = {
+        queryKey: ['followsData'],
+        predicate: (query) => query.queryKey[2] === followingId,
+    };
 
     return useMutation({
         mutationFn: (data) => addFollows(data, session?.access_token),
 
-        onMutate: async(data) => {
-            await queryClient.cancelQueries(['followsData']);
-            const previousData = queryClient.getQueryData(['followsData']);
+        onMutate: async() => {
+            await queryClient.cancelQueries(queryFilter);
+            const allMatching = queryClient.getQueriesData(queryFilter);
 
-            queryClient.setQueryData(['followsData'], (old) => {
+            queryClient.setQueriesData(queryFilter, (old) => {
                 if(!old) return old;
                 return{
                     ...old,
@@ -266,14 +270,16 @@ export const useFollowMutation = (session) =>{
                 }
             })
 
-            return {previousData};
+            return {allMatching};
 
         },
-        onError: (err, data, context) => {
-            queryClient.setQueryData(['followsData'], context.previousData)
+        onError: (_err, _data, context) => {
+            context?.allMatching?.forEach(([key, data]) => {
+                queryClient.setQueryData(key, data);
+            });
         },
         onSettled: () => {
-            queryClient.invalidateQueries(['followsData']);
+            queryClient.invalidateQueries({ queryKey: ['followsData'] });
         }
     })
 }

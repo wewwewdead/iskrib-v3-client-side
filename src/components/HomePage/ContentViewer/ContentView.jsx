@@ -173,7 +173,7 @@ const ContentView = () => {
 
     const { data: followsData, isLoading: isLoadingFollows } = useQuery({
         queryKey: ['followsData', user?.userData?.[0]?.id, postData?.userId],
-        queryFn: ({ queryKey }) => getFollowsData(queryKey[1], queryKey[2]),
+        queryFn: ({ queryKey }) => getFollowsData(session?.access_token, queryKey[2]),
         staleTime: 1000 * 60 * 60,
         gcTime: 1000 * 60 * 60,
         enabled: !!user?.userData?.[0]?.id && !!postData?.userId,
@@ -239,7 +239,7 @@ const ContentView = () => {
     }
     const debounceClickBookmark = debounce(handleClickBookmark, 100);
 
-    const mutationFollow = useFollowMutation(session);
+    const mutationFollow = useFollowMutation(session, postData?.userId);
     const handleClickFollow = async (e, followingId, followerId) => {
         e.stopPropagation();
         if(!session) return openAuthModal();

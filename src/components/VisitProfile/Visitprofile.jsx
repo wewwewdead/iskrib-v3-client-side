@@ -122,7 +122,7 @@ const Visitprofile = () =>{
         }
     }
 
-    const mutationFollow = useFollowMutation(session);
+    const mutationFollow = useFollowMutation(session, visitedUserId);
     const hadnleClickFollow = (e, followingId, followerId,) =>{
         mutationFollow.mutate({followingId, followerId})
     }
@@ -155,7 +155,7 @@ const Visitprofile = () =>{
 
     const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
         queryKey: ['followsData', user?.userData?.[0].id, visitedUserId],
-        queryFn: ({queryKey}) => getFollowsData(queryKey[1], queryKey[2]),
+        queryFn: ({queryKey}) => getFollowsData(session?.access_token, queryKey[2]),
         staleTime: 1000 * 60 * 60,
         gcTime: 1000 * 60 * 60,
         enabled: !!user?.userData?.[0].id && !!visitedUserId,

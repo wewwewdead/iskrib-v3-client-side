@@ -8,6 +8,7 @@ import { useInView } from "react-intersection-observer";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import formatPostDate from "../../../helpers/formatDateString";
 import { MoonLoader } from "react-spinners";
+import MentionText from "../mentions/MentionText";
 
 const MyOpinions = () =>{
     const {session, user, openAuthModal} = useAuth();
@@ -87,7 +88,7 @@ const MyOpinions = () =>{
                         onClick={(e) => handleClickContent(e, opinion.id, user?.userData[0].id)}
                         className="ov-body"
                     >
-                        {opinion.opinion}
+                        <MentionText text={opinion.opinion} />
                     </div>
 
                     <div className="ov-meta-bar">

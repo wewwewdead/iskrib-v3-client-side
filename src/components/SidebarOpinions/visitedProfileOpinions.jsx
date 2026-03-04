@@ -9,8 +9,16 @@ import { useAuth } from "../../Context/useAuth";
 import { handleClickProfile } from "../../../helpers/handleClicks";
 import formatPostDate from "../../../helpers/formatDateString";
 import { MoonLoader } from "react-spinners";
+import MentionText from "../mentions/MentionText";
 
-
+const cardVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: (i) => ({
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.3, delay: i * 0.04, ease: "easeOut" }
+    })
+};
 
 const VisitedProfileOpinions = () =>{
     const {ref, inView} = useInView({threshold: 0, rootMargin: '200px'})
@@ -57,10 +65,6 @@ const VisitedProfileOpinions = () =>{
     }
 
     useEffect(() =>{
-        // console.log(userId)
-    }, [userId])
-
-    useEffect(() =>{
         if(inView && hasNextPage && !isFetchingNextPage){
             fetchNextPage();
         }
@@ -90,40 +94,36 @@ const VisitedProfileOpinions = () =>{
         <>
         <AnimatePresence>
         <div className="visited-profile-opinions-container">
-            {opinions.map((opinion) => (
+            {opinions.map((opinion, index) => (
                 <motion.div
                     className="so-card-wrapper"
                     key={opinion.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    custom={index}
+                    initial="hidden"
+                    animate="visible"
+                    variants={cardVariants}
                 >
-                    <div className="so-card so-card--flat">
+                    <div className="so-card">
                         <div className="so-card-content">
-                            <div className="so-user-row">
-                                <div className="so-user-meta">
-                                    <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                        <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, userId)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
-                                    </div>
-                                    <div className="so-name-block">
-                                        <div className="so-name-line">
-                                            <span className="so-username">{opinion.users.name}</span>
-                                            <VerifiedBadge badge={opinion.users.badge} size={14} />
-                                        </div>
-                                        <span className="so-handle">{formatPostDate(opinion.created_at)}</span>
-                                    </div>
+                            <div className="so-header-row">
+                                <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                    <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, userId)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
                                 </div>
+                                <span className="so-username">{opinion.users.name}</span>
+                                <VerifiedBadge badge={opinion.users.badge} size={14} />
+                                <span className="so-dot">·</span>
+                                <span className="so-date">{formatPostDate(opinion.created_at)}</span>
                             </div>
 
                             <div
                                 onClick={(e) => handleClickContent(e, opinion.id, opinion.users.id)}
                                 className="so-body"
                             >
-                                {opinion.opinion}
+                                <MentionText text={opinion.opinion} />
                             </div>
 
-                            <div className="so-meta-bar">
-                                <span className="so-reply-pill" onClick={(e) => { e.stopPropagation(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}>
+                            <div className="so-action-row">
+                                <span className="so-reply-btn" onClick={(e) => { e.stopPropagation(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                     </svg>

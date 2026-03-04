@@ -7,6 +7,8 @@ import { getComments } from '../../../API/Api';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { BarLoader, MoonLoader } from 'react-spinners';
 import CommentsCards from './commentsCards';
+import useTextareaMention from '../mentions/useTextareaMention';
+import MentionDropdown from '../mentions/MentionDropdown';
 
 const incrementJournalCommentCount = (old, postId) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -39,6 +41,8 @@ const CommentSection = ({onclose, postId, receiverId})=>{
 
     const [comments, setComments] = useState('');
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+    const { textareaProps: mentionTextareaProps, dropdownProps: mentionDropdownProps } = useTextareaMention(comments, setComments, textAreaFocusRef, 200, user?.userData?.[0]?.id);
 
     const {data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage} = useInfiniteQuery({
         queryKey: ['postComments', postId],
@@ -207,12 +211,15 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                     <textarea
                         ref={textAreaFocusRef}
                         value={comments}
-                        onChange={(e) => setComments(e.target.value)}
+                        onChange={(e) => { setComments(e.target.value); mentionTextareaProps.onChange(e); }}
+                        onKeyDown={mentionTextareaProps.onKeyDown}
+                        onKeyUp={mentionTextareaProps.onKeyUp}
                         className="cm-textarea"
                         maxLength={200}
                         placeholder="Write a comment..."
                         rows={1}
                     />
+                    <MentionDropdown {...mentionDropdownProps} />
                     <button
                         disabled={isSubmittingComment || !comments.trim()}
                         onClick={(e) => handaleSubmitComment(e, postId, receiverId)}

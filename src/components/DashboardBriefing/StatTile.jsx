@@ -8,20 +8,19 @@ const fmt = (n) => {
     return String(n);
 };
 
-const StatTile = ({ icon, value, label, microCopy, index }) => {
+const StatTile = ({ icon, value, label, index }) => {
     const animated = useAnimatedCounter(value, 900 + index * 50);
 
     return (
         <motion.div
             className="recap-tile"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.35, delay: 0.1 + index * 0.08, ease: 'easeOut' }}
         >
             <span className="recap-tile-icon">{icon}</span>
             <span className="recap-tile-value">{fmt(animated)}</span>
             <span className="recap-tile-label">{label}</span>
-            {microCopy && <span className="recap-tile-micro">{microCopy}</span>}
         </motion.div>
     );
 };

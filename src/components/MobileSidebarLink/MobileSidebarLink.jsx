@@ -81,6 +81,18 @@ const MobileSidebarLink = ({onclose}) => {
                     </div>
                 </div>
 
+                <div onClick={() => navigatePath('/home/analytics')} className='sidebar-nav-container'>
+                    <div className={location.pathname === '/home/analytics' ? 'sidebar-nav-bttn-active' : 'sidebar-nav-bttn'}>
+                        Analytics
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28px" height="28px" viewBox="0 0 24 24" fill={location.pathname === '/home/analytics' ? "#D4A853" : "#b6b6b6"}>
+                            <path d="M3 3v18h18" stroke={location.pathname === '/home/analytics' ? "#D4A853" : "#b6b6b6"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                            <path d="M7 17V13" stroke={location.pathname === '/home/analytics' ? "#D4A853" : "#b6b6b6"} strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M11 17V9" stroke={location.pathname === '/home/analytics' ? "#D4A853" : "#b6b6b6"} strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M15 17V5" stroke={location.pathname === '/home/analytics' ? "#D4A853" : "#b6b6b6"} strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M19 17V11" stroke={location.pathname === '/home/analytics' ? "#D4A853" : "#b6b6b6"} strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                    </div>
+                </div>
 
                 <div onClick={() => navigatePath('/home/settings')} className='sidebar-nav-container'>
                     <div className={location.pathname === '/home/settings' ? 'sidebar-nav-bttn-active' : 'sidebar-nav-bttn'}>

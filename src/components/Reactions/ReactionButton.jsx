@@ -1,10 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import ReactionPicker from './ReactionPicker';
+import ReactionBurst from './ReactionBurst';
 import { getReactionEmoji } from '../../utils/reactionConfig';
 import './reactions.css';
 
 const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
     const [showPicker, setShowPicker] = useState(false);
+    const [burstState, setBurstState] = useState(null);
     const hoverTimerRef = useRef(null);
     const leaveTimerRef = useRef(null);
     const longPressTimerRef = useRef(null);
@@ -92,15 +94,23 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
         if (userReaction) {
             onReact(userReaction); // toggle off
         } else {
+            if (!burstState && containerRef.current) {
+                const rect = containerRef.current.getBoundingClientRect();
+                setBurstState({ emoji: getReactionEmoji('heart'), rect });
+            }
             onReact('heart'); // default to heart
         }
-    }, [userReaction, onReact, disabled, showPicker]);
+    }, [userReaction, onReact, disabled, showPicker, burstState]);
 
     const handlePickerSelect = useCallback((reactionType) => {
         setShowPicker(false);
         isTouchRef.current = false;
+        if (!burstState && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setBurstState({ emoji: getReactionEmoji(reactionType), rect });
+        }
         onReact(reactionType);
-    }, [onReact]);
+    }, [onReact, burstState]);
 
     const hasReaction = !!userReaction;
     const displayEmoji = hasReaction ? getReactionEmoji(userReaction) : null;
@@ -139,6 +149,13 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
                 onSelect={handlePickerSelect}
                 currentReaction={userReaction}
             />
+            {burstState && (
+                <ReactionBurst
+                    emoji={burstState.emoji}
+                    originRect={burstState.rect}
+                    onComplete={() => setBurstState(null)}
+                />
+            )}
         </div>
     );
 };

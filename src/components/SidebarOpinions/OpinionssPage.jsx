@@ -10,6 +10,16 @@ import { handleClickProfile } from "../../../helpers/handleClicks";
 import OpinionEditor from "./OpinionsEditor";
 import formatPostDate from "../../../helpers/formatDateString";
 import VerifiedBadge from "../Badge/VerifiedBadge";
+import MentionText from "../mentions/MentionText";
+
+const cardVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: (i) => ({
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.3, delay: i * 0.04, ease: "easeOut" }
+    })
+};
 
 const OpinionsPage = () =>{
     const [showHeaders, setShowHeaders] = useState(true);
@@ -39,16 +49,6 @@ const OpinionsPage = () =>{
         refetchOnWindowFocus: false,
         staleTime: 1000 * 60 * 5,
     })
-
-    useEffect(() =>{
-        // console.log(data);
-    }, [data])
-
-    const getUserHandle = (opinionUser) => {
-        if(!opinionUser?.user_email) return null;
-        const handle = opinionUser.user_email.split('@')[0];
-        return handle ? `@${handle}` : null;
-    }
 
     const links = [
         {label: 'Writings', path: '/home'},
@@ -135,6 +135,39 @@ const OpinionsPage = () =>{
 
     const opinions = data?.pages.flatMap((page) => page.data) || [];
 
+    const fabButton = showWriteContainer && (
+        <motion.div
+            className="write-opinion-fab"
+            onClick={(e) => handleClickWriteOpinion(e)}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } }}
+            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2, ease: 'easeIn' } }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+        </motion.div>
+    );
+
+    const headerNav = showHeaders && (
+        <motion.div
+            className="newsfeed-header"
+            initial={{opacity: 0}}
+            animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
+            exit={{ opacity: 0, y: -20, transition: { duration: 0.2, ease: "easeOut" } }}
+        >
+            {links.map((link, index) =>(
+                <div onClick={() => handleClickLinks(link.path)} key={index} className='header-link'>
+                    {link.label}
+                    <div className={link.path === location.pathname ? "header-underline" : ''}></div>
+                </div>
+            ))}
+        </motion.div>
+    );
+
     if(opinions.length === 0 && !isLoading) {
         return (
             <AnimatePresence>
@@ -142,50 +175,9 @@ const OpinionsPage = () =>{
                 {openOpinionEditor && (
                     <OpinionEditor onClose={closeOpinionEditor}/>
                 )}
-
-                {showHeaders && (
-                    <motion.div 
-                    className="newsfeed-header"
-                    initial={{opacity: 0}}
-                    animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
-                    exit={{ opacity: 0, y: -20,
-                        transition: { 
-                        duration: 0.2,
-                        ease: "easeOut"
-                        }
-                    }}
-                    >
-                        {links.map((link, index) =>(
-                            <div onClick={() => handleClickLinks(link.path)} key={index} className='header-link'>
-                                {link.label}
-                                <div className={link.path === location.pathname ? "header-underline" : ''}></div>
-                            </div>
-                        ))}
-                    </motion.div>
-                )}
-
-                    
+                {headerNav}
                 <div className="opinions-page-parent-container">
-
-                    {showWriteContainer && (
-                        <motion.div
-                            className="write-opinion-fab"
-                            onClick={(e) => handleClickWriteOpinion(e)}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }}
-                            exit={{ opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } }}
-                        >
-                            <div className="opinion-fab-icon-wrapper">
-                                <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="0.05">
-                                    <g id="grid_system"/>
-                                    <g id="_icons">
-                                        <path d="M22,13.5c0-2.3-1.8-4.2-4-4.5c-0.2-2.8-2.6-5-5.4-5H7.5C6,4,4.6,4.6,3.6,5.6C2.6,6.6,2,8,2,9.5c0,1.2,0.4,2.3,1,3.2l-1,3   c-0.1,0.4,0,0.8,0.3,1.1C2.5,16.9,2.8,17,3,17c0.2,0,0.3,0,0.4-0.1l4-2c0,0,0,0,0,0h1.8c0.2,0.5,0.4,1,0.7,1.4   c0.9,1.1,2.1,1.7,3.5,1.7h2.3l3.8,1.9C19.7,20,19.8,20,20,20c0.2,0,0.5-0.1,0.7-0.2c0.3-0.3,0.4-0.7,0.3-1.1L20.4,17   c0.1-0.1,0.2-0.2,0.3-0.3C21.5,15.8,22,14.7,22,13.5z M7.3,12.9c-0.2,0-0.4,0-0.6,0.1l-2.1,1l0.4-1.3c0.1-0.3,0-0.7-0.2-1   C4.3,11.1,4,10.3,4,9.5C4,8.5,4.4,7.7,5,7c0.7-0.7,1.5-1,2.4-1h5.1c1.8,0,3.2,1.3,3.4,3h-2.5c-1.2,0-2.3,0.5-3.2,1.3   c-0.7,0.7-1.1,1.5-1.3,2.4c0,0.1,0,0.1,0,0.2H7.5C7.4,12.9,7.4,12.9,7.3,12.9z M19.3,15.3c-0.2,0.2-0.4,0.3-0.6,0.4   c-0.4,0.2-0.6,0.7-0.5,1.2l0.1,0.2l-1.8-0.9C16.3,16,16.2,16,16,16h-2.5c-0.8,0-1.5-0.3-2-1c-0.3-0.4-0.5-0.8-0.5-1.2   c0-0.1,0-0.2,0-0.3c0-0.1,0-0.3,0-0.4c0.1-0.5,0.3-1,0.7-1.3c0.5-0.5,1.1-0.7,1.8-0.7H17h0.5c1.4,0,2.5,1.1,2.5,2.5   C20,14.2,19.7,14.8,19.3,15.3z"/>
-                                    </g>
-                                </svg>
-                            </div>
-                        </motion.div>
-                    )}
-
+                    {fabButton}
                     <div>
                         No opinions availabe
                     </div>
@@ -201,102 +193,59 @@ const OpinionsPage = () =>{
         {openOpinionEditor && (
             <OpinionEditor onClose={closeOpinionEditor}/>
         )}
+        {headerNav}
 
-        {showHeaders && (
-            <motion.div 
-            className="newsfeed-header"
-            initial={{opacity: 0}}
-            animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
-            exit={{ opacity: 0, y: -20,
-                    transition: { 
-                    duration: 0.2,
-                    ease: "easeOut"
-                    }
-                }}
-            >
-                {links.map((link, index) =>(
-                    <div onClick={() => handleClickLinks(link.path)} key={index} className='header-link'>
-                        {link.label}
-                        <div className={link.path === location.pathname ? "header-underline" : ''}></div>
-                    </div>
-                ))}
-            </motion.div>
-        )}
+        <div className="opinions-page-parent-container">
+            {fabButton}
 
-        
-        <div className="opinions-page-parent-container">   
-
-            {showWriteContainer && (
+            {opinions.map((opinion, index) => (
                 <motion.div
-                    className="write-opinion-fab"
-                    onClick={(e) => handleClickWriteOpinion(e)}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }}
-                    exit={{ opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } }}
+                    key={opinion.id}
+                    className="so-card-wrapper"
+                    custom={index}
+                    initial="hidden"
+                    animate="visible"
+                    variants={cardVariants}
                 >
-                    <div className="opinion-fab-icon-wrapper">
-                        <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="0.05">
-                            <g id="grid_system"/>
-                            <g id="_icons">
-                                <path d="M22,13.5c0-2.3-1.8-4.2-4-4.5c-0.2-2.8-2.6-5-5.4-5H7.5C6,4,4.6,4.6,3.6,5.6C2.6,6.6,2,8,2,9.5c0,1.2,0.4,2.3,1,3.2l-1,3   c-0.1,0.4,0,0.8,0.3,1.1C2.5,16.9,2.8,17,3,17c0.2,0,0.3,0,0.4-0.1l4-2c0,0,0,0,0,0h1.8c0.2,0.5,0.4,1,0.7,1.4   c0.9,1.1,2.1,1.7,3.5,1.7h2.3l3.8,1.9C19.7,20,19.8,20,20,20c0.2,0,0.5-0.1,0.7-0.2c0.3-0.3,0.4-0.7,0.3-1.1L20.4,17   c0.1-0.1,0.2-0.2,0.3-0.3C21.5,15.8,22,14.7,22,13.5z M7.3,12.9c-0.2,0-0.4,0-0.6,0.1l-2.1,1l0.4-1.3c0.1-0.3,0-0.7-0.2-1   C4.3,11.1,4,10.3,4,9.5C4,8.5,4.4,7.7,5,7c0.7-0.7,1.5-1,2.4-1h5.1c1.8,0,3.2,1.3,3.4,3h-2.5c-1.2,0-2.3,0.5-3.2,1.3   c-0.7,0.7-1.1,1.5-1.3,2.4c0,0.1,0,0.1,0,0.2H7.5C7.4,12.9,7.4,12.9,7.3,12.9z M19.3,15.3c-0.2,0.2-0.4,0.3-0.6,0.4   c-0.4,0.2-0.6,0.7-0.5,1.2l0.1,0.2l-1.8-0.9C16.3,16,16.2,16,16,16h-2.5c-0.8,0-1.5-0.3-2-1c-0.3-0.4-0.5-0.8-0.5-1.2   c0-0.1,0-0.2,0-0.3c0-0.1,0-0.3,0-0.4c0.1-0.5,0.3-1,0.7-1.3c0.5-0.5,1.1-0.7,1.8-0.7H17h0.5c1.4,0,2.5,1.1,2.5,2.5   C20,14.2,19.7,14.8,19.3,15.3z"/>
-                            </g>
-                        </svg>
-                    </div>
-                </motion.div>
-            )}
-             
-
-            {opinions.map((opinion) => {
-                const handle = getUserHandle(opinion?.users);
-                return (
-                    <div key={opinion.id} className="so-card-wrapper">
-                        <div className="so-card so-card--flat">
-                            <div className="so-card-content">
-                                <div className="so-user-row">
-                                    <div className="so-user-meta">
-                                        <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                            <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
-                                        </div>
-                                        <div className="so-name-block">
-                                            <div className="so-name-line">
-                                                <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-username">{opinion.users.name}</span>
-                                                <VerifiedBadge badge={opinion.users.badge} size={14}/>
-                                            </div>
-                                            {handle && (
-                                                <span className="so-handle">{handle}</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="so-date-row">
-                                        <span className="ov-dot">·</span>
-                                        <span className="ov-date">{formatPostDate(opinion.created_at)}</span>
-                                    </div>
+                    <div className="so-card">
+                        <div className="so-card-content">
+                            <div className="so-header-row">
+                                <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                    <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
                                 </div>
-                                <div className="so-body" onClick={(e) => handleClickContent(e, opinion.id, opinion.user_id)}>
-                                    {opinion.opinion}
-                                </div>
-                                <div className="so-meta-bar">
-                                    <span className="so-reply-pill" onClick={(e) => { e.stopPropagation(); if(!session) return openAuthModal(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                        </svg>
-                                        Reply
-                                    </span>
-                                </div>
+                                <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-username">{opinion.users.name}</span>
+                                <VerifiedBadge badge={opinion.users.badge} size={14}/>
+                                <span className="so-dot">·</span>
+                                <span className="so-date">{formatPostDate(opinion.created_at)}</span>
+                            </div>
+                            <div className="so-body" onClick={(e) => handleClickContent(e, opinion.id, opinion.user_id)}>
+                                <MentionText text={opinion.opinion} />
+                            </div>
+                            <div className="so-action-row">
+                                <motion.button
+                                    className="so-reply-btn"
+                                    whileHover={{ scale: 1.04 }}
+                                    whileTap={{ scale: 0.96 }}
+                                    onClick={(e) => { e.stopPropagation(); if(!session) return openAuthModal(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    Reply
+                                </motion.button>
                             </div>
                         </div>
                     </div>
-                )
-            })}
+                </motion.div>
+            ))}
             <div className="opinions-in-view" ref={ref}>
             </div>
         </div>
 
-            
+
         </>
         </AnimatePresence>
     )
 }
 
 export default OpinionsPage;
-

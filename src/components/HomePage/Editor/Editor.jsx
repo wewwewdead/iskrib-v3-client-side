@@ -1,11 +1,12 @@
 import './editor.css';
-import { motion } from "framer-motion";
-import React, { useCallback, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import EditorInner from './RichTextEditor.jsx';
 import { $getRoot } from 'lexical';
-import { deleteJournalImage } from '../../../../API/Api.js';
+import { deleteJournalImage, saveDraft } from '../../../../API/Api.js';
 import { useAuth } from '../../../Context/useAuth.js';
+import { useQueryClient } from '@tanstack/react-query';
 
 class ErrorBoundary extends React.Component {
   state = { error: null };
@@ -20,13 +21,20 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-const Editor=({onClose, initialTitle = '', promptId = null, promptText = null}) =>{
+const Editor=({onClose, initialTitle = '', promptId = null, promptText = null, draftId = null, draftContent = null}) =>{
     const {session} = useAuth();
+    const queryClient = useQueryClient();
 
     const [title, setTitle] = useState(initialTitle || '')
     const [wordCount, setWordCount] = useState(0);
     const [editor] = useLexicalComposerContext();
-
+    const currentDraftIdRef = useRef(draftId);
+    const editorStateRef = useRef({ hasChanges: false, hasContent: false, editorState: null, title: '' });
+    const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+    const [isSavingDraft, setIsSavingDraft] = useState(false);
+    const [saveError, setSaveError] = useState(false);
+    const saveButtonRef = useRef(null);
+    const isClosingRef = useRef(false);
 
     const [uploadedImagePaths, setUploadedImagePaths] = useState([]);
 
@@ -38,18 +46,33 @@ const Editor=({onClose, initialTitle = '', promptId = null, promptText = null}) 
         setTitle(initialTitle || '');
     }, [initialTitle]);
 
+    // Load draft content into Lexical editor on mount
+    useEffect(() => {
+        if (draftContent && editor) {
+            try {
+                const parsedState = editor.parseEditorState(draftContent);
+                editor.setEditorState(parsedState);
+            } catch (err) {
+                console.error('Failed to load draft content:', err);
+            }
+        }
+    }, [draftContent, editor]);
+
+    const handleDraftIdCreated = useCallback((newDraftId) => {
+        currentDraftIdRef.current = newDraftId;
+    }, []);
+
     const handleCloseEditor = useCallback(async() => {
-      if(uploadedImagePaths.length > 0){
+      // Only delete uploaded images if there's no saved draft
+      // (drafts own their images)
+      if(uploadedImagePaths.length > 0 && !currentDraftIdRef.current){
         const message = await deleteJournalImage(session?.access_token, uploadedImagePaths)
         if(message){
           // console.log(message.message)
         }
-
       }
-        editor.update(() => {
-            const state = editor.getEditorState().toJSON();
-            // console.log(state)
 
+        editor.update(() => {
             const root = $getRoot();
             root.clear();
             onClose();
@@ -58,14 +81,75 @@ const Editor=({onClose, initialTitle = '', promptId = null, promptText = null}) 
 
     const handleCloseEditorOnSave = useCallback(async() => {
       editor.update(() => {
-            const state = editor.getEditorState().toJSON();
-            // console.log(state)
-
             const root = $getRoot();
             root.clear();
             onClose();
       })
     }, [onClose, editor])
+
+    const handleCloseClick = useCallback(() => {
+        if (isClosingRef.current) return;
+        const { hasChanges, hasContent } = editorStateRef.current;
+        if (hasChanges && hasContent) {
+            setShowCloseConfirm(true);
+        } else {
+            isClosingRef.current = true;
+            handleCloseEditor();
+        }
+    }, [handleCloseEditor])
+
+    const handleConfirmSaveDraft = useCallback(async () => {
+        let currentEditorState;
+        editor.read(() => {
+            currentEditorState = JSON.stringify(editor.getEditorState().toJSON());
+        });
+        if (!currentEditorState || !session?.access_token) {
+            handleCloseEditor();
+            return;
+        }
+        setSaveError(false);
+        setIsSavingDraft(true);
+
+        // Cancel pending auto-save timer
+        if (editorStateRef.current.saveTimerRef) {
+            clearTimeout(editorStateRef.current.saveTimerRef.current);
+        }
+
+        try {
+            await saveDraft(session.access_token, {
+                content: currentEditorState,
+                title: title || '',
+                draftId: currentDraftIdRef.current || null,
+                prompt_id: promptId || null,
+            });
+            queryClient.invalidateQueries({ queryKey: ['journal-drafts'], refetchType: 'active' });
+            handleCloseEditorOnSave();
+        } catch (err) {
+            console.error('Failed to save draft on close:', err);
+            setSaveError(true);
+            setIsSavingDraft(false);
+        }
+    }, [editor, session?.access_token, title, promptId, queryClient, handleCloseEditor, handleCloseEditorOnSave])
+
+    const handleConfirmDiscard = useCallback(() => {
+        setShowCloseConfirm(false);
+        handleCloseEditor();
+    }, [handleCloseEditor])
+
+    // Escape key dismisses dialog
+    useEffect(() => {
+        if (!showCloseConfirm) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') handleConfirmDiscard();
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [showCloseConfirm, handleConfirmDiscard]);
+
+    // Auto-focus Save Draft button when dialog opens
+    useEffect(() => {
+        if (showCloseConfirm) saveButtonRef.current?.focus();
+    }, [showCloseConfirm]);
 
     return(
         <>
@@ -80,7 +164,7 @@ const Editor=({onClose, initialTitle = '', promptId = null, promptText = null}) 
             >
                 <div className='editor-close-bttn-container'>
                     <button
-                        onClick={() => handleCloseEditor()}
+                        onClick={handleCloseClick}
                         className='editor-close-bttn'
                         aria-label="Close editor"
                         title="Close"
@@ -101,9 +185,57 @@ const Editor=({onClose, initialTitle = '', promptId = null, promptText = null}) 
                             setWordCount={setWordCount}
                             wordCount={wordCount}
                             promptId={promptId}
+                            draftId={draftId}
+                            onDraftIdCreated={handleDraftIdCreated}
+                            editorStateRef={editorStateRef}
                         />
                     </ErrorBoundary>
                 </div>
+                <AnimatePresence>
+                    {showCloseConfirm && (
+                        <motion.div
+                            className="editor-close-confirm-overlay"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            onClick={handleConfirmDiscard}
+                        >
+                            <motion.div
+                                className="editor-close-confirm-card"
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <p className="editor-close-confirm-message">
+                                    {currentDraftIdRef.current ? 'Save changes before closing?' : 'Save as draft before closing?'}
+                                </p>
+                                {saveError && (
+                                    <p className="editor-close-confirm-error">Couldn't save. Try again?</p>
+                                )}
+                                <div className="editor-close-confirm-actions">
+                                    <button
+                                        className="editor-close-confirm-discard"
+                                        onClick={handleConfirmDiscard}
+                                        disabled={isSavingDraft}
+                                    >
+                                        Discard
+                                    </button>
+                                    <button
+                                        ref={saveButtonRef}
+                                        className="editor-close-confirm-save"
+                                        onClick={handleConfirmSaveDraft}
+                                        disabled={isSavingDraft}
+                                    >
+                                        {isSavingDraft ? 'Saving...' : 'Save Draft'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </motion.div>
         </div>
         </>

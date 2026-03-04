@@ -426,6 +426,69 @@
     background-color: var(--bg-pill);
 }
 
+/* ── Reply indent ── */
+.cm-card--reply {
+    margin-left: 20px;
+}
+
+/* ── Reply context chip ── */
+.cm-reply-context-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 20px;
+    background: var(--bg-pill);
+    border: 1px solid var(--border-card);
+    backdrop-filter: blur(8px);
+    width: fit-content;
+}
+.cm-reply-context-text {
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-faint);
+}
+.cm-reply-context-name {
+    color: var(--accent-amber);
+    font-weight: 600;
+}
+.cm-reply-context-dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 50%;
+    color: var(--text-faint);
+    padding: 0;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+.cm-reply-context-dismiss:hover {
+    color: var(--text-heading);
+    background-color: var(--border-card);
+}
+
+/* ── Reply count badge ── */
+.cm-replies-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background-color: var(--accent-amber);
+    color: #ffffff;
+    font-family: var(--font-ui);
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
 /* ── Mobile responsive ── */
 @media (max-width: 480px) {
     .cm-parent-container {

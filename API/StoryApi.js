@@ -1,336 +1,100 @@
-import BASE_URL from "../src/utils/apiBaseUrl";
-import apiRequest from "../src/utils/apiRequest";
+import { publicGet, authedGet, authedJsonRequest, authedFormRequest } from "./apiHelpers";
 
 // ── Stories ──
 
-export const createStory = async (token, formData) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+export const createStory = (token, formData) =>
+    authedFormRequest(token, 'POST', '/stories', formData, 'failed to create story');
 
-    const response = await apiRequest(`${BASE_URL}/stories`, {
-        method: 'POST',
-        headers,
-        body: formData,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to create story');
-    }
-    return response.json();
-};
-
-export const getStories = async (limit = 10, before = null, status = null, tag = null, token = null) => {
-    const params = new URLSearchParams();
-    params.set('limit', limit);
+export const getStories = (limit = 10, before = null, status = null, tag = null, token = null) => {
+    const params = new URLSearchParams({ limit: String(limit) });
     if (before) params.set('before', before);
     if (status) params.set('status', status);
     if (tag) params.set('tag', tag);
-
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories?${params}`, {
-        method: 'GET',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch stories');
-    }
-    return response.json();
+    return token
+        ? authedGet(token, `/stories?${params}`, 'failed to fetch stories')
+        : publicGet(`/stories?${params}`, 'failed to fetch stories');
 };
 
-export const getStoryById = async (storyId, token = null) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+export const getStoryById = (storyId, token = null) =>
+    token
+        ? authedGet(token, `/stories/${storyId}`, 'failed to fetch story')
+        : publicGet(`/stories/${storyId}`, 'failed to fetch story');
 
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}`, {
-        method: 'GET',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch story');
-    }
-    return response.json();
-};
+export const updateStory = (token, storyId, formData) =>
+    authedFormRequest(token, 'PATCH', `/stories/${storyId}`, formData, 'failed to update story');
 
-export const updateStory = async (token, storyId, formData) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+export const deleteStory = (token, storyId) =>
+    authedFormRequest(token, 'DELETE', `/stories/${storyId}`, undefined, 'failed to delete story');
 
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}`, {
-        method: 'PATCH',
-        headers,
-        body: formData,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to update story');
-    }
-    return response.json();
-};
-
-export const deleteStory = async (token, storyId) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}`, {
-        method: 'DELETE',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to delete story');
-    }
-    return response.json();
-};
-
-export const getMyStories = async (token, limit = 5, before = null) => {
-    const params = new URLSearchParams();
-    params.set('limit', limit);
+export const getMyStories = (token, limit = 5, before = null) => {
+    const params = new URLSearchParams({ limit: String(limit) });
     if (before) params.set('before', before);
-
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/my?${params}`, {
-        method: 'GET',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch my stories');
-    }
-    return response.json();
+    return authedGet(token, `/stories/my?${params}`, 'failed to fetch my stories');
 };
 
-export const getMyLibrary = async (token, limit = 5, before = null) => {
-    const params = new URLSearchParams();
-    params.set('limit', limit);
+export const getMyLibrary = (token, limit = 5, before = null) => {
+    const params = new URLSearchParams({ limit: String(limit) });
     if (before) params.set('before', before);
-
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/library?${params}`, {
-        method: 'GET',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch library');
-    }
-    return response.json();
+    return authedGet(token, `/stories/library?${params}`, 'failed to fetch library');
 };
 
-export const getUserStories = async (userId, token = null, limit = 5, before = null) => {
-    const params = new URLSearchParams();
-    params.set('limit', limit);
+export const getUserStories = (userId, token = null, limit = 5, before = null) => {
+    const params = new URLSearchParams({ limit: String(limit) });
     if (before) params.set('before', before);
-
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/user/${userId}?${params}`, {
-        method: 'GET',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch user stories');
-    }
-    return response.json();
+    return token
+        ? authedGet(token, `/stories/user/${userId}?${params}`, 'failed to fetch user stories')
+        : publicGet(`/stories/user/${userId}?${params}`, 'failed to fetch user stories');
 };
 
 // ── Chapters ──
 
-export const createChapter = async (token, storyId, title) => {
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+export const createChapter = (token, storyId, title) =>
+    authedJsonRequest(token, 'POST', `/stories/${storyId}/chapters`, { title }, 'failed to create chapter');
 
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/chapters`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ title }),
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to create chapter');
-    }
-    return response.json();
-};
+export const getChapter = (storyId, chapterId, token = null) =>
+    token
+        ? authedGet(token, `/stories/${storyId}/chapters/${chapterId}`, 'failed to fetch chapter')
+        : publicGet(`/stories/${storyId}/chapters/${chapterId}`, 'failed to fetch chapter');
 
-export const getChapter = async (storyId, chapterId, token = null) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+export const updateChapter = (token, storyId, chapterId, data) =>
+    authedJsonRequest(token, 'PATCH', `/stories/${storyId}/chapters/${chapterId}`, data, 'failed to update chapter');
 
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/chapters/${chapterId}`, {
-        method: 'GET',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch chapter');
-    }
-    return response.json();
-};
+export const deleteChapter = (token, storyId, chapterId) =>
+    authedFormRequest(token, 'DELETE', `/stories/${storyId}/chapters/${chapterId}`, undefined, 'failed to delete chapter');
 
-export const updateChapter = async (token, storyId, chapterId, data) => {
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/chapters/${chapterId}`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to update chapter');
-    }
-    return response.json();
-};
-
-export const deleteChapter = async (token, storyId, chapterId) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/chapters/${chapterId}`, {
-        method: 'DELETE',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to delete chapter');
-    }
-    return response.json();
-};
-
-export const reorderChapters = async (token, storyId, chapterOrder) => {
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/chapters/reorder`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ chapterOrder }),
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to reorder chapters');
-    }
-    return response.json();
-};
+export const reorderChapters = (token, storyId, chapterOrder) =>
+    authedJsonRequest(token, 'POST', `/stories/${storyId}/chapters/reorder`, { chapterOrder }, 'failed to reorder chapters');
 
 // ── Interactions ──
 
-export const toggleStoryVote = async (token, storyId) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+export const toggleStoryVote = (token, storyId) =>
+    authedFormRequest(token, 'POST', `/stories/${storyId}/vote`, undefined, 'failed to toggle vote');
 
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/vote`, {
-        method: 'POST',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to toggle vote');
-    }
-    return response.json();
-};
+export const toggleStoryLibrary = (token, storyId) =>
+    authedFormRequest(token, 'POST', `/stories/${storyId}/library`, undefined, 'failed to toggle library');
 
-export const toggleStoryLibrary = async (token, storyId) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/library`, {
-        method: 'POST',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to toggle library');
-    }
-    return response.json();
-};
-
-export const getChapterComments = async (chapterId, paragraphIndex = null, token = null) => {
+export const getChapterComments = (chapterId, paragraphIndex = null, token = null) => {
     const params = new URLSearchParams();
     if (paragraphIndex !== null && paragraphIndex !== undefined) {
         params.set('paragraph_index', paragraphIndex);
     }
-
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const url = `${BASE_URL}/chapters/${chapterId}/comments${params.toString() ? '?' + params : ''}`;
-    const response = await apiRequest(url, { method: 'GET', headers });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch comments');
-    }
-    return response.json();
+    const qs = params.toString();
+    const path = `/chapters/${chapterId}/comments${qs ? '?' + qs : ''}`;
+    return token
+        ? authedGet(token, path, 'failed to fetch comments')
+        : publicGet(path, 'failed to fetch comments');
 };
 
-export const getChapterCommentCounts = async (chapterId, token = null) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+export const getChapterCommentCounts = (chapterId, token = null) =>
+    token
+        ? authedGet(token, `/chapters/${chapterId}/comment-counts`, 'failed to fetch comment counts')
+        : publicGet(`/chapters/${chapterId}/comment-counts`, 'failed to fetch comment counts');
 
-    const response = await apiRequest(`${BASE_URL}/chapters/${chapterId}/comment-counts`, {
-        method: 'GET',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch comment counts');
-    }
-    return response.json();
-};
+export const addChapterComment = (token, chapterId, data) =>
+    authedJsonRequest(token, 'POST', `/chapters/${chapterId}/comments`, data, 'failed to add comment');
 
-export const addChapterComment = async (token, chapterId, data) => {
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+export const saveReadingProgress = (token, storyId, chapterId, scrollPosition) =>
+    authedJsonRequest(token, 'POST', `/stories/${storyId}/progress`, { chapter_id: chapterId, scroll_position: scrollPosition }, 'failed to save progress');
 
-    const response = await apiRequest(`${BASE_URL}/chapters/${chapterId}/comments`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to add comment');
-    }
-    return response.json();
-};
-
-export const saveReadingProgress = async (token, storyId, chapterId, scrollPosition) => {
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/progress`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ chapter_id: chapterId, scroll_position: scrollPosition }),
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to save progress');
-    }
-    return response.json();
-};
-
-export const getReadingProgress = async (token, storyId) => {
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await apiRequest(`${BASE_URL}/stories/${storyId}/progress`, {
-        method: 'GET',
-        headers,
-    });
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.error || 'failed to fetch progress');
-    }
-    return response.json();
-};
+export const getReadingProgress = (token, storyId) =>
+    authedGet(token, `/stories/${storyId}/progress`, 'failed to fetch progress');

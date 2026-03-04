@@ -8,6 +8,10 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import formatPostDate from "../../../helpers/formatDateString";
+import ReplyContextChip from "./ReplyContextChip";
+import useTextareaMention from "../mentions/useTextareaMention";
+import MentionDropdown from "../mentions/MentionDropdown";
+import MentionText from "../mentions/MentionText";
 
 const incrementReplyCount = (old, parentId) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -43,6 +47,8 @@ const CommentsCards = ({comments, postId}) =>{
 
     const navigate = useNavigate();
     const replyInputRef = useRef(null);
+
+    const { textareaProps: mentionTextareaProps, dropdownProps: mentionDropdownProps } = useTextareaMention(reply, setReply, replyInputRef, 200, userId);
 
     const clickProfile = handleClickProfile(navigate);
 
@@ -158,7 +164,7 @@ const CommentsCards = ({comments, postId}) =>{
     const replies = data?.pages.flatMap((page) => page.data) || [];
 
     return(
-        <div style={{marginLeft: comments?.parent_id ? 20 : 0}} className="cm-card">
+        <div className={`cm-card ${comments?.parent_id ? 'cm-card--reply' : ''}`}>
             {comments?.parent_id && <div className="cm-thread-line" />}
 
             <div className="cm-card-content">
@@ -180,7 +186,7 @@ const CommentsCards = ({comments, postId}) =>{
                     <span className="cm-date">{formatPostDate(comments?.created_at)}</span>
                 </div>
 
-                <p className="cm-body">{comments?.comment}</p>
+                <p className="cm-body"><MentionText text={comments?.comment} /></p>
 
                 <div className="cm-card-actions">
                     <button onClick={(e) => handleClickReplyButton(e)} className="cm-reply-btn">
@@ -193,10 +199,15 @@ const CommentsCards = ({comments, postId}) =>{
 
                     {comments?.reply_count > 0 && (
                         <button onClick={() => setShowReplies(!showReplies)} className="cm-toggle-replies-btn">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                            </svg>
-                            {showReplies ? 'Hide' : 'Show'} {comments?.reply_count} {comments?.reply_count === 1 ? 'reply' : 'replies'}
+                            <motion.svg
+                                width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                animate={{ rotate: showReplies ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <polyline points="6 9 12 15 18 9" />
+                            </motion.svg>
+                            <span className="cm-replies-count-badge">{comments?.reply_count}</span>
+                            {showReplies ? 'Hide replies' : 'View replies'}
                         </button>
                     )}
                 </div>
@@ -216,15 +227,19 @@ const CommentsCards = ({comments, postId}) =>{
                             transition={{ duration: 0.2 }}
                             className="cm-reply-input-wrapper"
                         >
+                            <ReplyContextChip name={comments?.users?.name} onDismiss={(e) => handleClickReplyButton(e)} />
                             <textarea
                                 ref={replyInputRef}
                                 maxLength={200}
                                 value={reply}
-                                onChange={(e) => setReply(e.target.value)}
+                                onChange={(e) => { setReply(e.target.value); mentionTextareaProps.onChange(e); }}
+                                onKeyDown={mentionTextareaProps.onKeyDown}
+                                onKeyUp={mentionTextareaProps.onKeyUp}
                                 className="cm-reply-textarea"
                                 placeholder={`Replying to ${comments?.users?.name}...`}
                                 rows={1}
                             />
+                            <MentionDropdown {...mentionDropdownProps} />
                             <div className="cm-reply-action-row">
                                 <span className={`cm-reply-char-count ${reply.length > 199 ? 'cm-char-limit' : ''}`}>
                                     {reply.length}/200

@@ -238,7 +238,9 @@ const NotificationCards = () =>{
         <div className="notifications-container">
             {notifications?.map((notification) => {
                 const isOpinion = notification?.source === 'opinion';
-                const displayType = isOpinion ? 'opinion_reply' : notification?.type;
+                const displayType = isOpinion
+                    ? (notification?.type === 'mention' ? 'mention' : 'opinion_reply')
+                    : notification?.type;
                 const previewText = !isOpinion ? (notification?.journals?.preview_text || '') : '';
                 const thumbnailUrl = !isOpinion ? (notification?.journals?.thumbnail_url || null) : null;
 

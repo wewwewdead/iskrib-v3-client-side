@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import formatPostDate from "../../../helpers/formatDateString";
 import OpinionsReplyCard from "./OpinionsCardRepy";
 import VerifiedBadge from "../Badge/VerifiedBadge";
+import MentionText from "../mentions/MentionText";
+import useTextareaMention from "../mentions/useTextareaMention";
+import MentionDropdown from "../mentions/MentionDropdown";
 
 const OpinionViewer = () => {
     const queryClient = useQueryClient();
@@ -17,6 +20,8 @@ const OpinionViewer = () => {
 
     const [replyOpinion, setReplyOpinion] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+
+    const { textareaProps: mentionTextareaProps, dropdownProps: mentionDropdownProps } = useTextareaMention(replyOpinion, setReplyOpinion, textAreaRef, 280, user?.userData?.[0]?.id);
 
     const { data, isLoading } = useQuery({
         queryKey: ['getViewOpinion', opinionId, userId],
@@ -31,7 +36,6 @@ const OpinionViewer = () => {
         setIsTyping(false);
         setReplyOpinion('');
         if (textAreaRef.current) {
-            textAreaRef.current.innerText = '';
             textAreaRef.current.blur();
         }
     };
@@ -43,18 +47,13 @@ const OpinionViewer = () => {
         try {
             await addReplyOpinion(formData, receiverId, senderId, parentId, session?.access_token);
             setReplyOpinion('');
-            if (textAreaRef.current) {
-                textAreaRef.current.innerText = '';
-            }
+            setIsTyping(false);
             queryClient.invalidateQueries({ queryKey: ['getViewOpinion', opinionId, userId] });
             queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
             queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
         } catch (error) {
             console.error(error);
             setReplyOpinion('');
-            if (textAreaRef.current) {
-                textAreaRef.current.innerText = '';
-            }
             queryClient.invalidateQueries({ queryKey: ['getViewOpinion', opinionId, userId] });
             queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
             queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
@@ -62,8 +61,6 @@ const OpinionViewer = () => {
     };
 
     const opinionData = data?.data;
-
-    // console.log(opinionData)
 
     return (
         <>
@@ -74,39 +71,31 @@ const OpinionViewer = () => {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
+                    style={{ borderBottom: 'none' }}
                 >
-                    <div className="so-card so-card--flat">
+                    <div className="so-card so-card--parent">
                         <div className="so-card-content">
-                            <div className="so-user-row">
-                                <div className="so-user-meta">
-                                    <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
-                                        <img
-                                            className="so-avatar"
-                                            src={opinion.users.image_url || '../assets/profile.jpg'}
-                                            alt={`${opinion?.users?.name || "User"} profile picture`}
-                                        />
-                                    </div>
-                                    <div className="so-name-block">
-                                        <div className="so-name-line">
-                                            <span className="so-username">{opinion.users.name}</span>
-                                            <VerifiedBadge badge={opinion.users.badge} size={14}/>
-                                        </div>
-                                        <span className="so-handle">{formatPostDate(opinion.created_at)}</span>
-                                    </div>
+                            <div className="so-header-row">
+                                <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                    <img
+                                        className="so-avatar"
+                                        src={opinion.users.image_url || '../assets/profile.jpg'}
+                                        alt={`${opinion?.users?.name || "User"} profile picture`}
+                                    />
                                 </div>
+                                <span className="so-username">{opinion.users.name}</span>
+                                <VerifiedBadge badge={opinion.users.badge} size={14}/>
                             </div>
 
-                            <div className="so-body">
-                                {opinion.opinion}
+                            <div className="so-body so-body--parent">
+                                <MentionText text={opinion.opinion} />
                             </div>
 
-                            <div className="so-meta-bar">
-                                <span className="so-reply-pill">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                    </svg>
+                            <div className="ov-stats-row">
+                                <span className="ov-reply-count">
                                     {opinion.reply_count} {opinion.reply_count === 1 ? 'reply' : 'replies'}
                                 </span>
+                                <span className="so-dot">·</span>
                                 <span className="ov-full-date">
                                     {new Date(opinion.created_at).toLocaleDateString('en-US', {
                                         month: 'long',
@@ -116,48 +105,63 @@ const OpinionViewer = () => {
                                 </span>
                             </div>
 
-                            <div className="ov-reply-row">
+                            <div className="ov-divider" />
+
+                            <div className="ov-composer">
                                 <img
                                     className="ov-reply-avatar"
                                     src={user?.userData[0].image_url || '../assets/profile.jpg'}
                                     alt={`${user?.userData?.[0]?.name || "User"} profile picture`}
                                 />
-                                <div
-                                    className="ov-reply-input"
-                                    onFocus={() => setIsTyping(true)}
-                                    ref={textAreaRef}
-                                    onInput={(e) => setReplyOpinion(e.currentTarget.innerText.trim())}
-                                    data-placeholder={`Add a reply to '${opinion.users.name}'`}
-                                    contentEditable="true"
-                                    role="textbox"
-                                />
+                                <div className="ov-composer-input-wrap">
+                                    <textarea
+                                        ref={textAreaRef}
+                                        maxLength={280}
+                                        value={replyOpinion}
+                                        onChange={(e) => { setReplyOpinion(e.target.value); mentionTextareaProps.onChange(e); }}
+                                        onKeyDown={mentionTextareaProps.onKeyDown}
+                                        onKeyUp={mentionTextareaProps.onKeyUp}
+                                        onFocus={() => setIsTyping(true)}
+                                        className="ov-reply-input"
+                                        placeholder={`Reply to ${opinion.users.name}...`}
+                                        rows={1}
+                                    />
+                                    <MentionDropdown {...mentionDropdownProps} />
+
+                                    <AnimatePresence>
+                                        {isTyping && (
+                                            <motion.div
+                                                className="ov-composer-actions"
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                            >
+                                                <span className="ov-char-count">
+                                                    {replyOpinion.length > 0 ? `${replyOpinion.length}/280` : ''}
+                                                </span>
+                                                <div className="ov-btn-row">
+                                                    <button
+                                                        onClick={cancelTyping}
+                                                        className="ov-btn-cancel"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        disabled={replyOpinion.trim().length === 0}
+                                                        onClick={() => submitReply(userId, user?.userData[0].id, opinion.id)}
+                                                        className={`ov-btn-submit ${replyOpinion.trim().length === 0 ? 'ov-btn-disabled' : ''}`}
+                                                    >
+                                                        Reply
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </div>
 
-                            <AnimatePresence>
-                                {isTyping && (
-                                    <motion.div
-                                        className="ov-btn-row"
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: "auto", opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        <button
-                                            onClick={cancelTyping}
-                                            className="ov-btn-cancel"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            disabled={replyOpinion.trim().length === 0}
-                                            onClick={() => submitReply(userId, user?.userData[0].id, opinion.id)}
-                                            className={`ov-btn-submit ${replyOpinion.trim().length === 0 ? 'ov-btn-disabled' : ''}`}
-                                        >
-                                            Submit
-                                        </button>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                            <div className="ov-divider" />
 
                             <OpinionsReplyCard opinionId={opinion.id} depth={0} />
                         </div>

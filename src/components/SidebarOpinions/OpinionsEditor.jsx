@@ -1,14 +1,19 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "../../Context/useAuth";
 import { addOpinion } from "../../../API/Api";
 import { BarLoader } from "react-spinners";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import useTextareaMention from "../mentions/useTextareaMention";
+import MentionDropdown from "../mentions/MentionDropdown";
 
 const OpinionEditor = ({onClose}) =>{
     const [opinion, setOpinion] = useState('');
-    const {session} = useAuth();
+    const {session, user} = useAuth();
     const [isSaving, setIsSaving] = useState(false);
+    const opinionTextareaRef = useRef(null);
+
+    const { textareaProps: mentionTextareaProps, dropdownProps: mentionDropdownProps } = useTextareaMention(opinion, setOpinion, opinionTextareaRef, 280, user?.userData?.[0]?.id);
 
     const queryClient = useQueryClient();
 
@@ -75,14 +80,18 @@ const OpinionEditor = ({onClose}) =>{
 
                 <div className="oe-body">
                     <textarea
+                        ref={opinionTextareaRef}
                         maxLength={280}
                         value={opinion}
-                        onChange={(e) => setOpinion(e.target.value)}
+                        onChange={(e) => { setOpinion(e.target.value); mentionTextareaProps.onChange(e); }}
+                        onKeyDown={mentionTextareaProps.onKeyDown}
+                        onKeyUp={mentionTextareaProps.onKeyUp}
                         className="oe-textarea"
                         name="opinions"
                         placeholder="What's on your mind..."
                         rows={5}
                     />
+                    <MentionDropdown {...mentionDropdownProps} />
                 </div>
 
                 <div className="oe-footer">
