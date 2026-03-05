@@ -31,21 +31,15 @@ const OpinionEditor = ({onClose}) =>{
 
         try {
             setIsSaving(true);
-
-            const message = await addOpinion(formdata, session?.access_token);
-            if(message){
-                // console.log(message)
-            }
-            setIsSaving(false)
+            await addOpinion(formdata, session?.access_token);
             queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
             queryClient.invalidateQueries({ queryKey: ['getMyOpinions'] });
-        } catch (error) {
-            setIsSaving(false)
-            setOpinion('')
-            throw new Error('error uploading data')
-        } finally {
-            setOpinion('')
+            setOpinion('');
             onClose();
+        } catch (error) {
+            console.error('error uploading opinion:', error);
+        } finally {
+            setIsSaving(false);
         }
 
     }

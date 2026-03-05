@@ -12,6 +12,7 @@ import ReplyContextChip from "./ReplyContextChip";
 import useTextareaMention from "../mentions/useTextareaMention";
 import MentionDropdown from "../mentions/MentionDropdown";
 import MentionText from "../mentions/MentionText";
+import { getBadgeRingClass } from "../../utils/badgeRingClass";
 
 const incrementReplyCount = (old, parentId) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -52,7 +53,7 @@ const CommentsCards = ({comments, postId}) =>{
 
     const clickProfile = handleClickProfile(navigate);
 
-    const {data, isLoading, fetchNextPage, hasNextPage, isFetchinNextPage} = useInfiniteQuery({
+    const {data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage} = useInfiniteQuery({
         queryKey: ['getPostReplies', comments.id],
         queryFn: ({pageParam = null, queryKey}) => getPostReplies(queryKey[1], 5, pageParam),
         getNextPageParam: (lastPage) => {
@@ -74,7 +75,7 @@ const CommentsCards = ({comments, postId}) =>{
     }
 
     const handleShowMoreReplies = () => {
-        if(!isFetchinNextPage){
+        if(!isFetchingNextPage){
             fetchNextPage();
         }
     }
@@ -171,7 +172,7 @@ const CommentsCards = ({comments, postId}) =>{
                 <div className="cm-user-row">
                     <div
                         onClick={(e) => clickProfile(e, user?.userData[0].id, comments?.user_id)}
-                        className={`cm-avatar-container ${comments?.users?.badge === 'legend' ? 'cm-ring-legend' : comments?.users?.badge === 'og' ? 'cm-ring-og' : ''}`}
+                        className={`cm-avatar-container ${getBadgeRingClass(comments?.users?.badge, 'cm-ring')}`}
                     >
                         <img className="cm-avatar" src={comments?.users?.image_url || '/assets/profile.jpg'} alt={`${comments?.users?.name || "User"} profile picture`} />
                     </div>
@@ -271,7 +272,7 @@ const CommentsCards = ({comments, postId}) =>{
 
                             {hasNextPage && (
                                 <button onClick={handleShowMoreReplies} className="cm-show-more-replies">
-                                    {isFetchinNextPage ? 'Loading...' : 'Show more replies'}
+                                    {isFetchingNextPage ? 'Loading...' : 'Show more replies'}
                                 </button>
                             )}
                         </motion.div>

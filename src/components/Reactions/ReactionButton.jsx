@@ -7,6 +7,7 @@ import './reactions.css';
 const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
     const [showPicker, setShowPicker] = useState(false);
     const [burstState, setBurstState] = useState(null);
+    const [justReacted, setJustReacted] = useState(false);
     const hoverTimerRef = useRef(null);
     const leaveTimerRef = useRef(null);
     const longPressTimerRef = useRef(null);
@@ -98,6 +99,8 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
                 const rect = containerRef.current.getBoundingClientRect();
                 setBurstState({ emoji: getReactionEmoji('heart'), rect });
             }
+            setJustReacted(true);
+            setTimeout(() => setJustReacted(false), 350);
             onReact('heart'); // default to heart
         }
     }, [userReaction, onReact, disabled, showPicker, burstState]);
@@ -109,6 +112,8 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
             const rect = containerRef.current.getBoundingClientRect();
             setBurstState({ emoji: getReactionEmoji(reactionType), rect });
         }
+        setJustReacted(true);
+        setTimeout(() => setJustReacted(false), 350);
         onReact(reactionType);
     }, [onReact, burstState]);
 
@@ -125,7 +130,10 @@ const ReactionButton = ({ userReaction, reactionCount, onReact, disabled }) => {
             onTouchEnd={handleTouchEnd}
         >
             <div
-                className={`reaction-button ${hasReaction ? 'has-reaction' : ''}`}
+                className={`reaction-button ${hasReaction ? 'has-reaction' : ''} ${justReacted ? 'just-reacted' : ''}`}
+                role="button"
+                aria-label="React"
+                aria-pressed={hasReaction}
                 onClick={handleQuickClick}
             >
                 {hasReaction ? (

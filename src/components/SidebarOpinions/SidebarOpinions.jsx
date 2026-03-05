@@ -2,12 +2,13 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import './sidebarOpinions.css'
 import { getOpinions } from '../../../API/Api';
 import { useNavigate } from 'react-router-dom';
-import { handleClickProfile } from '../../../helpers/handleClicks';
+import { makeAuthedProfileClick, handleClickOpinion } from '../../../helpers/handleClicks';
 import { useAuth } from '../../Context/useAuth';
 import { BarLoader, MoonLoader } from 'react-spinners';
 import VerifiedBadge from '../Badge/VerifiedBadge';
 import formatPostDate from '../../../helpers/formatDateString';
 import MentionText from '../mentions/MentionText';
+import { getBadgeRingClass } from '../../utils/badgeRingClass';
 
 const SidebarOpinions = ({openEditor}) =>{
     const {user, session, openAuthModal} = useAuth();
@@ -18,14 +19,7 @@ const SidebarOpinions = ({openEditor}) =>{
     }
     const navigate = useNavigate();
 
-    const handleClickOpionionsProfileOriginal = handleClickProfile(navigate);
-    const handleClickOpionionsProfile = (e, loggedInUserId, clickedUserId) => {
-        if(!session){
-            e.stopPropagation();
-            return openAuthModal();
-        }
-        handleClickOpionionsProfileOriginal(e, loggedInUserId, clickedUserId);
-    };
+    const handleClickOpionionsProfile = makeAuthedProfileClick(navigate, session, openAuthModal);
 
     const {data, isLoading, fetchNextPage, isFetchingNextPage, hasNextPage} = useInfiniteQuery({
         queryKey: ['getOpinions'],
@@ -38,26 +32,19 @@ const SidebarOpinions = ({openEditor}) =>{
                 return undefined
             }
         },
-        refetchOnWindowFocus: false,
-        staleTime: 1000 * 60 * 5,
     });
 
     const handleClickSeeMore = () =>{
         if(!isLoading && !isFetchingNextPage){
-            fetchNextPage();;
+            fetchNextPage();
         }
 
     }
 
+    const handleClickOpinionCard = handleClickOpinion(navigate);
     const handleClickContent = (e, opinionId, userId) =>{
-        e.stopPropagation();
         if(!session) return openAuthModal();
-        navigate('/home/opinionsViewer', {
-            state: {
-                opinionId: opinionId,
-                userId: userId
-            }
-        })
+        handleClickOpinionCard(e, opinionId, userId);
     }
 
     const opinions = data?.pages.flatMap((page) => page.data) || [];
@@ -76,7 +63,7 @@ const SidebarOpinions = ({openEditor}) =>{
                         Latest opinions
                     </div>
                     <div className='sidebar-opinions-cards-container'>
-                        No opinions availabe
+                        No opinions available
                     </div>
                 </div>
             </div>
@@ -111,7 +98,7 @@ const SidebarOpinions = ({openEditor}) =>{
                             <div className="so-card">
                                 <div className="so-card-content">
                                     <div className="so-header-row">
-                                        <div className={`so-avatar-outer ${opinionsData.users.badge === 'legend' ? 'avatar-ring-legend' : opinionsData.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                        <div className={`so-avatar-outer ${getBadgeRingClass(opinionsData.users.badge)}`}>
                                             <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt={`${opinionsData?.users?.name || "User"} profile picture`} />
                                         </div>
                                         <span onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-username">{opinionsData.users.name}</span>
@@ -123,7 +110,7 @@ const SidebarOpinions = ({openEditor}) =>{
                                         <MentionText text={opinionsData.opinion} />
                                     </div>
                                     <div className="so-action-row">
-                                        <span className="so-reply-btn" onClick={(e) => { e.stopPropagation(); if(!session) return openAuthModal(); navigate('/home/opinionsViewer', { state: { opinionId: opinionsData.id, userId: opinionsData.user_id } }); }}>
+                                        <span className="so-reply-btn" onClick={(e) => handleClickContent(e, opinionsData.id, opinionsData.user_id)}>
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                                             </svg>

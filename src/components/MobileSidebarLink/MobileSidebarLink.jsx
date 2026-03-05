@@ -14,7 +14,6 @@ const MobileSidebarLink = ({onclose}) => {
     const userData = user?.userData?.[0];
 
     const clickProfile = () =>{
-        preloadProfileRoute();
         navigate('/profile')
     }
 

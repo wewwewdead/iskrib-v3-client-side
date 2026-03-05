@@ -3,9 +3,7 @@ import './App.css'
 import { Routes, Route, BrowserRouter, Navigate} from 'react-router-dom'
 import { useAuth } from './Context/useAuth.js';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
-import ImageNode from './components/HomePage/Editor/nodes/ImageNode.jsx';
-import MentionNode from './components/HomePage/Editor/nodes/MentionNode.jsx';
+import { EDITOR_NODES, EDITOR_THEME } from './components/HomePage/Editor/editorConfig.js';
 import Loader from './components/loadingComponent/BgLoader.jsx';
 import SeoManager from './seo/SeoManager.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -47,25 +45,10 @@ const ChapterReader = lazy(() => import('./components/Stories/ChapterReader/Chap
 const ProfileStoriesSection = lazy(() => import('./components/ProfilePage/components/ProfileStoriesSection.jsx'));
 const VisitedProfileStoriesSection = lazy(() => import('./components/VisitProfile/components/VisitedProfileStoriesSection.jsx'));
 
-const editorTheme = {
-  paragraph: 'editor-paragraph',
-  heading: {
-    h1: 'editor-heading-h1',
-    h2: 'editor-heading-h2',
-    h3: 'editor-heading-h3',
-  },
-  quote: 'editor-quote',
-  text: {
-    bold: 'editor-text-bold',
-    italic: 'editor-text-italic',
-    underline: 'editor-text-underline',
-  }
-};
-
 const editorConfig = {
   namespace: "MyLexicalEditor",
-  theme: editorTheme,
-  nodes: [ImageNode, HeadingNode, QuoteNode, MentionNode],
+  theme: EDITOR_THEME,
+  nodes: EDITOR_NODES,
   onError(error){
     throw error;
   },
@@ -98,6 +81,7 @@ const App = () => {
   return (
     <>
       <BrowserRouter>
+        <a href="#main-content" className="skip-to-content">Skip to content</a>
         <SeoManager />
         <AppSplash />
         <Suspense fallback={<SuspenseFallback />}>

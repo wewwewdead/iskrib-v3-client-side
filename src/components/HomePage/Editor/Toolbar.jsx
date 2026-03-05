@@ -3,29 +3,82 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FORMAT_TEXT_COMMAND,
   FORMAT_ELEMENT_COMMAND,
+  UNDO_COMMAND,
+  REDO_COMMAND,
+  CAN_UNDO_COMMAND,
+  CAN_REDO_COMMAND,
+  COMMAND_PRIORITY_LOW,
   $getSelection,
   $isRangeSelection,
   $createParagraphNode,
+  $getNodeByKey,
+  $getRoot,
 } from "lexical";
 
 import { $createHeadingNode, $isHeadingNode, $createQuoteNode, $isQuoteNode } from "@lexical/rich-text";
 import { $getSelectionStyleValueForProperty, $patchStyleText, $setBlocksType } from "@lexical/selection";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-
+import { $isListNode, INSERT_UNORDERED_LIST_COMMAND, INSERT_ORDERED_LIST_COMMAND, INSERT_CHECK_LIST_COMMAND, REMOVE_LIST_COMMAND } from "@lexical/list";
+import { $isCodeNode, $createCodeNode } from "@lexical/code";
+import { $isLinkNode, $toggleLink } from "@lexical/link";
+import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { INSERT_IMAGE_COMMAND } from "./nodes/ImageNode";
 import { saveJournalImage } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
+
+function getTopLevelElementSafe(anchorNode) {
+    try {
+        return anchorNode.getKey() === 'root'
+            ? anchorNode
+            : anchorNode.getTopLevelElement() || anchorNode.getTopLevelElementOrThrow();
+    } catch {
+        return null;
+    }
+}
 
 const DEFAULT_ACTIVE_STATES = {
     bold: false,
     italic: false,
     underline: false,
+    strikethrough: false,
+    inlineCode: false,
     heading: null,
     quote: false,
     alignment: 'left',
     textColor: '',
     highlightColor: '',
+    listType: null, // 'bullet' | 'number' | 'check' | null
+    isCodeBlock: false,
+    isLink: false,
+    canUndo: false,
+    canRedo: false,
 };
+
+const COLOR_PALETTE = [
+    { label: 'Default', value: null },
+    { label: 'Black', value: '#000000' },
+    { label: 'Dark Gray', value: '#4d4d4d' },
+    { label: 'Gray', value: '#888888' },
+    { label: 'Light Gray', value: '#bfbfbf' },
+    { label: 'Red', value: '#f44336' },
+    { label: 'Pink', value: '#e91e63' },
+    { label: 'Purple', value: '#9c27b0' },
+    { label: 'Deep Purple', value: '#673ab7' },
+    { label: 'Indigo', value: '#3f51b5' },
+    { label: 'Blue', value: '#2196f3' },
+    { label: 'Light Blue', value: '#03a9f4' },
+    { label: 'Cyan', value: '#00bcd4' },
+    { label: 'Teal', value: '#009688' },
+    { label: 'Green', value: '#4caf50' },
+    { label: 'Light Green', value: '#8bc34a' },
+    { label: 'Lime', value: '#cddc39' },
+    { label: 'Yellow', value: '#ffeb3b' },
+    { label: 'Amber', value: '#ffc107' },
+    { label: 'Orange', value: '#ff9800' },
+    { label: 'Deep Orange', value: '#ff5722' },
+    { label: 'Brown', value: '#795548' },
+    { label: 'Blue Gray', value: '#607d8b' },
+];
 
 const ToolBar = ({addUploadedImagePath}) =>{
     const [editor] = useLexicalComposerContext();
@@ -37,32 +90,6 @@ const ToolBar = ({addUploadedImagePath}) =>{
 
     const [showTextColorPicker, setShowTextColorPicker] = useState(false);
     const [showHighlightColorPicker, setShowHighlightColorPicker] = useState(false);
-
-    const COLOR_PALETTE = [
-        { label: 'Default', value: null },
-        { label: 'Black', value: '#000000' },
-        { label: 'Dark Gray', value: '#4d4d4d' },
-        { label: 'Gray', value: '#888888' },
-        { label: 'Light Gray', value: '#bfbfbf' },
-        { label: 'Red', value: '#f44336' },
-        { label: 'Pink', value: '#e91e63' },
-        { label: 'Purple', value: '#9c27b0' },
-        { label: 'Deep Purple', value: '#673ab7' },
-        { label: 'Indigo', value: '#3f51b5' },
-        { label: 'Blue', value: '#2196f3' },
-        { label: 'Light Blue', value: '#03a9f4' },
-        { label: 'Cyan', value: '#00bcd4' },
-        { label: 'Teal', value: '#009688' },
-        { label: 'Green', value: '#4caf50' },
-        { label: 'Light Green', value: '#8bc34a' },
-        { label: 'Lime', value: '#cddc39' },
-        { label: 'Yellow', value: '#ffeb3b' },
-        { label: 'Amber', value: '#ffc107' },
-        { label: 'Orange', value: '#ff9800' },
-        { label: 'Deep Orange', value: '#ff5722' },
-        { label: 'Brown', value: '#795548' },
-        { label: 'Blue Gray', value: '#607d8b' },
-    ];
 
     const toCompactRgb = (value) => {
         if (!value) return '';
@@ -99,40 +126,75 @@ const ToolBar = ({addUploadedImagePath}) =>{
         return normalizedActive === normalizeColor(paletteValue);
     };
 
+    // Register undo/redo command listeners
+    useEffect(() => {
+        const unregisterUndo = editor.registerCommand(
+            CAN_UNDO_COMMAND,
+            (payload) => {
+                setActiveStates((prev) => ({ ...prev, canUndo: payload }));
+                return false;
+            },
+            COMMAND_PRIORITY_LOW,
+        );
+        const unregisterRedo = editor.registerCommand(
+            CAN_REDO_COMMAND,
+            (payload) => {
+                setActiveStates((prev) => ({ ...prev, canRedo: payload }));
+                return false;
+            },
+            COMMAND_PRIORITY_LOW,
+        );
+        return () => {
+            unregisterUndo();
+            unregisterRedo();
+        };
+    }, [editor]);
+
     // Register update listener for active state detection
     useEffect(() => {
         return editor.registerUpdateListener(({ editorState }) => {
             editorState.read(() => {
                 const selection = $getSelection();
                 if (!$isRangeSelection(selection)) {
-                    setActiveStates(DEFAULT_ACTIVE_STATES);
+                    setActiveStates((prev) => ({
+                        ...DEFAULT_ACTIVE_STATES,
+                        canUndo: prev.canUndo,
+                        canRedo: prev.canRedo,
+                    }));
                     return;
                 }
 
                 const bold = selection.hasFormat('bold');
                 const italic = selection.hasFormat('italic');
                 const underline = selection.hasFormat('underline');
+                const strikethrough = selection.hasFormat('strikethrough');
+                const inlineCode = selection.hasFormat('code');
 
                 const anchorNode = selection.anchor.getNode();
-                let element;
-                try {
-                    element = anchorNode.getKey() === 'root'
-                        ? anchorNode
-                        : anchorNode.getTopLevelElement() || anchorNode.getTopLevelElementOrThrow();
-                } catch {
-                    element = null;
-                }
+                const parent = anchorNode.getParent();
+
+                const element = getTopLevelElementSafe(anchorNode);
 
                 let heading = null;
                 let quote = false;
                 let alignment = 'left';
+                let listType = null;
+                let isCodeBlock = false;
+                let isLink = false;
 
                 if (element) {
                     if ($isHeadingNode(element)) {
-                        heading = element.getTag(); // 'h1', 'h2', 'h3'
+                        heading = element.getTag();
                     }
                     if ($isQuoteNode(element)) {
                         quote = true;
+                    }
+                    if ($isListNode(element)) {
+                        const type = element.getListType();
+                        listType = type === 'bullet' ? 'bullet' : type === 'number' ? 'number' : type === 'check' ? 'check' : null;
+                    }
+                    if ($isCodeNode(element)) {
+                        isCodeBlock = true;
                     }
                     const formatType = element.getFormatType?.();
                     if (formatType) {
@@ -140,19 +202,42 @@ const ToolBar = ({addUploadedImagePath}) =>{
                     }
                 }
 
+                // Check for list type on parent (listitem → list)
+                if (!listType && parent) {
+                    const grandParent = parent.getParent?.();
+                    if (grandParent && $isListNode(grandParent)) {
+                        const type = grandParent.getListType();
+                        listType = type === 'bullet' ? 'bullet' : type === 'number' ? 'number' : type === 'check' ? 'check' : null;
+                    }
+                }
+
+                // Check for link
+                if ($isLinkNode(parent)) {
+                    isLink = true;
+                } else if ($isLinkNode(anchorNode)) {
+                    isLink = true;
+                }
+
                 const textColor = $getSelectionStyleValueForProperty(selection, 'color', '');
                 const highlightColor = $getSelectionStyleValueForProperty(selection, 'background-color', '');
 
-                setActiveStates({
+                setActiveStates((prev) => ({
                     bold,
                     italic,
                     underline,
+                    strikethrough,
+                    inlineCode,
                     heading,
                     quote,
                     alignment,
                     textColor,
                     highlightColor,
-                });
+                    listType,
+                    isCodeBlock,
+                    isLink,
+                    canUndo: prev.canUndo,
+                    canRedo: prev.canRedo,
+                }));
             });
         });
     }, [editor]);
@@ -193,16 +278,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
             if ($isRangeSelection(selection)) {
                 const anchorNode = selection.anchor.getNode();
 
-                let element;
-                try {
-                    element = anchorNode.getKey() === 'root'
-                        ? anchorNode
-                        : anchorNode.getTopLevelElement() || anchorNode.getTopLevelElementOrThrow();
-                } catch (e) {
-                    console.error('Could not get top level element:', e);
-                    return;
-                }
-
+                const element = getTopLevelElementSafe(anchorNode);
                 if (!element) return;
 
                 const type = typeof element.getType === 'function' ? element.getType() : null;
@@ -232,16 +308,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
             if ($isRangeSelection(selection)) {
                 const anchorNode = selection.anchor.getNode();
 
-                let element;
-                try {
-                    element = anchorNode.getKey() === 'root'
-                        ? anchorNode
-                        : anchorNode.getTopLevelElement() || anchorNode.getTopLevelElementOrThrow();
-                } catch (e) {
-                    console.error('Could not get top level element:', e);
-                    return;
-                }
-
+                const element = getTopLevelElementSafe(anchorNode);
                 if (!element) return;
 
                 const type = typeof element.getType === 'function' ? element.getType() : null;
@@ -257,6 +324,52 @@ const ToolBar = ({addUploadedImagePath}) =>{
             }
         })
     }
+
+    // List commands
+    const toggleList = (type) => {
+        if (activeStates.listType === type) {
+            editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+        } else {
+            switch (type) {
+                case 'bullet':
+                    editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+                    break;
+                case 'number':
+                    editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+                    break;
+                case 'check':
+                    editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
+                    break;
+            }
+        }
+    };
+
+    // Code block toggle
+    const toggleCodeBlock = () => {
+        editor.update(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+                if (activeStates.isCodeBlock) {
+                    $setBlocksType(selection, () => $createParagraphNode());
+                } else {
+                    $setBlocksType(selection, () => $createCodeNode());
+                }
+            }
+        });
+    };
+
+    // Link toggle
+    const toggleLink = () => {
+        editor.update(() => {
+            const selection = $getSelection();
+            if (!$isRangeSelection(selection)) return;
+            if (activeStates.isLink) {
+                $toggleLink(null);
+            } else {
+                $toggleLink('https://');
+            }
+        });
+    };
 
     //insert image
     const insertImageFromFile = async() => {
@@ -280,7 +393,6 @@ const ToolBar = ({addUploadedImagePath}) =>{
             try {
                 const data_url = await saveJournalImage(session?.access_token, formdata);
                 if(!data_url){
-                    // console.log('error: no image_url');
                     return;
                 }
 
@@ -290,19 +402,28 @@ const ToolBar = ({addUploadedImagePath}) =>{
                 }
 
                 editor.update(() => {
-                    const root = editor.getEditorState()._nodeMap;
-                    for (const [, node] of root) {
-                        if (node.__type === 'image' && node.__src === blobUrl) {
-                            node.getWritable().__src = data_url.img_url;
-                            node.getWritable().__loading = false;
-                            break;
+                    const findImageNode = (parent) => {
+                        for (const child of parent.getChildren()) {
+                            if (child.getType() === 'image' && child.__src === blobUrl) {
+                                return child;
+                            }
+                            if (typeof child.getChildren === 'function') {
+                                const found = findImageNode(child);
+                                if (found) return found;
+                            }
                         }
+                        return null;
+                    };
+                    const imageNode = findImageNode($getRoot());
+                    if (imageNode) {
+                        imageNode.setSrcAndLoading(data_url.img_url, false);
                     }
                 });
 
                 URL.revokeObjectURL(blobUrl);
             } catch (err) {
                 console.error('Image upload failed:', err);
+                URL.revokeObjectURL(blobUrl);
             }
         }
 
@@ -316,10 +437,23 @@ const ToolBar = ({addUploadedImagePath}) =>{
 
     // Helper to get class name based on active state
     const getBtnClass = (isActive) => isActive ? 'is-active' : 'toolbar-bttns';
+    const getDisabledBtnClass = (disabled) => disabled ? 'toolbar-bttns toolbar-btn-disabled' : 'toolbar-bttns';
 
     return(
         <div className="toolbar">
-            {/* Group 1: Image upload */}
+            {/* Group 1: Undo/Redo */}
+            <div className="group">
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)} className={getDisabledBtnClass(!activeStates.canUndo)} title="Undo">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg>
+                </div>
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)} className={getDisabledBtnClass(!activeStates.canRedo)} title="Redo">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M396-200q-97 0-166.5-63T160-420q0-94 69.5-157T396-640h252L544-744l56-56 200 200-200 200-56-56 104-104H396q-63 0-109.5 40T240-420q0 60 46.5 100T396-280h284v80H396Z"/></svg>
+                </div>
+            </div>
+
+            <div className="toolbar-divider" />
+
+            {/* Group 2: Image upload */}
             <div className="group">
                 <div onMouseDown={(e) => e.preventDefault()} onClick={() => insertImageFromFile()} className="toolbar-bttns" title="Insert image">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M480-480ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h320v80H200v560h560v-320h80v320q0 33-23.5 56.5T760-120H200Zm40-160h480L570-480 450-320l-90-120-120 160Zm440-320v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>
@@ -328,7 +462,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
 
             <div className="toolbar-divider" />
 
-            {/* Group 2: Text formatting */}
+            {/* Group 3: Inline formatting */}
             <div className="group">
                 <div onMouseDown={(e) => e.preventDefault()} onClick={() => applyTextFormat('bold')} className={getBtnClass(activeStates.bold)} title="Bold">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M272-200v-560h221q65 0 120 40t55 111q0 51-23 78.5T602-491q25 11 55.5 41t30.5 90q0 89-65 124.5T501-200H272Zm121-112h104q48 0 58.5-24.5T566-372q0-11-10.5-35.5T494-432H393v120Zm0-228h93q33 0 48-17t15-38q0-24-17-39t-44-15h-95v109Z"/></svg>
@@ -339,11 +473,17 @@ const ToolBar = ({addUploadedImagePath}) =>{
                 <div onMouseDown={(e) => e.preventDefault()} onClick={() => applyTextFormat('underline')} className={getBtnClass(activeStates.underline)} title="Underline">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M200-120v-80h560v80H200Zm280-160q-101 0-157-63t-56-167v-330h103v336q0 56 28 91t82 35q54 0 82-35t28-91v-336h103v330q0 104-56 167t-157 63Z"/></svg>
                 </div>
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => applyTextFormat('strikethrough')} className={getBtnClass(activeStates.strikethrough)} title="Strikethrough">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M486-160q-76 0-135-45t-77-119l86-36q12 42 44.5 68t81.5 26q48 0 80-24.5t32-66.5q0-20-8-36t-22-28H80v-80h800v80H606q4 8 6 17t2 19q0 76-53.5 125.5T486-160ZM80-584v-80h184q-10-14-15-29.5T244-726q0-67 49-110.5T430-880q60 0 103.5 32t63.5 84l-86 36q-8-28-32.5-50T430-800q-40 0-66 22t-26 56q0 34 21.5 55T416-640h64v56H80Z"/></svg>
+                </div>
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => applyTextFormat('code')} className={getBtnClass(activeStates.inlineCode)} title="Inline code">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M320-240 80-480l240-240 57 57-184 183 184 183-57 57Zm320 0-57-57 184-183-184-183 57-57 240 240-240 240Z"/></svg>
+                </div>
             </div>
 
             <div className="toolbar-divider" />
 
-            {/* Group 3: Headings */}
+            {/* Group 4: Block types */}
             <div className="group">
                 <div onMouseDown={(e) => e.preventDefault()} onClick={() => setHeading('h1')} className={getBtnClass(activeStates.heading === 'h1')} title="Heading 1">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M200-280v-400h80v160h160v-160h80v400h-80v-160H280v160h-80Zm480 0v-320h-80v-80h160v400h-80Z"/></svg>
@@ -357,11 +497,41 @@ const ToolBar = ({addUploadedImagePath}) =>{
                 <div onMouseDown={(e) => e.preventDefault()} onClick={() => setQuote()} className={getBtnClass(activeStates.quote)} title="Quote">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M220-280q-50 0-85-35t-35-85q0-33 16-63t44-47l80-51v-159h160v240H300l-46 29q-14 9-14 26 0 17 12 29t28 12h140v104H220Zm420 0q-50 0-85-35t-35-85q0-33 16-63t44-47l80-51v-159h160v240H720l-46 29q-14 9-14 26 0 17 12 29t28 12h140v104H640Z"/></svg>
                 </div>
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => toggleCodeBlock()} className={getBtnClass(activeStates.isCodeBlock)} title="Code block">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-400H160v400Zm160-40 57-57-104-103 104-104-57-56-160 160 160 160Zm320 0 160-160-160-160-57 56 104 104-104 103 57 57Z"/></svg>
+                </div>
             </div>
 
             <div className="toolbar-divider" />
 
-            {/* Group 5: Text color + highlight */}
+            {/* Group 5: Lists */}
+            <div className="group">
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => toggleList('bullet')} className={getBtnClass(activeStates.listType === 'bullet')} title="Bullet list">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M360-200v-80h480v80H360Zm0-240v-80h480v80H360Zm0-240v-80h480v80H360ZM200-160q-33 0-56.5-23.5T120-240q0-33 23.5-56.5T200-320q33 0 56.5 23.5T280-240q0 33-23.5 56.5T200-160Zm0-240q-33 0-56.5-23.5T120-480q0-33 23.5-56.5T200-560q33 0 56.5 23.5T280-480q0 33-23.5 56.5T200-400Zm0-240q-33 0-56.5-23.5T120-720q0-33 23.5-56.5T200-800q33 0 56.5 23.5T280-720q0 33-23.5 56.5T200-640Z"/></svg>
+                </div>
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => toggleList('number')} className={getBtnClass(activeStates.listType === 'number')} title="Numbered list">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M120-80v-60h100v-30h-60v-60h60v-30H120v-60h160v240H120Zm0-280v-110l100-60H120v-60h160v110l-100 60h100v60H120Zm60-280v-180h-60v-60h120v240h-60Zm180 440v-80h480v80H360Zm0-240v-80h480v80H360Zm0-240v-80h480v80H360Z"/></svg>
+                </div>
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => toggleList('check')} className={getBtnClass(activeStates.listType === 'check')} title="Checklist">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M222-200 80-342l56-56 86 86 170-170 56 57-226 225Zm0-320L80-662l56-56 86 86 170-170 56 57-226 225Zm298 240v-80h360v80H520Zm0-320v-80h360v80H520Z"/></svg>
+                </div>
+            </div>
+
+            <div className="toolbar-divider" />
+
+            {/* Group 6: Insert */}
+            <div className="group">
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)} className="toolbar-bttns" title="Horizontal rule">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M160-440v-80h640v80H160Z"/></svg>
+                </div>
+                <div onMouseDown={(e) => e.preventDefault()} onClick={() => toggleLink()} className={getBtnClass(activeStates.isLink)} title="Insert link">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M440-280H280q-83 0-141.5-58.5T80-480q0-83 58.5-141.5T280-680h160v80H280q-50 0-85 35t-35 85q0 50 35 85t85 35h160v80ZM320-440v-80h320v80H320Zm200 160v-80h160q50 0 85-35t35-85q0-50-35-85t-85-35H520v-80h160q83 0 141.5 58.5T880-480q0 83-58.5 141.5T680-280H520Z"/></svg>
+                </div>
+            </div>
+
+            <div className="toolbar-divider" />
+
+            {/* Group 7: Text color + highlight */}
             <div className="group" ref={colorPickerRef}>
                 <div className="toolbar-color-picker">
                     <button
@@ -456,7 +626,7 @@ const ToolBar = ({addUploadedImagePath}) =>{
 
             <div className="toolbar-divider" />
 
-            {/* Group 4: Alignment */}
+            {/* Group 8: Alignment */}
             <div className="group">
                 <div onMouseDown={(e) => e.preventDefault()} onClick={() => setAlignment('left')} className={getBtnClass(activeStates.alignment === 'left' || activeStates.alignment === '')} title="Align left">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M120-120v-80h720v80H120Zm0-160v-80h480v80H120Zm0-160v-80h720v80H120Zm0-160v-80h480v80H120Zm0-160v-80h720v80H120Z"/></svg>

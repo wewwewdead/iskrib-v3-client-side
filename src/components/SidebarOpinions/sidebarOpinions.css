@@ -989,7 +989,7 @@
     color: var(--text-faint);
 }
 .ov-reply-input:focus {
-    border-bottom: 2px solid var(--accent-amber);
+    border-bottom: 1px solid var(--border-card);
 }
 
 .ov-composer-actions {
@@ -1170,6 +1170,7 @@
     gap: 0.4rem;
     overflow: hidden;
     padding-top: 0.25rem;
+    min-width: 0;
 }
 
 .rc-load-more {

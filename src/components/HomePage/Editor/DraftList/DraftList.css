@@ -111,3 +111,36 @@
 .draft-list-item-delete:hover svg {
     stroke: #ef4444;
 }
+
+/* ── Skeleton loading ── */
+.draft-skeleton-item {
+    padding: 0.875rem 1rem;
+    border-radius: 10px;
+}
+
+.draft-skeleton-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.draft-skeleton-title {
+    width: 60%;
+    height: 12px;
+    border-radius: 6px;
+    background: var(--bg-secondary, rgba(0, 0, 0, 0.06));
+    animation: draft-shimmer 1.2s ease-in-out infinite;
+}
+
+.draft-skeleton-date {
+    width: 30%;
+    height: 10px;
+    border-radius: 5px;
+    background: var(--bg-secondary, rgba(0, 0, 0, 0.06));
+    animation: draft-shimmer 1.2s ease-in-out infinite 0.15s;
+}
+
+@keyframes draft-shimmer {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+}

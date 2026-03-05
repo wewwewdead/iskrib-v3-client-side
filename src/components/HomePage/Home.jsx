@@ -3,7 +3,7 @@ import './home.css'
 import { useAuth } from "../../Context/useAuth";
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { useQueryClient } from '@tanstack/react-query';
 import Editor from "./Editor/Editor";
@@ -301,7 +301,7 @@ const HomePage = () => {
              <div className="side-bar-holder-container">
                 <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
             </div>
-            <div className="center-bar-holder-container">
+            <div id="main-content" className="center-bar-holder-container">
 
                 {/* <AnimatePresence>
                 {showHeaders && (
@@ -325,7 +325,18 @@ const HomePage = () => {
                 )}
                 </AnimatePresence> */}
 
-                <Outlet context={{ clickOpenSidebar: handleClickMobileProfileLink, handleOpenTextEditor }} />
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={location.pathname}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
+                        style={{ width: '100%', height: '100%' }}
+                    >
+                        <Outlet context={{ clickOpenSidebar: handleClickMobileProfileLink, handleOpenTextEditor }} />
+                    </motion.div>
+                </AnimatePresence>
             </div>
             <div className="sidebar-right-holder-container">
                 {/* Log out */}

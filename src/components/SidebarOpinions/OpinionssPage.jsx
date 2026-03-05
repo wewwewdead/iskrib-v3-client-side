@@ -6,11 +6,12 @@ import { getOpinions } from "../../../API/Api";
 import { useAuth } from "../../Context/useAuth";
 import { useInView } from "react-intersection-observer";
 import { useMediaQuery } from "react-responsive";
-import { handleClickProfile } from "../../../helpers/handleClicks";
+import { makeAuthedProfileClick, handleClickOpinion } from "../../../helpers/handleClicks";
 import OpinionEditor from "./OpinionsEditor";
 import formatPostDate from "../../../helpers/formatDateString";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import MentionText from "../mentions/MentionText";
+import { getBadgeRingClass } from "../../utils/badgeRingClass";
 
 const cardVariants = {
     hidden: { opacity: 0, y: 12 },
@@ -46,8 +47,6 @@ const OpinionsPage = () =>{
                 return undefined;
             }
         },
-        refetchOnWindowFocus: false,
-        staleTime: 1000 * 60 * 5,
     })
 
     const links = [
@@ -71,24 +70,12 @@ const OpinionsPage = () =>{
         setOpenOpinionEditor(false);
     }
 
-    const handleClickOpinionProfileOriginal = handleClickProfile(navigate);
-    const handleClickOpinionProfile = (e, loggedInUserId, clickedUserId) => {
-        if(!session){
-            e.stopPropagation();
-            return openAuthModal();
-        }
-        handleClickOpinionProfileOriginal(e, loggedInUserId, clickedUserId);
-    };
+    const handleClickOpinionProfile = makeAuthedProfileClick(navigate, session, openAuthModal);
 
+    const handleClickOpinionCard = handleClickOpinion(navigate);
     const handleClickContent = (e, opinionId, userId) =>{
-        e.stopPropagation();
         if(!session) return openAuthModal();
-        navigate('/home/opinionsViewer', {
-            state: {
-                opinionId: opinionId,
-                userId: userId
-            }
-        })
+        handleClickOpinionCard(e, opinionId, userId);
     }
 
     useLayoutEffect(() =>{
@@ -120,7 +107,7 @@ const OpinionsPage = () =>{
         }
         document.addEventListener('scroll', scroll, true)
         return () =>{
-            document.removeEventListener('scroll', scroll)
+            document.removeEventListener('scroll', scroll, true)
             if(timeoutRef.current){
                 clearTimeout(timeoutRef.current)
             }
@@ -179,7 +166,7 @@ const OpinionsPage = () =>{
                 <div className="opinions-page-parent-container">
                     {fabButton}
                     <div>
-                        No opinions availabe
+                        No opinions available
                     </div>
                 </div>
             </>
@@ -210,7 +197,7 @@ const OpinionsPage = () =>{
                     <div className="so-card">
                         <div className="so-card-content">
                             <div className="so-header-row">
-                                <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                <div className={`so-avatar-outer ${getBadgeRingClass(opinion.users.badge)}`}>
                                     <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
                                 </div>
                                 <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-username">{opinion.users.name}</span>
@@ -226,7 +213,7 @@ const OpinionsPage = () =>{
                                     className="so-reply-btn"
                                     whileHover={{ scale: 1.04 }}
                                     whileTap={{ scale: 0.96 }}
-                                    onClick={(e) => { e.stopPropagation(); if(!session) return openAuthModal(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}
+                                    onClick={(e) => handleClickContent(e, opinion.id, opinion.user_id)}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>

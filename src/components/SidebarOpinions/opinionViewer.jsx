@@ -10,6 +10,7 @@ import VerifiedBadge from "../Badge/VerifiedBadge";
 import MentionText from "../mentions/MentionText";
 import useTextareaMention from "../mentions/useTextareaMention";
 import MentionDropdown from "../mentions/MentionDropdown";
+import { getBadgeRingClass } from "../../utils/badgeRingClass";
 
 const OpinionViewer = () => {
     const queryClient = useQueryClient();
@@ -29,7 +30,6 @@ const OpinionViewer = () => {
         staleTime: 1000 * 60 * 60,
         gcTime: 1000 * 60 * 60,
         enabled: !!opinionId && !!userId,
-        refetchOnWindowFocus: false
     });
 
     const cancelTyping = () => {
@@ -46,13 +46,10 @@ const OpinionViewer = () => {
 
         try {
             await addReplyOpinion(formData, receiverId, senderId, parentId, session?.access_token);
-            setReplyOpinion('');
             setIsTyping(false);
-            queryClient.invalidateQueries({ queryKey: ['getViewOpinion', opinionId, userId] });
-            queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
-            queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
         } catch (error) {
             console.error(error);
+        } finally {
             setReplyOpinion('');
             queryClient.invalidateQueries({ queryKey: ['getViewOpinion', opinionId, userId] });
             queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
@@ -76,7 +73,7 @@ const OpinionViewer = () => {
                     <div className="so-card so-card--parent">
                         <div className="so-card-content">
                             <div className="so-header-row">
-                                <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                <div className={`so-avatar-outer ${getBadgeRingClass(opinion.users.badge)}`}>
                                     <img
                                         className="so-avatar"
                                         src={opinion.users.image_url || '../assets/profile.jpg'}

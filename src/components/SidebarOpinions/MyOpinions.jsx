@@ -3,12 +3,14 @@ import { useAuth } from "../../Context/useAuth";
 import { getMyOpinions } from "../../../API/Api";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { handleClickOpinion } from "../../../helpers/handleClicks";
 import { AnimatePresence, motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import formatPostDate from "../../../helpers/formatDateString";
 import { MoonLoader } from "react-spinners";
 import MentionText from "../mentions/MentionText";
+import { getBadgeRingClass } from "../../utils/badgeRingClass";
 
 const MyOpinions = () =>{
     const {session, user, openAuthModal} = useAuth();
@@ -27,20 +29,13 @@ const MyOpinions = () =>{
                 return undefined;
             }
         },
-        refetchOnWindowFocus: false,
         enabled: !!session,
-        staleTime: 1000 * 60 * 5
     })
 
+    const handleClickOpinionCard = handleClickOpinion(navigate);
     const handleClickContent = (e, opinionId, userId) =>{
-        e.stopPropagation();
         if(!session) return openAuthModal();
-        navigate('/home/opinionsViewer', {
-            state: {
-                opinionId: opinionId,
-                userId: userId
-            }
-        })
+        handleClickOpinionCard(e, opinionId, userId);
     }
 
     useEffect(() =>{
@@ -55,7 +50,7 @@ const MyOpinions = () =>{
         return (
             <>
             <div className="my-opinions-container">
-                No opinions availabe
+                No opinions available
             </div>
             </>
         )
@@ -75,7 +70,7 @@ const MyOpinions = () =>{
                     transition={{ duration: 0.3, ease: "easeOut" }}
                 >
                     <div className="ov-user-row">
-                        <div className={`ov-avatar-container ${user?.userData[0]?.badge === 'legend' ? 'avatar-ring-legend' : user?.userData[0]?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                        <div className={`ov-avatar-container ${getBadgeRingClass(user?.userData[0]?.badge)}`}>
                             <img className="ov-avatar" src={user?.userData[0].image_url || "../../assets/profile.jpg"} alt={`${user?.userData?.[0]?.name || "User"} profile picture`} />
                         </div>
                         <span className="ov-username">{user?.userData[0].name}</span>
@@ -92,7 +87,7 @@ const MyOpinions = () =>{
                     </div>
 
                     <div className="ov-meta-bar">
-                        <span className="ov-reply-pill" onClick={(e) => { e.stopPropagation(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}>
+                        <span className="ov-reply-pill" onClick={(e) => handleClickContent(e, opinion.id, opinion.user_id)}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                             </svg>

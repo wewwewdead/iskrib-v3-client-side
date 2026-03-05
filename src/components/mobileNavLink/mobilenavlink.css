@@ -29,6 +29,12 @@
         -webkit-backdrop-filter: blur(20px);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         z-index: 120;
+        opacity: 1;
+        transition: opacity 0.25s ease;
+    }
+    .mobile-navlink-container.mobile-navlink-dimmed{
+        opacity: 0.35;
+        pointer-events: none;
     }
 
     /* ── Icon row ── */

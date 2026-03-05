@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import './mobilenavlink.css';
-import { motion } from 'framer-motion';
 import { useAuth } from '../../Context/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const MobileNavlink = () => {
-    const [showNavlinks, setShowNavlinks] = useState(true);
+    const [isScrolling, setIsScrolling] = useState(false);
     const timeOutRef = useRef();
     const navigate = useNavigate();
     const location = useLocation();
@@ -90,14 +89,14 @@ const MobileNavlink = () => {
 
     useEffect(() => {
         const scroll = () => {
-            setShowNavlinks(false);
+            setIsScrolling(true);
 
             if (timeOutRef.current) {
                 clearTimeout(timeOutRef.current);
             }
 
             timeOutRef.current = setTimeout(() => {
-                setShowNavlinks(true);
+                setIsScrolling(false);
             }, 500);
         };
 
@@ -111,38 +110,29 @@ const MobileNavlink = () => {
     }, []);
 
     return (
-        <>
-            {showNavlinks && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 25, mass: 0.8 } }}
-                    exit={{ opacity: 0, y: 20, transition: { duration: 0.2, ease: 'easeOut' } }}
-                    className="mobile-navlink-container"
-                >
-                    <div className="mobile-navlink-icon-container">
-                        {navLinks.map((link, index) => {
-                            const isActive = link.path && location.pathname === link.path;
+        <div className={`mobile-navlink-container ${isScrolling ? 'mobile-navlink-dimmed' : ''}`}>
+            <div className="mobile-navlink-icon-container">
+                {navLinks.map((link, index) => {
+                    const isActive = link.path && location.pathname === link.path;
 
-                            return (
-                                <div
-                                    key={index}
-                                    className="mobile-navlink-item"
-                                    onClick={() => link.action(link.path)}
-                                >
-                                    <div className="mobile-navlink-icons">
-                                        {link.icon(isActive)}
-                                    </div>
-                                    <p className={`mobile-navlink-label ${isActive ? 'mobile-navlink-label-active' : ''}`}>
-                                        {link.label}
-                                    </p>
-                                    {isActive && <div className="mobile-navlink-active-dot" />}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </motion.div>
-            )}
-        </>
+                    return (
+                        <div
+                            key={index}
+                            className="mobile-navlink-item"
+                            onClick={() => link.action(link.path)}
+                        >
+                            <div className="mobile-navlink-icons">
+                                {link.icon(isActive)}
+                            </div>
+                            <p className={`mobile-navlink-label ${isActive ? 'mobile-navlink-label-active' : ''}`}>
+                                {link.label}
+                            </p>
+                            {isActive && <div className="mobile-navlink-active-dot" />}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
     );
 };
 

@@ -3,7 +3,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getNodeByKey } from 'lexical';
 import { deleteJournalImage } from '../../../../API/Api';
 import { useAuth } from '../../../Context/useAuth';
-import { AnimatePresence, motion, scale } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false, rotation = 0, isEditable = true }) => {
   const [editor] = useLexicalComposerContext();
@@ -14,6 +14,7 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
   const [isSelected, setIsSelected] = useState(false);
   const imageRef = useRef(null);
   const startPosRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  const activeListenersRef = useRef(null);
 
   const [viewImage, setViewImage] = useState(false);
 
@@ -37,10 +38,8 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
       filepath: []
     }
     editor.update(() =>{
-        const node = editor.getEditorState()._nodeMap.get(nodeKey);
-        if(!node || !node.__src) {
-          throw new Error('Node not found or missing source')
-        }
+        const node = $getNodeByKey(nodeKey);
+        if(!node || !node.__src) return;
         img_url = node.__src
         node.remove();
     });
@@ -170,11 +169,12 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
         document.removeEventListener('touchend', handleMouseUp)
     };
 
-    //add all event listerner after mouse down or mouse hold click 
+    //add all event listerner after mouse down or mouse hold click
     document.addEventListener('touchmove', handleMouseMove, {passive: false})
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     document.addEventListener('touchend', handleMouseUp)
+    activeListenersRef.current = { handleMouseMove, handleMouseUp };
 };
 
 
@@ -206,6 +206,19 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Clean up resize listeners if component unmounts mid-drag
+  useEffect(() => {
+    return () => {
+      if (activeListenersRef.current) {
+        const { handleMouseMove, handleMouseUp } = activeListenersRef.current;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleMouseMove);
+        document.removeEventListener('touchend', handleMouseUp);
+      }
+    };
+  }, []);
+
   return (
     <>
     {viewImage && (
@@ -230,17 +243,9 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
       onClick={isEditable ? handleImageClick : handleViewImage}
     >
    
-      <AnimatePresence>
       <motion.img
         initial={{opacity: 0}}
         animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
-        exit={{ opacity: 0, y: -20,
-          transition: { 
-            duration: 0.2,
-            ease: "easeOut"
-          }
-        }}
-
         src={src}
         alt="content"
         style={{
@@ -257,7 +262,6 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
         onClick={() => handleViewImage()}
         className='image-content'
       />
-      </AnimatePresence>
 
       {loading && (
         <div className="image-loading-overlay">

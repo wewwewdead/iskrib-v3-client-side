@@ -23,6 +23,9 @@ import PromptBadge from "../../DailyPrompt/PromptBadge";
 import DashboardBriefing from "../../DashboardBriefing/DashboardBriefing";
 import ShareMenu from "../../ShareMenu/ShareMenu";
 import getShareUrl from "../../../utils/getShareUrl";
+import { useToast } from "../../Toast/ToastContext";
+import FeedCardSkeleton from "../../Skeletons/FeedCardSkeleton";
+import EmptyState from "../../EmptyState/EmptyState";
 
 
 const PostCards = () => {
@@ -32,24 +35,23 @@ const PostCards = () => {
     const { clickOpenSidebar, handleOpenTextEditor } = outletContext;
 
     const navigate = useNavigate();
+    const { toast } = useToast();
     const searchShellRef = useRef(null);
-    const timeOutRef = useRef();
     const {ref, inView} = useInView({
         threshold: 0,
         rootMargin: '800px'
     })
     const [shareMenuPostId, setShareMenuPostId] = useState(null);
-    const [showHeaders, setShowHeaders] = useState(true);
+    const [bouncingBookmarkId, setBouncingBookmarkId] = useState(null);
+    const [isScrolling, setIsScrolling] = useState(false);
+    const timeOutRef = useRef();
 
-    const [bookmarkedMessage, setBookmarkedMessage] = useState('');
-    const [showBookmarkedMessage, setShowBookmarkedMessage] = useState(null);
     const [searchInput, setSearchInput] = useState('');
     const [debouncedSearchInput, setDebouncedSearchInput] = useState('');
     const [committedSearchQuery, setCommittedSearchQuery] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [searchType, setSearchType] = useState('posts');
     const [repostModalJournal, setRepostModalJournal] = useState(null);
-    const [repostToastMessage, setRepostToastMessage] = useState('');
 
     const handleClickUserProfileOriginal = handleClickProfile(navigate);
     const clickContent = handleCLickContent(navigate);
@@ -286,29 +288,18 @@ const PostCards = () => {
 
     const handleClickBookmark = async (journalId) => {
         if(!session) return openAuthModal();
-        // console.log(journalId)
-        // mutationBookmark.mutate({journalId});
-        const response = await mutationBookmark.mutateAsync({journalId})
-
-        if(timeOutRef.current){
-            clearTimeout(timeOutRef.current);
+        setBouncingBookmarkId(journalId);
+        setTimeout(() => setBouncingBookmarkId(null), 450);
+        try {
+            const response = await mutationBookmark.mutateAsync({journalId});
+            if(response.message === 'success'){
+                toast.success('Post was added to your Bookmarks');
+            } else {
+                toast.success('Post was removed from your Bookmarks');
+            }
+        } catch {
+            toast.error('Failed to bookmark. Please try again.');
         }
-        if(response.message === 'success'){
-            setBookmarkedMessage('Post was added to your Bookmarks')
-            setShowBookmarkedMessage(journalId);
-            timeOutRef.current = setTimeout(() =>{
-                setShowBookmarkedMessage(null)
-                setBookmarkedMessage('')
-            }, 2500)
-        } else {
-            setBookmarkedMessage('Post was removed from your Bookmarks')
-            setShowBookmarkedMessage(journalId);
-            timeOutRef.current = setTimeout(() =>{
-                setShowBookmarkedMessage(null)
-                setBookmarkedMessage('')
-            }, 2500)
-        }
-        // console.log(response.message);
     }
 
     const debounceClickBookmark = debounce(handleClickBookmark, 100);
@@ -387,26 +378,24 @@ const PostCards = () => {
         }
     }, [inView, activeFetchNextPage, activeHasNextPage, activeIsFetchingNextPage, isSearchMode])
 
-
-    useEffect(() =>{
-        const scroll = (e) =>{
-            setShowHeaders(!showHeaders)
-
-            if(timeOutRef.current){
+    useEffect(() => {
+        const scroll = () => {
+            setIsScrolling(true);
+            if (timeOutRef.current) {
                 clearTimeout(timeOutRef.current);
             }
             timeOutRef.current = setTimeout(() => {
-                setShowHeaders(showHeaders)
-            }, 100);
-        }
+                setIsScrolling(false);
+            }, 500);
+        };
         document.addEventListener('scroll', scroll, true);
-        return() =>{
-            if(timeOutRef.current){
+        return () => {
+            if (timeOutRef.current) {
                 clearTimeout(timeOutRef.current);
             }
-            document.removeEventListener('scroll', scroll, true)
-        }
-    }, [])
+            document.removeEventListener('scroll', scroll, true);
+        };
+    }, []);
 
     const feedJournals = useMemo(() => activeFeedData?.pages?.flatMap((page) => page.data || []) || [], [activeFeedData]);
     const searchedJournals = searchData?.data || [];
@@ -428,22 +417,30 @@ const PostCards = () => {
 
     if(isLoading) {
         return(
-            <>
-            <div className="postcards-parent-loading-container">
-                <MoonLoader loading={isLoading} color="var(--loader-color)" speedMultiplier={1} size={20}/>
-            </div>
-            </>
+             <FeedCardSkeleton count={4} />
         )
     }
 
     return(
         <>
-        <div className="mobile-top-header">
-            <span className="mobile-brand-text">iskrib</span>
-            {clickOpenSidebar && (
-                <button className="mobile-header-profile-btn" onClick={clickOpenSidebar}>
-                    <img src={user?.userData?.[0]?.image_url || '/assets/profile.jpg'} alt="profile" />
-                </button>
+        <div className={`mobile-top-header ${isScrolling ? 'mobile-top-header-hidden' : ''}`}>
+            <div className="mobile-top-header-row">
+                <span className="mobile-brand-text">iskrib</span>
+                {clickOpenSidebar && (
+                    <button className="mobile-header-profile-btn" onClick={clickOpenSidebar}>
+                        <img src={user?.userData?.[0]?.image_url || '/assets/profile.jpg'} alt="profile" />
+                    </button>
+                )}
+            </div>
+            {!isSearchMode && (
+                <div className="mobile-header-tabs">
+                    {header_links.map((header_link, index) => (
+                        <div key={index} className="mobile-header-tab" onClick={() => handleClickHeaderLinks(header_link.path)}>
+                            {header_link.label}
+                            <div className={header_link.path === location.pathname ? "mobile-header-tab-underline" : ''}/>
+                        </div>
+                    ))}
+                </div>
             )}
         </div>
 
@@ -572,32 +569,6 @@ const PostCards = () => {
             </button>
         </div>
 
-        <AnimatePresence>
-            {!isSearchMode && showHeaders && (
-                <motion.div
-                className="newsfeed-header"
-                initial={{opacity: 0}}
-                animate={{opacity: 1, transition: {type: 'spring', stiffness: 300, damping: 25, mass: 0.8}}}
-                exit={{ opacity: 0, y: -20,
-                        transition: {
-                        duration: 0.2,
-                        ease: "easeOut"
-                        }
-                }}
-                >
-
-                    {header_links.map((header_link, index) => (
-                        <div key={index} className="header-links">
-                            <div onClick={() => handleClickHeaderLinks(header_link.path) } className='header-link'>
-                                {header_link.label}
-                                <div className={header_link.path === location.pathname ? "header-underline" : ''}/>
-                            </div>
-                        </div>
-                    ))}
-
-                </motion.div>
-            )}
-            </AnimatePresence>
 
         <AnimatePresence>
         <div className="postcards-parent-container">
@@ -663,17 +634,20 @@ const PostCards = () => {
             )}
 
             {isFollowingFeed && !activeIsLoading && journals.length === 0 && !isSearchMode && (
-                <div className="following-empty-state" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
-                    <p>Your Following feed is empty</p>
-                    <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Follow writers to see their posts here</p>
-                </div>
+                <EmptyState
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>}
+                    title="Your Following feed is empty"
+                    description="Follow writers to see their posts here"
+                    action={{ label: 'Explore writers', onClick: () => navigate('/home/explore') }}
+                />
             )}
 
             {isForYouFeed && !activeIsLoading && journals.length === 0 && !isSearchMode && (
-                <div className="following-empty-state" style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
-                    <p>No recommendations yet</p>
-                    <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>We're still learning your taste — check back soon as more posts are published</p>
-                </div>
+                <EmptyState
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>}
+                    title="No recommendations yet"
+                    description="We're still learning your taste — check back soon as more posts are published"
+                />
             )}
 
             {journals.length === 0 && !isLoading && !isFollowingFeed && !isForYouFeed && (
@@ -698,6 +672,9 @@ const PostCards = () => {
                     <motion.div
                         className={`cards${isRepost ? ' is-repost-card' : ''}`}
                         key={journal.id}
+                        initial={index < 10 ? { opacity: 0, y: 16 } : false}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={index < 10 ? { duration: 0.35, delay: index * 0.05, ease: [0.25, 0.46, 0.45, 0.94] } : { duration: 0 }}
                     >
 
                         {isRepost && (
@@ -827,7 +804,7 @@ const PostCards = () => {
                                                 )}
 
                                             {icon.bookmarkAction && (
-                                                <div onClick={(e) => icon.bookmarkAction(e, journal.id)} id="card-icons" className={icon.className}>
+                                                <div onClick={(e) => icon.bookmarkAction(e, journal.id)} id="card-icons" className={`${icon.className} ${bouncingBookmarkId === journal.id ? 'bookmark-bouncing' : ''}`}>
                                                     {icon.checkBookrmark(isBookmarked)}
                                                 </div>
                                             )}
@@ -890,14 +867,6 @@ const PostCards = () => {
                                 )}
                             </div>
                         </div>
-                        {showBookmarkedMessage === journal.id && (
-                            <div
-                            className="bookmarked-content-message-container"
-                            >
-                                {bookmarkedMessage}
-
-                            </div>
-                        )}
                     </motion.div>
                 )
             })}
@@ -918,26 +887,12 @@ const PostCards = () => {
                 onClose={(result) => {
                     setRepostModalJournal(null);
                     if(result === 'success'){
-                        setRepostToastMessage('Post was reposted');
-                        setTimeout(() => setRepostToastMessage(''), 2500);
+                        toast.success('Post was reposted');
                     }
                 }}
             />
         )}
 
-        <AnimatePresence>
-            {repostToastMessage && (
-                <motion.div
-                    className="repost-toast"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    {repostToastMessage}
-                </motion.div>
-            )}
-        </AnimatePresence>
         </>
     )
 }

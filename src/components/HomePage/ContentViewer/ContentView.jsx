@@ -1,8 +1,6 @@
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import ImageNode from "../Editor/nodes/ImageNode";
-import MentionNode from "../Editor/nodes/MentionNode";
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
+import { VIEWER_NODES, EDITOR_THEME } from "../Editor/editorConfig";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -30,6 +28,8 @@ import ShareMenu from "../../ShareMenu/ShareMenu";
 import getShareUrl from "../../../utils/getShareUrl";
 import usePostSeo from "../../../seo/usePostSeo";
 import RelatedPosts from "../../Discovery/RelatedPosts";
+import { useToast } from "../../Toast/ToastContext";
+import ReadingProgress from "../../ReadingProgress/ReadingProgress";
 
 const normalizeInteractionFlag = (value) => {
     if(typeof value === 'boolean') return value;
@@ -60,6 +60,7 @@ const getNextToggleCount = (isActive, currentCount) => {
 
 const ContentView = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [showBackButton, setShowBackButton] = useState(true);
     const { session, user, openAuthModal } = useAuth();
 
@@ -73,26 +74,10 @@ const ContentView = () => {
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [bookmarkCounts, setBookmarkCounts] = useState(0);
 
-    const [bookmarkedMessage, setBookmarkedMessage] = useState('');
     const [showRepostModal, setShowRepostModal] = useState(false);
     const [showShareMenu, setShowShareMenu] = useState(false);
 
     const contentRef = useRef();
-
-    const theme = {
-        paragraph: 'editor-paragraph',
-        heading: {
-            h1: 'editor-heading-h1',
-            h2: 'editor-heading-h2',
-            h3: 'editor-heading-h3',
-        },
-        quote: 'editor-quote',
-        text: {
-            bold: 'editor-text-bold',
-            italic: 'editor-text-italic',
-            underline: 'editor-text-underline',
-        }
-    }
 
     const location = useLocation();
     const { journalId } = useParams();
@@ -216,25 +201,18 @@ const ContentView = () => {
         bookmarkInFlightRef.current = true;
         setIsBookmarked(!wasBookmarked);
         setBookmarkCounts((prevCount) => getNextToggleCount(wasBookmarked, normalizeCount(prevCount)));
-        let response = null;
         try {
-            response = await mutationBookmark.mutateAsync({ journalId });
+            const response = await mutationBookmark.mutateAsync({ journalId });
+            if (response?.message === 'success') {
+                toast.success('Post was added to your Bookmarks');
+            } else if(response?.message === 'deleted'){
+                toast.success('Post was removed from your Bookmarks');
+            }
+        } catch {
+            toast.error('Failed to bookmark. Please try again.');
         } finally {
             bookmarkInFlightRef.current = false;
         }
-        
-        if(timeOutRefBookmark.current){
-            clearTimeout(timeOutRefBookmark.current);
-        }
-        if (response?.message === 'success') {
-            setBookmarkedMessage('Post was added to your Bookmarks'); 
-        } else if(response?.message === 'deleted'){
-            setBookmarkedMessage('Post was removed from your Bookmarks');
-        }
-            
-        timeOutRefBookmark.current = setTimeout(() => {
-            setBookmarkedMessage('');
-        }, 1500);
 
     }
     const debounceClickBookmark = debounce(handleClickBookmark, 100);
@@ -317,6 +295,7 @@ const ContentView = () => {
                 </AnimatePresence>
             )}
 
+            <ReadingProgress targetRef={contentRef} />
             <div ref={contentRef} className="cv-container">
                 {/* Back header */}
                 <AnimatePresence>
@@ -337,7 +316,7 @@ const ContentView = () => {
                     )}
                 </AnimatePresence>
 
-                <article className="cv-article">
+                <article className="cv-article" role="article">
                     {postData?.isRepost ? (
                         <>
                             {/* ── Repost view: quote on top, original post nested below ── */}
@@ -407,10 +386,10 @@ const ContentView = () => {
                                         {postData.repostSource.content ? (
                                             <LexicalComposer initialConfig={{
                                                 namespace: "RepostSourceViewer",
-                                                theme: theme,
+                                                theme: EDITOR_THEME,
                                                 editable: false,
                                                 editorState: postData.repostSource.content,
-                                                nodes: [HeadingNode, ImageNode, QuoteNode, MentionNode],
+                                                nodes: VIEWER_NODES,
                                                 onError(error) { throw error; },
                                             }}>
                                                 <RichTextPlugin
@@ -445,14 +424,14 @@ const ContentView = () => {
                                     />
                                 </div>
 
-                                <button className="cv-action-btn" onClick={hanldeClickComments}>
+                                <button className="cv-action-btn" onClick={hanldeClickComments} aria-label="Comments">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--icon-default)">
                                         <path fillRule="evenodd" clipRule="evenodd" d="M11.9862 0.763672C6.07454 0.763672 1.23621 5.36133 1.23621 11.1034C1.23621 13.5057 2.10188 15.7237 3.55066 17.4735C5.46882 19.8566 8.48271 21.3843 11.8522 21.4238L11.8878 21.4367C11.9902 21.4735 12.1385 21.5265 12.3236 21.5916C12.6936 21.7216 13.2115 21.9001 13.8035 22.0941C14.9799 22.4797 16.4767 22.9358 17.6892 23.1894C18.303 23.3178 18.9306 23.1718 19.4096 22.8608C19.8872 22.5507 20.3019 22.0126 20.3019 21.3173C20.3019 20.9046 20.1354 20.4987 19.9732 20.1857C19.8007 19.8529 19.5794 19.5251 19.371 19.2448C19.2691 19.1076 19.1676 18.9782 19.0724 18.8609C21.3193 16.9815 22.7362 14.2061 22.7362 11.1034C22.7362 7.55126 20.8865 4.4319 18.073 2.58609C16.3321 1.4227 14.2426 0.763672 11.9862 0.763672ZM18.3637 6.03728C18.1546 5.67972 17.6953 5.55937 17.3377 5.76847C16.9801 5.97757 16.8598 6.43694 17.0689 6.7945C17.8131 8.0671 18.2362 9.53599 18.2362 11.1034C18.2362 12.6662 17.8138 14.1316 17.0693 15.4016C16.8598 15.7589 16.9797 16.2184 17.337 16.4279C17.6943 16.6374 18.1538 16.5175 18.3633 16.1602C19.2385 14.6673 19.7362 12.941 19.7362 11.1034C19.7362 9.26158 19.238 7.53236 18.3637 6.03728Z" fill="var(--icon-default)" />
                                     </svg>
                                     <span>{formatCounts(postData?.commentsCount)}</span>
                                 </button>
 
-                                <button className="cv-action-btn" onClick={(e) => debounceClickBookmark(e, postData?.journalId)}>
+                                <button className="cv-action-btn pressable" onClick={(e) => debounceClickBookmark(e, postData?.journalId)} aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
                                         <path fillRule="evenodd" clipRule="evenodd" d="M8 1.25C5.37665 1.25 3.25 3.37665 3.25 6V20.4648C3.25 21.7269 4.27311 22.75 5.53518 22.75C5.98634 22.75 6.42739 22.6165 6.80278 22.3662L11.3066 19.3636C11.7265 19.0837 12.2735 19.0837 12.6934 19.3636L17.1972 22.3662C17.5726 22.6165 18.0137 22.75 18.4648 22.75C19.7269 22.75 20.75 21.7269 20.75 20.4648V6C20.75 3.37665 18.6234 1.25 16 1.25H8ZM9 6.75C8.58579 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 8.58579 8.25 9 8.25H15C15.4142 8.25 15.75 7.91421 15.75 7.5C15.75 7.08579 15.4142 6.75 15 6.75H9Z" fill={isBookmarked ? "rgb(72, 208, 135)" : "var(--icon-default)"} />
                                     </svg>
@@ -535,14 +514,14 @@ const ContentView = () => {
                                     />
                                 </div>
 
-                                <button className="cv-action-btn" onClick={hanldeClickComments}>
+                                <button className="cv-action-btn" onClick={hanldeClickComments} aria-label="Comments">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--icon-default)">
                                         <path fillRule="evenodd" clipRule="evenodd" d="M11.9862 0.763672C6.07454 0.763672 1.23621 5.36133 1.23621 11.1034C1.23621 13.5057 2.10188 15.7237 3.55066 17.4735C5.46882 19.8566 8.48271 21.3843 11.8522 21.4238L11.8878 21.4367C11.9902 21.4735 12.1385 21.5265 12.3236 21.5916C12.6936 21.7216 13.2115 21.9001 13.8035 22.0941C14.9799 22.4797 16.4767 22.9358 17.6892 23.1894C18.303 23.3178 18.9306 23.1718 19.4096 22.8608C19.8872 22.5507 20.3019 22.0126 20.3019 21.3173C20.3019 20.9046 20.1354 20.4987 19.9732 20.1857C19.8007 19.8529 19.5794 19.5251 19.371 19.2448C19.2691 19.1076 19.1676 18.9782 19.0724 18.8609C21.3193 16.9815 22.7362 14.2061 22.7362 11.1034C22.7362 7.55126 20.8865 4.4319 18.073 2.58609C16.3321 1.4227 14.2426 0.763672 11.9862 0.763672ZM18.3637 6.03728C18.1546 5.67972 17.6953 5.55937 17.3377 5.76847C16.9801 5.97757 16.8598 6.43694 17.0689 6.7945C17.8131 8.0671 18.2362 9.53599 18.2362 11.1034C18.2362 12.6662 17.8138 14.1316 17.0693 15.4016C16.8598 15.7589 16.9797 16.2184 17.337 16.4279C17.6943 16.6374 18.1538 16.5175 18.3633 16.1602C19.2385 14.6673 19.7362 12.941 19.7362 11.1034C19.7362 9.26158 19.238 7.53236 18.3637 6.03728Z" fill="var(--icon-default)" />
                                     </svg>
                                     <span>{formatCounts(postData?.commentsCount)}</span>
                                 </button>
 
-                                <button className="cv-action-btn" onClick={(e) => debounceClickBookmark(e, postData?.journalId)}>
+                                <button className="cv-action-btn pressable" onClick={(e) => debounceClickBookmark(e, postData?.journalId)} aria-label={isBookmarked ? "Remove bookmark" : "Bookmark"}>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
                                         <path fillRule="evenodd" clipRule="evenodd" d="M8 1.25C5.37665 1.25 3.25 3.37665 3.25 6V20.4648C3.25 21.7269 4.27311 22.75 5.53518 22.75C5.98634 22.75 6.42739 22.6165 6.80278 22.3662L11.3066 19.3636C11.7265 19.0837 12.2735 19.0837 12.6934 19.3636L17.1972 22.3662C17.5726 22.6165 18.0137 22.75 18.4648 22.75C19.7269 22.75 20.75 21.7269 20.75 20.4648V6C20.75 3.37665 18.6234 1.25 16 1.25H8ZM9 6.75C8.58579 6.75 8.25 7.08579 8.25 7.5C8.25 7.91421 8.58579 8.25 9 8.25H15C15.4142 8.25 15.75 7.91421 15.75 7.5C15.75 7.08579 15.4142 6.75 15 6.75H9Z" fill={isBookmarked ? "rgb(72, 208, 135)" : "var(--icon-default)"} />
                                     </svg>
@@ -587,10 +566,10 @@ const ContentView = () => {
                             <div className="cv-body">
                                 <LexicalComposer initialConfig={{
                                     namespace: "ContentViewer",
-                                    theme: theme,
+                                    theme: EDITOR_THEME,
                                     editable: false,
                                     editorState: postData?.content,
-                                    nodes: [HeadingNode, ImageNode, QuoteNode, MentionNode],
+                                    nodes: VIEWER_NODES,
                                     onError(error) { throw error; },
                                 }}>
                                     <RichTextPlugin
@@ -605,20 +584,6 @@ const ContentView = () => {
 
                 <RelatedPosts journalId={postData?.journalId} />
 
-                {/* Toast notification */}
-            <AnimatePresence>
-                {(bookmarkedMessage) && (
-                    <motion.div
-                        className="cv-toast"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                    >
-                        {bookmarkedMessage}
-                    </motion.div>
-                )}
-            </AnimatePresence>
             </div>
 
             {showRepostModal && postData && (
@@ -636,13 +601,7 @@ const ContentView = () => {
                     onClose={(result) => {
                         setShowRepostModal(false);
                         if(result === 'success'){
-                            setBookmarkedMessage('Post was reposted');
-                            if(timeOutRefBookmark.current){
-                                clearTimeout(timeOutRefBookmark.current);
-                            }
-                            timeOutRefBookmark.current = setTimeout(() => {
-                                setBookmarkedMessage('');
-                            }, 2500);
+                            toast.success('Post was reposted');
                         }
                     }}
                 />

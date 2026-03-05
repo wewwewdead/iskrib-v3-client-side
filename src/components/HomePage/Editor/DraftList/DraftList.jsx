@@ -68,7 +68,16 @@ const DraftList = () => {
         return (
             <div className="draft-list-container">
                 <h2 className="draft-list-title">Drafts</h2>
-                <div className="draft-list-loading">Loading drafts...</div>
+                <div className="draft-list-items">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="draft-skeleton-item">
+                            <div className="draft-skeleton-content">
+                                <div className="draft-skeleton-title" />
+                                <div className="draft-skeleton-date" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

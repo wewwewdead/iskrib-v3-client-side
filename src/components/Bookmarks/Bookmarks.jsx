@@ -13,6 +13,8 @@ import { useRef } from 'react';
 import VerifiedBadge from '../Badge/VerifiedBadge';
 import formatPostDate from '../../../helpers/formatDateString';
 import { handleImageFallback } from '../../utils/handleImageFallback';
+import EmptyState from '../EmptyState/EmptyState';
+import FeedCardSkeleton from '../Skeletons/FeedCardSkeleton';
 
 const Bookmarks = () =>{
     const {user, session} = useAuth();
@@ -116,16 +118,19 @@ const Bookmarks = () =>{
 
     if(isLoading){
         return(
-            <div className='bookmark-loading-container'>
-                <MoonLoader loading={isLoading} color="var(--loader-color)" speedMultiplier={1} size={20}/>
+            <div className='bookmark-parent-container'>
+                <FeedCardSkeleton count={3} />
             </div>
-        )
+        );
     }
     if(journals?.length === 0){
         return(
-            <div className='bookmark-parent-container'>
-                <p>No bookmarks available</p>
-            </div>
+            <EmptyState
+                icon={<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>}
+                title="No bookmarks yet"
+                description="Save posts you want to revisit later"
+                action={{ label: 'Browse feed', onClick: () => navigate('/home') }}
+            />
         )
     }
 

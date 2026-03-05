@@ -30,8 +30,13 @@ const useMentionAutocomplete = (text, cursorPos, excludeUserId) => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
 
         debounceRef.current = setTimeout(async () => {
+            if (abortRef.current) abortRef.current.abort();
+            abortRef.current = new AbortController();
+            const { signal } = abortRef.current;
+
             try {
                 const res = await searchUsers(q, 6);
+                if (signal.aborted) return;
                 const filtered = excludeUserId
                     ? res?.data?.filter(u => u.id !== excludeUserId)
                     : res?.data;
@@ -44,6 +49,7 @@ const useMentionAutocomplete = (text, cursorPos, excludeUserId) => {
                     setResults([]);
                 }
             } catch {
+                if (signal.aborted) return;
                 setIsOpen(false);
                 setResults([]);
             }
@@ -52,7 +58,7 @@ const useMentionAutocomplete = (text, cursorPos, excludeUserId) => {
         return () => {
             if (debounceRef.current) clearTimeout(debounceRef.current);
         };
-    }, [text, cursorPos]);
+    }, [text, cursorPos, excludeUserId]);
 
     const close = useCallback(() => {
         setIsOpen(false);

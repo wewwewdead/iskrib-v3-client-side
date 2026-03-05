@@ -5,11 +5,19 @@ import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { ListPlugin } from "@lexical/react/LexicalListPlugin";
+import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
+import { HorizontalRulePlugin } from "@lexical/react/LexicalHorizontalRulePlugin";
+import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
+import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
+import { TRANSFORMERS } from "@lexical/markdown";
+import { CodeHighlightPlugin } from "./plugins/CodeHighlightPlugin";
+import { AutoLinkPlugin } from "./plugins/AutoLinkPlugin";
+import FloatingLinkEditor from "./plugins/FloatingLinkEditor";
+import FloatingSelectionToolbar from "./plugins/FloatingSelectionToolbar";
+import PasteImagePlugin from "./plugins/PasteImagePlugin";
 import ImagePlugin from "./nodes/Plugins/ImagePlugin";
 import MentionPlugin from "./nodes/Plugins/MentionPlugin";
-
-
-import ToolBar from "./Toolbar";
 
 import { saveJournal, saveDraft, publishDraft } from "../../../../API/Api";
 import { useAuth } from "../../../Context/useAuth";
@@ -17,26 +25,6 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { BarLoader } from "react-spinners";
 import { $getRoot } from "lexical";
-
-
-class ErrorBoundary extends React.Component {
-  state = { error: null };
-  static getDerivedStateFromError(error) {
-    return { error };
-  }
-  render() {
-    if (this.state.error) {
-      return <div>Error: {this.state.error.message}</div>;
-    }
-    return this.props.children;
-  }
-}
-
-/* theme for mapping css classes to lexical rols */
-const theme = {
-    paragraph: 'editor-paragraph',
-    heading: 'editor-heading',
-}
 
 const formatTimeAgo = (date) => {
     if (!date) return '';
@@ -193,7 +181,7 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
         const jsonb = JSON.stringify(state.toJSON());
         setEditorState(jsonb)
         setHasChanges(true);
-        if (saveStatus === 'saved') setSaveStatus('unsaved');
+        setSaveStatus(prev => prev === 'saved' ? 'unsaved' : prev);
 
         state.read(() => {
             const root = $getRoot();
@@ -213,10 +201,10 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
 
             // Expose state to parent via ref
             if (editorStateRef) {
-                editorStateRef.current = { ...editorStateRef.current, hasChanges: true, hasContent, editorState: jsonb, title };
+                editorStateRef.current = { ...editorStateRef.current, hasChanges: true, hasContent };
             }
         })
-    }, [setWordCount, saveStatus])
+    }, [setWordCount, editorStateRef])
 
     const renderSaveStatus = () => {
         if (!saveStatus) return null;
@@ -246,11 +234,6 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
 
     return(
         <>
-        {/* Toolbar above content */}
-        <div className="toolbar-wrapper">
-            <ToolBar addUploadedImagePath={addUploadImagesPath}/>
-        </div>
-
         {/* Bar loader directly under toolbar */}
         <div className="editor-loader-wrapper">
             {isSending && (
@@ -274,6 +257,18 @@ const EditorInner = ({title, onclose, onCloseOnSave, addUploadImagesPath, setWor
             <MentionPlugin/>
             <HistoryPlugin/>
             <OnChangePlugin onChange={onchange}/>
+            <ListPlugin/>
+            <CheckListPlugin/>
+            <HorizontalRulePlugin/>
+            <LinkPlugin validateUrl={(url) => {
+                try { return Boolean(new URL(url)); } catch { return false; }
+            }}/>
+            <AutoLinkPlugin/>
+            <CodeHighlightPlugin/>
+            <MarkdownShortcutPlugin transformers={TRANSFORMERS}/>
+            <FloatingLinkEditor/>
+            <FloatingSelectionToolbar/>
+            <PasteImagePlugin addUploadedImagePath={addUploadImagesPath} token={session?.access_token}/>
 
         </div>
 

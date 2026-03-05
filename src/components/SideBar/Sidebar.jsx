@@ -17,7 +17,7 @@ const Sidebar = ({links}) =>{
     const { data: streakData } = useStreakData(userData?.id);
     return(
         <>
-        <div className='side-bar-container'>
+        <nav className='side-bar-container' role="navigation" aria-label="Main navigation">
             <div className='sidebar-header'>
                 Iskrib
             </div>
@@ -60,7 +60,7 @@ const Sidebar = ({links}) =>{
                     </>                  
                 )}
             </div>
-        </div>
+        </nav>
         </>
     )
 }

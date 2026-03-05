@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRepostMutation } from "../../utils/useMutation";
 import { useAuth } from "../../Context/useAuth";
 import VerifiedBadge from "../Badge/VerifiedBadge";
+import useFocusTrap from "../../utils/useFocusTrap";
 import './repostmodal.css';
 
 const CAPTION_MAX = 280;
 
 const RepostModal = ({ journal, onClose }) => {
     const { session } = useAuth();
+    const modalRef = useRef(null);
+    useFocusTrap(modalRef, true);
     const [caption, setCaption] = useState('');
     const [error, setError] = useState('');
 
@@ -46,6 +49,7 @@ const RepostModal = ({ journal, onClose }) => {
             >
                 <motion.div
                     className="repost-modal"
+                    ref={modalRef}
                     initial={{ opacity: 0, scale: 0.92, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.92, y: 20 }}

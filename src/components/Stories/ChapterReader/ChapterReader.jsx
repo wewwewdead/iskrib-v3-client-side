@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../Context/useAuth';
 import { useChapter, useChapterCommentCounts } from '../hooks/useStoryData';
-import { saveReadingProgress } from '../../../../API/StoryApi';
+import { saveReadingProgress, getReadingProgress } from '../../../../API/StoryApi';
+import BASE_URL from '../../../utils/apiBaseUrl';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BeatLoader } from 'react-spinners';
 import ParagraphCommentLayer from './ParagraphCommentLayer';
@@ -13,25 +15,10 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { HeadingNode, QuoteNode } from '@lexical/rich-text';
-import ImageNode from '../../HomePage/Editor/nodes/ImageNode';
+import { VIEWER_NODES, EDITOR_THEME } from '../../HomePage/Editor/editorConfig';
 
 import './ChapterReader.css';
 
-const readerTheme = {
-    paragraph: 'editor-paragraph',
-    heading: {
-        h1: 'editor-heading-h1',
-        h2: 'editor-heading-h2',
-        h3: 'editor-heading-h3',
-    },
-    quote: 'editor-quote',
-    text: {
-        bold: 'editor-text-bold',
-        italic: 'editor-text-italic',
-        underline: 'editor-text-underline',
-    },
-};
 
 const ReaderContent = ({ chapter, onContentReady }) => {
     const [editor] = useLexicalComposerContext();
@@ -48,7 +35,13 @@ const ReaderContent = ({ chapter, onContentReady }) => {
                 console.error('Failed to load chapter content:', err);
             }
             editor.setEditable(false);
-            if (onContentReady) onContentReady();
+            // Wait for Lexical's DOM reconciliation + browser paint before signaling ready
+            const removeListener = editor.registerUpdateListener(() => {
+                removeListener();
+                requestAnimationFrame(() => {
+                    if (onContentReady) onContentReady();
+                });
+            });
         }
     }, [chapter?.id, editor]);
 
@@ -67,6 +60,7 @@ const ChapterReader = () => {
     const { session } = useAuth();
     const token = session?.access_token;
 
+    const queryClient = useQueryClient();
     const { data: chapter, isLoading } = useChapter(storyId, chapterId, token);
     const { data: commentCounts } = useChapterCommentCounts(chapterId, token);
     const progressTimerRef = useRef(null);
@@ -83,8 +77,8 @@ const ChapterReader = () => {
 
     // Save reading progress debounced on scroll
     const saveProgress = useCallback(() => {
-        if (!token || !storyId || !chapterId) return;
-        saveReadingProgress(token, storyId, chapterId, scrollRef.current).catch(() => {});
+        if (!token || !storyId || !chapterId) return Promise.resolve();
+        return saveReadingProgress(token, storyId, chapterId, scrollRef.current).catch(() => {});
     }, [token, storyId, chapterId]);
 
     useEffect(() => {
@@ -96,47 +90,94 @@ const ChapterReader = () => {
             scrollRef.current = scrollableHeight > 0 ? Math.min(scrollTop / scrollableHeight, 1) : 0;
 
             if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
-            progressTimerRef.current = setTimeout(saveProgress, 3000);
+            progressTimerRef.current = setTimeout(saveProgress, 1000);
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) saveProgress();
+        };
+
+        const handleBeforeUnload = () => {
+            if (!token || !storyId || !chapterId) return;
+            fetch(`${BASE_URL}/stories/${storyId}/progress`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ chapter_id: chapterId, scroll_position: scrollRef.current }),
+                keepalive: true,
+            });
         };
 
         container.addEventListener('scroll', handleScroll, { passive: true });
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
         return () => {
             container.removeEventListener('scroll', handleScroll);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
             if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
-            // Save on unmount
-            saveProgress();
+            // Save on unmount, then invalidate story cache so StoryDetail gets fresh progress
+            saveProgress().then(() => {
+                queryClient.invalidateQueries({ queryKey: ['story', storyId] });
+            });
         };
-    }, [saveProgress, getScrollContainer]);
+    }, [saveProgress, getScrollContainer, queryClient, storyId, token, chapterId]);
 
-    // Restore scroll position when resuming from "Continue Reading"
+    // Restore scroll position — from location.state or by fetching saved progress
     useEffect(() => {
-        const savedPosition = location.state?.scrollPosition;
-        if (!savedPosition || hasRestoredRef.current || !contentReady) return;
+        if (hasRestoredRef.current || !contentReady) return;
         hasRestoredRef.current = true;
 
-        const container = getScrollContainer();
-        // Double rAF ensures the browser has painted Lexical content
-        let raf1, raf2;
-        raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(() => {
-                const scrollableHeight = container.scrollHeight - container.clientHeight;
-                if (scrollableHeight > 0) {
-                    container.scrollTo({ top: scrollableHeight * savedPosition, behavior: 'instant' });
-                }
-                navigate(location.pathname, { replace: true, state: {} });
-            });
-        });
+        const restoreScroll = (position) => {
+            if (!position || position <= 0) return;
+            const container = getScrollContainer();
+            let lastHeight = -1;
 
-        return () => {
-            cancelAnimationFrame(raf1);
-            cancelAnimationFrame(raf2);
+            const attemptScroll = (retries = 0) => {
+                setTimeout(() => {
+                    const scrollableHeight = container.scrollHeight - container.clientHeight;
+                    if (scrollableHeight <= 0 && retries < 10) {
+                        attemptScroll(retries + 1);
+                        return;
+                    }
+                    // Wait until height stabilizes (same value twice in a row)
+                    if (scrollableHeight !== lastHeight && retries < 10) {
+                        lastHeight = scrollableHeight;
+                        attemptScroll(retries + 1);
+                        return;
+                    }
+                    if (scrollableHeight > 0) {
+                        container.scrollTo({ top: scrollableHeight * position, behavior: 'instant' });
+                    }
+                    navigate(location.pathname, { replace: true, state: {} });
+                }, 50);
+            };
+            attemptScroll();
         };
+
+        if (token) {
+            // Always fetch fresh progress — location.state may be stale
+            getReadingProgress(token, storyId).then(progress => {
+                if (progress?.chapter_id === chapterId && progress.scroll_position > 0) {
+                    restoreScroll(progress.scroll_position);
+                } else if (location.state?.scrollPosition) {
+                    restoreScroll(location.state.scrollPosition);
+                }
+            }).catch(() => {
+                if (location.state?.scrollPosition) {
+                    restoreScroll(location.state.scrollPosition);
+                }
+            });
+        } else if (location.state?.scrollPosition) {
+            restoreScroll(location.state.scrollPosition);
+        }
     }, [contentReady]);
 
     // Reset state when chapter changes
     useEffect(() => {
         setContentReady(false);
         setActiveComment(null);
+        hasRestoredRef.current = false;
     }, [chapterId]);
 
     // Scroll progress bar (re-runs when chapter loads so the bar element exists in the DOM)
@@ -158,8 +199,8 @@ const ChapterReader = () => {
 
     const editorConfig = {
         namespace: 'ChapterReader',
-        theme: readerTheme,
-        nodes: [ImageNode, HeadingNode, QuoteNode],
+        theme: EDITOR_THEME,
+        nodes: VIEWER_NODES,
         editable: false,
         onError(error) { console.error('Lexical error:', error); },
     };

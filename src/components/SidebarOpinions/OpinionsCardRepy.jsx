@@ -8,6 +8,7 @@ import VerifiedBadge from "../Badge/VerifiedBadge";
 import MentionText from "../mentions/MentionText";
 import useTextareaMention from "../mentions/useTextareaMention";
 import MentionDropdown from "../mentions/MentionDropdown";
+import { getBadgeRingClass } from "../../utils/badgeRingClass";
 
 const MAX_VISUAL_DEPTH = 3;
 
@@ -15,7 +16,7 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
     const queryClient = useQueryClient();
     const { user, session } = useAuth();
 
-    const [showReply, setShowReply] = useState(false);
+    const [openReplies, setOpenReplies] = useState(new Set());
     const [replyOpinion, setReplyOpinion] = useState('');
     const [isTypingId, setIsTypingId] = useState('');
     const [showReplyButtonId, setShowReplyButtonId] = useState('');
@@ -35,8 +36,6 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
             return undefined;
         },
         enabled: !!opinionId,
-        refetchOnWindowFocus: false,
-        staleTime: 1000 * 60 * 5
     });
 
     const handleSubmitReplyOpinion = async (reply, receiver_id, sender_id, parent_id) => {
@@ -44,14 +43,11 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
             const formadata = new FormData();
             formadata.append('opinion', reply);
             await addReplyOpinion(formadata, receiver_id, sender_id, parent_id, session?.access_token);
-            queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
-            queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
-            queryClient.invalidateQueries({ queryKey: ['getViewOpinion'] });
-            setReplyOpinion('');
             setShowReplyButtonId('');
             setIsTypingId('');
         } catch (error) {
             console.error(error);
+        } finally {
             setReplyOpinion('');
             queryClient.invalidateQueries({ queryKey: ['getReplyOpinion', opinionId] });
             queryClient.invalidateQueries({ queryKey: ['getOpinions'] });
@@ -89,7 +85,7 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
                         transition={{ duration: 0.25, delay: index * 0.03, ease: "easeOut" }}
                     >
                         <div className="rc-avatar-col">
-                            <div className={`so-avatar-outer so-avatar-outer--sm ${opinion.users?.badge === 'legend' ? 'avatar-ring-legend' : opinion.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                            <div className={`so-avatar-outer so-avatar-outer--sm ${getBadgeRingClass(opinion.users?.badge)}`}>
                                 <img
                                     className="so-avatar so-avatar--sm"
                                     src={opinion.users?.image_url || '../assets/profile.jpg'}
@@ -115,9 +111,13 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
                                 {opinion.reply_count > 0 && (
                                     <button
                                         className="rc-show-replies"
-                                        onClick={() => setShowReply(prev => !prev)}
+                                        onClick={() => setOpenReplies(prev => {
+                                            const next = new Set(prev);
+                                            next.has(opinion.id) ? next.delete(opinion.id) : next.add(opinion.id);
+                                            return next;
+                                        })}
                                     >
-                                        {showReply ? 'Hide' : 'Show'} {opinion.reply_count} {opinion.reply_count === 1 ? 'reply' : 'replies'}
+                                        {openReplies.has(opinion.id) ? 'Hide' : 'Show'} {opinion.reply_count} {opinion.reply_count === 1 ? 'reply' : 'replies'}
                                     </button>
                                 )}
                                 <button
@@ -175,7 +175,7 @@ const OpinionsReplyCard = ({ opinionId, depth = 0 }) => {
                             </AnimatePresence>
 
                             <AnimatePresence>
-                                {showReply && (
+                                {openReplies.has(opinion.id) && (
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}

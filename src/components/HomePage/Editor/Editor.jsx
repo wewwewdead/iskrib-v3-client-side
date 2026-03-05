@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import EditorInner from './RichTextEditor.jsx';
+import ToolBar from './Toolbar';
 import { $getRoot } from 'lexical';
 import { deleteJournalImage, saveDraft } from '../../../../API/Api.js';
 import { useAuth } from '../../../Context/useAuth.js';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../Toast/ToastContext';
 
 class ErrorBoundary extends React.Component {
   state = { error: null };
@@ -25,6 +27,7 @@ const Editor=({onClose, initialTitle = '', promptId = null, promptText = null, d
     const {session} = useAuth();
     const queryClient = useQueryClient();
 
+    const { toast } = useToast();
     const [title, setTitle] = useState(initialTitle || '')
     const [wordCount, setWordCount] = useState(0);
     const [editor] = useLexicalComposerContext();
@@ -128,6 +131,7 @@ const Editor=({onClose, initialTitle = '', promptId = null, promptText = null, d
             console.error('Failed to save draft on close:', err);
             setSaveError(true);
             setIsSavingDraft(false);
+            toast.error('Failed to save draft. Please try again.');
         }
     }, [editor, session?.access_token, title, promptId, queryClient, handleCloseEditor, handleCloseEditorOnSave])
 
@@ -174,6 +178,10 @@ const Editor=({onClose, initialTitle = '', promptId = null, promptText = null, d
                 </div>
 
                 <input value={title} onChange={(e) => setTitle(e.target.value)} className='content-title-input' type="text" placeholder='Title' />
+
+                <div className="toolbar-wrapper">
+                    <ToolBar addUploadedImagePath={addUploadedImagePath}/>
+                </div>
 
                 <div className="editor-mode-shell">
                     <ErrorBoundary>

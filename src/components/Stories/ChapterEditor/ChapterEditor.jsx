@@ -13,29 +13,24 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
-import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { $getRoot } from 'lexical';
 
-import ImageNode from '../../HomePage/Editor/nodes/ImageNode';
+import { EDITOR_NODES, EDITOR_THEME } from '../../HomePage/Editor/editorConfig';
 import ImagePlugin from '../../HomePage/Editor/nodes/Plugins/ImagePlugin';
+import { ListPlugin } from '@lexical/react/LexicalListPlugin';
+import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin';
+import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin';
+import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
+import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
+import { TRANSFORMERS } from '@lexical/markdown';
+import { CodeHighlightPlugin } from '../../HomePage/Editor/plugins/CodeHighlightPlugin';
+import { AutoLinkPlugin } from '../../HomePage/Editor/plugins/AutoLinkPlugin';
+import FloatingLinkEditor from '../../HomePage/Editor/plugins/FloatingLinkEditor';
+import FloatingSelectionToolbar from '../../HomePage/Editor/plugins/FloatingSelectionToolbar';
 import ToolBar from '../../HomePage/Editor/Toolbar';
 
 import './ChapterEditor.css';
 
-const editorTheme = {
-    paragraph: 'editor-paragraph',
-    heading: {
-        h1: 'editor-heading-h1',
-        h2: 'editor-heading-h2',
-        h3: 'editor-heading-h3',
-    },
-    quote: 'editor-quote',
-    text: {
-        bold: 'editor-text-bold',
-        italic: 'editor-text-italic',
-        underline: 'editor-text-underline',
-    },
-};
 
 const ChapterEditorInner = ({ chapter, storyId, chapterId, token, onBack }) => {
     const [editor] = useLexicalComposerContext();
@@ -203,6 +198,17 @@ const ChapterEditorInner = ({ chapter, storyId, chapterId, token, onBack }) => {
                 <ImagePlugin addUploadedImagePath={addUploadImagesPath} />
                 <HistoryPlugin />
                 <OnChangePlugin onChange={onchange} />
+                <ListPlugin />
+                <CheckListPlugin />
+                <HorizontalRulePlugin />
+                <LinkPlugin validateUrl={(url) => {
+                    try { return Boolean(new URL(url)); } catch { return false; }
+                }} />
+                <AutoLinkPlugin />
+                <CodeHighlightPlugin />
+                <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+                <FloatingLinkEditor />
+                <FloatingSelectionToolbar />
             </div>
 
             <div className="chapter-editor-footer">
@@ -227,8 +233,8 @@ const ChapterEditor = () => {
 
     const editorConfig = {
         namespace: 'ChapterEditor',
-        theme: editorTheme,
-        nodes: [ImageNode, HeadingNode, QuoteNode],
+        theme: EDITOR_THEME,
+        nodes: EDITOR_NODES,
         onError(error) {
             console.error('Lexical error:', error);
         },

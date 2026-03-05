@@ -74,6 +74,17 @@ export const handleClickOpinion = (navigate) => {
     }
 }
 
+export const makeAuthedProfileClick = (navigate, session, openAuthModal) => {
+    const profileClick = handleClickProfile(navigate);
+    return (e, loggedInUserId, clickedUserId, clickedUsername) => {
+        if (!session) {
+            e.stopPropagation();
+            return openAuthModal();
+        }
+        profileClick(e, loggedInUserId, clickedUserId, clickedUsername);
+    };
+};
+
 export const handleClickProfile = (navigate) => {
     return(e, loggedInUserId, clickedUserId, clickedUsername) =>{
         if(loggedInUserId === clickedUserId){

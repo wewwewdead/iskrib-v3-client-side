@@ -362,6 +362,7 @@ const ExplorePage = () => {
     return (
         <div className="explore-page-container">
             <div className="search-shell" role="search" ref={searchShellRef}>
+                <div className="search-top-bar-wrap">
                 <div className="search-top-bar">
                     <div className="search-input-wrap">
                         <svg className="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -389,7 +390,7 @@ const ExplorePage = () => {
                         </span>
                     ) : (
                         <span className="search-mode-pill">
-                            {isSuggestionsLoading && showSuggestions ? "Suggesting..." : "Search"}
+                            {isSugLoading && showSuggestions ? "Suggesting..." : "Search"}
                         </span>
                     )}
                 </div>
@@ -441,6 +442,7 @@ const ExplorePage = () => {
                         )}
                     </div>
                 )}
+                </div>
                 {(isSearchFocused || searchInput.length > 0 || isSearchMode) && (
                     <div className="search-type-toggle">
                         <button

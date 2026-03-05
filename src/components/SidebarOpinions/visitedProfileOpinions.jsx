@@ -6,10 +6,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 import { useAuth } from "../../Context/useAuth";
-import { handleClickProfile } from "../../../helpers/handleClicks";
+import { makeAuthedProfileClick, handleClickOpinion } from "../../../helpers/handleClicks";
 import formatPostDate from "../../../helpers/formatDateString";
 import { MoonLoader } from "react-spinners";
 import MentionText from "../mentions/MentionText";
+import { getBadgeRingClass } from "../../utils/badgeRingClass";
 
 const cardVariants = {
     hidden: { opacity: 0, y: 12 },
@@ -38,30 +39,16 @@ const VisitedProfileOpinions = () =>{
                 return undefined
             }
         },
-        refetchOnWindowFocus: false,
         enabled: !!userId,
-        staleTime: 1000 * 60 * 5
     })
 
 
-    const handleClickOpionionsProfileOriginal = handleClickProfile(navigate);
-    const handleClickOpionionsProfile = (e, loggedInUserId, clickedUserId) => {
-        if(!session){
-            e.stopPropagation();
-            return openAuthModal();
-        }
-        handleClickOpionionsProfileOriginal(e, loggedInUserId, clickedUserId);
-    };
+    const handleClickOpionionsProfile = makeAuthedProfileClick(navigate, session, openAuthModal);
 
+    const handleClickOpinionCard = handleClickOpinion(navigate);
     const handleClickContent = (e, opinionId, userId) =>{
-        e.stopPropagation();
         if(!session) return openAuthModal();
-        navigate('/home/opinionsViewer', {
-            state: {
-                opinionId: opinionId,
-                userId: userId
-            }
-        })
+        handleClickOpinionCard(e, opinionId, userId);
     }
 
     useEffect(() =>{
@@ -106,7 +93,7 @@ const VisitedProfileOpinions = () =>{
                     <div className="so-card">
                         <div className="so-card-content">
                             <div className="so-header-row">
-                                <div className={`so-avatar-outer ${opinion.users.badge === 'legend' ? 'avatar-ring-legend' : opinion.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                <div className={`so-avatar-outer ${getBadgeRingClass(opinion.users.badge)}`}>
                                     <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, userId)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
                                 </div>
                                 <span className="so-username">{opinion.users.name}</span>
@@ -123,7 +110,7 @@ const VisitedProfileOpinions = () =>{
                             </div>
 
                             <div className="so-action-row">
-                                <span className="so-reply-btn" onClick={(e) => { e.stopPropagation(); navigate('/home/opinionsViewer', { state: { opinionId: opinion.id, userId: opinion.user_id } }); }}>
+                                <span className="so-reply-btn" onClick={(e) => handleClickContent(e, opinion.id, opinion.user_id)}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                     </svg>

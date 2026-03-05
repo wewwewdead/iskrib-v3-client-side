@@ -3,9 +3,7 @@ import './profilepostcards.css';
 import '../../Editor/editor.css';
 import { motion } from 'framer-motion';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
-import { HeadingNode, QuoteNode } from '@lexical/rich-text';
-import ImageNode from '../../Editor/nodes/ImageNode';
-import MentionNode from '../../Editor/nodes/MentionNode';
+import { EDITOR_NODES, EDITOR_THEME } from '../../Editor/editorConfig';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
@@ -14,6 +12,16 @@ import ImagePlugin from '../../Editor/nodes/Plugins/ImagePlugin';
 import MentionPlugin from '../../Editor/nodes/Plugins/MentionPlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
+import { ListPlugin } from '@lexical/react/LexicalListPlugin';
+import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin';
+import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin';
+import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
+import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
+import { TRANSFORMERS } from '@lexical/markdown';
+import { CodeHighlightPlugin } from '../../Editor/plugins/CodeHighlightPlugin';
+import { AutoLinkPlugin } from '../../Editor/plugins/AutoLinkPlugin';
+import FloatingLinkEditor from '../../Editor/plugins/FloatingLinkEditor';
+import FloatingSelectionToolbar from '../../Editor/plugins/FloatingSelectionToolbar';
 import { updateJournal } from '../../../../../API/Api';
 import { useAuth } from '../../../../Context/useAuth';
 import { BarLoader } from 'react-spinners';
@@ -22,21 +30,6 @@ import { useQueryClient } from '@tanstack/react-query';
 const EditJournal = ({onClose, journalData}) => {
     const {session, user} = useAuth();
     const queryClient = useQueryClient();
-
-    const theme = {
-        paragraph: 'editor-paragraph',
-        heading: {
-            h1: 'editor-heading-h1',
-            h2: 'editor-heading-h2',
-            h3: 'editor-heading-h3',
-        },
-        quote: 'editor-quote',
-        text: {
-            bold: 'editor-text-bold',
-            italic: 'editor-text-italic',
-            underline: 'editor-text-underline',
-        }
-    }
 
     const [title, setTitle] = useState(journalData?.title);
     const [editorState , setEditorState] = useState(journalData?.content);
@@ -120,11 +113,11 @@ const EditJournal = ({onClose, journalData}) => {
 
                 <LexicalComposer initialConfig={{
                     namespace: 'editContent',
-                    theme: theme,
+                    theme: EDITOR_THEME,
                     editable: true,
                     editorState: typeof journalData?.content === 'string'
                     ? journalData.content : JSON.stringify(journalData?.content),
-                    nodes: [HeadingNode, ImageNode, QuoteNode, MentionNode],
+                    nodes: EDITOR_NODES,
                     onError(error){
                         throw error
                     },
@@ -155,6 +148,17 @@ const EditJournal = ({onClose, journalData}) => {
                         <MentionPlugin/>
                         <HistoryPlugin/>
                         <OnChangePlugin onChange={onChange}/>
+                        <ListPlugin/>
+                        <CheckListPlugin/>
+                        <HorizontalRulePlugin/>
+                        <LinkPlugin validateUrl={(url) => {
+                            try { return Boolean(new URL(url)); } catch { return false; }
+                        }}/>
+                        <AutoLinkPlugin/>
+                        <CodeHighlightPlugin/>
+                        <MarkdownShortcutPlugin transformers={TRANSFORMERS}/>
+                        <FloatingLinkEditor/>
+                        <FloatingSelectionToolbar/>
                     </div>
 
                     <div className='editor-footer'>

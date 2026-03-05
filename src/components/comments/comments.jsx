@@ -9,6 +9,8 @@ import { BarLoader, MoonLoader } from 'react-spinners';
 import CommentsCards from './commentsCards';
 import useTextareaMention from '../mentions/useTextareaMention';
 import MentionDropdown from '../mentions/MentionDropdown';
+import { useToast } from '../Toast/ToastContext';
+import useFocusTrap from '../../utils/useFocusTrap';
 
 const incrementJournalCommentCount = (old, postId) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -34,10 +36,13 @@ const incrementJournalCommentCount = (old, postId) => {
 
 const CommentSection = ({onclose, postId, receiverId})=>{
     const queryClient = useQueryClient();
+    const { toast } = useToast();
 
     const {session, user} = useAuth();
 
     const textAreaFocusRef = useRef();
+    const modalContainerRef = useRef();
+    useFocusTrap(modalContainerRef, true);
 
     const [comments, setComments] = useState('');
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -158,7 +163,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
             previousJournalCaches.forEach(([key, value]) => {
                 queryClient.setQueryData(key, value);
             });
-            throw new Error('error adding comments')
+            toast.error('Failed to post comment. Please try again.');
         } finally {
             setIsSubmittingComment(false)
             setComments('')
@@ -177,10 +182,11 @@ const CommentSection = ({onclose, postId, receiverId})=>{
             }}
             exit={{y: '-100vh', opacity: 0, transition: {duration: 0.2}}}
             className="cm-parent-container"
+            ref={modalContainerRef}
         >
             <div className="cm-header">
                 <p className="cm-header-title">Comments</p>
-                <div className="cm-close-btn" onClick={(e) => handeCloseCommentsSection(e)}>
+                <div className="cm-close-btn" onClick={(e) => handeCloseCommentsSection(e)} role="button" aria-label="Close comments">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px">
                         <path d="m336-280-56-56 144-144-144-143 56-56 144 144 143-144 56 56-144 143 144 144-56 56-143-144-144 144Z"/>
                     </svg>
@@ -224,6 +230,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                         disabled={isSubmittingComment || !comments.trim()}
                         onClick={(e) => handaleSubmitComment(e, postId, receiverId)}
                         className="cm-submit-btn"
+                        aria-label="Submit comment"
                     >
                         Submit
                     </button>

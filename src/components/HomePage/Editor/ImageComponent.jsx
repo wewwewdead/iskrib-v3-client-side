@@ -1,11 +1,12 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $getNodeByKey } from "lexical";
 
 function ImageComponent({ src, nodeKey }){
   const [editor] = useLexicalComposerContext();
   const handleDelete = (e) => {
     e.stopPropagation();
     editor.update(() => {
-      const node = editor.getEditorState()._nodeMap.get(nodeKey);
+      const node = $getNodeByKey(nodeKey);
       if (node) {
         try {
           node.remove();
