@@ -16,9 +16,39 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { VIEWER_NODES, EDITOR_THEME } from '../../HomePage/Editor/editorConfig';
+import { collectParagraphAnchors, getActiveParagraphSnapshot } from './paragraphAnchors';
 
 import './ChapterReader.css';
 
+const RESUME_ANCHOR_RATIO = 0;
+const BACKUP_SAVE_INTERVAL_MS = 15000;
+const RESTORE_RETRY_DELAY_MS = 100;
+const RESTORE_MAX_RETRIES = 15;
+
+const clamp01 = (value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.min(Math.max(parsed, 0), 1);
+};
+
+const parseOptionalNumber = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
+const parseOptionalIndex = (value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+};
+
+const snapshotsEqual = (a, b) => {
+    if (!a || !b) return false;
+    return a.scrollPosition === b.scrollPosition
+        && a.paragraphIndex === b.paragraphIndex
+        && a.paragraphOffset === b.paragraphOffset;
+};
 
 const ReaderContent = ({ chapter, onContentReady }) => {
     const [editor] = useLexicalComposerContext();
@@ -35,7 +65,6 @@ const ReaderContent = ({ chapter, onContentReady }) => {
                 console.error('Failed to load chapter content:', err);
             }
             editor.setEditable(false);
-            // Wait for Lexical's DOM reconciliation + browser paint before signaling ready
             const removeListener = editor.registerUpdateListener(() => {
                 removeListener();
                 requestAnimationFrame(() => {
@@ -43,7 +72,7 @@ const ReaderContent = ({ chapter, onContentReady }) => {
                 });
             });
         }
-    }, [chapter?.id, editor]);
+    }, [chapter?.id, editor, onContentReady]);
 
     return (
         <RichTextPlugin
@@ -63,139 +92,427 @@ const ChapterReader = () => {
     const queryClient = useQueryClient();
     const { data: chapter, isLoading } = useChapter(storyId, chapterId, token);
     const { data: commentCounts } = useChapterCommentCounts(chapterId, token);
-    const progressTimerRef = useRef(null);
+    const backupSaveIntervalRef = useRef(null);
     const scrollRef = useRef(0);
     const bodyRef = useRef(null);
     const hasRestoredRef = useRef(false);
-
-    // The scrollable element is .home-parent-container, not the window
-    const getScrollContainer = useCallback(() =>
-        document.querySelector('.home-parent-container') || document.documentElement
-    , []);
+    const isRestoringRef = useRef(false);
+    const skipNextSaveRef = useRef(false);
+    const ignoreScrollUntilRef = useRef(0);
+    const liveProgressRef = useRef(null);
+    const lastSavedProgressRef = useRef(null);
     const [contentReady, setContentReady] = useState(false);
     const [activeComment, setActiveComment] = useState(null);
+    const handleContentReady = useCallback(() => {
+        setContentReady(true);
+    }, []);
 
-    // Save reading progress debounced on scroll
-    const saveProgress = useCallback(() => {
-        if (!token || !storyId || !chapterId) return Promise.resolve();
-        return saveReadingProgress(token, storyId, chapterId, scrollRef.current).catch(() => {});
-    }, [token, storyId, chapterId]);
+    const getScrollContainer = useCallback(() =>
+        document.querySelector('#main-content.center-bar-holder-container')
+        || document.querySelector('.center-bar-holder-container')
+        || document.querySelector('.home-parent-container')
+        || document.documentElement
+    , []);
+
+    const getContentRoot = useCallback(() =>
+        bodyRef.current?.querySelector('.chapter-reader-content') || null
+    , []);
+
+    const getReaderParagraphs = useCallback(() =>
+        collectParagraphAnchors({ root: getContentRoot() })
+    , [getContentRoot]);
+
+    const syncStoryProgressCache = useCallback((progress) => {
+        if (!storyId || !progress) return;
+
+        queryClient.setQueryData(['story', storyId], (current) => {
+            if (!current) return current;
+            return {
+                ...current,
+                reading_progress: {
+                    ...(current.reading_progress || {}),
+                    ...progress,
+                },
+            };
+        });
+    }, [queryClient, storyId]);
+
+    const getProgressSnapshot = useCallback(() => {
+        const container = getScrollContainer();
+        const scrollableHeight = Math.max(container.scrollHeight - container.clientHeight, 0);
+        const scrollPosition = scrollableHeight > 0
+            ? clamp01(container.scrollTop / scrollableHeight)
+            : 0;
+        const { paragraphIndex, paragraphOffset } = getActiveParagraphSnapshot({
+            root: getContentRoot(),
+            container,
+            anchorRatio: RESUME_ANCHOR_RATIO,
+        });
+
+        return {
+            scrollPosition,
+            paragraphIndex,
+            paragraphOffset,
+        };
+    }, [getContentRoot, getScrollContainer]);
+
+    const captureLatestProgressSnapshot = useCallback(() => {
+        const snapshot = getProgressSnapshot();
+        liveProgressRef.current = snapshot;
+        scrollRef.current = snapshot.scrollPosition;
+        return snapshot;
+    }, [getProgressSnapshot]);
+
+    const persistProgress = useCallback(async (snapshot, { keepalive = false } = {}) => {
+        if (!token || !storyId || !chapterId) return null;
+
+        const payload = {
+            chapter_id: chapterId,
+            scroll_position: snapshot.scrollPosition,
+            paragraph_index: snapshot.paragraphIndex,
+            paragraph_offset: snapshot.paragraphOffset,
+        };
+
+        scrollRef.current = payload.scroll_position;
+
+        if (keepalive) {
+            return fetch(`${BASE_URL}/stories/${storyId}/progress`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+                keepalive: true,
+            })
+                .then(async (response) => {
+                    if (!response.ok) {
+                        throw new Error('failed to save progress');
+                    }
+                    return response.json().catch(() => payload);
+                })
+                .then((saved) => {
+                    const resolved = saved || payload;
+                    syncStoryProgressCache(resolved);
+                    return resolved;
+                });
+        }
+
+        return saveReadingProgress(token, storyId, payload).then((saved) => {
+            const resolved = saved || payload;
+            syncStoryProgressCache(resolved);
+            return resolved;
+        });
+    }, [chapterId, storyId, syncStoryProgressCache, token]);
+
+    const saveProgressNow = useCallback(async (options = {}) => {
+        if (!token || !storyId || !chapterId) return null;
+        const liveSnapshot = liveProgressRef.current;
+        const freshSnapshot = getProgressSnapshot();
+        const snapshot = liveSnapshot?.paragraphIndex !== null ? liveSnapshot : freshSnapshot;
+        const shouldSkip = !options.force && snapshotsEqual(snapshot, lastSavedProgressRef.current);
+
+        if (shouldSkip) {
+            return lastSavedProgressRef.current;
+        }
+
+        liveProgressRef.current = snapshot;
+
+        return persistProgress(snapshot, options)
+            .then((saved) => {
+                const normalizedSaved = {
+                    scrollPosition: clamp01(saved?.scroll_position ?? snapshot.scrollPosition),
+                    paragraphIndex: parseOptionalIndex(saved?.paragraph_index ?? snapshot.paragraphIndex),
+                    paragraphOffset: (() => {
+                        const value = parseOptionalNumber(saved?.paragraph_offset ?? snapshot.paragraphOffset);
+                        return value === null ? null : clamp01(value);
+                    })(),
+                };
+                lastSavedProgressRef.current = normalizedSaved;
+                liveProgressRef.current = normalizedSaved;
+                return saved;
+            })
+            .catch(() => null);
+    }, [chapterId, getProgressSnapshot, persistProgress, storyId, token]);
+
+    const clearTransientState = useCallback(() => {
+        if (location.state && Object.keys(location.state).length > 0) {
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.pathname, location.state, navigate]);
+
+    const restoreProgress = useCallback((progress) => {
+        if (!progress) return;
+
+        const position = clamp01(progress.scroll_position ?? 0);
+        const paragraphIndex = parseOptionalIndex(progress.paragraph_index);
+        const paragraphOffsetValue = parseOptionalNumber(progress.paragraph_offset);
+        const paragraphOffset = paragraphOffsetValue === null ? 0 : clamp01(paragraphOffsetValue);
+
+        if (paragraphIndex === null && position <= 0) return;
+
+        const container = getScrollContainer();
+        let lastHeight = -1;
+        let targetScrollTop = null;
+
+        const attemptScroll = (retries = 0) => {
+            setTimeout(() => {
+                const scrollableHeight = Math.max(container.scrollHeight - container.clientHeight, 0);
+                if (scrollableHeight <= 0 && retries < RESTORE_MAX_RETRIES) {
+                    attemptScroll(retries + 1);
+                    return;
+                }
+
+                if (scrollableHeight !== lastHeight && retries < RESTORE_MAX_RETRIES) {
+                    lastHeight = scrollableHeight;
+                    attemptScroll(retries + 1);
+                    return;
+                }
+
+                let restored = false;
+                const paragraphs = getReaderParagraphs();
+
+                if (paragraphIndex !== null && paragraphs.length <= paragraphIndex && retries < RESTORE_MAX_RETRIES) {
+                    attemptScroll(retries + 1);
+                    return;
+                }
+
+                if (paragraphIndex !== null) {
+                    const targetBlock = paragraphs[paragraphIndex]?.element;
+
+                    if (targetBlock) {
+                        const containerRect = container.getBoundingClientRect();
+                        const targetRect = targetBlock.getBoundingClientRect();
+                        const targetTop = targetRect.top - containerRect.top + container.scrollTop;
+                        const targetHeight = Math.max(targetBlock.offsetHeight, targetRect.height, 1);
+                        const anchorOffset = container.clientHeight * RESUME_ANCHOR_RATIO;
+                        targetScrollTop = Math.min(
+                            Math.max(targetTop + (targetHeight * paragraphOffset) - anchorOffset, 0),
+                            scrollableHeight
+                        );
+                        isRestoringRef.current = true;
+                        skipNextSaveRef.current = true;
+                        ignoreScrollUntilRef.current = Date.now() + 150;
+                        container.scrollTop = targetScrollTop;
+                        restored = true;
+                    }
+                }
+
+                if (!restored && position > 0 && scrollableHeight > 0) {
+                    isRestoringRef.current = true;
+                    skipNextSaveRef.current = true;
+                    ignoreScrollUntilRef.current = Date.now() + 150;
+                    targetScrollTop = scrollableHeight * position;
+                    container.scrollTop = targetScrollTop;
+                    restored = true;
+                }
+
+                if (restored) {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            if (paragraphIndex !== null) {
+                                const latestParagraphs = getReaderParagraphs();
+                                const latestTarget = latestParagraphs[paragraphIndex]?.element;
+                                const latestScrollableHeight = Math.max(container.scrollHeight - container.clientHeight, 0);
+
+                                if (latestTarget) {
+                                    const containerRect = container.getBoundingClientRect();
+                                    const targetRect = latestTarget.getBoundingClientRect();
+                                    const targetTop = targetRect.top - containerRect.top + container.scrollTop;
+                                    const targetHeight = Math.max(latestTarget.offsetHeight, targetRect.height, 1);
+                                    const anchorOffset = container.clientHeight * RESUME_ANCHOR_RATIO;
+                                    targetScrollTop = Math.min(
+                                        Math.max(targetTop + (targetHeight * paragraphOffset) - anchorOffset, 0),
+                                        latestScrollableHeight
+                                    );
+                                }
+
+                                if (targetScrollTop !== null) {
+                                    container.scrollTop = targetScrollTop;
+                                }
+                            }
+
+                            const restoredSnapshot = captureLatestProgressSnapshot();
+                            scrollRef.current = restoredSnapshot.scrollPosition;
+                            isRestoringRef.current = false;
+                            skipNextSaveRef.current = false;
+                            clearTransientState();
+                        });
+                    });
+                }
+            }, retries === 0 ? 0 : RESTORE_RETRY_DELAY_MS);
+        };
+
+        attemptScroll();
+    }, [captureLatestProgressSnapshot, clearTransientState, getReaderParagraphs, getScrollContainer]);
+
+    const navigateWithProgress = useCallback(async (targetPath) => {
+        await saveProgressNow({ force: true });
+        void queryClient.invalidateQueries({ queryKey: ['story', storyId] });
+        navigate(targetPath);
+    }, [navigate, queryClient, saveProgressNow, storyId]);
 
     useEffect(() => {
         const container = getScrollContainer();
 
         const handleScroll = () => {
-            const scrollTop = container.scrollTop;
-            const scrollableHeight = container.scrollHeight - container.clientHeight;
-            scrollRef.current = scrollableHeight > 0 ? Math.min(scrollTop / scrollableHeight, 1) : 0;
+            const scrollableHeight = Math.max(container.scrollHeight - container.clientHeight, 0);
+            scrollRef.current = scrollableHeight > 0
+                ? clamp01(container.scrollTop / scrollableHeight)
+                : 0;
+            captureLatestProgressSnapshot();
 
-            if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
-            progressTimerRef.current = setTimeout(saveProgress, 1000);
+            if (skipNextSaveRef.current) {
+                skipNextSaveRef.current = false;
+                return;
+            }
+
+            if (Date.now() < ignoreScrollUntilRef.current) {
+                return;
+            }
+
+            if (isRestoringRef.current) {
+                return;
+            }
         };
 
         const handleVisibilityChange = () => {
-            if (document.hidden) saveProgress();
+            if (document.hidden) {
+                void saveProgressNow({ keepalive: true, force: true });
+            }
         };
 
         const handleBeforeUnload = () => {
-            if (!token || !storyId || !chapterId) return;
-            fetch(`${BASE_URL}/stories/${storyId}/progress`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ chapter_id: chapterId, scroll_position: scrollRef.current }),
-                keepalive: true,
-            });
+            void saveProgressNow({ keepalive: true, force: true });
+        };
+
+        const handlePageHide = () => {
+            void saveProgressNow({ keepalive: true, force: true });
         };
 
         container.addEventListener('scroll', handleScroll, { passive: true });
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('beforeunload', handleBeforeUnload);
+        window.addEventListener('pagehide', handlePageHide);
 
         return () => {
             container.removeEventListener('scroll', handleScroll);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('beforeunload', handleBeforeUnload);
-            if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
-            // Save on unmount, then invalidate story cache so StoryDetail gets fresh progress
-            saveProgress().then(() => {
-                queryClient.invalidateQueries({ queryKey: ['story', storyId] });
+            window.removeEventListener('pagehide', handlePageHide);
+            isRestoringRef.current = false;
+            skipNextSaveRef.current = false;
+            ignoreScrollUntilRef.current = 0;
+            void saveProgressNow({ force: true }).then(() => {
+                void queryClient.invalidateQueries({ queryKey: ['story', storyId] });
             });
         };
-    }, [saveProgress, getScrollContainer, queryClient, storyId, token, chapterId]);
+    }, [captureLatestProgressSnapshot, getScrollContainer, queryClient, saveProgressNow, storyId]);
 
-    // Restore scroll position — from location.state or by fetching saved progress
+    useEffect(() => {
+        if (backupSaveIntervalRef.current) {
+            clearInterval(backupSaveIntervalRef.current);
+        }
+
+        backupSaveIntervalRef.current = setInterval(() => {
+            if (isRestoringRef.current) return;
+            if (!liveProgressRef.current) return;
+            if (snapshotsEqual(liveProgressRef.current, lastSavedProgressRef.current)) return;
+            void saveProgressNow();
+        }, BACKUP_SAVE_INTERVAL_MS);
+
+        return () => {
+            if (backupSaveIntervalRef.current) {
+                clearInterval(backupSaveIntervalRef.current);
+                backupSaveIntervalRef.current = null;
+            }
+        };
+    }, [saveProgressNow]);
+
     useEffect(() => {
         if (hasRestoredRef.current || !contentReady) return;
         hasRestoredRef.current = true;
 
-        const restoreScroll = (position) => {
-            if (!position || position <= 0) return;
-            const container = getScrollContainer();
-            let lastHeight = -1;
+        const locationProgress = {
+            chapter_id: chapterId,
+            scroll_position: parseOptionalNumber(location.state?.scrollPosition) ?? 0,
+            paragraph_index: parseOptionalIndex(location.state?.paragraphIndex),
+            paragraph_offset: parseOptionalNumber(location.state?.paragraphOffset),
+        };
 
-            const attemptScroll = (retries = 0) => {
-                setTimeout(() => {
-                    const scrollableHeight = container.scrollHeight - container.clientHeight;
-                    if (scrollableHeight <= 0 && retries < 10) {
-                        attemptScroll(retries + 1);
-                        return;
-                    }
-                    // Wait until height stabilizes (same value twice in a row)
-                    if (scrollableHeight !== lastHeight && retries < 10) {
-                        lastHeight = scrollableHeight;
-                        attemptScroll(retries + 1);
-                        return;
-                    }
-                    if (scrollableHeight > 0) {
-                        container.scrollTo({ top: scrollableHeight * position, behavior: 'instant' });
-                    }
-                    navigate(location.pathname, { replace: true, state: {} });
-                }, 50);
-            };
-            attemptScroll();
+        const hasLocationProgress = locationProgress.paragraph_index !== null || locationProgress.scroll_position > 0;
+        const restoreLocationFallback = () => {
+            if (hasLocationProgress) {
+                restoreProgress(locationProgress);
+            }
         };
 
         if (token) {
-            // Always fetch fresh progress — location.state may be stale
-            getReadingProgress(token, storyId).then(progress => {
-                if (progress?.chapter_id === chapterId && progress.scroll_position > 0) {
-                    restoreScroll(progress.scroll_position);
-                } else if (location.state?.scrollPosition) {
-                    restoreScroll(location.state.scrollPosition);
-                }
-            }).catch(() => {
-                if (location.state?.scrollPosition) {
-                    restoreScroll(location.state.scrollPosition);
-                }
-            });
-        } else if (location.state?.scrollPosition) {
-            restoreScroll(location.state.scrollPosition);
-        }
-    }, [contentReady]);
+            getReadingProgress(token, storyId).then((progress) => {
+                const normalizedProgress = progress ? {
+                    ...progress,
+                    scroll_position: parseOptionalNumber(progress.scroll_position) ?? 0,
+                    paragraph_index: parseOptionalIndex(progress.paragraph_index),
+                    paragraph_offset: parseOptionalNumber(progress.paragraph_offset),
+                } : null;
 
-    // Reset state when chapter changes
+                const sameChapter = normalizedProgress?.chapter_id
+                    && String(normalizedProgress.chapter_id) === String(chapterId);
+                const hasServerProgress = sameChapter
+                    && (normalizedProgress.paragraph_index !== null || normalizedProgress.scroll_position > 0);
+
+                if (hasServerProgress) {
+                    lastSavedProgressRef.current = {
+                        scrollPosition: normalizedProgress.scroll_position,
+                        paragraphIndex: normalizedProgress.paragraph_index,
+                        paragraphOffset: normalizedProgress.paragraph_offset === null
+                            ? null
+                            : clamp01(normalizedProgress.paragraph_offset),
+                    };
+                    restoreProgress(normalizedProgress);
+                    return;
+                }
+
+                restoreLocationFallback();
+            }).catch(() => {
+                restoreLocationFallback();
+            });
+        } else {
+            restoreLocationFallback();
+        }
+    }, [chapterId, contentReady, location.state, restoreProgress, storyId, token]);
+
     useEffect(() => {
         setContentReady(false);
         setActiveComment(null);
         hasRestoredRef.current = false;
+        isRestoringRef.current = false;
+        skipNextSaveRef.current = false;
+        ignoreScrollUntilRef.current = 0;
+        liveProgressRef.current = null;
+        lastSavedProgressRef.current = null;
     }, [chapterId]);
 
-    // Scroll progress bar (re-runs when chapter loads so the bar element exists in the DOM)
+    useEffect(() => {
+        if (!contentReady) return;
+        captureLatestProgressSnapshot();
+    }, [captureLatestProgressSnapshot, contentReady]);
+
     useEffect(() => {
         const bar = document.getElementById('chapter-progress-bar');
         if (!bar) return;
         const container = getScrollContainer();
 
         const updateBar = () => {
-            const scrollTop = container.scrollTop;
-            const scrollableHeight = container.scrollHeight - container.clientHeight;
-            const pct = scrollableHeight > 0 ? (scrollTop / scrollableHeight) * 100 : 0;
+            const scrollableHeight = Math.max(container.scrollHeight - container.clientHeight, 0);
+            const pct = scrollableHeight > 0 ? (container.scrollTop / scrollableHeight) * 100 : 0;
             bar.style.width = `${Math.min(pct, 100)}%`;
         };
 
+        updateBar();
         container.addEventListener('scroll', updateBar, { passive: true });
         return () => container.removeEventListener('scroll', updateBar);
-    }, [getScrollContainer, isLoading]);
+    }, [contentReady, getScrollContainer, isLoading]);
 
     const editorConfig = {
         namespace: 'ChapterReader',
@@ -228,7 +545,6 @@ const ChapterReader = () => {
 
     return (
         <>
-        {/* Progress bar — must be outside motion.div so position:fixed works */}
         <div className="chapter-progress-track">
             <div id="chapter-progress-bar" className="chapter-progress-fill" />
         </div>
@@ -239,11 +555,10 @@ const ChapterReader = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2 }}
         >
-            {/* Header */}
             <div className="chapter-reader-header">
                 <button
                     className="chapter-reader-back"
-                    onClick={() => navigate(`/home/stories/${storyId}`)}
+                    onClick={() => void navigateWithProgress(`/home/stories/${storyId}`)}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="var(--text-secondary)">
                         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
@@ -255,10 +570,9 @@ const ChapterReader = () => {
                 </div>
             </div>
 
-            {/* Content */}
             <div className="chapter-reader-body" ref={bodyRef}>
                 <LexicalComposer initialConfig={editorConfig}>
-                    <ReaderContent chapter={chapter} onContentReady={() => setContentReady(true)} />
+                    <ReaderContent chapter={chapter} onContentReady={handleContentReady} />
                 </LexicalComposer>
                 <ParagraphCommentLayer
                     containerRef={bodyRef}
@@ -267,7 +581,6 @@ const ChapterReader = () => {
                 />
             </div>
 
-            {/* Comment Panel */}
             <AnimatePresence>
                 {activeComment && (
                     <CommentPanel
@@ -278,12 +591,11 @@ const ChapterReader = () => {
                 )}
             </AnimatePresence>
 
-            {/* Navigation */}
             <div className="chapter-reader-nav">
                 {prevCh ? (
                     <button
                         className="chapter-nav-btn chapter-nav-prev"
-                        onClick={() => navigate(`/home/stories/${storyId}/chapter/${prevCh.id}`)}
+                        onClick={() => void navigateWithProgress(`/home/stories/${storyId}/chapter/${prevCh.id}`)}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
@@ -294,7 +606,7 @@ const ChapterReader = () => {
                 {nextCh ? (
                     <button
                         className="chapter-nav-btn chapter-nav-next"
-                        onClick={() => navigate(`/home/stories/${storyId}/chapter/${nextCh.id}`)}
+                        onClick={() => void navigateWithProgress(`/home/stories/${storyId}/chapter/${nextCh.id}`)}
                     >
                         <span>Ch. {nextCh.chapter_number}: {nextCh.title}</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">

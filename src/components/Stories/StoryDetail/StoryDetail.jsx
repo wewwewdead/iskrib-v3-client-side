@@ -33,7 +33,11 @@ const StoryDetail = () => {
         // If there's reading progress, resume from there
         if (story?.reading_progress?.chapter_id) {
             navigate(`/home/stories/${storyId}/chapter/${story.reading_progress.chapter_id}`, {
-                state: { scrollPosition: story.reading_progress.scroll_position }
+                state: {
+                    scrollPosition: story.reading_progress.scroll_position,
+                    paragraphIndex: story.reading_progress.paragraph_index,
+                    paragraphOffset: story.reading_progress.paragraph_offset,
+                }
             });
             return;
         }

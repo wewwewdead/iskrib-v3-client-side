@@ -153,6 +153,10 @@
         padding-bottom: 5rem;
     }
 
+    .chapter-reader-body {
+        padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+    }
+
     .chapter-reader-title {
         font-size: 1.1rem;
     }

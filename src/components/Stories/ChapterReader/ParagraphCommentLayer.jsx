@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { collectParagraphAnchors } from './paragraphAnchors';
 
 const HOVER_LEAVE_DELAY_MS = 450;
+const MOBILE_MEDIA_QUERY = '(max-width: 768px), (pointer: coarse)';
 
 const CommentBadge = ({ count, hasComments }) => {
     return (
@@ -28,6 +30,7 @@ const ParagraphCommentLayer = ({ containerRef, commentCounts, onParagraphClick }
     const layerRef = useRef(null);
     const clickedRef = useRef(false);
     const prevActiveElRef = useRef(null);
+    const isMobileRef = useRef(false);
 
     const clearLeaveTimer = useCallback(() => {
         if (leaveTimerRef.current) {
@@ -49,6 +52,17 @@ const ParagraphCommentLayer = ({ containerRef, commentCounts, onParagraphClick }
         return Number(el.getAttribute('data-paragraph-index'));
     }, []);
 
+    const openParagraph = useCallback((paragraphIndex) => {
+        const paragraph = paragraphs.find((item) => item.index === paragraphIndex);
+        if (!paragraph) return;
+
+        onParagraphClick({
+            paragraphIndex: paragraph.index,
+            fingerprint: paragraph.fingerprint,
+            text: paragraph.text,
+        });
+    }, [onParagraphClick, paragraphs]);
+
     const scanParagraphs = useCallback(() => {
         const container = containerRef.current;
         if (!container) return;
@@ -60,27 +74,10 @@ const ParagraphCommentLayer = ({ containerRef, commentCounts, onParagraphClick }
         });
         listenersRef.current = [];
 
-        const elements = container.querySelectorAll('.editor-paragraph');
-        const containerRect = container.getBoundingClientRect();
-        const result = [];
-        let realIndex = 0;
+        const result = collectParagraphAnchors({ root: container, offsetParent: container });
 
-        elements.forEach((el) => {
-            const text = el.textContent.trim();
-            if (!text) return;
-
-            const idx = realIndex;
-            el.setAttribute('data-paragraph-index', idx);
-            const fingerprint = text.substring(0, 100);
-
-            const elRect = el.getBoundingClientRect();
-            result.push({
-                index: idx,
-                top: elRect.top - containerRect.top + container.scrollTop,
-                height: elRect.height,
-                text,
-                fingerprint,
-            });
+        result.forEach((paragraph) => {
+            const { index: idx, element: el } = paragraph;
 
             // Desktop hover listeners (per-paragraph)
             const enter = () => {
@@ -102,8 +99,6 @@ const ParagraphCommentLayer = ({ containerRef, commentCounts, onParagraphClick }
             el.addEventListener('mouseenter', enter);
             el.addEventListener('mouseleave', leave);
             listenersRef.current.push({ el, enter, leave });
-
-            realIndex++;
         });
 
         setParagraphs(result);
@@ -122,6 +117,10 @@ const ParagraphCommentLayer = ({ containerRef, commentCounts, onParagraphClick }
             clickedRef.current = true;
             setHoveredIndex(idx);
             setClickSeq(c => c + 1);
+
+            if (isMobileRef.current) {
+                openParagraph(idx);
+            }
         };
 
         container.addEventListener('click', handleClick);
@@ -129,7 +128,21 @@ const ParagraphCommentLayer = ({ containerRef, commentCounts, onParagraphClick }
         return () => {
             container.removeEventListener('click', handleClick);
         };
-    }, [containerRef, getParagraphIndex, clearLeaveTimer]);
+    }, [containerRef, getParagraphIndex, clearLeaveTimer, openParagraph]);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
+        const updateIsMobile = () => {
+            isMobileRef.current = mediaQuery.matches;
+        };
+
+        updateIsMobile();
+        mediaQuery.addEventListener('change', updateIsMobile);
+
+        return () => {
+            mediaQuery.removeEventListener('change', updateIsMobile);
+        };
+    }, []);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -245,11 +258,7 @@ const ParagraphCommentLayer = ({ containerRef, commentCounts, onParagraphClick }
                             className={`pcl-badge ${hasComments ? 'pcl-badge-active' : ''}`}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onParagraphClick({
-                                    paragraphIndex: p.index,
-                                    fingerprint: p.fingerprint,
-                                    text: p.text,
-                                });
+                                openParagraph(p.index);
                             }}
                         >
                             <CommentBadge count={count} hasComments={hasComments} />

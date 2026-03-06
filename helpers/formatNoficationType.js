@@ -17,8 +17,8 @@ const notificationTypeMap = {
     opinion_reply: 'Replied to your opinion',
     constellation_request: 'Wants to link stars with you',
     constellation_accepted: 'Accepted your constellation link',
-    hottest_post: 'Your post is #1 Hottest!',
-    hottest_post_replaced: 'Your post is no longer #1 Hottest',
+    hottest_post: 'Your post is #1 Hottest on Explore Page!',
+    hottest_post_replaced: 'Your post is no longer #1 Hottest on Explore Page',
     mention: 'Mentioned you in a post'
 };
 

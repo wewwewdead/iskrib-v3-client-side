@@ -93,8 +93,8 @@ export const getChapterCommentCounts = (chapterId, token = null) =>
 export const addChapterComment = (token, chapterId, data) =>
     authedJsonRequest(token, 'POST', `/chapters/${chapterId}/comments`, data, 'failed to add comment');
 
-export const saveReadingProgress = (token, storyId, chapterId, scrollPosition) =>
-    authedJsonRequest(token, 'POST', `/stories/${storyId}/progress`, { chapter_id: chapterId, scroll_position: scrollPosition }, 'failed to save progress');
+export const saveReadingProgress = (token, storyId, progress) =>
+    authedJsonRequest(token, 'POST', `/stories/${storyId}/progress`, progress, 'failed to save progress');
 
 export const getReadingProgress = (token, storyId) =>
     authedGet(token, `/stories/${storyId}/progress`, 'failed to fetch progress');
