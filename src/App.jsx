@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import './App.css'
 import { Routes, Route, BrowserRouter, Navigate} from 'react-router-dom'
 import { useAuth } from './Context/useAuth.js';
@@ -77,6 +77,11 @@ const SuspenseFallback = () => (
 );
 
 const App = () => {
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
 
   return (
     <>

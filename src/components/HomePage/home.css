@@ -83,6 +83,7 @@
     width: 750px;
     height: 100vh;
     overflow-y: auto;
+    overflow-anchor: none;
 }
 .sidebar-right-holder-container{
     position: fixed;
@@ -335,6 +336,7 @@ mobile responsive */
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
+        overflow-anchor: none;
     }
     .sidebar-right-holder-container {
         position: fixed;
@@ -392,6 +394,7 @@ mobile responsive */
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
+        overflow-anchor: none;
     }
     .side-bar-holder-container{
         position: fixed;
@@ -460,6 +463,7 @@ mobile responsive */
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
+        overflow-anchor: none;
     }
     .side-bar-holder-container{
         position: fixed;

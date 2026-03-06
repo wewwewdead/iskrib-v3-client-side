@@ -89,6 +89,7 @@
 .chapter-reader-body {
     min-height: 300px;
     position: relative;
+    overflow-anchor: none;
 }
 
 .chapter-reader-content {
@@ -96,6 +97,7 @@
     line-height: 1.85;
     color: var(--text-primary);
     outline: none;
+    overflow-anchor: none;
 }
 
 .chapter-reader-content .editor-paragraph {
