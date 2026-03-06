@@ -127,7 +127,6 @@ const ChapterReader = () => {
     const getScrollContainer = useCallback(() =>
         document.querySelector('#main-content.center-bar-holder-container')
         || document.querySelector('.center-bar-holder-container')
-        || document.querySelector('.home-parent-container')
         || document.scrollingElement
         || document.documentElement
     , []);
@@ -512,6 +511,7 @@ const ChapterReader = () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('beforeunload', handleBeforeUnload);
             window.removeEventListener('pagehide', handlePageHide);
+            clearRestoreFollowUps();
             isRestoringRef.current = false;
             skipNextSaveRef.current = false;
             ignoreScrollUntilRef.current = 0;

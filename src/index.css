@@ -92,6 +92,12 @@
   background-color: var(--bg-primary);
 }
 
+html {
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--bg-primary);
+}
+
 [data-theme="dark"] {
   --bg-primary: #1A1916;
   --bg-secondary: #222220;
@@ -167,6 +173,7 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   background-color: var(--bg-primary);
   color: var(--text-primary);
