@@ -29,7 +29,6 @@ import getShareUrl from "../../../utils/getShareUrl";
 import usePostSeo from "../../../seo/usePostSeo";
 import RelatedPosts from "../../Discovery/RelatedPosts";
 import { useToast } from "../../Toast/ToastContext";
-import ReadingProgress from "../../ReadingProgress/ReadingProgress";
 
 const normalizeInteractionFlag = (value) => {
     if(typeof value === 'boolean') return value;
@@ -76,8 +75,6 @@ const ContentView = () => {
 
     const [showRepostModal, setShowRepostModal] = useState(false);
     const [showShareMenu, setShowShareMenu] = useState(false);
-
-    const contentRef = useRef();
 
     const location = useLocation();
     const { journalId } = useParams();
@@ -295,8 +292,7 @@ const ContentView = () => {
                 </AnimatePresence>
             )}
 
-            <ReadingProgress targetRef={contentRef} />
-            <div ref={contentRef} className="cv-container">
+            <div className="cv-container">
                 {/* Back header */}
                 <AnimatePresence>
                     {showBackButton && (
