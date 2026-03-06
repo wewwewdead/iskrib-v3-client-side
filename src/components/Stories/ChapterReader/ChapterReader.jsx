@@ -157,9 +157,20 @@ const ReaderDebugPanel = ({
 
 const ReaderContent = ({ chapter, onContentReady }) => {
     const [editor] = useLexicalComposerContext();
+    const readyNotifiedRef = useRef(false);
+
+    useEffect(() => {
+        readyNotifiedRef.current = false;
+    }, [chapter?.id]);
 
     useEffect(() => {
         if (chapter?.content && editor) {
+            const notifyReady = () => {
+                if (readyNotifiedRef.current) return;
+                readyNotifiedRef.current = true;
+                if (onContentReady) onContentReady();
+            };
+
             try {
                 const content = typeof chapter.content === 'string'
                     ? chapter.content
@@ -173,11 +184,24 @@ const ReaderContent = ({ chapter, onContentReady }) => {
             const removeListener = editor.registerUpdateListener(() => {
                 removeListener();
                 requestAnimationFrame(() => {
-                    if (onContentReady) onContentReady();
+                    notifyReady();
                 });
             });
+
+            // Safari can render the content without delivering the expected
+            // update callback in time, so keep a non-event fallback.
+            const fallbackTimer = setTimeout(() => {
+                requestAnimationFrame(() => {
+                    notifyReady();
+                });
+            }, 120);
+
+            return () => {
+                clearTimeout(fallbackTimer);
+                removeListener();
+            };
         }
-    }, [chapter?.id, editor, onContentReady]);
+    }, [chapter?.id, chapter?.content, editor, onContentReady]);
 
     return (
         <RichTextPlugin
