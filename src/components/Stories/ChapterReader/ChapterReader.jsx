@@ -24,6 +24,7 @@ const RESUME_ANCHOR_RATIO = 0;
 const BACKUP_SAVE_INTERVAL_MS = 15000;
 const RESTORE_RETRY_DELAY_MS = 100;
 const RESTORE_MAX_RETRIES = 15;
+const POST_RESTORE_CORRECTION_DELAYS_MS = [250, 800];
 
 const clamp01 = (value) => {
     const parsed = Number(value);
@@ -41,6 +42,21 @@ const parseOptionalIndex = (value) => {
     if (value === null || value === undefined || value === '') return null;
     const parsed = Number(value);
     return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+};
+
+const getParagraphTargetScrollTop = ({ container, targetBlock, paragraphOffset, scrollableHeight }) => {
+    if (!container || !targetBlock) return null;
+
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = targetBlock.getBoundingClientRect();
+    const targetTop = targetRect.top - containerRect.top + container.scrollTop;
+    const targetHeight = Math.max(targetBlock.offsetHeight, targetRect.height, 1);
+    const anchorOffset = container.clientHeight * RESUME_ANCHOR_RATIO;
+
+    return Math.min(
+        Math.max(targetTop + (targetHeight * paragraphOffset) - anchorOffset, 0),
+        scrollableHeight
+    );
 };
 
 const snapshotsEqual = (a, b) => {
@@ -101,6 +117,7 @@ const ChapterReader = () => {
     const ignoreScrollUntilRef = useRef(0);
     const liveProgressRef = useRef(null);
     const lastSavedProgressRef = useRef(null);
+    const restoreFollowUpsCleanupRef = useRef(null);
     const [contentReady, setContentReady] = useState(false);
     const [activeComment, setActiveComment] = useState(null);
     const handleContentReady = useCallback(() => {
@@ -111,6 +128,7 @@ const ChapterReader = () => {
         document.querySelector('#main-content.center-bar-holder-container')
         || document.querySelector('.center-bar-holder-container')
         || document.querySelector('.home-parent-container')
+        || document.scrollingElement
         || document.documentElement
     , []);
 
@@ -241,6 +259,13 @@ const ChapterReader = () => {
         }
     }, [location.pathname, location.state, navigate]);
 
+    const clearRestoreFollowUps = useCallback(() => {
+        if (typeof restoreFollowUpsCleanupRef.current === 'function') {
+            restoreFollowUpsCleanupRef.current();
+        }
+        restoreFollowUpsCleanupRef.current = null;
+    }, []);
+
     const restoreProgress = useCallback((progress) => {
         if (!progress) return;
 
@@ -254,6 +279,93 @@ const ChapterReader = () => {
         const container = getScrollContainer();
         let lastHeight = -1;
         let targetScrollTop = null;
+
+        const applySavedProgress = (forceParagraphCorrection = false) => {
+            const activeContainer = getScrollContainer();
+            const scrollableHeight = Math.max(activeContainer.scrollHeight - activeContainer.clientHeight, 0);
+
+            if (scrollableHeight <= 0) return false;
+
+            let nextScrollTop = position > 0 ? scrollableHeight * position : null;
+
+            if (paragraphIndex !== null) {
+                const currentSnapshot = getActiveParagraphSnapshot({
+                    root: getContentRoot(),
+                    container: activeContainer,
+                    anchorRatio: RESUME_ANCHOR_RATIO,
+                });
+                const needsParagraphCorrection = forceParagraphCorrection
+                    || currentSnapshot.paragraphIndex !== paragraphIndex;
+
+                if (needsParagraphCorrection) {
+                    const targetBlock = getReaderParagraphs()[paragraphIndex]?.element;
+                    const paragraphScrollTop = getParagraphTargetScrollTop({
+                        container: activeContainer,
+                        targetBlock,
+                        paragraphOffset,
+                        scrollableHeight,
+                    });
+
+                    if (paragraphScrollTop !== null) {
+                        nextScrollTop = paragraphScrollTop;
+                    }
+                }
+            }
+
+            if (nextScrollTop === null) return false;
+
+            isRestoringRef.current = true;
+            skipNextSaveRef.current = true;
+            ignoreScrollUntilRef.current = Date.now() + 200;
+            activeContainer.scrollTop = nextScrollTop;
+            targetScrollTop = nextScrollTop;
+            return true;
+        };
+
+        const scheduleRestoreFollowUps = () => {
+            clearRestoreFollowUps();
+
+            const timeouts = POST_RESTORE_CORRECTION_DELAYS_MS.map((delay) => setTimeout(() => {
+                if (!applySavedProgress()) return;
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        isRestoringRef.current = false;
+                        skipNextSaveRef.current = false;
+                        captureLatestProgressSnapshot();
+                    });
+                });
+            }, delay));
+
+            const handleViewportChange = () => {
+                if (!applySavedProgress()) return;
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        isRestoringRef.current = false;
+                        skipNextSaveRef.current = false;
+                        captureLatestProgressSnapshot();
+                    });
+                });
+            };
+
+            window.addEventListener('resize', handleViewportChange, { passive: true });
+
+            const viewport = window.visualViewport;
+            viewport?.addEventListener('resize', handleViewportChange, { passive: true });
+
+            if (document.fonts?.ready) {
+                document.fonts.ready.then(() => {
+                    handleViewportChange();
+                }).catch(() => {});
+            }
+
+            restoreFollowUpsCleanupRef.current = () => {
+                timeouts.forEach(clearTimeout);
+                window.removeEventListener('resize', handleViewportChange);
+                viewport?.removeEventListener('resize', handleViewportChange);
+            };
+        };
 
         const attemptScroll = (retries = 0) => {
             setTimeout(() => {
@@ -277,58 +389,55 @@ const ChapterReader = () => {
                     return;
                 }
 
-                if (paragraphIndex !== null) {
+                if (position > 0 && scrollableHeight > 0) {
+                    restored = applySavedProgress();
+                }
+                else if (paragraphIndex !== null) {
                     const targetBlock = paragraphs[paragraphIndex]?.element;
 
                     if (targetBlock) {
-                        const containerRect = container.getBoundingClientRect();
-                        const targetRect = targetBlock.getBoundingClientRect();
-                        const targetTop = targetRect.top - containerRect.top + container.scrollTop;
-                        const targetHeight = Math.max(targetBlock.offsetHeight, targetRect.height, 1);
-                        const anchorOffset = container.clientHeight * RESUME_ANCHOR_RATIO;
-                        targetScrollTop = Math.min(
-                            Math.max(targetTop + (targetHeight * paragraphOffset) - anchorOffset, 0),
-                            scrollableHeight
-                        );
-                        isRestoringRef.current = true;
-                        skipNextSaveRef.current = true;
-                        ignoreScrollUntilRef.current = Date.now() + 150;
-                        container.scrollTop = targetScrollTop;
-                        restored = true;
+                        targetScrollTop = getParagraphTargetScrollTop({
+                            container,
+                            targetBlock,
+                            paragraphOffset,
+                            scrollableHeight,
+                        });
+                        if (targetScrollTop !== null) {
+                            isRestoringRef.current = true;
+                            skipNextSaveRef.current = true;
+                            ignoreScrollUntilRef.current = Date.now() + 150;
+                            container.scrollTop = targetScrollTop;
+                            restored = true;
+                        }
                     }
-                }
-
-                if (!restored && position > 0 && scrollableHeight > 0) {
-                    isRestoringRef.current = true;
-                    skipNextSaveRef.current = true;
-                    ignoreScrollUntilRef.current = Date.now() + 150;
-                    targetScrollTop = scrollableHeight * position;
-                    container.scrollTop = targetScrollTop;
-                    restored = true;
                 }
 
                 if (restored) {
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
                             if (paragraphIndex !== null) {
-                                const latestParagraphs = getReaderParagraphs();
-                                const latestTarget = latestParagraphs[paragraphIndex]?.element;
-                                const latestScrollableHeight = Math.max(container.scrollHeight - container.clientHeight, 0);
+                                const restoredSnapshot = getActiveParagraphSnapshot({
+                                    root: getContentRoot(),
+                                    container,
+                                    anchorRatio: RESUME_ANCHOR_RATIO,
+                                });
+                                const needsParagraphCorrection = restoredSnapshot.paragraphIndex !== paragraphIndex;
 
-                                if (latestTarget) {
-                                    const containerRect = container.getBoundingClientRect();
-                                    const targetRect = latestTarget.getBoundingClientRect();
-                                    const targetTop = targetRect.top - containerRect.top + container.scrollTop;
-                                    const targetHeight = Math.max(latestTarget.offsetHeight, targetRect.height, 1);
-                                    const anchorOffset = container.clientHeight * RESUME_ANCHOR_RATIO;
-                                    targetScrollTop = Math.min(
-                                        Math.max(targetTop + (targetHeight * paragraphOffset) - anchorOffset, 0),
-                                        latestScrollableHeight
-                                    );
-                                }
+                                if (needsParagraphCorrection) {
+                                    const latestParagraphs = getReaderParagraphs();
+                                    const latestTarget = latestParagraphs[paragraphIndex]?.element;
+                                    const latestScrollableHeight = Math.max(container.scrollHeight - container.clientHeight, 0);
+                                    const correctedScrollTop = getParagraphTargetScrollTop({
+                                        container,
+                                        targetBlock: latestTarget,
+                                        paragraphOffset,
+                                        scrollableHeight: latestScrollableHeight,
+                                    });
 
-                                if (targetScrollTop !== null) {
-                                    container.scrollTop = targetScrollTop;
+                                    if (correctedScrollTop !== null) {
+                                        targetScrollTop = correctedScrollTop;
+                                        container.scrollTop = correctedScrollTop;
+                                    }
                                 }
                             }
 
@@ -336,6 +445,7 @@ const ChapterReader = () => {
                             scrollRef.current = restoredSnapshot.scrollPosition;
                             isRestoringRef.current = false;
                             skipNextSaveRef.current = false;
+                            scheduleRestoreFollowUps();
                             clearTransientState();
                         });
                     });
@@ -344,7 +454,7 @@ const ChapterReader = () => {
         };
 
         attemptScroll();
-    }, [captureLatestProgressSnapshot, clearTransientState, getReaderParagraphs, getScrollContainer]);
+    }, [captureLatestProgressSnapshot, clearRestoreFollowUps, clearTransientState, getContentRoot, getReaderParagraphs, getScrollContainer]);
 
     const navigateWithProgress = useCallback(async (targetPath) => {
         await saveProgressNow({ force: true });
@@ -374,6 +484,8 @@ const ChapterReader = () => {
             if (isRestoringRef.current) {
                 return;
             }
+
+            clearRestoreFollowUps();
         };
 
         const handleVisibilityChange = () => {
@@ -407,7 +519,7 @@ const ChapterReader = () => {
                 void queryClient.invalidateQueries({ queryKey: ['story', storyId] });
             });
         };
-    }, [captureLatestProgressSnapshot, getScrollContainer, queryClient, saveProgressNow, storyId]);
+    }, [captureLatestProgressSnapshot, clearRestoreFollowUps, getScrollContainer, queryClient, saveProgressNow, storyId]);
 
     useEffect(() => {
         if (backupSaveIntervalRef.current) {
@@ -491,7 +603,8 @@ const ChapterReader = () => {
         ignoreScrollUntilRef.current = 0;
         liveProgressRef.current = null;
         lastSavedProgressRef.current = null;
-    }, [chapterId]);
+        clearRestoreFollowUps();
+    }, [chapterId, clearRestoreFollowUps]);
 
     useEffect(() => {
         if (!contentReady) return;
