@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../Context/useAuth';
 import { useChapter, useChapterCommentCounts } from '../hooks/useStoryData';
@@ -25,23 +25,6 @@ const BACKUP_SAVE_INTERVAL_MS = 15000;
 const RESTORE_RETRY_DELAY_MS = 100;
 const RESTORE_MAX_RETRIES = 15;
 const POST_RESTORE_CORRECTION_DELAYS_MS = [250, 800];
-const DEBUG_EVENT_LIMIT = 12;
-const DRIFT_WATCH_INTERVAL_MS = 150;
-const DRIFT_WATCH_DURATION_MS = 1500;
-const DEBUG_RESTORE_MODE_STORAGE_KEY = 'readerDebugRestoreMode';
-
-const toDebugNumber = (value, digits = 2) => {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) return null;
-    return Number(parsed.toFixed(digits));
-};
-
-const getQueryFlag = (search, key) => {
-    const value = new URLSearchParams(search).get(key);
-    if (value === '1') return true;
-    if (value === '0') return false;
-    return null;
-};
 
 const clamp01 = (value) => {
     const parsed = Number(value);
@@ -81,78 +64,6 @@ const snapshotsEqual = (a, b) => {
     return a.scrollPosition === b.scrollPosition
         && a.paragraphIndex === b.paragraphIndex
         && a.paragraphOffset === b.paragraphOffset;
-};
-
-const ReaderDebugPanel = ({
-    enabled,
-    restoreMode,
-    onRestoreModeChange,
-    latestEvent,
-    events,
-}) => {
-    if (!enabled) return null;
-
-    const saved = latestEvent?.savedProgress || null;
-
-    return (
-        <div className="chapter-reader-debug-panel">
-            <div className="chapter-reader-debug-header">
-                <strong>Reader Debug</strong>
-                <span>{latestEvent?.stage || 'idle'}</span>
-            </div>
-
-            <div className="chapter-reader-debug-section">
-                <label htmlFor="reader-debug-restore-mode">Restore mode</label>
-                <select
-                    id="reader-debug-restore-mode"
-                    value={restoreMode}
-                    onChange={(event) => onRestoreModeChange(event.target.value)}
-                >
-                    <option value="scroll-first">scroll-first</option>
-                    <option value="paragraph-first">paragraph-first</option>
-                    <option value="scroll-only">scroll-only</option>
-                </select>
-            </div>
-
-            <div className="chapter-reader-debug-grid">
-                <span>Source</span><span>{latestEvent?.source || 'unknown'}</span>
-                <span>Container</span><span>{latestEvent?.containerName || 'unknown'}</span>
-                <span>ScrollTop</span><span>{latestEvent?.actualScrollTop ?? '-'}</span>
-                <span>Requested</span><span>{latestEvent?.requestedScrollTop ?? '-'}</span>
-                <span>ClientHeight</span><span>{latestEvent?.clientHeight ?? '-'}</span>
-                <span>ScrollHeight</span><span>{latestEvent?.scrollHeight ?? '-'}</span>
-                <span>Viewport</span><span>{latestEvent?.viewportHeight ?? '-'}</span>
-                <span>Saved Chapter</span><span>{saved?.chapter_id ?? '-'}</span>
-                <span>Saved Scroll</span><span>{saved?.scroll_position ?? '-'}</span>
-                <span>Saved Paragraph</span><span>{saved?.paragraph_index ?? '-'}</span>
-                <span>Saved Offset</span><span>{saved?.paragraph_offset ?? '-'}</span>
-                <span>Active Paragraph</span><span>{latestEvent?.activeParagraphIndex ?? '-'}</span>
-                <span>Resolved Paragraph</span><span>{latestEvent?.resolvedParagraphIndex ?? '-'}</span>
-            </div>
-
-            <div className="chapter-reader-debug-section">
-                <label>Saved paragraph text</label>
-                <p>{latestEvent?.savedParagraphText || '-'}</p>
-            </div>
-
-            <div className="chapter-reader-debug-section">
-                <label>Active paragraph text</label>
-                <p>{latestEvent?.activeParagraphText || '-'}</p>
-            </div>
-
-            <div className="chapter-reader-debug-section">
-                <label>Recent events</label>
-                <div className="chapter-reader-debug-events">
-                    {events.map((event) => (
-                        <div key={`${event.stage}-${event.ts}`} className="chapter-reader-debug-event">
-                            <span>{event.stage}</span>
-                            <span>{new Date(event.ts).toLocaleTimeString()}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
 };
 
 const ReaderContent = ({ chapter, onContentReady }) => {
@@ -217,15 +128,6 @@ const ChapterReader = () => {
     const location = useLocation();
     const { session } = useAuth();
     const token = session?.access_token;
-    const queryDebugEnabled = useMemo(() => getQueryFlag(location.search, 'readerDebug'), [location.search]);
-    const debugEnabled = useMemo(() => {
-        if (queryDebugEnabled !== null) return queryDebugEnabled;
-        try {
-            return window.localStorage.getItem('readerDebug') === '1';
-        } catch {
-            return false;
-        }
-    }, [queryDebugEnabled]);
 
     const queryClient = useQueryClient();
     const { data: chapter, isLoading } = useChapter(storyId, chapterId, token);
@@ -240,21 +142,8 @@ const ChapterReader = () => {
     const liveProgressRef = useRef(null);
     const lastSavedProgressRef = useRef(null);
     const restoreFollowUpsCleanupRef = useRef(null);
-    const driftWatchCleanupRef = useRef(null);
-    const debugSavedProgressRef = useRef(null);
-    const debugSourceRef = useRef('none');
-    const lastDebugScrollSignatureRef = useRef('');
     const [contentReady, setContentReady] = useState(false);
     const [activeComment, setActiveComment] = useState(null);
-    const [debugEvents, setDebugEvents] = useState([]);
-    const [debugLatestEvent, setDebugLatestEvent] = useState(null);
-    const [debugRestoreMode, setDebugRestoreMode] = useState(() => {
-        try {
-            return window.localStorage.getItem(DEBUG_RESTORE_MODE_STORAGE_KEY) || 'scroll-first';
-        } catch {
-            return 'scroll-first';
-        }
-    });
     const handleContentReady = useCallback(() => {
         setContentReady(true);
     }, []);
@@ -273,115 +162,6 @@ const ChapterReader = () => {
     const getReaderParagraphs = useCallback(() =>
         collectParagraphAnchors({ root: getContentRoot() })
     , [getContentRoot]);
-
-    const getScrollContainerName = useCallback((container) => {
-        const mainContainer = document.querySelector('#main-content.center-bar-holder-container');
-        const centerContainer = document.querySelector('.center-bar-holder-container');
-
-        if (container === mainContainer) return '#main-content.center-bar-holder-container';
-        if (container === centerContainer) return '.center-bar-holder-container';
-        if (container === document.scrollingElement) return 'document.scrollingElement';
-        if (container === document.documentElement) return 'document.documentElement';
-        return container?.className || container?.id || 'unknown';
-    }, []);
-
-    const getParagraphPreview = useCallback((paragraphIndex) => {
-        if (paragraphIndex === null || paragraphIndex === undefined) return null;
-        const paragraph = getReaderParagraphs()[paragraphIndex];
-        return paragraph?.text?.slice(0, 80) || null;
-    }, [getReaderParagraphs]);
-
-    const captureDebugSnapshot = useCallback((extra = {}) => {
-        const container = getScrollContainer();
-        const root = getContentRoot();
-        const activeSnapshot = getActiveParagraphSnapshot({
-            root,
-            container,
-            anchorRatio: RESUME_ANCHOR_RATIO,
-        });
-        const resolvedParagraphIndex = parseOptionalIndex(extra.resolvedParagraphIndex);
-
-        return {
-            containerName: getScrollContainerName(container),
-            actualScrollTop: toDebugNumber(container?.scrollTop, 2),
-            clientHeight: toDebugNumber(container?.clientHeight, 2),
-            scrollHeight: toDebugNumber(container?.scrollHeight, 2),
-            viewportHeight: toDebugNumber(window.visualViewport?.height ?? window.innerHeight, 2),
-            activeParagraphIndex: activeSnapshot.paragraphIndex,
-            activeParagraphText: getParagraphPreview(activeSnapshot.paragraphIndex),
-            resolvedParagraphIndex,
-            resolvedParagraphText: getParagraphPreview(resolvedParagraphIndex),
-        };
-    }, [getContentRoot, getParagraphPreview, getScrollContainer, getScrollContainerName]);
-
-    const pushDebugEvent = useCallback((stage, extra = {}) => {
-        if (!debugEnabled) return;
-
-        const savedProgress = extra.savedProgress || debugSavedProgressRef.current;
-        const event = {
-            stage,
-            ts: Date.now(),
-            source: extra.source || debugSourceRef.current,
-            restoreMode: debugRestoreMode,
-            savedProgress,
-            savedParagraphText: getParagraphPreview(parseOptionalIndex(savedProgress?.paragraph_index)),
-            requestedScrollTop: extra.requestedScrollTop ?? null,
-            ...captureDebugSnapshot(extra),
-            ...extra,
-        };
-
-        setDebugLatestEvent(event);
-        setDebugEvents((previous) => [event, ...previous].slice(0, DEBUG_EVENT_LIMIT));
-    }, [captureDebugSnapshot, debugEnabled, debugRestoreMode, getParagraphPreview]);
-
-    const clearDriftWatch = useCallback(() => {
-        if (typeof driftWatchCleanupRef.current === 'function') {
-            driftWatchCleanupRef.current();
-        }
-        driftWatchCleanupRef.current = null;
-    }, []);
-
-    const startDriftWatch = useCallback(() => {
-        if (!debugEnabled) return;
-        clearDriftWatch();
-
-        const container = getScrollContainer();
-        let previous = {
-            scrollTop: toDebugNumber(container?.scrollTop, 2),
-            clientHeight: toDebugNumber(container?.clientHeight, 2),
-            viewportHeight: toDebugNumber(window.visualViewport?.height ?? window.innerHeight, 2),
-        };
-
-        const interval = setInterval(() => {
-            const next = {
-                scrollTop: toDebugNumber(container?.scrollTop, 2),
-                clientHeight: toDebugNumber(container?.clientHeight, 2),
-                viewportHeight: toDebugNumber(window.visualViewport?.height ?? window.innerHeight, 2),
-            };
-
-            if (next.scrollTop !== previous.scrollTop) {
-                pushDebugEvent('drift:scroll', { requestedScrollTop: next.scrollTop });
-            }
-            if (next.clientHeight !== previous.clientHeight) {
-                pushDebugEvent('drift:clientHeight', { requestedScrollTop: next.scrollTop });
-            }
-            if (next.viewportHeight !== previous.viewportHeight) {
-                pushDebugEvent('drift:viewport', { requestedScrollTop: next.scrollTop });
-            }
-
-            previous = next;
-        }, DRIFT_WATCH_INTERVAL_MS);
-
-        const timeout = setTimeout(() => {
-            clearInterval(interval);
-            driftWatchCleanupRef.current = null;
-        }, DRIFT_WATCH_DURATION_MS);
-
-        driftWatchCleanupRef.current = () => {
-            clearInterval(interval);
-            clearTimeout(timeout);
-        };
-    }, [clearDriftWatch, debugEnabled, getScrollContainer, pushDebugEvent]);
 
     const syncStoryProgressCache = useCallback((progress) => {
         if (!storyId || !progress) return;
@@ -478,17 +258,6 @@ const ChapterReader = () => {
         }
 
         liveProgressRef.current = snapshot;
-        pushDebugEvent(`save:${options.reason || (options.keepalive ? 'keepalive' : 'manual')}`, {
-            source: 'live',
-            requestedScrollTop: toDebugNumber(getScrollContainer()?.scrollTop, 2),
-            resolvedParagraphIndex: snapshot.paragraphIndex,
-            savedProgress: {
-                chapter_id: chapterId,
-                scroll_position: snapshot.scrollPosition,
-                paragraph_index: snapshot.paragraphIndex,
-                paragraph_offset: snapshot.paragraphOffset,
-            },
-        });
 
         return persistProgress(snapshot, options)
             .then((saved) => {
@@ -502,51 +271,16 @@ const ChapterReader = () => {
                 };
                 lastSavedProgressRef.current = normalizedSaved;
                 liveProgressRef.current = normalizedSaved;
-                pushDebugEvent('save:success', {
-                    source: 'live',
-                    requestedScrollTop: toDebugNumber(getScrollContainer()?.scrollTop, 2),
-                    resolvedParagraphIndex: normalizedSaved.paragraphIndex,
-                    savedProgress: {
-                        chapter_id: chapterId,
-                        scroll_position: normalizedSaved.scrollPosition,
-                        paragraph_index: normalizedSaved.paragraphIndex,
-                        paragraph_offset: normalizedSaved.paragraphOffset,
-                    },
-                });
                 return saved;
             })
-            .catch(() => {
-                pushDebugEvent('save:error', {
-                    source: 'live',
-                    requestedScrollTop: toDebugNumber(getScrollContainer()?.scrollTop, 2),
-                    resolvedParagraphIndex: snapshot.paragraphIndex,
-                });
-                return null;
-            });
-    }, [chapterId, getProgressSnapshot, getScrollContainer, persistProgress, pushDebugEvent, storyId, token]);
+            .catch(() => null);
+    }, [chapterId, getProgressSnapshot, persistProgress, storyId, token]);
 
     const clearTransientState = useCallback(() => {
         if (location.state && Object.keys(location.state).length > 0) {
             navigate(location.pathname, { replace: true, state: {} });
         }
     }, [location.pathname, location.state, navigate]);
-
-    useEffect(() => {
-        if (queryDebugEnabled === null) return;
-        try {
-            window.localStorage.setItem('readerDebug', queryDebugEnabled ? '1' : '0');
-        } catch {
-            // ignore debug persistence failures
-        }
-    }, [queryDebugEnabled]);
-
-    useEffect(() => {
-        try {
-            window.localStorage.setItem(DEBUG_RESTORE_MODE_STORAGE_KEY, debugRestoreMode);
-        } catch {
-            // ignore debug persistence failures
-        }
-    }, [debugRestoreMode]);
 
     const clearRestoreFollowUps = useCallback(() => {
         if (typeof restoreFollowUpsCleanupRef.current === 'function') {
@@ -557,11 +291,6 @@ const ChapterReader = () => {
 
     const restoreProgress = useCallback((progress) => {
         if (!progress) return;
-
-        debugSavedProgressRef.current = progress;
-        pushDebugEvent('restore:start', {
-            source: debugSourceRef.current,
-        });
 
         const position = clamp01(progress.scroll_position ?? 0);
         const paragraphIndex = parseOptionalIndex(progress.paragraph_index);
@@ -574,35 +303,15 @@ const ChapterReader = () => {
         let lastHeight = -1;
         let targetScrollTop = null;
 
-        const applySavedProgress = ({ forceParagraphCorrection = false, stage = 'restore:initial-scroll-applied' } = {}) => {
+        const applySavedProgress = (forceParagraphCorrection = false) => {
             const activeContainer = getScrollContainer();
             const scrollableHeight = Math.max(activeContainer.scrollHeight - activeContainer.clientHeight, 0);
 
             if (scrollableHeight <= 0) return false;
 
-            let nextScrollTop = null;
-            const restoreMode = debugRestoreMode;
-            const useParagraphFirst = restoreMode === 'paragraph-first';
-            const useScrollOnly = restoreMode === 'scroll-only';
-            const baseScrollTop = position > 0 ? scrollableHeight * position : null;
-            const paragraphTarget = paragraphIndex !== null
-                ? getParagraphTargetScrollTop({
-                    container: activeContainer,
-                    targetBlock: getReaderParagraphs()[paragraphIndex]?.element,
-                    paragraphOffset,
-                    scrollableHeight,
-                })
-                : null;
+            let nextScrollTop = position > 0 ? scrollableHeight * position : null;
 
-            if (useParagraphFirst && paragraphTarget !== null) {
-                nextScrollTop = paragraphTarget;
-            } else if (baseScrollTop !== null) {
-                nextScrollTop = baseScrollTop;
-            } else if (paragraphTarget !== null) {
-                nextScrollTop = paragraphTarget;
-            }
-
-            if (!useScrollOnly && paragraphIndex !== null) {
+            if (paragraphIndex !== null) {
                 const currentSnapshot = getActiveParagraphSnapshot({
                     root: getContentRoot(),
                     container: activeContainer,
@@ -612,6 +321,13 @@ const ChapterReader = () => {
                     || currentSnapshot.paragraphIndex !== paragraphIndex;
 
                 if (needsParagraphCorrection) {
+                    const paragraphTarget = getParagraphTargetScrollTop({
+                        container: activeContainer,
+                        targetBlock: getReaderParagraphs()[paragraphIndex]?.element,
+                        paragraphOffset,
+                        scrollableHeight,
+                    });
+
                     if (paragraphTarget !== null) {
                         nextScrollTop = paragraphTarget;
                     }
@@ -625,47 +341,32 @@ const ChapterReader = () => {
             ignoreScrollUntilRef.current = Date.now() + 200;
             activeContainer.scrollTop = nextScrollTop;
             targetScrollTop = nextScrollTop;
-            pushDebugEvent(stage, {
-                requestedScrollTop: toDebugNumber(nextScrollTop, 2),
-                resolvedParagraphIndex: paragraphIndex,
-            });
             return true;
         };
 
         const scheduleRestoreFollowUps = () => {
             clearRestoreFollowUps();
-            clearDriftWatch();
 
             const timeouts = POST_RESTORE_CORRECTION_DELAYS_MS.map((delay) => setTimeout(() => {
-                if (!applySavedProgress({ stage: 'restore:followup-correction-applied' })) return;
+                if (!applySavedProgress()) return;
 
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         isRestoringRef.current = false;
                         skipNextSaveRef.current = false;
                         captureLatestProgressSnapshot();
-                        pushDebugEvent('restore:followup-finalized', {
-                            requestedScrollTop: toDebugNumber(targetScrollTop, 2),
-                            resolvedParagraphIndex: paragraphIndex,
-                        });
-                        startDriftWatch();
                     });
                 });
             }, delay));
 
             const handleViewportChange = () => {
-                if (!applySavedProgress({ stage: 'restore:viewport-correction-applied' })) return;
+                if (!applySavedProgress()) return;
 
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
                         isRestoringRef.current = false;
                         skipNextSaveRef.current = false;
                         captureLatestProgressSnapshot();
-                        pushDebugEvent('restore:viewport-finalized', {
-                            requestedScrollTop: toDebugNumber(targetScrollTop, 2),
-                            resolvedParagraphIndex: paragraphIndex,
-                        });
-                        startDriftWatch();
                     });
                 });
             };
@@ -711,7 +412,7 @@ const ChapterReader = () => {
                 }
 
                 if (position > 0 && scrollableHeight > 0) {
-                    restored = applySavedProgress({ stage: 'restore:initial-scroll-applied' });
+                    restored = applySavedProgress();
                 }
                 else if (paragraphIndex !== null) {
                     const targetBlock = paragraphs[paragraphIndex]?.element;
@@ -728,10 +429,6 @@ const ChapterReader = () => {
                             skipNextSaveRef.current = true;
                             ignoreScrollUntilRef.current = Date.now() + 150;
                             container.scrollTop = targetScrollTop;
-                            pushDebugEvent('restore:paragraph-first-applied', {
-                                requestedScrollTop: toDebugNumber(targetScrollTop, 2),
-                                resolvedParagraphIndex: paragraphIndex,
-                            });
                             restored = true;
                         }
                     }
@@ -762,10 +459,6 @@ const ChapterReader = () => {
                                     if (correctedScrollTop !== null) {
                                         targetScrollTop = correctedScrollTop;
                                         container.scrollTop = correctedScrollTop;
-                                        pushDebugEvent('restore:paragraph-correction-applied', {
-                                            requestedScrollTop: toDebugNumber(correctedScrollTop, 2),
-                                            resolvedParagraphIndex: paragraphIndex,
-                                        });
                                     }
                                 }
                             }
@@ -775,11 +468,6 @@ const ChapterReader = () => {
                             isRestoringRef.current = false;
                             skipNextSaveRef.current = false;
                             scheduleRestoreFollowUps();
-                            pushDebugEvent('restore:final', {
-                                requestedScrollTop: toDebugNumber(targetScrollTop, 2),
-                                resolvedParagraphIndex: paragraphIndex,
-                            });
-                            startDriftWatch();
                             clearTransientState();
                         });
                     });
@@ -788,7 +476,7 @@ const ChapterReader = () => {
         };
 
         attemptScroll();
-    }, [captureLatestProgressSnapshot, clearDriftWatch, clearRestoreFollowUps, clearTransientState, debugRestoreMode, getContentRoot, getReaderParagraphs, getScrollContainer, pushDebugEvent, startDriftWatch]);
+    }, [captureLatestProgressSnapshot, clearRestoreFollowUps, clearTransientState, getContentRoot, getReaderParagraphs, getScrollContainer]);
 
     const navigateWithProgress = useCallback(async (targetPath) => {
         await saveProgressNow({ force: true, reason: 'leave' });
@@ -804,7 +492,7 @@ const ChapterReader = () => {
             scrollRef.current = scrollableHeight > 0
                 ? clamp01(container.scrollTop / scrollableHeight)
                 : 0;
-            const snapshot = captureLatestProgressSnapshot();
+            captureLatestProgressSnapshot();
 
             if (skipNextSaveRef.current) {
                 skipNextSaveRef.current = false;
@@ -819,39 +507,21 @@ const ChapterReader = () => {
                 return;
             }
 
-            clearDriftWatch();
             clearRestoreFollowUps();
-
-            if (debugEnabled) {
-                const signature = `${snapshot.scrollPosition}:${snapshot.paragraphIndex}:${snapshot.paragraphOffset}`;
-                if (lastDebugScrollSignatureRef.current !== signature) {
-                    lastDebugScrollSignatureRef.current = signature;
-                    pushDebugEvent('save:scroll-update', {
-                        source: 'live',
-                        resolvedParagraphIndex: snapshot.paragraphIndex,
-                        savedProgress: {
-                            chapter_id: chapterId,
-                            scroll_position: snapshot.scrollPosition,
-                            paragraph_index: snapshot.paragraphIndex,
-                            paragraph_offset: snapshot.paragraphOffset,
-                        },
-                    });
-                }
-            }
         };
 
         const handleVisibilityChange = () => {
             if (document.hidden) {
-                void saveProgressNow({ keepalive: true, force: true, reason: 'visibilitychange' });
+                void saveProgressNow({ keepalive: true, force: true });
             }
         };
 
         const handleBeforeUnload = () => {
-            void saveProgressNow({ keepalive: true, force: true, reason: 'beforeunload' });
+            void saveProgressNow({ keepalive: true, force: true });
         };
 
         const handlePageHide = () => {
-            void saveProgressNow({ keepalive: true, force: true, reason: 'pagehide' });
+            void saveProgressNow({ keepalive: true, force: true });
         };
 
         container.addEventListener('scroll', handleScroll, { passive: true });
@@ -865,15 +535,14 @@ const ChapterReader = () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
             window.removeEventListener('pagehide', handlePageHide);
             clearRestoreFollowUps();
-            clearDriftWatch();
             isRestoringRef.current = false;
             skipNextSaveRef.current = false;
             ignoreScrollUntilRef.current = 0;
-            void saveProgressNow({ force: true, reason: 'unmount' }).then(() => {
+            void saveProgressNow({ force: true }).then(() => {
                 void queryClient.invalidateQueries({ queryKey: ['story', storyId] });
             });
         };
-    }, [captureLatestProgressSnapshot, chapterId, clearDriftWatch, clearRestoreFollowUps, debugEnabled, getScrollContainer, pushDebugEvent, queryClient, saveProgressNow, storyId]);
+    }, [captureLatestProgressSnapshot, clearRestoreFollowUps, getScrollContainer, queryClient, saveProgressNow, storyId]);
 
     useEffect(() => {
         if (backupSaveIntervalRef.current) {
@@ -884,7 +553,7 @@ const ChapterReader = () => {
             if (isRestoringRef.current) return;
             if (!liveProgressRef.current) return;
             if (snapshotsEqual(liveProgressRef.current, lastSavedProgressRef.current)) return;
-            void saveProgressNow({ reason: 'backup-autosave' });
+            void saveProgressNow();
         }, BACKUP_SAVE_INTERVAL_MS);
 
         return () => {
@@ -909,13 +578,6 @@ const ChapterReader = () => {
         const hasLocationProgress = locationProgress.paragraph_index !== null || locationProgress.scroll_position > 0;
         const restoreLocationFallback = () => {
             if (hasLocationProgress) {
-                debugSourceRef.current = 'location.state';
-                debugSavedProgressRef.current = locationProgress;
-                pushDebugEvent('restore:source-chosen', {
-                    source: 'location.state',
-                    savedProgress: locationProgress,
-                    resolvedParagraphIndex: locationProgress.paragraph_index,
-                });
                 restoreProgress(locationProgress);
             }
         };
@@ -935,8 +597,6 @@ const ChapterReader = () => {
                     && (normalizedProgress.paragraph_index !== null || normalizedProgress.scroll_position > 0);
 
                 if (hasServerProgress) {
-                    debugSourceRef.current = 'server';
-                    debugSavedProgressRef.current = normalizedProgress;
                     lastSavedProgressRef.current = {
                         scrollPosition: normalizedProgress.scroll_position,
                         paragraphIndex: normalizedProgress.paragraph_index,
@@ -944,11 +604,6 @@ const ChapterReader = () => {
                             ? null
                             : clamp01(normalizedProgress.paragraph_offset),
                     };
-                    pushDebugEvent('restore:source-chosen', {
-                        source: 'server',
-                        savedProgress: normalizedProgress,
-                        resolvedParagraphIndex: normalizedProgress.paragraph_index,
-                    });
                     restoreProgress(normalizedProgress);
                     return;
                 }
@@ -972,11 +627,7 @@ const ChapterReader = () => {
         liveProgressRef.current = null;
         lastSavedProgressRef.current = null;
         clearRestoreFollowUps();
-        clearDriftWatch();
-        lastDebugScrollSignatureRef.current = '';
-        setDebugEvents([]);
-        setDebugLatestEvent(null);
-    }, [chapterId, clearDriftWatch, clearRestoreFollowUps]);
+    }, [chapterId, clearRestoreFollowUps]);
 
     useEffect(() => {
         if (!contentReady) return;
@@ -1040,13 +691,6 @@ const ChapterReader = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.2 }}
         >
-            <ReaderDebugPanel
-                enabled={debugEnabled}
-                restoreMode={debugRestoreMode}
-                onRestoreModeChange={setDebugRestoreMode}
-                latestEvent={debugLatestEvent}
-                events={debugEvents}
-            />
             <div className="chapter-reader-header">
                 <button
                     className="chapter-reader-back"
