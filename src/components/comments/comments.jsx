@@ -79,7 +79,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
         let timeout;
         if(textAreaFocusRef.current){
             timeout = setTimeout(() => {
-                textAreaFocusRef.current.focus();
+                textAreaFocusRef.current.focus({ preventScroll: true });
             }, 500);
         }
         return () => {
@@ -174,13 +174,13 @@ const CommentSection = ({onclose, postId, receiverId})=>{
 
     return(
         <motion.div
-            initial={{y: '100vh', opacity: 0}}
+            initial={{y: '100%', opacity: 0}}
             animate={{
                 y: 0,
                 opacity: 1,
                 transition: {type: 'spring', damping: 25, stiffness: 200}
             }}
-            exit={{y: '-100vh', opacity: 0, transition: {duration: 0.2}}}
+            exit={{y: '100%', opacity: 0, transition: {duration: 0.2}}}
             className="cm-parent-container"
             ref={modalContainerRef}
         >
