@@ -500,6 +500,7 @@
         height: 85%;
         border-radius: 14px 14px 0 0;
         z-index: 134;
+        padding-bottom: 70px;
     }
     .cm-list {
         padding: 0.6rem 0.75rem;
