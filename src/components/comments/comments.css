@@ -10,7 +10,7 @@
     border: 1px solid var(--border-card);
     border-radius: 14px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-    z-index: 4;
+    z-index: 134;
     overflow: hidden;
 }
 
