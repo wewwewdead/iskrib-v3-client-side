@@ -110,9 +110,9 @@ export const getJournalById = (journalId, userId, options = {}) => {
     return publicGet(path, 'failed to fetch journal');
 };
 
-export const getJournalContent = (journalId) => {
+export const getJournalContent = (journalId, token) => {
     if (!journalId) throw new Error('journalId is required');
-    return publicGet(`/journal/${encodeURIComponent(journalId)}/content`, 'failed to fetch journal content');
+    return authedGet(token, `/journal/${encodeURIComponent(journalId)}/content`, 'failed to fetch journal content');
 };
 
 export const getUserJournals = (cursor = null, limit = 5, userId, token) => {

@@ -7,6 +7,8 @@ import { updateFontColor, updateProfileData } from "../../../API/Api";
 import { AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import Editor from "../HomePage/Editor/Editor";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import { EDITOR_NODES, EDITOR_THEME } from "../HomePage/Editor/editorConfig";
 import getCroppedImage from "../../utils/getCroppedImage";
 import extractDominantColors from "../../utils/extractDominantColors";
 import MobileNavlink from "../mobileNavLink/MobileNavLink";
@@ -359,7 +361,16 @@ const MyProfile = () => {
                     isSavingProfile={isSavingProfile}
                 />
 
-                {showEditor && <Editor key={"main-editor"} onClose={handleCloseRichTextEditor} />}
+                {showEditor && (
+                    <LexicalComposer initialConfig={{
+                        namespace: "ProfileEditor",
+                        theme: EDITOR_THEME,
+                        nodes: EDITOR_NODES,
+                        onError(error) { throw error; },
+                    }}>
+                        <Editor key={"main-editor"} onClose={handleCloseRichTextEditor} />
+                    </LexicalComposer>
+                )}
 
                 <div
                     key={"profile-page-layout"}

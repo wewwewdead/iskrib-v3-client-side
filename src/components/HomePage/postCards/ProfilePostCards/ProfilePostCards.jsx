@@ -213,7 +213,7 @@ const ProfilePostCards = () =>{
         let content = journalContent;
         if (!content) {
             try {
-                const result = await getJournalContent(journalId);
+                const result = await getJournalContent(journalId, session?.access_token);
                 content = result?.journal?.content;
             } catch (err) {
                 console.error('failed to fetch journal for edit:', err);
