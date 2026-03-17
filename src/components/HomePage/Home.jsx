@@ -58,6 +58,7 @@ const HomePage = () => {
     const [editorLaunchConfig, setEditorLaunchConfig] = useState(DEFAULT_EDITOR_LAUNCH_CONFIG);
 
     const [showOpinionEditor, setShowOpinionEditor] = useState(false);
+    const [isCommentsOpen, setIsCommentsOpen] = useState(false);
 
     const handleOpenTextEditor = useCallback((config = {}) => {
         editor.setEditable(true)
@@ -334,7 +335,7 @@ const HomePage = () => {
                         transition={{ duration: 0.2, ease: [0.25, 1, 0.5, 1] }}
                         style={{ width: '100%', height: '100%' }}
                     >
-                        <Outlet context={{ clickOpenSidebar: handleClickMobileProfileLink, handleOpenTextEditor }} />
+                        <Outlet context={{ clickOpenSidebar: handleClickMobileProfileLink, handleOpenTextEditor, setIsCommentsOpen }} />
                     </motion.div>
                 </AnimatePresence>
             </div>
@@ -346,7 +347,7 @@ const HomePage = () => {
                 
             </div>
             
-            {!isGuest && !isOpinionsPage && !isOpinionsViewer && (
+            {!isGuest && !isOpinionsPage && !isOpinionsViewer && !isCommentsOpen && (
                 <WriteJournalButton onOpen={handleOpenTextEditor} hideOnHomeFeed={location.pathname === '/home' || location.pathname === '/home/opinions'}/>
             )}
             

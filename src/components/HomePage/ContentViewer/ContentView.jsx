@@ -3,7 +3,7 @@ import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { VIEWER_NODES, EDITOR_THEME } from "../Editor/editorConfig";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useOutletContext } from "react-router-dom";
 import './contentviewer.css'
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -62,6 +62,7 @@ const ContentView = () => {
     const { toast } = useToast();
     const [showBackButton, setShowBackButton] = useState(true);
     const { session, user, openAuthModal } = useAuth();
+    const { setIsCommentsOpen } = useOutletContext() || {};
 
     const timeOutRef = useRef();
     const timeOutRefBookmark = useRef();
@@ -231,10 +232,12 @@ const ContentView = () => {
         e.stopPropagation();
         if(!session) return openAuthModal();
         setShowCommentsContainer(true);
+        setIsCommentsOpen?.(true);
     }
 
     const handleCLoseComments = () => {
         setShowCommentsContainer(false);
+        setIsCommentsOpen?.(false);
     }
 
     useEffect(() => {
