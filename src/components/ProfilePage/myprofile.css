@@ -1347,8 +1347,24 @@
     to{ opacity: 0; pointer-events: none; }
 }
 
+/* ── Sidebar container (must be defined here — home.css isn't loaded on /profile refresh) ── */
+.side-bar-holder-container{
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 250px;
+    height: 100%;
+    border-right: 0.7px solid var(--border-light);
+    z-index: 2;
+}
+
 /* mobile responsive */
 @media(max-width: 768px){
+    .side-bar-holder-container{
+        width: 200px;
+    }
+
     .profile-sidebar-right-holder-container {
         display: none;
     }
@@ -1372,6 +1388,10 @@
 }
 
 @media (max-width: 428px){
+    .side-bar-holder-container{
+        display: none;
+    }
+
     .profile-parent-container {
         position: relative;
         flex-direction: column;
@@ -1477,6 +1497,10 @@
 }
 
 @media (max-width: 480px){
+    .side-bar-holder-container{
+        display: none;
+    }
+
     .profile-parent-container {
         position: relative;
         flex-direction: column;
