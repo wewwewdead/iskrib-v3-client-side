@@ -1,5 +1,7 @@
 import React from 'react';
 
+const LIGHTBULB_PATH = "M480-80q-26 0-47-12.5T400-126q-33 0-56.5-23.5T320-206v-142q-59-39-94.5-103T190-590q0-121 84.5-205.5T480-880q121 0 205.5 84.5T770-590q0 77-35.5 140T640-348v142q0 33-23.5 56.5T560-126q-12 21-33 33.5T480-80Z";
+
 const PromptBadge = ({ promptId }) => {
     if (!promptId) return null;
 
@@ -22,10 +24,28 @@ const PromptBadge = ({ promptId }) => {
             }}
         >
             <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 -960 960 960" fill="currentColor">
-                <path d="M480-80q-26 0-47-12.5T400-126q-33 0-56.5-23.5T320-206v-142q-59-39-94.5-103T190-590q0-121 84.5-205.5T480-880q121 0 205.5 84.5T770-590q0 77-35.5 140T640-348v142q0 33-23.5 56.5T560-126q-12 21-33 33.5T480-80Z"/>
+                <path d={LIGHTBULB_PATH}/>
             </svg>
             Prompt
         </span>
+    );
+};
+
+export const PromptAttribution = ({ promptText }) => {
+    if (!promptText) return null;
+
+    const MAX_LEN = 80;
+    const truncated = promptText.length > MAX_LEN
+        ? `${promptText.substring(0, MAX_LEN)}\u2026`
+        : promptText;
+
+    return (
+        <div className="prompt-attribution">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 -960 960 960" fill="currentColor">
+                <path d={LIGHTBULB_PATH}/>
+            </svg>
+            <span className="prompt-attribution-text">{truncated}</span>
+        </div>
     );
 };
 

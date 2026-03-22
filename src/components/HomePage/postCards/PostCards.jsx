@@ -19,7 +19,7 @@ import { handleClickProfile, handleCLickContent } from "../../../../helpers/hand
 import formatPostDate from "../../../../helpers/formatDateString";
 import { handleImageFallback } from "../../../utils/handleImageFallback";
 import RepostModal from "../../RepostModal/RepostModal";
-import PromptBadge from "../../DailyPrompt/PromptBadge";
+import PromptBadge, { PromptAttribution } from "../../DailyPrompt/PromptBadge";
 import DashboardBriefing from "../../DashboardBriefing/DashboardBriefing";
 import ShareMenu from "../../ShareMenu/ShareMenu";
 import getShareUrl from "../../../utils/getShareUrl";
@@ -763,6 +763,7 @@ const PostCards = () => {
                                             <div className="feed-title-content">
                                                 <h2 className="feed-title">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}<PromptBadge promptId={journal.prompt_id} /></h2>
                                             </div>
+                                            <PromptAttribution promptText={journal.writing_prompts?.prompt_text} />
                                             <p className="feed-text-content">{previewText}</p>
                                         </div>
                                     </div>
