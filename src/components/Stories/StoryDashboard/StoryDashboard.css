@@ -20,21 +20,27 @@
 }
 
 .story-dashboard-back {
-    width: 34px;
-    height: 34px;
     border: none;
     background: var(--bg-secondary);
     border-radius: 8px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 4px;
+    padding: 6px 12px 6px 8px;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background-color 0.12s ease;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.01em;
+    transition: background-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
 }
 
 .story-dashboard-back:hover {
     background: var(--bg-hover);
+    color: var(--text-primary);
+    transform: translateX(-2px);
 }
 
 .story-dashboard-title {

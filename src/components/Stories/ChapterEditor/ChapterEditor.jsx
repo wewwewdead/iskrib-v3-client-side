@@ -121,7 +121,7 @@ const ChapterEditorInner = ({ chapter, storyId, chapterId, token, onBack }) => {
                 },
             });
             setHasChanges(false);
-            navigate(`/home/stories/${storyId}/manage`);
+            navigate(`/home/stories/${storyId}/manage`, { replace: true });
         } catch (err) {
             console.error('Failed to publish chapter:', err);
         } finally {

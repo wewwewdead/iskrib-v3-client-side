@@ -97,10 +97,10 @@ const StoryEditor = () => {
         try {
             if (isEdit) {
                 await updateMutation.mutateAsync({ storyId, formData });
-                navigate(`/home/stories/${storyId}/manage`);
+                navigate(`/home/stories/${storyId}/manage`, { replace: true });
             } else {
                 const newStory = await createMutation.mutateAsync(formData);
-                navigate(`/home/stories/${newStory.id}/manage`);
+                navigate(`/home/stories/${newStory.id}/manage`, { replace: true });
             }
         } catch (err) {
             console.error('Failed to save story:', err);
