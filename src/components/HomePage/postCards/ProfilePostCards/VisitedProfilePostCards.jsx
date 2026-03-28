@@ -11,6 +11,7 @@ import { getVisitedUserJournals } from '../../../../../API/Api';
 import { useAddViewsMutation } from '../../../../utils/useMutation';
 import VerifiedBadge from '../../../Badge/VerifiedBadge';
 import { handleImageFallback } from '../../../../utils/handleImageFallback';
+import VisitedPinnedPostsSection from './VisitedPinnedPostsSection';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
@@ -89,6 +90,7 @@ const VisitedProfilePostCards = () =>{
 
     return(
         <>
+        <VisitedPinnedPostsSection />
         <div className='profile-postcards-parent-container'>
             <div className="postcards-header-row">
                 <h2 className="postcards-heading">

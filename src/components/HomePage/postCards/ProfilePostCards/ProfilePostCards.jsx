@@ -12,9 +12,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { handleCLickContent } from '../../../../../helpers/handleClicks';
 import { useNavigate } from 'react-router-dom';
 import EditJournal from './editJournal';
-import { useAddViewsMutation, useUpdateJournalPrivacyMutation } from '../../../../utils/useMutation';
+import { useAddViewsMutation, useUpdateJournalPrivacyMutation, useTogglePinMutation } from '../../../../utils/useMutation';
 import VerifiedBadge from '../../../Badge/VerifiedBadge';
 import { handleImageFallback } from '../../../../utils/handleImageFallback';
+import { useQuery } from '@tanstack/react-query';
+import { getUserPinnedIds } from '../../../../../API/Api';
+import PinnedPostsSection from './PinnedPostsSection';
 
 const ProfilePostCards = () =>{
     const queryClient = useQueryClient();
@@ -52,6 +55,16 @@ const ProfilePostCards = () =>{
             </svg>
         },
         {
+            label: 'Pin to profile',
+            unpinLabel: 'Unpin from profile',
+            className: 'pin-button',
+            actionPin: (e, journalId) => handleTogglePin(e, journalId),
+            icon:
+            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" fill="none">
+                <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" fill="currentColor"/>
+            </svg>
+        },
+        {
             label: 'Only me',
             className: 'only-me-bttn',
             actionOnlyMe: (e, privacy, journalId) => {handleEditJournalPrivacy(e, privacy, journalId)},
@@ -79,6 +92,7 @@ const ProfilePostCards = () =>{
     const [isDeletingJournal, setIsDeletingJournal] = useState(false);
     const [journalIsDeleted, setJournalIsDeleted] = useState(false);
     const [viewMode, setViewMode] = useState('grid');
+    const [showPinFullModal, setShowPinFullModal] = useState(false);
     const [showCaptionEditor, setShowCaptionEditor] = useState(null);
     const [captionData, setCaptionData] = useState(null);
     const [captionText, setCaptionText] = useState('');
@@ -116,6 +130,27 @@ const ProfilePostCards = () =>{
         mutateViews.mutate(formadata);
         clickContent(e, jsonbContent,wholeText, title, userId, name, avatar, created_at, journalId, isLiked, commentsCount, isBookmarked, likesCount, bookmarksCount, badge, postType, userReaction, reactionCount)
     }
+
+    const mutatePin = useTogglePinMutation(session);
+    const { data: pinnedIdsData } = useQuery({
+        queryKey: ['userPinnedIds'],
+        queryFn: () => getUserPinnedIds(session?.access_token),
+        enabled: !!session?.access_token,
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5,
+    });
+    const pinnedIds = pinnedIdsData?.pinnedIds || [];
+
+    const handleTogglePin = (e, journalId) => {
+        e.stopPropagation();
+        setShowSettings(null);
+        const isAlreadyPinned = pinnedIds.includes(journalId);
+        if (!isAlreadyPinned && pinnedIds.length >= 3) {
+            setShowPinFullModal(true);
+            return;
+        }
+        mutatePin.mutate({ journalId });
+    };
 
     const mutatePrivacy = useUpdateJournalPrivacyMutation(session);
     const handleEditJournalPrivacy = (e, privacy, journalId) =>{
@@ -191,6 +226,8 @@ const ProfilePostCards = () =>{
             queryClient.invalidateQueries({ queryKey: queryKey });
             queryClient.invalidateQueries({ queryKey: ['journals'], refetchType: 'none' });
             queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'], refetchType: 'none' });
+            queryClient.invalidateQueries({ queryKey: ['pinnedJournals'] });
+            queryClient.invalidateQueries({ queryKey: ['userPinnedIds'] });
 
             setTimeout(() =>{
                 setIsDeletingJournal(false)
@@ -320,6 +357,7 @@ const ProfilePostCards = () =>{
     }
     return(
         <>
+        <PinnedPostsSection />
         <div className='profile-postcards-parent-container'>
             <div className="postcards-header-row">
                 <h2 className="postcards-heading">
@@ -459,6 +497,12 @@ const ProfilePostCards = () =>{
                                                         <div onClick={(e) => {setting.actionPublic(e, journal.privacy, journal.id)}} className={setting.className}>
                                                             {setting.icon}
                                                             {setting.label}
+                                                        </div>
+                                                    )}
+                                                    {setting.actionPin && (
+                                                        <div className={setting.className} onClick={(e) => setting.actionPin(e, journal.id)}>
+                                                            {setting.icon}
+                                                            {pinnedIds.includes(journal.id) ? setting.unpinLabel : setting.label}
                                                         </div>
                                                     )}
                                                 </div>
@@ -647,6 +691,12 @@ const ProfilePostCards = () =>{
                                                         {setting.label}
                                                     </div>
                                                 )}
+                                                {setting.actionPin && (
+                                                    <div className={setting.className} onClick={(e) => setting.actionPin(e, journal.id)}>
+                                                        {setting.icon}
+                                                        {pinnedIds.includes(journal.id) ? setting.unpinLabel : setting.label}
+                                                    </div>
+                                                )}
                                             </div>
                                                 ))}
                                 </motion.div>
@@ -733,6 +783,43 @@ const ProfilePostCards = () =>{
                                 {isSavingCaption ? 'Saving...' : 'Save'}
                             </button>
                         </div>
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>,
+            document.body
+        )}
+        {showPinFullModal && createPortal(
+            <AnimatePresence>
+                <motion.div
+                    className="pin-full-modal-overlay"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setShowPinFullModal(false)}
+                >
+                    <motion.div
+                        className="pin-full-modal"
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="pin-full-modal-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                            </svg>
+                        </div>
+                        <h3 className="pin-full-modal-title">Pin limit reached</h3>
+                        <p className="pin-full-modal-text">
+                            You can only pin up to 3 posts. Unpin an existing post from your pinned section to make room for a new one.
+                        </p>
+                        <button
+                            className="pin-full-modal-btn"
+                            onClick={() => setShowPinFullModal(false)}
+                        >
+                            Got it
+                        </button>
                     </motion.div>
                 </motion.div>
             </AnimatePresence>,

@@ -148,6 +148,23 @@ export const getVisitedUserJournals = (cursor = null, limit = 5, userId, loggedI
 export const deleteJournal = (journalId, token) =>
     authedFormRequest(token, 'DELETE', `/deleteJournal/${journalId}`, undefined, 'failed to delete journal');
 
+// ─── Pinned Posts ───
+
+export const togglePin = (token, body) =>
+    authedJsonRequest(token, 'POST', '/togglePin', body, 'failed to toggle pin');
+
+export const reorderPin = (token, body) =>
+    authedJsonRequest(token, 'POST', '/reorderPin', body, 'failed to reorder pin');
+
+export const getPinnedJournals = (token) =>
+    authedGet(token, '/pinnedJournals', 'failed to fetch pinned journals');
+
+export const getVisitedPinnedJournals = (userId, loggedInUserId) =>
+    publicGet(`/visitedPinnedJournals?userId=${userId}&loggedInUserId=${loggedInUserId || ''}`, 'failed to fetch pinned journals');
+
+export const getUserPinnedIds = (token) =>
+    authedGet(token, '/userPinnedIds', 'failed to fetch pinned IDs');
+
 // ─── Interactions ───
 
 export const clickLike = (token, body) =>

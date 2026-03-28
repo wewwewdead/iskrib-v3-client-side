@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {addBookmark, addFollows, addJournalViews, clickLike, createRepost, deleteNotification, readNotification, toggleReaction, updatePrivacy } from "../../API/Api";
+import {addBookmark, addFollows, addJournalViews, clickLike, createRepost, deleteNotification, readNotification, toggleReaction, updatePrivacy, togglePin, reorderPin } from "../../API/Api";
 
 const updateInfiniteJournalsCache = (old, updater) => {
     if (!old || !Array.isArray(old.pages)) return old;
@@ -491,3 +491,57 @@ export const useReactionMutation = (session, userId) => {
 
     return { ...mutation, mutate: guardedMutate };
 }
+
+// ─── Pinned Posts ────────────────────────────────────────────────
+
+export const useTogglePinMutation = (session) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data) => togglePin(session?.access_token, data),
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['userJournals'] });
+            queryClient.invalidateQueries({ queryKey: ['pinnedJournals'] });
+            queryClient.invalidateQueries({ queryKey: ['userPinnedIds'] });
+            queryClient.invalidateQueries({ queryKey: ['visitedProfileJournals'], refetchType: 'none' });
+        },
+    });
+};
+
+export const useReorderPinMutation = (session) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data) => reorderPin(session?.access_token, data),
+        onMutate: async ({ journalId, direction }) => {
+            await queryClient.cancelQueries({ queryKey: ['pinnedJournals'] });
+            const previousPinned = queryClient.getQueryData(['pinnedJournals']);
+
+            // Optimistic reorder
+            queryClient.setQueryData(['pinnedJournals'], (old) => {
+                if (!old?.data) return old;
+                const pins = [...old.data];
+                const idx = pins.findIndex(p => p.id === journalId);
+                if (idx === -1) return old;
+
+                const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+                if (swapIdx < 0 || swapIdx >= pins.length) return old;
+
+                [pins[idx], pins[swapIdx]] = [pins[swapIdx], pins[idx]];
+                // Update pin_position values
+                pins.forEach((p, i) => { p.pin_position = i + 1; });
+                return { ...old, data: pins };
+            });
+
+            return { previousPinned };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousPinned) {
+                queryClient.setQueryData(['pinnedJournals'], context.previousPinned);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['pinnedJournals'] });
+        },
+    });
+};
