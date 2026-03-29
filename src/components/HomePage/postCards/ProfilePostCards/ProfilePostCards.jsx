@@ -91,7 +91,7 @@ const ProfilePostCards = () =>{
     const [journalData, setJournalData] = useState(null);
     const [isDeletingJournal, setIsDeletingJournal] = useState(false);
     const [journalIsDeleted, setJournalIsDeleted] = useState(false);
-    const [viewMode, setViewMode] = useState('grid');
+    const [viewMode, setViewMode] = useState('list');
     const [showPinFullModal, setShowPinFullModal] = useState(false);
     const [showCaptionEditor, setShowCaptionEditor] = useState(null);
     const [captionData, setCaptionData] = useState(null);

@@ -54,7 +54,7 @@ const VisitedProfilePostCards = () =>{
         // console.log(userId)
     },[userId])
 
-    const [viewMode, setViewMode] = useState('grid');
+    const [viewMode, setViewMode] = useState('list');
 
     useEffect(() =>{
         if(!isFetchingNextPage && hasNextPage && inView){
