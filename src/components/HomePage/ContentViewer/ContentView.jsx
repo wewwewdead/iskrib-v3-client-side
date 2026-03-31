@@ -84,7 +84,7 @@ const ContentView = () => {
 
     const { data: fetchedJournalData, isLoading: isLoadingJournalById } = useQuery({
         queryKey: ['journalById', journalId, user?.userData?.[0]?.id],
-        queryFn: ({ queryKey }) => getJournalById(queryKey[1], queryKey[2], { includeRepostContent: false }),
+        queryFn: () => getJournalById(journalId, session?.access_token, { includeRepostContent: false }),
         enabled: shouldFetchPost,
         staleTime: 1000 * 60 * 5,
         refetchOnWindowFocus: false,

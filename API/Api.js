@@ -98,16 +98,15 @@ export const searchJournals = (query, limit = 10, userId) => {
     return publicGet(path, 'failed to search journals');
 };
 
-export const getJournalById = (journalId, userId, options = {}) => {
+export const getJournalById = (journalId, token, options = {}) => {
     if (!journalId) throw new Error('journalId is required');
     const params = new URLSearchParams();
-    if (userId) params.set('userId', String(userId));
     if (options.includeRepostContent) params.set('includeRepostContent', 'true');
     const qs = params.toString();
     const path = qs
         ? `/journal/${encodeURIComponent(journalId)}?${qs}`
         : `/journal/${encodeURIComponent(journalId)}`;
-    return publicGet(path, 'failed to fetch journal');
+    return authedGet(token, path, 'failed to fetch journal');
 };
 
 export const getJournalContent = (journalId, token) => {
