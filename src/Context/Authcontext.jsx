@@ -92,7 +92,12 @@ export const AuthProvider = ({children}) => {
 
 
     const signOut = useCallback(async() =>{
-        await supabase.auth.signOut({ scope: 'local' });
+        // `local` logs out only the current device/session.
+        const { error } = await supabase.auth.signOut({ scope: 'local' });
+        if (error) {
+            console.error('failed to sign out current device:', error.message);
+            throw error;
+        }
         queryClient.setQueryData(['authsession'], null)
         queryClient.clear();
     }, [queryClient])

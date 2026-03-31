@@ -162,9 +162,10 @@ const SettingsPage = () => {
 
         setEmailLoading(true);
         try {
-            const { error } = await supabase.auth.updateUser({
-                email: newEmail,
-            });
+            const { error } = await supabase.auth.updateUser(
+                { email: newEmail },
+                { emailRedirectTo: window.location.origin + '/home/settings' }
+            );
             if (error) {
                 setEmailLoading(false);
                 return setEmailError(error.message);
