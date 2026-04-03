@@ -402,6 +402,13 @@
     }
 }
 
+.user-info-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 /* Profile-specific text styles */
 .user-newsfeed-name-profile-page {
     font-family: var(--font-ui);
