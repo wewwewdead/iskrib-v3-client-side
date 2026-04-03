@@ -114,8 +114,10 @@ const VisitedProfilePostCards = () =>{
             {viewMode === 'grid' ? (
                 <div className="postcards-grid-view">
                     {journals.map((journal) => {
-                        const previewText = journal?.preview_text || '';
-                        const thumbnail = journal?.thumbnail_url || null;
+                        const isRepost = journal?.is_repost === true;
+                        const previewText = !isRepost ? (journal?.preview_text || '') : '';
+                        const thumbnail = !isRepost ? (journal?.thumbnail_url || null) : null;
+                        const repostSource = isRepost ? journal?.repost_source : null;
                         return (
                             <motion.div
                                 key={journal.id}
@@ -125,6 +127,21 @@ const VisitedProfilePostCards = () =>{
                                 transition={{ duration: 0.25, ease: 'easeOut' }}
                                 onClick={(e) => viewContent(e, null, '', journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)}
                             >
+                                {isRepost ? (
+                                    <div className="postcards-grid-body">
+                                        <div className="repost-header-badge" style={{padding: 0}}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="var(--text-faint)">
+                                                <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
+                                            </svg>
+                                            <span>Reposted</span>
+                                        </div>
+                                        <h3 className="postcards-grid-title">{(repostSource?.title || journal.title).length > 32 ? `${(repostSource?.title || journal.title).substring(0, 32)}...` : (repostSource?.title || journal.title)}</h3>
+                                        {repostSource?.users?.name && (
+                                            <p className="postcards-grid-snippet">by {repostSource.users.name}</p>
+                                        )}
+                                    </div>
+                                ) : (
+                                <>
                                 {thumbnail ? (
                                     <div className="postcards-grid-img-wrap">
                                         <img className="postcards-grid-thumb" src={thumbnail} alt={journal?.title ? `${journal.title} cover image` : "Post cover image"} loading="lazy" onError={handleImageFallback} />
@@ -136,6 +153,8 @@ const VisitedProfilePostCards = () =>{
                                         <p className="postcards-grid-snippet">{previewText.length > 50 ? `${previewText.substring(0, 50)}...` : previewText}</p>
                                     )}
                                 </div>
+                                </>
+                                )}
                             </motion.div>
                         );
                     })}
@@ -143,8 +162,11 @@ const VisitedProfilePostCards = () =>{
             ) : (
             <div className="postcards-list-view">
             {journals.map((journal, index) => {
-                const previewText = journal?.preview_text || '';
-                const thumbnail = journal?.thumbnail_url || null;
+                const isRepost = journal?.is_repost === true;
+                const previewText = !isRepost ? (journal?.preview_text || '') : '';
+                const thumbnail = !isRepost ? (journal?.thumbnail_url || null) : null;
+                const repostSource = isRepost ? journal?.repost_source : null;
+                const repostSourcePreviewText = repostSource?.preview_text || '';
                 const badgeClass = journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : '';
 
                 return(
@@ -155,7 +177,17 @@ const VisitedProfilePostCards = () =>{
                         animate={{opacity: 1, y: 0}}
                         transition={{duration: 0.3, ease: 'easeOut'}}
                     >
-                        {thumbnail && (
+                        {isRepost && (
+                            <div className="repost-header-badge">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="var(--text-faint)">
+                                    <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
+                                </svg>
+                                <span className="repost-header-name">{journal.users.name}</span>
+                                <span>reposted</span>
+                            </div>
+                        )}
+
+                        {!isRepost && thumbnail && (
                             <img
                                 className="card-image-banner"
                                 src={thumbnail}
@@ -167,14 +199,71 @@ const VisitedProfilePostCards = () =>{
                         )}
 
                         <div className='user-profile-card-content'>
-                            <div onClick={(e) => viewContent(e, null, '', journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} className="content-container">
-                                <div className='feed-text-content-container'>
-                                    <div className='feed-title-content'>
-                                        <h2 className="feed-title-profile-page">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
-                                    </div>
-                                    <p className="feed-text-content-profile-page">{previewText}</p>
+                            {isRepost ? (
+                                <div
+                                    className="card-content"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const formadata = new FormData();
+                                        formadata.append('journalId', journal.id);
+                                        mutateViews.mutate(formadata);
+                                        const postSlug = journal.title
+                                            ? journal.title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+                                            : '';
+                                        navigate(`/home/post/${encodeURIComponent(journal.id)}${postSlug ? `/${postSlug}` : ''}`, {
+                                            state: {
+                                                isRepost: true,
+                                                repostCaption: journal.repost_caption || '',
+                                                repostSource: repostSource,
+                                                title: journal.title,
+                                                userId: journal.users?.id,
+                                                name: journal.users?.name,
+                                                avatar: journal.users?.image_url,
+                                                created_at: journal.created_at,
+                                                journalId: journal.id,
+                                                isLiked: journal.has_liked,
+                                                commentsCount: journal.comment_count?.[0]?.count || 0,
+                                                isBookmarked: journal.has_bookmarked,
+                                                likesCount: journal.like_count?.[0]?.count || 0,
+                                                bookmarksCount: journal.bookmark_count?.[0]?.count || 0,
+                                                badge: journal.users?.badge,
+                                            }
+                                        });
+                                    }}
+                                >
+                                    {journal.repost_caption && (
+                                        <p className="repost-caption-text">{journal.repost_caption}</p>
+                                    )}
+                                    {repostSource ? (
+                                        <div className="repost-embedded-card">
+                                            <div className="repost-embedded-author">
+                                                <div className={`repost-embedded-avatar-wrap ${repostSource.users?.badge === 'legend' ? 'avatar-ring-legend' : repostSource.users?.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                                    <img className="repost-embedded-avatar" src={repostSource.users?.image_url || '/assets/profile.jpg'} alt="original author" />
+                                                </div>
+                                                <span className="repost-embedded-name">{repostSource.users?.name}</span>
+                                                <VerifiedBadge badge={repostSource.users?.badge} size={12} />
+                                            </div>
+                                            <p className="repost-embedded-title">{repostSource.title?.length > 60 ? repostSource.title.substring(0, 60) + '...' : repostSource.title}</p>
+                                            {repostSourcePreviewText && (
+                                                <p className="repost-embedded-text">{repostSourcePreviewText}</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="repost-unavailable">
+                                            This post is no longer available
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
+                            ) : (
+                                <div onClick={(e) => viewContent(e, null, '', journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} className="content-container">
+                                    <div className='feed-text-content-container'>
+                                        <div className='feed-title-content'>
+                                            <h2 className="feed-title-profile-page">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
+                                        </div>
+                                        <p className="feed-text-content-profile-page">{previewText}</p>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="card-icons-container">
                                 <div className='user-info-child-container'>
