@@ -3,7 +3,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getNodeByKey } from 'lexical';
 import { deleteJournalImage } from '../../../../API/Api';
 import { useAuth } from '../../../Context/useAuth';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false, rotation = 0, isEditable = true }) => {
   const [editor] = useLexicalComposerContext();
@@ -194,6 +194,18 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
     
   }
 
+  // escape key + scroll lock for lightbox
+  useEffect(() => {
+    if (!viewImage) return;
+    const handleEsc = (e) => { if (e.key === 'Escape') setViewImage(false); };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [viewImage]);
+
   // click outside to deselect
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -221,18 +233,45 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
 
   return (
     <>
-    {viewImage && (
-      <img
-        onClick={() => setViewImage(!viewImage)}
-        className='image-view'
-        src={src}
-        alt="view-image"
-        style={{
-          transform: `rotate(${currentRotation}deg) scale(1.2)`,
-          transition: 'transform 0.3s ease',
-        }}
-      />
-    )}
+    <AnimatePresence>
+      {viewImage && (
+        <motion.div
+          className="image-view-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          onClick={() => setViewImage(false)}
+        >
+          <motion.img
+            src={src}
+            alt="view-image"
+            className="image-view-img"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.94, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.7 }}
+            style={{ rotate: currentRotation }}
+            onClick={(e) => e.stopPropagation()}
+            draggable={false}
+          />
+
+          <motion.button
+            className="image-view-close"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ delay: 0.08, duration: 0.18 }}
+            onClick={() => setViewImage(false)}
+            aria-label="Close image"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </motion.button>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
     <div
     className='image-wrapper'
@@ -250,8 +289,9 @@ const ResizableImageComponent = ({ src ,nodeKey, width, height, loading = false,
         alt="content"
         style={{
           borderRadius: '5px',
-          width: `${currentWidth}px`,
-          height: `${currentHeight}px`,
+          width: isEditable ? `${currentWidth}px` : '100%',
+          maxWidth: isEditable ? undefined : `${currentWidth}px`,
+          height: isEditable ? `${currentHeight}px` : 'auto',
           display: 'block',
           border: isSelected ? '1px solid rgba(153, 200, 255, 0.99)' : '2px solid transparent',
           userSelect: 'none',
