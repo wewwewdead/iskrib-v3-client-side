@@ -141,11 +141,6 @@
     flex-shrink: 0;
 }
 
-.rp-card-avatar-placeholder {
-    background: var(--bg-hover);
-    border: 1px solid var(--border-light);
-}
-
 /* ── Avatar Ring Badge ── */
 
 .rp-card-avatar-container {
