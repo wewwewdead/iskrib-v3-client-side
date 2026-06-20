@@ -23,18 +23,22 @@
     height: fit-content;
     width: 90%;
     margin-top: 1rem;
-    padding: 0.8rem;
-    border: 0.7px solid  rgba(151, 151, 151, 0.168);
+    padding: 0.9rem 0.8rem;
+    /* FINDING-003: demoted from a saturated solid #D4A853 block (which
+       out-shouted the feed) to a calm gold-tinted card. The dark CTA button
+       below is now the section's focal action, not the whole panel. */
+    border: 1px solid rgba(212, 168, 83, 0.4);
     gap: 0.8rem;
-    background-color: #D4A853;
+    background-color: rgba(212, 168, 83, 0.12);
     border-radius: 15px;
 }
 .signal-header{
-    font-weight: 780;
-    font-size: 1.1rem;
-    line-height: 1.4rem;
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.35rem;
     padding: 0;
     margin: 0;
+    color: var(--text-heading);
 }
 .write-opinions-bttn {
   cursor: pointer;
