@@ -646,6 +646,19 @@
     justify-content: center;
     align-items: center;
 }
+/* FINDING-006: ensure action buttons meet the 44px touch-target minimum on
+   touch devices, without making the desktop (mouse) feed bar chunkier. */
+@media (pointer: coarse) {
+    .like-button,
+    .comment-button,
+    .bookmark-button,
+    .repost-button,
+    #card-icons,
+    #card-icons-view {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
 .icon-container p{
     font-family: var(--font-ui);
     font-size: 0.78rem;
