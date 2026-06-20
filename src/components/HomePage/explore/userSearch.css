@@ -190,7 +190,7 @@
 }
 .search-suggestion-user:hover{
     background: var(--bg-pill);
-    border-left-color: #D4A853;
+    border-left-color: var(--accent-amber);
 }
 .search-suggestion-user-avatar{
     width: 30px;

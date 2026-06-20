@@ -394,3 +394,8 @@ export const getWeeklyRecap = (token) =>
 
 export const getWriterAnalytics = (token, range = '30d') =>
     authedGet(token, `/analytics?range=${encodeURIComponent(range)}`, 'failed to fetch writer analytics');
+
+// ─── Account ───
+
+export const deleteAccount = (token, confirmation) =>
+    authedJsonRequest(token, 'DELETE', '/account', { confirmation }, 'failed to delete account');

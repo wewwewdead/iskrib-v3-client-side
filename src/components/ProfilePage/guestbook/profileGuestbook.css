@@ -1,7 +1,13 @@
 /*
- * Profile Guestbook (Phase 2).
- * Inherits Profile Builder theme vars (--pt-*) when rendered inside .pt-scope,
- * and falls back to the app's glass tokens when no theme is active.
+ * Profile Guestbook (Phase 2 + Phase 1.5 theming).
+ *
+ * The guestbook borrows a profile's *accent*, radius, shadow, blur and font so
+ * it feels like part of the room — but it intentionally does NOT adopt the
+ * theme's raw card background or text color. A guest's note must always be
+ * readable and trustworthy, and --pt-card-bg / --pt-text are user-controlled
+ * values with no guaranteed contrast against each other. So we keep the app's
+ * own readable parchment/glass surface (light/dark-aware) as the base and wash
+ * a little accent over it. Text rides app tokens. Everything else is themed.
  */
 
 .pt-guestbook {
@@ -9,12 +15,22 @@
     margin: 1rem auto 2rem;
     padding: 1.2rem 1.3rem 1.4rem;
     border-radius: var(--pt-card-radius, 18px);
-    background-color: var(--pt-card-bg, var(--bg-glass, rgba(255, 255, 255, 0.55)));
+
+    /* Readable base; color-mix accent wash is progressively enhanced (browsers
+       without it simply show the plain glass surface). */
+    background-color: var(--bg-glass, rgba(255, 255, 255, 0.55));
+    background-image: linear-gradient(
+        0deg,
+        color-mix(in srgb, var(--pt-accent, var(--accent-amber)) 7%, transparent),
+        color-mix(in srgb, var(--pt-accent, var(--accent-amber)) 7%, transparent)
+    );
     border: var(--pt-card-border-width, 0.7px) solid var(--pt-card-border-color, var(--border-light, rgba(0, 0, 0, 0.08)));
     box-shadow: var(--pt-card-shadow, 0 8px 32px rgba(0, 0, 0, 0.06));
     backdrop-filter: var(--pt-card-blur, blur(25px));
     -webkit-backdrop-filter: var(--pt-card-blur, blur(25px));
-    color: inherit;
+
+    /* Always-legible text — never the theme's uncontrolled text color. */
+    color: var(--text-primary);
     font-family: var(--pt-font, inherit);
 }
 
@@ -92,7 +108,10 @@
 
 .pt-guestbook-toggle:hover {
     opacity: 1;
-    background: var(--pt-accent, rgba(0, 0, 0, 0.05));
+    /* Subtle accent wash on hover (not a solid accent fill — text stays legible). */
+    background: rgba(0, 0, 0, 0.05);
+    background: color-mix(in srgb, var(--pt-accent, var(--accent-amber)) 14%, transparent);
+    border-color: color-mix(in srgb, var(--pt-accent, var(--accent-amber)) 40%, var(--border-light, rgba(0, 0, 0, 0.15)));
 }
 
 /* ── Composer ─────────────────────────────────────────────────────────────── */
@@ -109,21 +128,23 @@
     min-height: 48px;
     padding: 0.7rem 0.85rem;
     border-radius: 12px;
-    border: 1px solid var(--pt-card-border-color, rgba(0, 0, 0, 0.12));
-    background: rgba(255, 255, 255, 0.14);
-    color: inherit;
+    /* Accent-tinted border (color-mix progressively enhanced over the fallback). */
+    border: 1px solid var(--pt-card-border-color, var(--border-light, rgba(0, 0, 0, 0.12)));
+    border-color: color-mix(in srgb, var(--pt-accent, var(--accent-amber)) 28%, var(--border-light, rgba(0, 0, 0, 0.12)));
+    background: var(--bg-elevated, rgba(255, 255, 255, 0.14));
+    color: var(--text-primary);
     font-family: inherit;
     font-size: 0.9rem;
     box-sizing: border-box;
 }
 
 .pt-guestbook-input::placeholder {
-    color: currentColor;
-    opacity: 0.5;
+    color: var(--text-faint);
+    opacity: 1;
 }
 
 .pt-guestbook-input:focus {
-    outline: 2px solid var(--pt-accent, #D4A853);
+    outline: 2px solid var(--pt-accent, var(--accent-amber));
     outline-offset: 1px;
 }
 
@@ -143,25 +164,16 @@
     opacity: 1;
 }
 
-.pt-guestbook-sign-btn {
-    padding: 0.45rem 1.3rem;
-    border-radius: 999px;
-    border: none;
-    background: var(--pt-accent, #D4A853);
+/* Sign is now an IskribButton; this layer (higher specificity than
+   .iskrib-btn--primary) tints it with the profile theme accent (D6) while
+   inheriting the primitive's sizing, loading spinner, and press motion. */
+.iskrib-btn.pt-guestbook-sign-btn {
+    background: var(--pt-accent, var(--accent-amber));
     color: #1a1a1a;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: transform 0.18s ease, opacity 0.18s ease;
 }
-
-.pt-guestbook-sign-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-}
-
-.pt-guestbook-sign-btn:disabled {
-    opacity: 0.5;
-    cursor: default;
+.iskrib-btn.pt-guestbook-sign-btn:not(:disabled):hover {
+    background: var(--pt-accent, var(--accent-amber));
+    filter: brightness(0.95);
 }
 
 .pt-guestbook-cta {
@@ -169,18 +181,22 @@
     padding: 0.7rem 1rem;
     margin-bottom: 1.1rem;
     border-radius: 12px;
-    border: 1.5px dashed currentColor;
+    /* Accent-tinted dashed border; text stays on the readable app token. */
+    border: 1.5px dashed var(--text-faint, currentColor);
+    border-color: color-mix(in srgb, var(--pt-accent, var(--accent-amber)) 50%, var(--text-faint, currentColor));
     background: transparent;
-    color: inherit;
+    color: var(--text-secondary);
     font-size: 0.88rem;
     font-weight: 500;
     cursor: pointer;
-    opacity: 0.85;
-    transition: opacity 0.18s ease;
+    opacity: 0.95;
+    transition: opacity 0.18s ease, color 0.18s ease, background 0.18s ease;
 }
 
 .pt-guestbook-cta:hover {
     opacity: 1;
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--pt-accent, var(--accent-amber)) 10%, transparent);
 }
 
 .pt-guestbook-error {
@@ -218,8 +234,10 @@
 @keyframes pt-guestbook-highlight {
     0%,
     35% {
-        background-color: var(--pt-accent, #D4A853);
-        box-shadow: 0 0 0 3px var(--pt-accent, #D4A853);
+        /* Accent wash (not a solid fill) keeps the note text legible at the peak;
+           the solid accent ring carries the "look here" signal. */
+        background-color: color-mix(in srgb, var(--pt-accent, var(--accent-amber)) 40%, transparent);
+        box-shadow: 0 0 0 3px var(--pt-accent, var(--accent-amber));
     }
     100% {
         background-color: transparent;
@@ -231,7 +249,7 @@
     /* No pulse — show a calm static outline that the JS timer clears. */
     .pt-guestbook-entry.is-highlighted {
         animation: none;
-        outline: 2px solid var(--pt-accent, #D4A853);
+        outline: 2px solid var(--pt-accent, var(--accent-amber));
         outline-offset: 2px;
     }
 }

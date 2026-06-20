@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { STICKER_BY_ID } from "./stickerRegistry";
 
 /**
@@ -11,6 +11,7 @@ import { STICKER_BY_ID } from "./stickerRegistry";
 const StickerLayer = ({ stickers, editable = false, onChange, accentColor }) => {
     const layerRef = useRef(null);
     const dragState = useRef(null);
+    const [draggingIndex, setDraggingIndex] = useState(null);
 
     if (!Array.isArray(stickers) || stickers.length === 0) {
         return null;
@@ -22,6 +23,7 @@ const StickerLayer = ({ stickers, editable = false, onChange, accentColor }) => 
         event.stopPropagation();
         event.currentTarget.setPointerCapture?.(event.pointerId);
         dragState.current = { index, pointerId: event.pointerId };
+        setDraggingIndex(index);
     };
 
     const handlePointerMove = (event) => {
@@ -46,6 +48,7 @@ const StickerLayer = ({ stickers, editable = false, onChange, accentColor }) => 
             event.currentTarget.releasePointerCapture?.(dragState.current.pointerId);
             dragState.current = null;
         }
+        setDraggingIndex(null);
     };
 
     const handleRemove = (event, index) => {
@@ -71,7 +74,7 @@ const StickerLayer = ({ stickers, editable = false, onChange, accentColor }) => 
                 return (
                     <div
                         key={`${sticker.id}-${index}`}
-                        className={`pt-sticker${editable ? " is-editable" : ""}`}
+                        className={`pt-sticker${editable ? " is-editable" : ""}${draggingIndex === index ? " is-dragging" : ""}`}
                         style={{
                             left: `${sticker.x}%`,
                             top: `${sticker.y}%`,

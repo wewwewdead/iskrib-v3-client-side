@@ -9,19 +9,24 @@ const SectionsPanel = ({ theme, onToggleSection }) => (
                 const visible = isSectionVisible(theme, section.id);
                 const locked = section.togglable === false;
                 return (
-                    <div key={section.id} className="pt-section-row">
+                    <div key={section.id} className={`pt-section-row${visible ? " is-visible" : ""}`}>
                         <span className="pt-section-name">{section.label}</span>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={visible}
-                            aria-label={`${visible ? "Hide" : "Show"} ${section.label}`}
-                            disabled={locked}
-                            className={`pt-toggle${visible ? " is-on" : ""}${locked ? " is-locked" : ""}`}
-                            onClick={() => !locked && onToggleSection(section.id)}
-                        >
-                            <span className="pt-toggle-knob" />
-                        </button>
+                        <div className="pt-section-control">
+                            <span className="pt-section-state" aria-hidden="true">
+                                {locked ? "Always on" : visible ? "Shown" : "Hidden"}
+                            </span>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={visible}
+                                aria-label={`${visible ? "Hide" : "Show"} ${section.label}`}
+                                disabled={locked}
+                                className={`pt-toggle${visible ? " is-on" : ""}${locked ? " is-locked" : ""}`}
+                                onClick={() => !locked && onToggleSection(section.id)}
+                            >
+                                <span className="pt-toggle-knob" />
+                            </button>
+                        </div>
                     </div>
                 );
             })}

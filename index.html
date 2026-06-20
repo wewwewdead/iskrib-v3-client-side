@@ -2,6 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- App theme bootstrap: set the theme attributes before first paint to
+         avoid a light-mode flash (FOUC). Mirrors src/theme/appThemes.js. -->
+    <script>
+      (function () {
+        try {
+          var BASE = { light: 'light', dark: 'dark', midnight: 'dark', sepia: 'light', forest: 'dark', rose: 'light', ocean: 'dark' };
+          var sel = localStorage.getItem('iskrib-app-theme');
+          if (!BASE[sel] && sel !== 'system') {
+            var legacy = localStorage.getItem('theme');
+            sel = (legacy === 'light' || legacy === 'dark') ? legacy : 'system';
+          }
+          var resolved = sel;
+          if (sel === 'system') {
+            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            resolved = prefersDark ? 'dark' : 'light';
+          }
+          var root = document.documentElement;
+          root.dataset.theme = BASE[resolved] || 'light';
+          root.dataset.appTheme = resolved;
+          root.dataset.themePreference = sel;
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/temporary-logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta id="seo-description" name="description" content="Iskrib is a social journaling platform where you can publish journals, share opinions, and discover stories." />

@@ -1,0 +1,145 @@
+/* Design Delight Phase 1 — primitive styles.
+   Consumes index.css tokens only; declares no raw color values. */
+
+/* ── IskribButton ── */
+.iskrib-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    position: relative;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    line-height: 1;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-out-quart),
+        border-color var(--duration-fast) var(--ease-out-quart),
+        color var(--duration-fast) var(--ease-out-quart),
+        box-shadow var(--duration-fast) var(--ease-out-quart);
+}
+.iskrib-btn:disabled,
+.iskrib-btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* sizes — sm keeps a >=44px touch target via min-height */
+.iskrib-btn--sm { min-height: 44px; padding: 6px 14px; font-size: var(--text-sm); }
+.iskrib-btn--md { min-height: 44px; padding: 10px 18px; font-size: var(--text-base); }
+.iskrib-btn--lg { min-height: 52px; padding: 14px 24px; font-size: var(--text-md); }
+
+/* variants */
+.iskrib-btn--primary {
+    background: var(--accent-dark);
+    color: var(--bg-elevated);
+}
+.iskrib-btn--primary:not(:disabled):hover { background: var(--accent-dark-hover); }
+
+.iskrib-btn--secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+.iskrib-btn--secondary:not(:disabled):hover { background: var(--bg-hover); }
+
+.iskrib-btn--ghost {
+    background: transparent;
+    color: var(--text-secondary);
+}
+.iskrib-btn--ghost:not(:disabled):hover {
+    background: var(--bg-pill);
+    color: var(--text-primary);
+}
+
+.iskrib-btn--danger {
+    background: var(--color-danger);
+    color: #fff;
+}
+.iskrib-btn--danger:not(:disabled):hover { filter: brightness(0.94); }
+
+/* loading: hide the label visually, keep layout, show spinner */
+.iskrib-btn.is-loading .iskrib-btn-label { opacity: 0.65; }
+.iskrib-btn-spinner {
+    width: 1em;
+    height: 1em;
+    border-radius: var(--radius-pill);
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    animation: iskrib-spin 0.6s linear infinite;
+}
+@keyframes iskrib-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .iskrib-btn-spinner { animation-duration: 1.2s; }
+}
+
+/* ── IskribCard ── */
+.iskrib-card {
+    background: var(--bg-glass);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-room);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+}
+.iskrib-card--interactive {
+    cursor: pointer;
+    transition: box-shadow var(--duration-normal) var(--ease-out-quart);
+}
+.iskrib-card--interactive:hover { box-shadow: var(--shadow-hover-lift); }
+
+/* ── IskribModal ── */
+.iskrib-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: var(--bg-backdrop-heavy);
+    backdrop-filter: blur(4px);
+}
+.iskrib-modal {
+    width: 100%;
+    max-width: 440px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-modal);
+    padding: var(--space-6);
+    outline: none;
+}
+
+/* ── IskribSectionHeader ── */
+.iskrib-section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+.iskrib-section-eyebrow {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-amber-strong);
+    margin-bottom: var(--space-1);
+}
+.iskrib-section-title {
+    font-family: var(--font-serif);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--text-heading);
+    margin: 0;
+}
+.iskrib-section-subtitle {
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin: var(--space-1) 0 0;
+}
+.iskrib-section-action { flex-shrink: 0; }

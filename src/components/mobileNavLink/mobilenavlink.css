@@ -71,7 +71,7 @@
         width: 4px;
         height: 4px;
         border-radius: 50%;
-        background-color: #D4A853;
+        background-color: var(--accent-amber);
     }
 
     /* ── Icon base styles ── */
@@ -101,6 +101,6 @@
         white-space: nowrap;
     }
     .mobile-navlink-label-active{
-        color: #D4A853;
+        color: var(--accent-amber);
     }
 }

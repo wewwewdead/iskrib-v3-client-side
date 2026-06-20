@@ -58,12 +58,12 @@ const SignUp = () => {
                 return setErrorMessage("CAPTCHA verification failed. Try again.");
             }
 
-            const { error: error } = await supabase.auth.signUp({
+            const { error: signUpError } = await supabase.auth.signUp({
                 email: email,
                 password: password
             })
-            if(error.message){
-                return setErrorMessage(error.message)
+            if(signUpError){
+                return setErrorMessage(signUpError.message)
             }
             setSuccessMessage('Account created. Check your email to confirm.');
             setTimeout(() => navigate('/home'), 600);

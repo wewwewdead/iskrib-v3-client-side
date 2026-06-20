@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { profileThemeToCssVars } from "../ProfilePage/builder/profileThemeUtils";
+import VerifiedBadge from "../Badge/VerifiedBadge";
 
 const fmtCount = (n) => {
     const value = Number(n) || 0;
@@ -19,7 +20,7 @@ const RoomPreview = ({ card }) => {
         });
     }, [card.profile_theme, card.profile_font_color]);
 
-    const accent = themeVars?.["--pt-accent"] || card.profile_font_color || "#c98a3a";
+    const accent = themeVars?.["--pt-accent"] || card.profile_font_color || "var(--accent-amber)";
     const backdrop =
         card.background && typeof card.background === "object" ? card.background : null;
 
@@ -59,6 +60,9 @@ const ProfileDiscoverCard = ({ card, index = 0 }) => {
 
     const profilePath = `/u/${encodeURIComponent(card.username)}`;
     const hasStats = card.visit_count || card.guestbook_count || card.remix_count;
+    // A themed profile is a "room"; a bare one is just a profile.
+    const isRoom = !!card.profile_theme;
+    const ctaLabel = isRoom ? "Visit room" : "Visit profile";
 
     return (
         <motion.article
@@ -71,14 +75,18 @@ const ProfileDiscoverCard = ({ card, index = 0 }) => {
                     : { duration: 0 }
             }
         >
-            <Link to={profilePath} className="pdc-card-link" aria-label={`Visit ${card.name || card.username}'s room`}>
+            <Link to={profilePath} className="pdc-card-link pressable" aria-label={`${ctaLabel}: ${card.name || card.username}`}>
                 <RoomPreview card={card} />
 
                 <div className="pdc-body">
                     <div className="pdc-identity">
                         <span
                             className={`pdc-avatar-ring${
-                                card.profile_theme ? " pdc-avatar-ring--themed" : ""
+                                card.badge === "legend"
+                                    ? " pdc-avatar-ring--legend"
+                                    : card.badge === "og"
+                                    ? " pdc-avatar-ring--og"
+                                    : ""
                             }`}
                         >
                             <img
@@ -91,6 +99,7 @@ const ProfileDiscoverCard = ({ card, index = 0 }) => {
                         <div className="pdc-names">
                             <span className="pdc-name-row">
                                 <h3 className="pdc-name">{card.name || card.username}</h3>
+                                <VerifiedBadge badge={card.badge} size={14} />
                             </span>
                             <span className="pdc-handle">@{card.username}</span>
                         </div>
@@ -112,7 +121,7 @@ const ProfileDiscoverCard = ({ card, index = 0 }) => {
                 </div>
 
                 <span className="pdc-visit-cta">
-                    Visit room
+                    {ctaLabel}
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>

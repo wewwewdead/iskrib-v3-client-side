@@ -6,6 +6,8 @@ import "./profileGuestbook.css";
 import { useAuth } from "../../../Context/useAuth";
 import { getProfileGuestbook, createGuestbookEntry, deleteGuestbookEntry } from "../../../../API/Api";
 import VerifiedBadge from "../../Badge/VerifiedBadge";
+import { useToast } from "../../Toast/ToastContext";
+import IskribButton from "../../../design/ui/IskribButton";
 
 const MAX_LENGTH = 280;
 const COMPACT_VISIBLE_COUNT = 3;
@@ -28,11 +30,11 @@ const ProfileGuestbook = ({
     highlightFromUserId = null,
 }) => {
     const { session, user, openAuthModal } = useAuth();
+    const { toast } = useToast();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
 
     const sectionRef = useRef(null);
     const [highlightedId, setHighlightedId] = useState(null);
@@ -40,7 +42,8 @@ const ProfileGuestbook = ({
     const focusHandledRef = useRef(null);
     const focusExpandedRef = useRef(null);
 
-    const currentUserId = user?.userData?.[0]?.id;
+    const me = user?.userData?.[0];
+    const currentUserId = me?.id;
     const token = session?.access_token;
     const isLoggedIn = !!session;
 
@@ -116,14 +119,55 @@ const ProfileGuestbook = ({
         };
     }, [focusGuestbook, highlightEntryId, highlightFromUserId, isLoading, entries, compact, expanded]);
 
+    // Optimistic signing: the note appears instantly, then reconciles with the
+    // server on settle. The query holds { entries, hasMore, profileUserId } —
+    // we MUST spread that object and prepend to .entries (a bare array would
+    // break the count + empty-state). Author is shaped from `me` (the userData
+    // row, which carries username/name/image_url/badge) — NOT session.user.
     const createMutation = useMutation({
         mutationFn: (text) => createGuestbookEntry(token, username, text),
+        onMutate: async (text) => {
+            await queryClient.cancelQueries({ queryKey: ["guestbook", username] });
+            const previous = queryClient.getQueryData(["guestbook", username]);
+            const tempId =
+                typeof crypto !== "undefined" && crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : `temp-${Date.now()}`;
+            const optimistic = {
+                id: tempId,
+                message: text,
+                created_at: new Date().toISOString(),
+                author_user_id: currentUserId,
+                author: {
+                    id: me?.id,
+                    username: me?.username,
+                    name: me?.name,
+                    image_url: me?.image_url,
+                    badge: me?.badge,
+                },
+            };
+            queryClient.setQueryData(["guestbook", username], (old) => ({
+                ...old,
+                entries: [optimistic, ...(old?.entries || [])],
+            }));
+            setMessage(""); // clear the composer now
+            return { previous, draft: text };
+        },
+        onError: (_err, _text, ctx) => {
+            // Roll the cache back to its pre-insert snapshot and restore the draft.
+            if (ctx?.previous !== undefined) {
+                queryClient.setQueryData(["guestbook", username], ctx.previous);
+            }
+            if (ctx?.draft) setMessage(ctx.draft);
+            toast.error("Couldn't leave your note. Please try again.");
+        },
         onSuccess: () => {
-            setMessage("");
-            setError("");
+            toast.success("Note left in the room");
+        },
+        onSettled: () => {
+            // Reconcile temp id → real server id.
             queryClient.invalidateQueries({ queryKey: ["guestbook", username] });
         },
-        onError: () => setError("Couldn't sign the guestbook. Please try again."),
     });
 
     const deleteMutation = useMutation({
@@ -175,15 +219,17 @@ const ProfileGuestbook = ({
                         <span className={`pt-guestbook-charcount${message.length > MAX_LENGTH - 20 ? " is-near-limit" : ""}`}>
                             {message.length}/{MAX_LENGTH}
                         </span>
-                        <button
+                        <IskribButton
                             type="submit"
+                            variant="primary"
+                            size="sm"
                             className="pt-guestbook-sign-btn"
-                            disabled={!message.trim() || createMutation.isPending}
+                            loading={createMutation.isPending}
+                            disabled={!message.trim()}
                         >
-                            {createMutation.isPending ? "Signing…" : "Sign"}
-                        </button>
+                            Sign
+                        </IskribButton>
                     </div>
-                    {error && <p className="pt-guestbook-error" role="alert">{error}</p>}
                 </form>
             ) : (
                 <button type="button" className="pt-guestbook-cta" onClick={() => openAuthModal?.()}>

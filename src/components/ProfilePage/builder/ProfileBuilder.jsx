@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import "./ProfileBuilder.css";
 import "./profileTheme.css";
@@ -36,7 +36,9 @@ const ProfileBuilder = ({
     const [activeTab, setActiveTab] = useState("presets");
     const [draft, setDraft] = useState(() => getDefaultProfileTheme(userData));
     const [isSaving, setIsSaving] = useState(false);
+    const [justSaved, setJustSaved] = useState(false);
     const [error, setError] = useState("");
+    const closeTimerRef = useRef(null);
 
     // (Re)initialize the draft each time the builder opens.
     useEffect(() => {
@@ -48,8 +50,14 @@ const ProfileBuilder = ({
             );
             setActiveTab("presets");
             setError("");
+            setJustSaved(false);
         }
     }, [open, initialTheme, userData]);
+
+    // Clear any pending post-save close timer on unmount.
+    useEffect(() => () => {
+        if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    }, []);
 
     // Close on Escape.
     useEffect(() => {
@@ -108,19 +116,23 @@ const ProfileBuilder = ({
     }, []);
 
     const handleSave = useCallback(async () => {
-        if (isSaving) return;
+        if (isSaving || justSaved) return;
         setIsSaving(true);
         setError("");
         try {
             const response = await updateProfileTheme(token, draft);
             onSaved?.(response?.profileTheme || draft);
-            onClose?.();
+            // Calm success beat: confirm "Saved", let the preview settle, then close.
+            setIsSaving(false);
+            setJustSaved(true);
+            closeTimerRef.current = setTimeout(() => {
+                onClose?.();
+            }, 1050);
         } catch {
             setError("Couldn't save your theme. Please try again.");
-        } finally {
             setIsSaving(false);
         }
-    }, [draft, isSaving, onClose, onSaved, token]);
+    }, [draft, isSaving, justSaved, onClose, onSaved, token]);
 
     const activePanel = useMemo(() => {
         switch (activeTab) {
@@ -186,7 +198,10 @@ const ProfileBuilder = ({
                         </header>
 
                         <div className="pt-builder-body">
-                            <section className="pt-builder-preview" aria-label="Live preview">
+                            <section
+                                className={`pt-builder-preview${justSaved ? " is-saved" : ""}`}
+                                aria-label="Live preview"
+                            >
                                 <BuilderPreview
                                     theme={draft}
                                     userData={userData}
@@ -216,12 +231,24 @@ const ProfileBuilder = ({
 
                         <footer className="pt-builder-footer">
                             {error && <span className="pt-builder-error" role="alert">{error}</span>}
-                            <div className="pt-builder-footer-actions">
-                                <button type="button" className="pt-builder-cancel" onClick={onClose} disabled={isSaving}>
+                            <div className="pt-builder-footer-actions" aria-live="polite">
+                                <button type="button" className="pt-builder-cancel" onClick={onClose} disabled={isSaving || justSaved}>
                                     Cancel
                                 </button>
-                                <button type="button" className="pt-builder-save" onClick={handleSave} disabled={isSaving}>
-                                    {isSaving ? "Saving…" : "Save profile"}
+                                <button
+                                    type="button"
+                                    className={`pt-builder-save${justSaved ? " is-saved" : ""}`}
+                                    onClick={handleSave}
+                                    disabled={isSaving || justSaved}
+                                >
+                                    {justSaved ? (
+                                        <>
+                                            <svg className="pt-save-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                <path d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Saved
+                                        </>
+                                    ) : isSaving ? "Saving…" : "Save profile"}
                                 </button>
                             </div>
                         </footer>

@@ -139,8 +139,8 @@ const MyProfile = () => {
         e.stopPropagation();
         setShowFontColorSelector(false);
         setEditImagePreview(userData?.image_url);
-        setProfileEditName(userData?.name);
-        setProfileEditBio(userData?.bio);
+        setProfileEditName(userData?.name ?? "");
+        setProfileEditBio(userData?.bio ?? "");
         setShowProfileEditor(true);
     };
 
@@ -456,8 +456,8 @@ const MyProfile = () => {
                                     onEdit={() => {
                                         setShowFontColorSelector(false);
                                         setEditImagePreview(userData?.image_url);
-                                        setProfileEditName(userData?.name);
-                                        setProfileEditBio(userData?.bio);
+                                        setProfileEditName(userData?.name ?? "");
+                                        setProfileEditBio(userData?.bio ?? "");
                                         setShowProfileEditor(true);
                                     }}
                                 />

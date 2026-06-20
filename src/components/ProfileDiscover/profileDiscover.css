@@ -1,20 +1,22 @@
 /* ────────────────────────────────────────────────────────────────────────
    Profile Discovery — "personal rooms" (Phase 3)
-   Warm editorial aesthetic: Playfair Display headings, Outfit body, ember
-   accent, parchment glass. Self-contained tokens so it reads consistently
-   regardless of the surrounding app theme.
+   App-native styling: Lexend Deca headings + Outfit body (matching the feed
+   and Explore page), amber accents, driven entirely by the semantic design
+   tokens so it adapts to light/dark.
    ──────────────────────────────────────────────────────────────────────── */
 
 .pd-page {
-    --pd-ink: #2a211b;
-    --pd-ink-soft: #6b5d52;
-    --pd-ink-faint: #9a8a7c;
-    --pd-ember: #bd7b32;
-    --pd-ember-deep: #9a5e1f;
-    --pd-paper: #fbf6ee;
-    --pd-paper-2: #f4ece0;
-    --pd-line: rgba(74, 56, 38, 0.12);
-    --pd-card-shadow: 0 18px 44px -28px rgba(58, 38, 18, 0.55);
+    /* Map the page-local palette onto the app's semantic tokens so the whole
+       surface adapts to light/dark and reads as native Iskrib. */
+    --pd-ink: var(--text-heading);
+    --pd-ink-soft: var(--text-body);
+    --pd-ink-faint: var(--text-muted);
+    --pd-ember: var(--accent-amber);
+    --pd-ember-deep: var(--accent-amber-strong);
+    --pd-paper: var(--bg-elevated);
+    --pd-paper-2: var(--bg-secondary);
+    --pd-line: var(--border-card);
+    --pd-card-shadow: var(--shadow-card);
 
     width: 100%;
     max-width: 940px;
@@ -29,9 +31,9 @@
     position: relative;
     padding: 30px 30px 32px;
     margin-bottom: 30px;
-    border-radius: 22px;
+    border-radius: var(--radius-room);
     background:
-        radial-gradient(120% 140% at 100% 0%, rgba(189, 123, 50, 0.16), transparent 55%),
+        radial-gradient(120% 140% at 100% 0%, var(--accent-amber-soft), transparent 55%),
         linear-gradient(160deg, var(--pd-paper) 0%, var(--pd-paper-2) 100%);
     border: 1px solid var(--pd-line);
     box-shadow: var(--pd-card-shadow);
@@ -42,7 +44,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(rgba(74, 56, 38, 0.05) 1px, transparent 1px);
+    background-image: radial-gradient(var(--border-light) 1px, transparent 1px);
     background-size: 18px 18px;
     pointer-events: none;
     opacity: 0.6;
@@ -63,11 +65,11 @@
 .pd-hero-title {
     position: relative;
     margin: 0 0 10px;
-    font-family: "Playfair Display", serif;
+    font-family: "Lexend Deca", sans-serif;
     font-weight: 700;
     font-size: clamp(1.9rem, 4.4vw, 2.9rem);
-    line-height: 1.04;
-    letter-spacing: -0.01em;
+    line-height: 1.06;
+    letter-spacing: -0.025em;
     color: var(--pd-ink);
 }
 
@@ -104,11 +106,11 @@
 
 .pd-section-title {
     margin: 0 0 4px;
-    font-family: "Playfair Display", serif;
-    font-weight: 600;
+    font-family: "Lexend Deca", sans-serif;
+    font-weight: 700;
     font-size: clamp(1.3rem, 2.6vw, 1.6rem);
     color: var(--pd-ink);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.022em;
 }
 
 .pd-section-blurb {
@@ -125,20 +127,14 @@
     gap: 18px;
 }
 
-/* ── Card ── */
+/* ── Card — flat & calm: no hover movement, no border highlight, no gradients.
+   The link's global .pressable class still gives a subtle press on tap. ── */
 .pdc-card {
-    border-radius: 18px;
-    background: linear-gradient(165deg, #ffffff 0%, var(--pd-paper) 100%);
+    border-radius: var(--radius-room);
+    background: var(--bg-elevated);
     border: 1px solid var(--pd-line);
     box-shadow: var(--pd-card-shadow);
     overflow: hidden;
-    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-        box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.pdc-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 26px 54px -26px rgba(58, 38, 18, 0.6);
 }
 
 .pdc-card-link {
@@ -154,7 +150,7 @@
     position: relative;
     height: 92px;
     overflow: hidden;
-    background: linear-gradient(135deg, #efe4d4, #e3d2bb);
+    background: var(--bg-secondary);
 }
 
 .pdc-room-backdrop {
@@ -162,18 +158,10 @@
     inset: 0;
     background-size: cover !important;
     background-position: center !important;
-    transform: scale(1.04);
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.pdc-card:hover .pdc-room-backdrop {
-    transform: scale(1.12);
 }
 
 .pdc-room-backdrop--bare {
-    background:
-        radial-gradient(90% 120% at 15% 0%, rgba(189, 123, 50, 0.4), transparent 60%),
-        linear-gradient(135deg, #e9dac2, #d8c2a3);
+    background: var(--bg-secondary);
 }
 
 .pdc-room-veil {
@@ -249,11 +237,57 @@
     border-radius: 50%;
     padding: 3px;
     background: var(--pd-paper);
-    box-shadow: 0 4px 12px rgba(58, 38, 18, 0.28);
+    box-shadow: var(--shadow-card);
 }
 
-.pdc-avatar-ring--themed {
-    background: linear-gradient(135deg, var(--pd-ember), var(--pd-ember-deep));
+/* ── Badge glow rings (Legend / OG only) — no badge means a plain ring,
+   matching the profile hero. ── */
+.pdc-avatar-ring--legend {
+    background: #FFD700;
+    box-shadow:
+        0 0 6px 1px rgba(255, 215, 0, 0.5),
+        0 0 12px 2px rgba(255, 215, 0, 0.35),
+        0 0 20px 4px rgba(255, 215, 0, 0.2);
+    animation: pdc-glow-legend 2s ease-in-out infinite alternate;
+}
+
+.pdc-avatar-ring--og {
+    background: #9B59FF;
+    box-shadow:
+        0 0 6px 1px rgba(155, 89, 255, 0.5),
+        0 0 12px 2px rgba(155, 89, 255, 0.35),
+        0 0 20px 4px rgba(155, 89, 255, 0.2);
+    animation: pdc-glow-og 2s ease-in-out infinite alternate;
+}
+
+@keyframes pdc-glow-legend {
+    from {
+        box-shadow:
+            0 0 6px 1px rgba(255, 215, 0, 0.5),
+            0 0 12px 2px rgba(255, 215, 0, 0.35),
+            0 0 20px 4px rgba(255, 215, 0, 0.2);
+    }
+    to {
+        box-shadow:
+            0 0 8px 2px rgba(255, 215, 0, 0.6),
+            0 0 16px 4px rgba(255, 215, 0, 0.4),
+            0 0 24px 6px rgba(255, 215, 0, 0.25);
+    }
+}
+
+@keyframes pdc-glow-og {
+    from {
+        box-shadow:
+            0 0 6px 1px rgba(155, 89, 255, 0.5),
+            0 0 12px 2px rgba(155, 89, 255, 0.35),
+            0 0 20px 4px rgba(155, 89, 255, 0.2);
+    }
+    to {
+        box-shadow:
+            0 0 8px 2px rgba(155, 89, 255, 0.6),
+            0 0 16px 4px rgba(155, 89, 255, 0.4),
+            0 0 24px 6px rgba(155, 89, 255, 0.25);
+    }
 }
 
 .pdc-avatar {
@@ -278,10 +312,11 @@
 
 .pdc-name {
     margin: 0;
-    font-family: "Playfair Display", serif;
-    font-weight: 600;
-    font-size: 1.04rem;
-    line-height: 1.1;
+    font-family: "Lexend Deca", sans-serif;
+    font-weight: 700;
+    font-size: 1.02rem;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
     color: var(--pd-ink);
     white-space: nowrap;
     overflow: hidden;
@@ -351,27 +386,13 @@
     gap: 6px;
     margin: 12px 16px 16px;
     padding: 10px 14px;
-    border-radius: 11px;
-    background: rgba(189, 123, 50, 0.1);
+    border-radius: var(--radius-md);
+    background: var(--accent-amber-soft);
     color: var(--pd-ember-deep);
-    font-family: "Outfit", sans-serif;
+    font-family: var(--font-ui);
     font-size: 0.82rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    transition: background 0.25s ease, gap 0.25s ease;
-}
-
-.pdc-card:hover .pdc-visit-cta {
-    background: rgba(189, 123, 50, 0.18);
-    gap: 10px;
-}
-
-.pdc-visit-cta svg {
-    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.pdc-card:hover .pdc-visit-cta svg {
-    transform: translateX(3px);
 }
 
 /* ── Empty / error ── */
@@ -385,8 +406,10 @@
 
 .pd-empty-title {
     margin: 0 0 6px;
-    font-family: "Playfair Display", serif;
+    font-family: "Lexend Deca", sans-serif;
+    font-weight: 700;
     font-size: 1.3rem;
+    letter-spacing: -0.02em;
     color: var(--pd-ink);
 }
 
@@ -400,8 +423,8 @@
 /* ── Skeletons ── */
 .pd-skeleton {
     display: block;
-    border-radius: 8px;
-    background: linear-gradient(90deg, var(--pd-paper-2) 25%, #efe6d8 37%, var(--pd-paper-2) 63%);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(90deg, var(--pd-paper-2) 25%, var(--bg-hover) 37%, var(--pd-paper-2) 63%);
     background-size: 400% 100%;
     animation: pd-shimmer 1.4s ease infinite;
 }
@@ -437,95 +460,236 @@
    ──────────────────────────────────────────────────────────────────────── */
 
 .rooms-shelf {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     margin: 4px 0 20px;
     padding: 18px 18px 14px;
-    border-radius: 18px;
+    border-radius: var(--radius-room);
     background:
-        radial-gradient(120% 160% at 100% 0%, rgba(189, 123, 50, 0.12), transparent 55%),
-        linear-gradient(160deg, #fbf6ee 0%, #f3eadd 100%);
-    border: 1px solid rgba(74, 56, 38, 0.12);
-    box-shadow: 0 14px 34px -26px rgba(58, 38, 18, 0.5);
+        radial-gradient(120% 160% at 100% 0%, var(--accent-amber-soft), transparent 55%),
+        var(--bg-glass);
+    border: 1px solid var(--border-card);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .rooms-shelf-head {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
 .rooms-shelf-eyebrow {
     display: block;
-    font-family: "Outfit", sans-serif;
-    font-size: 0.62rem;
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
     font-weight: 600;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #bd7b32;
-    margin-bottom: 3px;
+    color: var(--accent-amber-strong);
+    margin-bottom: var(--space-1);
 }
 
 .rooms-shelf-title {
     margin: 0;
-    font-family: "Playfair Display", serif;
+    font-family: var(--font-serif);
     font-weight: 600;
-    font-size: 1.22rem;
-    color: #2a211b;
+    font-size: var(--text-lg);
+    letter-spacing: -0.01em;
+    color: var(--text-heading);
 }
 
 .rooms-shelf-all {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
     flex-shrink: 0;
     text-decoration: none;
-    font-family: "Outfit", sans-serif;
-    font-size: 0.78rem;
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
     font-weight: 600;
-    color: #9a5e1f;
-    transition: gap 0.25s ease;
+    color: var(--accent-amber-strong);
+    transition: gap var(--duration-normal) var(--ease-out-quart),
+        color var(--duration-normal) var(--ease-out-quart);
 }
 
-.rooms-shelf-all:hover { gap: 8px; }
+.rooms-shelf-all:hover {
+    gap: var(--space-2);
+    color: var(--accent-amber-strong);
+}
+
+/* ── Carousel viewport: track + arrow controls + edge fades ── */
+.rooms-shelf-viewport {
+    position: relative;
+}
 
 .rooms-shelf-track {
     display: flex;
-    gap: 12px;
+    gap: var(--space-3);
+    width: 100%;
+    min-width: 0;
     overflow-x: auto;
-    padding-bottom: 6px;
-    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+    padding-bottom: var(--space-2);
     scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
+    /* Scrollbar hidden — the arrows (and swipe on touch) drive navigation. */
+    scrollbar-width: none;
 }
 
-.rooms-shelf-track::-webkit-scrollbar { height: 6px; }
-.rooms-shelf-track::-webkit-scrollbar-thumb {
-    background: rgba(74, 56, 38, 0.2);
-    border-radius: 999px;
+.rooms-shelf-track::-webkit-scrollbar { display: none; }
+
+/* Arrow controls — circular glass, warm on hover, springy on press. */
+.rooms-shelf-nav {
+    position: absolute;
+    top: 50%;
+    margin-top: -19px; /* center a 38px control without claiming `transform` */
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-light);
+    background: var(--bg-elevated);
+    color: var(--accent-amber-strong);
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: border-color var(--duration-normal) var(--ease-out-quart),
+        box-shadow var(--duration-normal) var(--ease-out-quart),
+        background var(--duration-normal) var(--ease-out-quart);
+}
+
+.rooms-shelf-nav:hover {
+    border-color: var(--accent-amber);
+    box-shadow: var(--shadow-warm-glow);
+}
+
+.rooms-shelf-nav--left { left: -6px; }
+.rooms-shelf-nav--right { right: -6px; }
+
+.rooms-shelf-nav-chevron {
+    transition: transform var(--duration-normal) var(--ease-out-quart);
+}
+
+.rooms-shelf-nav--left:hover .rooms-shelf-nav-chevron { transform: translateX(-2px); }
+.rooms-shelf-nav--right:hover .rooms-shelf-nav-chevron { transform: translateX(2px); }
+
+/* Soft edge fades that hint at more rooms beyond the cut line. */
+.rooms-shelf-fade {
+    position: absolute;
+    top: 0;
+    bottom: var(--space-2);
+    width: 56px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--duration-normal) var(--ease-out-quart);
+}
+
+.rooms-shelf-fade.is-visible { opacity: 1; }
+
+.rooms-shelf-fade--left {
+    left: 0;
+    background: linear-gradient(90deg, var(--bg-glass), transparent);
+}
+
+.rooms-shelf-fade--right {
+    right: 0;
+    background: linear-gradient(270deg, var(--bg-glass), transparent);
+}
+
+/* On touch, the swipe gesture is the natural control — drop the arrows/fades. */
+@media (hover: none) {
+    .rooms-shelf-nav,
+    .rooms-shelf-fade { display: none; }
 }
 
 .rooms-chip {
+    position: relative;
     flex: 0 0 auto;
     width: 138px;
     scroll-snap-align: start;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
     padding: 14px 10px 13px;
-    border-radius: 14px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
     text-decoration: none;
-    background: rgba(255, 255, 255, 0.66);
-    border: 1px solid rgba(74, 56, 38, 0.1);
-    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-        box-shadow 0.28s ease, background 0.28s ease;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-card);
+    transition: transform var(--duration-normal) var(--ease-out-quart),
+        box-shadow var(--duration-normal) var(--ease-out-quart),
+        border-color var(--duration-normal) var(--ease-out-quart);
+}
+
+/* The room's own background, served from the pre-generated __thumb variant
+   (~480px WebP) so it stays light on memory and scrolls smoothly. */
+.rooms-chip-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Legibility veil — darker toward the bottom where the text sits. */
+.rooms-chip-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+        180deg,
+        rgba(18, 14, 8, 0.28) 0%,
+        rgba(18, 14, 8, 0.34) 38%,
+        rgba(18, 14, 8, 0.74) 100%
+    );
+}
+
+/* Keep all chip content above the image + veil. */
+.rooms-chip-avatar-ring,
+.rooms-chip-name,
+.rooms-chip-handle,
+.rooms-chip-meta {
+    position: relative;
+    z-index: 2;
+}
+
+/* Over a photo, switch text to light and the meta pill to frosted white. */
+.rooms-chip--has-image .rooms-chip-name {
+    color: #fff;
+}
+
+.rooms-chip--has-image .rooms-chip-handle {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.rooms-chip--has-image .rooms-chip-meta {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .rooms-chip:hover {
     transform: translateY(-3px);
-    background: #ffffff;
-    box-shadow: 0 16px 30px -20px rgba(58, 38, 18, 0.55);
+    border-color: var(--accent-amber-soft);
+    box-shadow: var(--shadow-hover-lift);
+}
+
+.rooms-chip:active {
+    transform: translateY(-1px) scale(0.98);
 }
 
 .rooms-chip-avatar-ring {
@@ -533,12 +697,28 @@
     height: 54px;
     border-radius: 50%;
     padding: 2.5px;
-    background: #e3d2bb;
-    margin-bottom: 3px;
+    background: var(--bg-hover);
+    margin-bottom: var(--space-1);
 }
 
-.rooms-chip-avatar-ring--themed {
-    background: linear-gradient(135deg, #bd7b32, #9a5e1f);
+/* Badge glow rings (Legend / OG only) — no badge means a plain ring.
+   Reuses the pdc-glow-* keyframes defined above. */
+.rooms-chip-avatar-ring--legend {
+    background: #FFD700;
+    box-shadow:
+        0 0 6px 1px rgba(255, 215, 0, 0.5),
+        0 0 12px 2px rgba(255, 215, 0, 0.35),
+        0 0 20px 4px rgba(255, 215, 0, 0.2);
+    animation: pdc-glow-legend 2s ease-in-out infinite alternate;
+}
+
+.rooms-chip-avatar-ring--og {
+    background: #9B59FF;
+    box-shadow:
+        0 0 6px 1px rgba(155, 89, 255, 0.5),
+        0 0 12px 2px rgba(155, 89, 255, 0.35),
+        0 0 20px 4px rgba(155, 89, 255, 0.2);
+    animation: pdc-glow-og 2s ease-in-out infinite alternate;
 }
 
 .rooms-chip-avatar {
@@ -547,14 +727,14 @@
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    background: #f4ece0;
+    background: var(--bg-secondary);
 }
 
 .rooms-chip-name {
-    font-family: "Playfair Display", serif;
+    font-family: var(--font-ui);
     font-weight: 600;
-    font-size: 0.86rem;
-    color: #2a211b;
+    font-size: var(--text-base);
+    color: var(--text-heading);
     text-align: center;
     line-height: 1.15;
     max-width: 100%;
@@ -564,9 +744,9 @@
 }
 
 .rooms-chip-handle {
-    font-family: "Outfit", sans-serif;
-    font-size: 0.7rem;
-    color: #9a8a7c;
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
     max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
@@ -574,21 +754,17 @@
 }
 
 .rooms-chip-meta {
-    margin-top: 3px;
-    font-family: "Outfit", sans-serif;
+    margin-top: var(--space-1);
+    font-family: var(--font-ui);
     font-size: 0.66rem;
     font-weight: 600;
-    color: #bd7b32;
-    background: rgba(189, 123, 50, 0.12);
+    color: var(--accent-amber-strong);
+    background: var(--accent-amber-soft);
     padding: 2px 8px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .pdc-card,
-    .pdc-room-backdrop,
-    .pdc-visit-cta,
-    .pdc-visit-cta svg,
     .rooms-chip {
         transition: none;
     }

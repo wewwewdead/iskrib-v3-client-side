@@ -92,9 +92,21 @@
     pointer-events: auto;
     cursor: grab;
     touch-action: none;
+    transition: transform 0.16s cubic-bezier(0.25, 1, 0.5, 1),
+        filter 0.16s ease;
 }
 
 .pt-sticker.is-editable:active {
+    cursor: grabbing;
+}
+
+/* Tactile lift while a sticker is being dragged — keeps its own rotation/scale. */
+.pt-sticker.is-editable.is-dragging {
+    transform: translate(-50%, -50%)
+        rotate(calc(var(--pt-rot, 0deg) - 4deg))
+        scale(calc(var(--pt-scl, 1) * 1.14));
+    filter: drop-shadow(0 7px 16px rgba(0, 0, 0, 0.35));
+    z-index: 5;
     cursor: grabbing;
 }
 

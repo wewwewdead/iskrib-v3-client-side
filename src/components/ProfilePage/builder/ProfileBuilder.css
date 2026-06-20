@@ -111,17 +111,22 @@
     font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.18s ease, border-color 0.18s ease;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
 }
 
 .pt-builder-tab:hover {
     background: var(--bg-glass, rgba(0, 0, 0, 0.04));
 }
 
+.pt-builder-tab:active {
+    transform: scale(0.96);
+}
+
 .pt-builder-tab.is-active {
     background: rgba(212, 168, 83, 0.16);
     border-color: rgba(212, 168, 83, 0.5);
     color: #8a6d3b;
+    font-weight: 600;
 }
 
 .pt-builder-panel-scroll {
@@ -182,6 +187,11 @@
 
 .pt-option-btn:hover {
     border-color: rgba(212, 168, 83, 0.6);
+    background: rgba(212, 168, 83, 0.06);
+}
+
+.pt-option-btn:active {
+    transform: scale(0.96);
 }
 
 .pt-option-btn.is-active {
@@ -236,22 +246,51 @@
     background: transparent;
     color: inherit;
     cursor: pointer;
-    transition: border-color 0.18s ease, transform 0.18s ease;
+    transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .pt-preset-card:hover {
     transform: translateY(-2px);
     border-color: rgba(212, 168, 83, 0.6);
+    box-shadow: 0 6px 16px rgba(80, 60, 40, 0.1);
+}
+
+.pt-preset-card:active {
+    transform: translateY(-1px) scale(0.985);
 }
 
 .pt-preset-card.is-active {
     border-color: #D4A853;
-    box-shadow: 0 0 0 2px rgba(212, 168, 83, 0.25);
+    box-shadow: 0 0 0 2px rgba(212, 168, 83, 0.3), 0 6px 18px rgba(212, 168, 83, 0.2);
 }
 
 .pt-preset-swatch {
+    position: relative;
     height: 48px;
     border-radius: 8px;
+    overflow: hidden;
+}
+
+.pt-preset-check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20, 18, 14, 0.6);
+    color: #fff;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: pt-pop-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pt-pop-in {
+    from { opacity: 0; transform: scale(0.4); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .pt-preset-label {
@@ -279,6 +318,11 @@
 
 .pt-font-btn:hover {
     border-color: rgba(212, 168, 83, 0.6);
+    background: rgba(212, 168, 83, 0.05);
+}
+
+.pt-font-btn:active {
+    transform: scale(0.97);
 }
 
 .pt-font-btn.is-active {
@@ -303,6 +347,33 @@
 
 .pt-section-name {
     font-size: 0.9rem;
+    transition: color 0.18s ease, opacity 0.18s ease;
+}
+
+.pt-section-row:not(.is-visible) .pt-section-name {
+    opacity: 0.55;
+}
+
+.pt-section-control {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.pt-section-state {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.45;
+    min-width: 54px;
+    text-align: right;
+    transition: color 0.18s ease, opacity 0.18s ease;
+}
+
+.pt-section-row.is-visible .pt-section-state {
+    color: #8a6d3b;
+    opacity: 0.9;
 }
 
 .pt-toggle {
@@ -374,6 +445,11 @@
 .pt-sticker-swatch:hover:not(:disabled) {
     transform: translateY(-2px);
     border-color: rgba(212, 168, 83, 0.6);
+    background: rgba(212, 168, 83, 0.06);
+}
+
+.pt-sticker-swatch:active:not(:disabled) {
+    transform: translateY(0) scale(0.92);
 }
 
 .pt-sticker-swatch:disabled {
@@ -444,6 +520,10 @@
 }
 
 .pt-builder-save {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
     border: none;
     background: linear-gradient(135deg, #D4A853, #b8893a);
     color: #fff;
@@ -458,6 +538,37 @@
 .pt-builder-cancel:disabled {
     opacity: 0.6;
     cursor: default;
+}
+
+/* Calm success: button settles into a confirmed green, full opacity. */
+.pt-builder-save.is-saved,
+.pt-builder-save.is-saved:disabled {
+    background: linear-gradient(135deg, var(--color-success, #16A34A), #15803d);
+    opacity: 1;
+    cursor: default;
+}
+
+.pt-save-check {
+    animation: pt-pop-in 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Preview gently glows when the theme is saved. */
+.pt-builder-preview {
+    transition: box-shadow 0.3s ease;
+}
+
+.pt-builder-preview.is-saved .pt-preview-surface {
+    animation: pt-saved-glow 1s ease-out;
+}
+
+@keyframes pt-saved-glow {
+    0% { box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); }
+    35% {
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18),
+            0 0 0 3px rgba(212, 168, 83, 0.55),
+            0 0 32px rgba(212, 168, 83, 0.4);
+    }
+    100% { box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); }
 }
 
 /* ── Customize entry button (on the profile) ─────────────────────────────── */
@@ -521,7 +632,20 @@
 
 @media (prefers-reduced-motion: reduce) {
     .pt-builder-overlay,
-    .pt-builder {
+    .pt-builder,
+    .pt-preset-card,
+    .pt-option-btn,
+    .pt-font-btn,
+    .pt-builder-tab,
+    .pt-sticker-swatch,
+    .pt-builder-preview {
         transition: none !important;
+    }
+    /* No glow pulse or pop-in under reduced motion — the state still changes,
+       it just doesn't animate. */
+    .pt-builder-preview.is-saved .pt-preview-surface,
+    .pt-preset-check,
+    .pt-save-check {
+        animation: none !important;
     }
 }

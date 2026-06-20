@@ -773,6 +773,12 @@ const PostCards = () => {
                                             <PromptAttribution promptText={journal.writing_prompts?.prompt_text} />
                                             <p className="feed-text-content">{previewText}</p>
                                         </div>
+                                        <span className="feed-read-affordance" aria-hidden="true">
+                                            Read
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M5 12h14M13 6l6 6-6 6" />
+                                            </svg>
+                                        </span>
                                     </div>
                                 </div>
                             </>

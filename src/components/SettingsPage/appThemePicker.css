@@ -1,0 +1,119 @@
+/* Settings → Appearance theme picker. Token-driven so every card re-skins
+   itself live in whatever theme is active. */
+
+.app-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.app-theme-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid var(--border-card);
+    background: var(--bg-primary);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease,
+        box-shadow 0.2s ease, transform var(--duration-fast, 150ms) var(--ease-out-quart, ease);
+}
+
+.app-theme-card:hover {
+    border-color: var(--accent-amber);
+}
+
+.app-theme-card:active {
+    transform: scale(0.99);
+}
+
+/* The native radio drives selection + keyboard arrow navigation, but is hidden;
+   the label is the visible affordance. Kept focusable for accessibility. */
+.app-theme-radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    pointer-events: none;
+}
+
+/* Visible, on-theme focus ring when the hidden radio is keyboard-focused. */
+.app-theme-card:has(.app-theme-radio:focus-visible) {
+    box-shadow: var(--focus-ring);
+    border-color: var(--accent-amber);
+}
+
+.app-theme-card.is-selected {
+    border-color: var(--accent-amber);
+    background: var(--accent-amber-soft);
+}
+
+.app-theme-swatches {
+    display: flex;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm, 8px);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-card-sm);
+}
+
+.app-theme-swatch {
+    width: 14px;
+    height: 36px;
+}
+
+.app-theme-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.app-theme-name {
+    font-family: var(--font-ui);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-heading);
+}
+
+.app-theme-desc {
+    font-family: var(--font-ui);
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+
+.app-theme-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent-amber);
+    color: #fff;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.18s ease, transform 0.18s var(--ease-spring, ease);
+}
+
+.app-theme-card.is-selected .app-theme-check {
+    opacity: 1;
+    transform: scale(1);
+}
+
+@media (max-width: 600px) {
+    .app-theme-grid {
+        grid-template-columns: 1fr;
+    }
+}

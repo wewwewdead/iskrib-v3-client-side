@@ -8,6 +8,8 @@
     "prebuild": "npm run seo:sitemap",
     "build": "vite build && npm run seo:prerender",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "seo:sitemap": "node ./scripts/generate-sitemap.mjs",
     "seo:prerender": "node ./scripts/prerender-routes.mjs"
@@ -39,11 +41,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@vitejs/plugin-react": "^5.0.4",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
-    "vite": "^7.1.7"
+    "jsdom": "^28.1.0",
+    "vite": "^7.1.7",
+    "vitest": "^2.1.9"
   }
 }

@@ -196,7 +196,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
             <div className="cm-list">
                 {isLoading ? (
                     <div className="cm-loading">
-                        <MoonLoader color='rgba(19, 77, 104, 1)' size={20} loading={isLoading}/>
+                        <MoonLoader color='var(--loader-color)' size={20} loading={isLoading}/>
                     </div>
                 ) : (
                     commentsData?.map((comment, index) => (
@@ -207,7 +207,7 @@ const CommentSection = ({onclose, postId, receiverId})=>{
                 {hasNextPage && (
                     <button onClick={(e) => handleSeeMoreComments(e)} className="cm-load-more">
                         See more comments
-                        {isFetchingNextPage && (<MoonLoader size={12} speedMultiplier={0.5} color='rgba(19, 77, 104, 1)'/>)}
+                        {isFetchingNextPage && (<MoonLoader size={12} speedMultiplier={0.5} color='var(--loader-color)'/>)}
                     </button>
                 )}
             </div>

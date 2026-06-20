@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../Context/useAuth.js';
 import { useQueryClient } from '@tanstack/react-query';
 import supabase from '../../utils/supabaseClient.js';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { updateInterests } from '../../../API/Api.js';
+import { updateInterests, deleteAccount } from '../../../API/Api.js';
+import IskribButton from '../../design/ui/IskribButton.jsx';
+import IskribModal from '../../design/ui/IskribModal.jsx';
+import PageTransition from '../../design/ui/PageTransition.jsx';
+import AppThemePicker from './AppThemePicker.jsx';
 import './SettingsPage.css';
+
+const DELETE_CONFIRM_PHRASE = 'DELETE';
 
 const TOPICS = [
     'Poetry', 'Fiction', 'Journals', 'Essays',
@@ -29,7 +35,7 @@ const GOALS = [
 ];
 
 const SettingsPage = () => {
-    const { session, user } = useAuth();
+    const { session, user, signOut } = useAuth();
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -50,6 +56,12 @@ const SettingsPage = () => {
     const [emailLoading, setEmailLoading] = useState(false);
     const [emailError, setEmailError] = useState('');
     const [emailSuccess, setEmailSuccess] = useState('');
+
+    // Account deletion state
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteConfirmation, setDeleteConfirmation] = useState('');
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
 
     // Interests state
     const userData = user?.userData?.[0];
@@ -93,6 +105,40 @@ const SettingsPage = () => {
             setInterestsError(err?.message || 'Something went wrong. Please try again.');
         } finally {
             setInterestsLoading(false);
+        }
+    };
+
+    const closeDeleteModal = useCallback(() => {
+        if (deleteLoading) return;
+        setShowDeleteModal(false);
+        setDeleteConfirmation('');
+        setDeleteError('');
+    }, [deleteLoading]);
+
+    const handleDeleteAccount = async () => {
+        if (deleteConfirmation !== DELETE_CONFIRM_PHRASE || deleteLoading) return;
+        setDeleteError('');
+        setDeleteLoading(true);
+
+        try {
+            await deleteAccount(session?.access_token, deleteConfirmation);
+
+            // Account is gone server-side. Tear down local session + cache and
+            // leave no stale profile/session state behind.
+            try {
+                await signOut();
+            } catch {
+                // The server already deleted the auth user; ensure local cleanup
+                // even if the local sign-out call hiccups.
+                await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+                queryClient.clear();
+            }
+
+            navigate('/', { replace: true });
+        } catch (err) {
+            // Keep the modal open and surface a safe error — no fake success.
+            setDeleteError(err?.message || 'Failed to delete your account. Please try again.');
+            setDeleteLoading(false);
         }
     };
 
@@ -188,7 +234,7 @@ const SettingsPage = () => {
     const isEmailDisabled = !newEmail || emailLoading;
 
     return (
-        <div className="settings-page">
+        <PageTransition className="settings-page">
             <div className="settings-header">
                 <button className="settings-back-btn" onClick={() => navigate(-1)} aria-label="Go back">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -368,7 +414,86 @@ const SettingsPage = () => {
                     <div className="form-message success" role="status">{interestsSuccess}</div>
                 )}
             </section>
-        </div>
+
+            {/* Appearance Section — App Theme picker */}
+            <AppThemePicker />
+
+            {/* Danger Zone Section */}
+            <section className="settings-section settings-danger-zone">
+                <h2 className="settings-section-title settings-danger-title">Danger Zone</h2>
+                <p className="settings-current-value">
+                    Delete your account and remove your profile, writings, guestbook notes, stories,
+                    notifications, and uploaded media from Iskrib.
+                </p>
+                <IskribButton
+                    type="button"
+                    variant="danger"
+                    size="md"
+                    className="settings-danger-button"
+                    onClick={() => { setDeleteError(''); setDeleteConfirmation(''); setShowDeleteModal(true); }}
+                >
+                    Delete account
+                </IskribButton>
+            </section>
+
+            <IskribModal
+                open={showDeleteModal}
+                onClose={closeDeleteModal}
+                loading={deleteLoading}
+                labelledBy="delete-account-title"
+                describedBy="delete-account-warning"
+                className="settings-delete-modal"
+            >
+                <h2 id="delete-account-title" className="settings-modal-title">Delete your account?</h2>
+                <p id="delete-account-warning" className="settings-modal-warning">
+                    This cannot be undone. You won&rsquo;t be able to recover your profile, writings,
+                    guestbook notes, stories, comments, or uploaded media after deletion.
+                </p>
+
+                <div className="settings-field">
+                    <label htmlFor="delete-confirm">
+                        Type <strong>{DELETE_CONFIRM_PHRASE}</strong> to confirm.
+                    </label>
+                    <input
+                        id="delete-confirm"
+                        type="text"
+                        className="auth-input"
+                        value={deleteConfirmation}
+                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                        placeholder={DELETE_CONFIRM_PHRASE}
+                        autoComplete="off"
+                        autoFocus
+                        disabled={deleteLoading}
+                    />
+                </div>
+
+                {deleteError && (
+                    <div className="form-message error" role="alert">{deleteError}</div>
+                )}
+
+                <div className="settings-modal-actions">
+                    <IskribButton
+                        type="button"
+                        variant="ghost"
+                        size="md"
+                        onClick={closeDeleteModal}
+                        disabled={deleteLoading}
+                    >
+                        Cancel
+                    </IskribButton>
+                    <IskribButton
+                        type="button"
+                        variant="danger"
+                        size="md"
+                        onClick={handleDeleteAccount}
+                        loading={deleteLoading}
+                        disabled={deleteConfirmation !== DELETE_CONFIRM_PHRASE}
+                    >
+                        {deleteLoading ? 'Deleting…' : 'Delete my account'}
+                    </IskribButton>
+                </div>
+            </IskribModal>
+        </PageTransition>
     );
 };
 

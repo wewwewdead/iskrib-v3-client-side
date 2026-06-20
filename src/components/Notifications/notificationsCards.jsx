@@ -252,8 +252,16 @@ const NotificationCards = () =>{
                             </div>
 
                             <div
-                            className="notification-content"
+                            className="notification-content pressable"
+                            role="button"
+                            tabIndex={0}
                             onClick={(e) => handleReadNotif(e, notification)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleReadNotif(e, notification);
+                                }
+                            }}
                             >
                                 {displayType === 'follow' ? (
                                     <div className="notification-content-text">

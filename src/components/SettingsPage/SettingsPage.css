@@ -366,6 +366,107 @@
     background: rgba(212, 168, 83, 0.12);
 }
 
+/* ── Danger Zone ── */
+.settings-page .settings-danger-zone {
+    border-color: rgba(220, 38, 38, 0.28);
+}
+
+.settings-page .settings-danger-title {
+    color: var(--color-danger);
+}
+
+/* The danger button is an <IskribButton variant="danger"> — let the primitive
+   own its look (pill, token danger colour, hover/press) so it matches the
+   modal's confirm button. Only position it here. */
+.settings-page .settings-danger-button {
+    margin-top: 16px;
+    align-self: flex-start;
+}
+
+/* ── Delete confirmation modal ──
+   The shell, backdrop, focus trap, Escape/backdrop close (all loading-guarded)
+   now come from <IskribModal>. Only the content typography lives here. */
+.settings-modal-title {
+    margin: 0 0 12px;
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--color-danger);
+}
+
+.settings-modal-warning {
+    margin: 0 0 18px;
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.settings-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+/* IskribModal portals to <body>, so the page-scoped input/message styles no
+   longer reach it — re-declare them scoped to the modal so the confirm field
+   and error keep their familiar look. */
+.settings-delete-modal .auth-input {
+    font-family: var(--font-ui);
+    width: 100%;
+    border: 1px solid var(--border-card);
+    background: var(--bg-primary);
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.settings-delete-modal .auth-input::placeholder {
+    color: var(--text-faint);
+    font-style: italic;
+}
+
+.settings-delete-modal .auth-input:focus {
+    outline: none;
+    border-color: var(--accent-amber);
+    box-shadow: 0 0 0 3px var(--accent-amber-soft);
+    background: var(--bg-primary);
+}
+
+.settings-delete-modal .form-message {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.settings-delete-modal .form-message.error {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+[data-theme="dark"] .settings-delete-modal .auth-input {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+[data-theme="dark"] .settings-delete-modal .auth-input::placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme="dark"] .settings-delete-modal .auth-input:focus {
+    background: var(--bg-elevated);
+}
+
 @media (max-width: 600px) {
     .settings-page {
         padding: 20px 16px 48px;
@@ -377,5 +478,14 @@
 
     .settings-title {
         font-size: 1.2rem;
+    }
+
+    /* Stack the destructive action under Cancel and let both fill the width. */
+    .settings-modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .settings-modal-actions .iskrib-btn {
+        width: 100%;
     }
 }

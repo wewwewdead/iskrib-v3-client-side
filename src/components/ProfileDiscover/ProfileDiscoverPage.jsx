@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getProfileDiscover } from "../../../API/Api";
 import ProfileDiscoverCard from "./ProfileDiscoverCard";
+import PageTransition from "../../design/ui/PageTransition";
 import "./profileDiscover.css";
 
 // Section order + editorial copy. A section only renders if it has cards.
@@ -76,7 +77,7 @@ const ProfileDiscoverPage = () => {
     }, [data]);
 
     return (
-        <div className="pd-page">
+        <PageTransition className="pd-page">
             <motion.header
                 className="pd-hero"
                 initial={{ opacity: 0, y: 12 }}
@@ -130,7 +131,7 @@ const ProfileDiscoverPage = () => {
                         </div>
                     </section>
                 ))}
-        </div>
+        </PageTransition>
     );
 };
 

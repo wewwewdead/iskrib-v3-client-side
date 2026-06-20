@@ -16,7 +16,15 @@ const PresetsPanel = ({ theme, onApplyPreset }) => (
                         className="pt-preset-swatch"
                         style={{ background: `linear-gradient(135deg, ${preset.swatch[0]} 0%, ${preset.swatch[1]} 100%)` }}
                         aria-hidden="true"
-                    />
+                    >
+                        {theme.presetId === preset.id && (
+                            <span className="pt-preset-check" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M5 13l4 4L19 7" />
+                                </svg>
+                            </span>
+                        )}
+                    </span>
                     <span className="pt-preset-label">{preset.label}</span>
                 </button>
             ))}

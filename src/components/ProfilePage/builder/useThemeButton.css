@@ -38,13 +38,26 @@
 }
 
 .use-theme-modal {
+    position: relative;
     width: min(420px, 100%);
-    padding: 1.6rem;
+    padding: 1.7rem 1.6rem 1.6rem;
     border-radius: 18px;
     background: var(--bg-elevated, #fff);
     color: var(--text-primary, #1a1a1a);
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+    overflow: hidden;
+}
+
+/* Warm editorial accent across the top of the dialog. */
+.use-theme-modal::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #D4A853, #b8893a);
 }
 
 .use-theme-title {
@@ -104,10 +117,19 @@
     box-shadow: 0 6px 18px rgba(212, 168, 83, 0.4);
 }
 
+.use-theme-confirm:active:not(:disabled),
+.use-theme-cancel:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
 .use-theme-confirm:disabled,
 .use-theme-cancel:disabled {
     opacity: 0.6;
     cursor: default;
+}
+
+.use-theme-btn:active {
+    transform: scale(0.97);
 }
 
 @media (prefers-reduced-motion: reduce) {

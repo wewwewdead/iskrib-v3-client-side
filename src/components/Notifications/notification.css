@@ -85,10 +85,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(212, 168, 83, 0.08);
+    position: relative;
+    background-color: var(--accent-amber-soft);
     width: 100%;
     height: 180px;
     border-bottom: 0.7px solid rgba(151, 151, 151, 0.363);
+}
+/* Design Delight P1 — calm unread marker: a small amber rail dot, not a badge. */
+.notification-cards-unread::before{
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-pill);
+    background: var(--accent-amber);
+    transform: translateY(-50%);
+}
+/* Hover affordance on both read + unread. */
+.notification-cards,
+.notification-cards-unread{
+    transition: background-color var(--duration-fast) var(--ease-out-quart);
+}
+.notification-cards:hover{
+    background-color: var(--bg-hover);
 }
 .notification-cards-child-container{
     display: flex;
