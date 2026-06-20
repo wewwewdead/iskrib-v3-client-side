@@ -20,9 +20,17 @@
 
 .pt-guestbook-header {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 0.75rem;
     margin-bottom: 0.9rem;
+}
+
+.pt-guestbook-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
 }
 
 .pt-guestbook-title {
@@ -32,9 +40,59 @@
     font-family: var(--pt-font, "Playfair Display", serif);
 }
 
+.pt-guestbook-subtitle {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
 .pt-guestbook-count {
     font-size: 0.78rem;
     opacity: 0.6;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Compact mode (hero-adjacent module) ──────────────────────────────────── */
+.pt-guestbook--compact {
+    margin: 0.9rem auto 0.6rem;
+    padding: 1rem 1.1rem 1.1rem;
+}
+
+.pt-guestbook--compact .pt-guestbook-header {
+    margin-bottom: 0.7rem;
+}
+
+.pt-guestbook--compact .pt-guestbook-composer {
+    margin-bottom: 0.85rem;
+}
+
+.pt-guestbook--compact .pt-guestbook-input {
+    min-height: 40px;
+}
+
+.pt-guestbook--compact .pt-guestbook-entries {
+    gap: 0.65rem;
+}
+
+.pt-guestbook-toggle {
+    margin-top: 0.85rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--pt-card-border-color, var(--border-light, rgba(0, 0, 0, 0.15)));
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    opacity: 0.85;
+    transition: opacity 0.18s ease, background 0.18s ease;
+}
+
+.pt-guestbook-toggle:hover {
+    opacity: 1;
+    background: var(--pt-accent, rgba(0, 0, 0, 0.05));
 }
 
 /* ── Composer ─────────────────────────────────────────────────────────────── */

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
-import { useLocation } from "react-router-dom";
+import { useLocation, useOutletContext } from "react-router-dom";
 import { useAuth } from "../../../Context/useAuth";
 import { getVisitedProfileMedia } from "../../../../API/Api";
 
@@ -11,8 +11,9 @@ const PROFILE_MEDIA_PAGE_SIZE = 5;
 const VisitedProfileMediaSection = () => {
     const location = useLocation();
     const stateData = location.state;
+    const { visitedUserId: ctxUserId } = useOutletContext() || {};
     const queryUserId = new URLSearchParams(location.search).get("userId");
-    const visitedUserId = stateData?.userId || queryUserId;
+    const visitedUserId = stateData?.userId || ctxUserId || queryUserId;
     const { session } = useAuth();
 
     const [selectedMedia, setSelectedMedia] = useState(null);

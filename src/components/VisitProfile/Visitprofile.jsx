@@ -349,6 +349,11 @@ const Visitprofile = () =>{
                     )
                 }
 
+                {/* Guestbook sits directly below the hero — the social doorway, not buried under posts */}
+                {guestbookUsername && isSectionVisible(profileTheme, 'guestbook') && (
+                    <ProfileGuestbook username={guestbookUsername} profileUserId={visitedUserId} compact />
+                )}
+
                 <div className='my-profile-tablist'>
                     {visibleTablists.map((tab, index) => (
                          <div key={index} onClick={() => tab.action()} className='tab-container'>
@@ -359,11 +364,7 @@ const Visitprofile = () =>{
                    
                 </div>
 
-                <Outlet/>
-
-                {guestbookUsername && isSectionVisible(profileTheme, 'guestbook') && (
-                    <ProfileGuestbook username={guestbookUsername} profileUserId={visitedUserId} />
-                )}
+                <Outlet context={{ visitedUserId }}/>
 
             </div>
 

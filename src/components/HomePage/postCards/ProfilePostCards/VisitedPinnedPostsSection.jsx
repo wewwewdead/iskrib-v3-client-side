@@ -3,12 +3,13 @@ import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../../Context/useAuth';
 import { getVisitedPinnedJournals } from '../../../../../API/Api';
 import { handleCLickContent } from '../../../../../helpers/handleClicks';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import PinnedPostCard from './PinnedPostCard';
 
 const VisitedPinnedPostsSection = () => {
     const location = useLocation();
-    const userId = location.state?.userId || new URLSearchParams(location.search).get('userId');
+    const { visitedUserId: ctxUserId } = useOutletContext() || {};
+    const userId = location.state?.userId || ctxUserId || new URLSearchParams(location.search).get('userId');
     const { user } = useAuth();
     const navigate = useNavigate();
     const loggedInUserId = user?.userData?.[0]?.id;

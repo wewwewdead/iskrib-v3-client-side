@@ -1,0 +1,596 @@
+/* ────────────────────────────────────────────────────────────────────────
+   Profile Discovery — "personal rooms" (Phase 3)
+   Warm editorial aesthetic: Playfair Display headings, Outfit body, ember
+   accent, parchment glass. Self-contained tokens so it reads consistently
+   regardless of the surrounding app theme.
+   ──────────────────────────────────────────────────────────────────────── */
+
+.pd-page {
+    --pd-ink: #2a211b;
+    --pd-ink-soft: #6b5d52;
+    --pd-ink-faint: #9a8a7c;
+    --pd-ember: #bd7b32;
+    --pd-ember-deep: #9a5e1f;
+    --pd-paper: #fbf6ee;
+    --pd-paper-2: #f4ece0;
+    --pd-line: rgba(74, 56, 38, 0.12);
+    --pd-card-shadow: 0 18px 44px -28px rgba(58, 38, 18, 0.55);
+
+    width: 100%;
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 26px 20px 120px;
+    box-sizing: border-box;
+    color: var(--pd-ink);
+}
+
+/* ── Hero ── */
+.pd-hero {
+    position: relative;
+    padding: 30px 30px 32px;
+    margin-bottom: 30px;
+    border-radius: 22px;
+    background:
+        radial-gradient(120% 140% at 100% 0%, rgba(189, 123, 50, 0.16), transparent 55%),
+        linear-gradient(160deg, var(--pd-paper) 0%, var(--pd-paper-2) 100%);
+    border: 1px solid var(--pd-line);
+    box-shadow: var(--pd-card-shadow);
+    overflow: hidden;
+}
+
+.pd-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(74, 56, 38, 0.05) 1px, transparent 1px);
+    background-size: 18px 18px;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.pd-hero-eyebrow {
+    position: relative;
+    display: inline-block;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--pd-ember-deep);
+    margin-bottom: 12px;
+}
+
+.pd-hero-title {
+    position: relative;
+    margin: 0 0 10px;
+    font-family: "Playfair Display", serif;
+    font-weight: 700;
+    font-size: clamp(1.9rem, 4.4vw, 2.9rem);
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    color: var(--pd-ink);
+}
+
+.pd-hero-sub {
+    position: relative;
+    margin: 0;
+    max-width: 48ch;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.98rem;
+    line-height: 1.55;
+    color: var(--pd-ink-soft);
+}
+
+/* ── Section ── */
+.pd-section {
+    margin-bottom: 42px;
+}
+
+.pd-section-head {
+    margin-bottom: 18px;
+    padding-left: 2px;
+}
+
+.pd-section-eyebrow {
+    display: block;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--pd-ember);
+    margin-bottom: 5px;
+}
+
+.pd-section-title {
+    margin: 0 0 4px;
+    font-family: "Playfair Display", serif;
+    font-weight: 600;
+    font-size: clamp(1.3rem, 2.6vw, 1.6rem);
+    color: var(--pd-ink);
+    letter-spacing: -0.01em;
+}
+
+.pd-section-blurb {
+    margin: 0;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.86rem;
+    font-style: italic;
+    color: var(--pd-ink-faint);
+}
+
+.pd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+    gap: 18px;
+}
+
+/* ── Card ── */
+.pdc-card {
+    border-radius: 18px;
+    background: linear-gradient(165deg, #ffffff 0%, var(--pd-paper) 100%);
+    border: 1px solid var(--pd-line);
+    box-shadow: var(--pd-card-shadow);
+    overflow: hidden;
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pdc-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 26px 54px -26px rgba(58, 38, 18, 0.6);
+}
+
+.pdc-card-link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* room preview window */
+.pdc-room {
+    position: relative;
+    height: 92px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #efe4d4, #e3d2bb);
+}
+
+.pdc-room-backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover !important;
+    background-position: center !important;
+    transform: scale(1.04);
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pdc-card:hover .pdc-room-backdrop {
+    transform: scale(1.12);
+}
+
+.pdc-room-backdrop--bare {
+    background:
+        radial-gradient(90% 120% at 15% 0%, rgba(189, 123, 50, 0.4), transparent 60%),
+        linear-gradient(135deg, #e9dac2, #d8c2a3);
+}
+
+.pdc-room-veil {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(28, 18, 8, 0) 30%, rgba(28, 18, 8, 0.34) 100%);
+}
+
+.pdc-room-lines {
+    position: absolute;
+    left: 16px;
+    bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pdc-room-line {
+    display: block;
+    width: 64px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+.pdc-room-line--short {
+    width: 44px;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.pdc-room-line--shorter {
+    width: 30px;
+    background: rgba(255, 255, 255, 0.42);
+}
+
+.pdc-room-tag {
+    position: absolute;
+    top: 11px;
+    right: 11px;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(4px);
+}
+
+/* body */
+.pdc-body {
+    flex: 1;
+    padding: 16px 16px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.pdc-identity {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-top: -34px; /* lift avatar to straddle the room preview */
+}
+
+.pdc-avatar-ring {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    padding: 3px;
+    background: var(--pd-paper);
+    box-shadow: 0 4px 12px rgba(58, 38, 18, 0.28);
+}
+
+.pdc-avatar-ring--themed {
+    background: linear-gradient(135deg, var(--pd-ember), var(--pd-ember-deep));
+}
+
+.pdc-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    background: var(--pd-paper-2);
+}
+
+.pdc-names {
+    min-width: 0;
+    padding-top: 28px;
+}
+
+.pdc-name-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pdc-name {
+    margin: 0;
+    font-family: "Playfair Display", serif;
+    font-weight: 600;
+    font-size: 1.04rem;
+    line-height: 1.1;
+    color: var(--pd-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pdc-handle {
+    display: block;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.78rem;
+    color: var(--pd-ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pdc-bio {
+    margin: 0;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--pd-ink-soft);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.pdc-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: auto;
+    padding-top: 2px;
+}
+
+.pdc-stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.74rem;
+    color: var(--pd-ink-faint);
+}
+
+.pdc-stat strong {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--pd-ink);
+}
+
+.pdc-stats--quiet {
+    min-height: 18px;
+}
+
+.pdc-stat-empty {
+    font-family: "Outfit", sans-serif;
+    font-size: 0.76rem;
+    font-style: italic;
+    color: var(--pd-ink-faint);
+}
+
+.pdc-visit-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin: 12px 16px 16px;
+    padding: 10px 14px;
+    border-radius: 11px;
+    background: rgba(189, 123, 50, 0.1);
+    color: var(--pd-ember-deep);
+    font-family: "Outfit", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: background 0.25s ease, gap 0.25s ease;
+}
+
+.pdc-card:hover .pdc-visit-cta {
+    background: rgba(189, 123, 50, 0.18);
+    gap: 10px;
+}
+
+.pdc-visit-cta svg {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pdc-card:hover .pdc-visit-cta svg {
+    transform: translateX(3px);
+}
+
+/* ── Empty / error ── */
+.pd-empty {
+    text-align: center;
+    padding: 64px 24px;
+    border-radius: 18px;
+    border: 1px dashed var(--pd-line);
+    background: linear-gradient(160deg, var(--pd-paper), var(--pd-paper-2));
+}
+
+.pd-empty-title {
+    margin: 0 0 6px;
+    font-family: "Playfair Display", serif;
+    font-size: 1.3rem;
+    color: var(--pd-ink);
+}
+
+.pd-empty-sub {
+    margin: 0;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.9rem;
+    color: var(--pd-ink-faint);
+}
+
+/* ── Skeletons ── */
+.pd-skeleton {
+    display: block;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--pd-paper-2) 25%, #efe6d8 37%, var(--pd-paper-2) 63%);
+    background-size: 400% 100%;
+    animation: pd-shimmer 1.4s ease infinite;
+}
+
+.pd-skeleton-eyebrow { width: 100px; height: 11px; margin-bottom: 8px; }
+.pd-skeleton-title { width: 220px; height: 22px; }
+.pd-skeleton-line { height: 12px; margin-bottom: 9px; }
+
+.pdc-card--skeleton {
+    pointer-events: none;
+}
+.pdc-card--skeleton .pdc-room {
+    border-radius: 0;
+    height: 92px;
+}
+.pdc-card--skeleton .pdc-body {
+    padding-top: 22px;
+}
+
+@keyframes pd-shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+@media (max-width: 560px) {
+    .pd-page { padding: 18px 14px 110px; }
+    .pd-hero { padding: 24px 22px 26px; }
+    .pd-grid { grid-template-columns: 1fr; }
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Home "Rooms to visit" shelf — compact, horizontal, never dominates feed
+   ──────────────────────────────────────────────────────────────────────── */
+
+.rooms-shelf {
+    margin: 4px 0 20px;
+    padding: 18px 18px 14px;
+    border-radius: 18px;
+    background:
+        radial-gradient(120% 160% at 100% 0%, rgba(189, 123, 50, 0.12), transparent 55%),
+        linear-gradient(160deg, #fbf6ee 0%, #f3eadd 100%);
+    border: 1px solid rgba(74, 56, 38, 0.12);
+    box-shadow: 0 14px 34px -26px rgba(58, 38, 18, 0.5);
+}
+
+.rooms-shelf-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.rooms-shelf-eyebrow {
+    display: block;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #bd7b32;
+    margin-bottom: 3px;
+}
+
+.rooms-shelf-title {
+    margin: 0;
+    font-family: "Playfair Display", serif;
+    font-weight: 600;
+    font-size: 1.22rem;
+    color: #2a211b;
+}
+
+.rooms-shelf-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    text-decoration: none;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #9a5e1f;
+    transition: gap 0.25s ease;
+}
+
+.rooms-shelf-all:hover { gap: 8px; }
+
+.rooms-shelf-track {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+}
+
+.rooms-shelf-track::-webkit-scrollbar { height: 6px; }
+.rooms-shelf-track::-webkit-scrollbar-thumb {
+    background: rgba(74, 56, 38, 0.2);
+    border-radius: 999px;
+}
+
+.rooms-chip {
+    flex: 0 0 auto;
+    width: 138px;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 10px 13px;
+    border-radius: 14px;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.66);
+    border: 1px solid rgba(74, 56, 38, 0.1);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.28s ease, background 0.28s ease;
+}
+
+.rooms-chip:hover {
+    transform: translateY(-3px);
+    background: #ffffff;
+    box-shadow: 0 16px 30px -20px rgba(58, 38, 18, 0.55);
+}
+
+.rooms-chip-avatar-ring {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    padding: 2.5px;
+    background: #e3d2bb;
+    margin-bottom: 3px;
+}
+
+.rooms-chip-avatar-ring--themed {
+    background: linear-gradient(135deg, #bd7b32, #9a5e1f);
+}
+
+.rooms-chip-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    background: #f4ece0;
+}
+
+.rooms-chip-name {
+    font-family: "Playfair Display", serif;
+    font-weight: 600;
+    font-size: 0.86rem;
+    color: #2a211b;
+    text-align: center;
+    line-height: 1.15;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rooms-chip-handle {
+    font-family: "Outfit", sans-serif;
+    font-size: 0.7rem;
+    color: #9a8a7c;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rooms-chip-meta {
+    margin-top: 3px;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: #bd7b32;
+    background: rgba(189, 123, 50, 0.12);
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pdc-card,
+    .pdc-room-backdrop,
+    .pdc-visit-cta,
+    .pdc-visit-cta svg,
+    .rooms-chip {
+        transition: none;
+    }
+    .pd-skeleton { animation: none; }
+}

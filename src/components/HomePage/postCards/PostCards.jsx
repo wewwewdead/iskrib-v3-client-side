@@ -26,6 +26,7 @@ import getShareUrl from "../../../utils/getShareUrl";
 import { useToast } from "../../Toast/ToastContext";
 import FeedCardSkeleton from "../../Skeletons/FeedCardSkeleton";
 import EmptyState from "../../EmptyState/EmptyState";
+import HomeRoomsShelf from "../../ProfileDiscover/HomeRoomsShelf";
 
 
 const PostCards = () => {
@@ -631,6 +632,11 @@ const PostCards = () => {
                         handleOpenTextEditor({ promptId: prompt.id, promptText: prompt.prompt_text });
                     }
                 }} />
+            )}
+
+            {/* Rooms to visit — small profile-discovery shelf on the main logged-in feed */}
+            {!isSearchMode && session && !isFollowingFeed && !isForYouFeed && (
+                <HomeRoomsShelf />
             )}
 
             {isFollowingFeed && !activeIsLoading && journals.length === 0 && !isSearchMode && (

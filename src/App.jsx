@@ -32,6 +32,7 @@ const VisitedProfileOpinions = lazy(() => import('./components/SidebarOpinions/v
 const MyOpinions = lazy(() => import('./components/SidebarOpinions/MyOpinions.jsx'));
 const OpinionViewer = lazy(() => import('./components/SidebarOpinions/opinionViewer.jsx'));
 const ExplorePage = lazy(() => import('./components/HomePage/explore/ExplorePage.jsx'));
+const ProfileDiscoverPage = lazy(() => import('./components/ProfileDiscover/ProfileDiscoverPage.jsx'));
 const SettingsPage = lazy(() => import('./components/SettingsPage/SettingsPage.jsx'));
 const DraftList = lazy(() => import('./components/HomePage/Editor/DraftList/DraftList.jsx'));
 const AnalyticsDashboard = lazy(() => import('./components/Analytics/AnalyticsDashboard.jsx'));
@@ -120,6 +121,7 @@ const App = () => {
               <Route path='following' element={<PostCards/>}/>
               <Route path='for-you' element={<PostCards/>}/>
               <Route path='explore' element={<ExplorePage/>}/>
+              <Route path='explore/profiles' element={<ProfileDiscoverPage/>}/>
               <Route path='contentViewer' element={<ContentView/>}/>
               <Route path='post/:journalId' element={<ContentView/>}/>
               <Route path='post/:journalId/:slug' element={<ContentView/>}/>

@@ -1,4 +1,4 @@
-import {useLocation, useNavigate } from 'react-router-dom';
+import {useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import './profilepostcards.css';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useState, useCallback, useMemo } from 'react';
@@ -15,7 +15,8 @@ import VisitedPinnedPostsSection from './VisitedPinnedPostsSection';
 
 const VisitedProfilePostCards = () =>{
     const location = useLocation();
-    const userId = location.state?.userId || new URLSearchParams(location.search).get('userId');
+    const { visitedUserId: ctxUserId } = useOutletContext() || {};
+    const userId = location.state?.userId || ctxUserId || new URLSearchParams(location.search).get('userId');
     const {user, session} = useAuth();
 
     const navigate = useNavigate();

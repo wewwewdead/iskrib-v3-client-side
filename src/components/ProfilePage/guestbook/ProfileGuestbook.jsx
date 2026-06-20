@@ -8,6 +8,7 @@ import { getProfileGuestbook, createGuestbookEntry, deleteGuestbookEntry } from 
 import VerifiedBadge from "../../Badge/VerifiedBadge";
 
 const MAX_LENGTH = 280;
+const COMPACT_VISIBLE_COUNT = 3;
 
 const formatDate = (iso) => {
     if (!iso) return "";
@@ -21,6 +22,7 @@ const formatDate = (iso) => {
 const ProfileGuestbook = ({
     username,
     profileUserId,
+    compact = false,
     focusGuestbook = false,
     highlightEntryId = null,
     highlightFromUserId = null,
@@ -34,7 +36,9 @@ const ProfileGuestbook = ({
 
     const sectionRef = useRef(null);
     const [highlightedId, setHighlightedId] = useState(null);
+    const [expanded, setExpanded] = useState(false);
     const focusHandledRef = useRef(null);
+    const focusExpandedRef = useRef(null);
 
     const currentUserId = user?.userData?.[0]?.id;
     const token = session?.access_token;
@@ -50,20 +54,17 @@ const ProfileGuestbook = ({
 
     const entries = data?.entries || [];
 
+    // In compact mode (near the hero) show only the latest few notes until the
+    // visitor expands. Full list otherwise.
+    const isCondensed = compact && !expanded;
+    const visibleEntries = isCondensed ? entries.slice(0, COMPACT_VISIBLE_COUNT) : entries;
+    const hiddenCount = entries.length - visibleEntries.length;
+
     // Deep-link from a guestbook notification: scroll the section into view and
     // briefly highlight the relevant note (exact entry if given, else the most
     // recent note from the signer). Runs once per focus target.
     useEffect(() => {
         if (!focusGuestbook || isLoading) return undefined;
-
-        const key = `${highlightEntryId || ""}:${highlightFromUserId || ""}`;
-        if (focusHandledRef.current === key) return undefined;
-        focusHandledRef.current = key;
-
-        const prefersReduced =
-            typeof window !== "undefined" &&
-            window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-        const behavior = prefersReduced ? "auto" : "smooth";
 
         let targetId = null;
         if (highlightEntryId) {
@@ -73,6 +74,28 @@ const ProfileGuestbook = ({
             // entries are newest-first, so the first match is the signer's latest note
             targetId = entries.find((entry) => entry.author_user_id === highlightFromUserId)?.id || null;
         }
+
+        const key = `${highlightEntryId || ""}:${highlightFromUserId || ""}`;
+
+        // If the target note is collapsed in compact mode, expand it once so it
+        // can render; the effect re-runs after `expanded` changes and scrolls.
+        // Tracked per-key so a later manual collapse isn't fought.
+        if (targetId && compact && !expanded && focusExpandedRef.current !== key) {
+            const idx = entries.findIndex((entry) => entry.id === targetId);
+            if (idx >= COMPACT_VISIBLE_COUNT) {
+                focusExpandedRef.current = key;
+                setExpanded(true);
+                return undefined;
+            }
+        }
+
+        if (focusHandledRef.current === key) return undefined;
+        focusHandledRef.current = key;
+
+        const prefersReduced =
+            typeof window !== "undefined" &&
+            window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+        const behavior = prefersReduced ? "auto" : "smooth";
 
         const raf = requestAnimationFrame(() => {
             const node = targetId
@@ -91,7 +114,7 @@ const ProfileGuestbook = ({
             cancelAnimationFrame(raf);
             clearTimeout(timer);
         };
-    }, [focusGuestbook, highlightEntryId, highlightFromUserId, isLoading, entries]);
+    }, [focusGuestbook, highlightEntryId, highlightFromUserId, isLoading, entries, compact, expanded]);
 
     const createMutation = useMutation({
         mutationFn: (text) => createGuestbookEntry(token, username, text),
@@ -123,9 +146,17 @@ const ProfileGuestbook = ({
     };
 
     return (
-        <section className="pt-guestbook" id="profile-guestbook" ref={sectionRef} aria-label="Guestbook">
+        <section
+            className={`pt-guestbook${compact ? " pt-guestbook--compact" : ""}`}
+            id="profile-guestbook"
+            ref={sectionRef}
+            aria-label="Guestbook"
+        >
             <div className="pt-guestbook-header">
-                <h3 className="pt-guestbook-title">Guestbook</h3>
+                <div className="pt-guestbook-heading">
+                    <h3 className="pt-guestbook-title">Guestbook</h3>
+                    <p className="pt-guestbook-subtitle">Leave a note in this room.</p>
+                </div>
                 <span className="pt-guestbook-count">{entries.length > 0 ? `${entries.length}${data?.hasMore ? "+" : ""} signed` : ""}</span>
             </div>
 
@@ -166,7 +197,7 @@ const ProfileGuestbook = ({
                     <p className="pt-guestbook-empty">No messages yet. Be the first to sign!</p>
                 )}
                 <AnimatePresence initial={false}>
-                    {entries.map((entry) => (
+                    {visibleEntries.map((entry) => (
                         <Motion.div
                             key={entry.id}
                             id={`guestbook-entry-${entry.id}`}
@@ -221,6 +252,16 @@ const ProfileGuestbook = ({
                     ))}
                 </AnimatePresence>
             </div>
+
+            {compact && (hiddenCount > 0 || expanded) && entries.length > COMPACT_VISIBLE_COUNT && (
+                <button
+                    type="button"
+                    className="pt-guestbook-toggle"
+                    onClick={() => setExpanded((v) => !v)}
+                >
+                    {isCondensed ? `View all notes (${entries.length})` : "Show less"}
+                </button>
+            )}
         </section>
     );
 };

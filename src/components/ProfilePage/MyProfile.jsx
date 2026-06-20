@@ -26,6 +26,9 @@ import { PROFILE_TABS } from "./constants/profileTabs";
 import ProfileBuilder from "./builder/ProfileBuilder";
 import { profileThemeToCssVars, isSectionVisible } from "./builder/profileThemeUtils";
 import ProfileGuestbook from "./guestbook/ProfileGuestbook";
+import ProfileCompletionCard from "./completion/ProfileCompletionCard";
+import ProfileActivitySummary from "./completion/ProfileActivitySummary";
+import NewUserCustomizeCTA from "./completion/NewUserCustomizeCTA";
 
 // Maps profile tab labels to their theme section id so hidden sections drop their tab.
 const TAB_SECTION_ID = {
@@ -441,19 +444,42 @@ const MyProfile = () => {
                             profileTheme={profileTheme}
                         />
 
-                        <ProfileTabList tablists={visibleTabs} navigate={navigate} location={location} />
+                        {/* Owner-only activation cards (Phase 3) — never shown on visited profiles */}
+                        <div className="profile-owner-cards">
+                            {!hasTheme ? (
+                                <NewUserCustomizeCTA onCustomize={() => setShowBuilder(true)} />
+                            ) : (
+                                <ProfileCompletionCard
+                                    userData={userData}
+                                    profileTheme={profileTheme}
+                                    onCustomize={() => setShowBuilder(true)}
+                                    onEdit={() => {
+                                        setShowFontColorSelector(false);
+                                        setEditImagePreview(userData?.image_url);
+                                        setProfileEditName(userData?.name);
+                                        setProfileEditBio(userData?.bio);
+                                        setShowProfileEditor(true);
+                                    }}
+                                />
+                            )}
+                            <ProfileActivitySummary token={session?.access_token} />
+                        </div>
 
-                        <Outlet />
-
+                        {/* Guestbook sits directly below the hero — the social doorway, not buried under posts */}
                         {userData?.username && isSectionVisible(profileTheme, "guestbook") && (
                             <ProfileGuestbook
                                 username={userData.username}
                                 profileUserId={userData.id}
+                                compact
                                 focusGuestbook={focusGuestbook}
                                 highlightEntryId={highlightEntryId}
                                 highlightFromUserId={highlightFromUserId}
                             />
                         )}
+
+                        <ProfileTabList tablists={visibleTabs} navigate={navigate} location={location} />
+
+                        <Outlet />
                     </div>
 
                     <div className="profile-sidebar-right-holder-container">{/* Log out */}</div>

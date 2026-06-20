@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../../Context/useAuth';
 import { useUserStories } from '../../Stories/hooks/useStoryData';
 import { useInView } from 'react-intersection-observer';
@@ -11,7 +11,8 @@ const STATUS_LABELS = { ongoing: 'Ongoing', completed: 'Completed', hiatus: 'Hia
 
 const VisitedProfileStoriesSection = () => {
     const location = useLocation();
-    const userId = location.state?.userId || new URLSearchParams(location.search).get('userId');
+    const { visitedUserId: ctxUserId } = useOutletContext() || {};
+    const userId = location.state?.userId || ctxUserId || new URLSearchParams(location.search).get('userId');
     const { session } = useAuth();
     const token = session?.access_token;
     const navigate = useNavigate();

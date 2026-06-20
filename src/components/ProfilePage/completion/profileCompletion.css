@@ -1,0 +1,335 @@
+/* ────────────────────────────────────────────────────────────────────────
+   Owner-only profile cards (Phase 3): completion, activity summary, new-user
+   CTA. Self-contained warm-editorial surfaces so they stay legible on top of
+   any profile background/theme. Scoped so they never leak into themed content.
+   ──────────────────────────────────────────────────────────────────────── */
+
+.profile-owner-cards {
+    width: 100%;
+    margin: 14px 0 4px;
+}
+
+.pcc-card,
+.pas-card,
+.nucta-card {
+    --oc-ink: #2a211b;
+    --oc-ink-soft: #6b5d52;
+    --oc-ink-faint: #9a8a7c;
+    --oc-ember: #bd7b32;
+    --oc-ember-deep: #9a5e1f;
+    --oc-paper: #fbf6ee;
+    --oc-paper-2: #f4ece0;
+    --oc-line: rgba(74, 56, 38, 0.14);
+
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto 16px;
+    color: var(--oc-ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Completion card ── */
+.pcc-card {
+    position: relative;
+    padding: 20px 22px 18px;
+    border-radius: 18px;
+    background: linear-gradient(160deg, #ffffff 0%, var(--oc-paper) 100%);
+    border: 1px solid var(--oc-line);
+    box-shadow: 0 16px 40px -28px rgba(58, 38, 18, 0.55);
+    overflow: hidden;
+}
+
+.pcc-dismiss {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(74, 56, 38, 0.07);
+    color: var(--oc-ink-faint);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.pcc-dismiss:hover {
+    background: rgba(74, 56, 38, 0.14);
+    color: var(--oc-ink);
+}
+
+.pcc-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.pcc-ring {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background:
+        radial-gradient(closest-side, #ffffff 78%, transparent 79% 100%),
+        conic-gradient(var(--oc-ember) calc(var(--pcc-pct) * 1%), rgba(74, 56, 38, 0.12) 0);
+}
+
+.pcc-ring-value {
+    font-family: "Outfit", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--oc-ember-deep);
+}
+
+.pcc-eyebrow {
+    display: block;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--oc-ember);
+    margin-bottom: 2px;
+}
+
+.pcc-title {
+    margin: 0 0 3px;
+    font-family: "Playfair Display", serif;
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: var(--oc-ink);
+}
+
+.pcc-sub {
+    margin: 0;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.82rem;
+    color: var(--oc-ink-faint);
+}
+
+.pcc-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pcc-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(244, 236, 224, 0.7);
+    border: 1px solid rgba(74, 56, 38, 0.08);
+}
+
+.pcc-step-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--oc-ember);
+}
+
+.pcc-step-text {
+    flex: 1;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.85rem;
+    color: var(--oc-ink-soft);
+    line-height: 1.4;
+}
+
+.pcc-step-cta {
+    flex-shrink: 0;
+    border: none;
+    border-radius: 9px;
+    padding: 7px 13px;
+    background: var(--oc-ember);
+    color: #fff;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.pcc-step-cta:hover {
+    background: var(--oc-ember-deep);
+    transform: translateY(-1px);
+}
+
+/* ── Activity summary ── */
+.pas-card {
+    padding: 18px 22px;
+    border-radius: 16px;
+    background: linear-gradient(160deg, #fffdf9 0%, var(--oc-paper-2) 100%);
+    border: 1px solid var(--oc-line);
+    box-shadow: 0 12px 32px -26px rgba(58, 38, 18, 0.5);
+}
+
+.pas-eyebrow {
+    display: block;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--oc-ember);
+    margin-bottom: 10px;
+}
+
+.pas-lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.pas-line {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    font-family: "Playfair Display", serif;
+    font-size: 1rem;
+    line-height: 1.35;
+    color: var(--oc-ink);
+}
+
+.pas-spark {
+    color: var(--oc-ember);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+/* ── New-user customize CTA ── */
+.nucta-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 24px 24px;
+    border-radius: 20px;
+    background: linear-gradient(150deg, #241d3a 0%, #2f2540 55%, #3a2640 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 22px 50px -28px rgba(20, 12, 30, 0.8);
+    overflow: hidden;
+    color: #f5eede;
+}
+
+.nucta-glow {
+    position: absolute;
+    top: -40%;
+    right: -10%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(189, 123, 50, 0.45), transparent 65%);
+    pointer-events: none;
+}
+
+.nucta-body {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.nucta-eyebrow {
+    display: block;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #d9a35e;
+    margin-bottom: 6px;
+}
+
+.nucta-title {
+    margin: 0 0 7px;
+    font-family: "Playfair Display", serif;
+    font-weight: 700;
+    font-size: clamp(1.3rem, 3vw, 1.65rem);
+    color: #fbf6ee;
+    letter-spacing: -0.01em;
+}
+
+.nucta-sub {
+    margin: 0 0 16px;
+    max-width: 46ch;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: rgba(245, 238, 222, 0.78);
+}
+
+.nucta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #d9a35e, #bd7b32);
+    color: #211625;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 24px -10px rgba(189, 123, 50, 0.7);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, gap 0.22s ease;
+}
+
+.nucta-btn:hover {
+    transform: translateY(-2px);
+    gap: 12px;
+    box-shadow: 0 16px 30px -12px rgba(189, 123, 50, 0.8);
+}
+
+.nucta-swatches {
+    position: relative;
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 46px);
+    grid-template-rows: repeat(2, 46px);
+    gap: 8px;
+}
+
+.nucta-swatches span {
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 6px 16px -8px rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 560px) {
+    .nucta-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .nucta-swatches {
+        grid-template-columns: repeat(4, 40px);
+        grid-template-rows: 40px;
+    }
+    .pcc-step {
+        flex-wrap: wrap;
+    }
+    .pcc-step-cta {
+        margin-left: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pcc-step-cta,
+    .nucta-btn {
+        transition: none;
+    }
+}

@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import { getUserOpinions } from "../../../API/Api";
 import { AnimatePresence, motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
@@ -25,7 +25,8 @@ const VisitedProfileOpinions = () =>{
     const {ref, inView} = useInView({threshold: 0, rootMargin: '200px'})
     const location = useLocation();
     const navigate = useNavigate();
-    const userId = location.state?.userId || new URLSearchParams(location.search).get('userId');
+    const { visitedUserId: ctxUserId } = useOutletContext() || {};
+    const userId = location.state?.userId || ctxUserId || new URLSearchParams(location.search).get('userId');
    const {openAuthModal, session, user} = useAuth();;
 
     const {data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage} = useInfiniteQuery({

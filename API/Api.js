@@ -60,6 +60,14 @@ export const recordProfileVisit = (token, username) => {
 export const remixProfileTheme = (token, username) =>
     authedJsonRequest(token, 'POST', `/users/${encodeURIComponent(username)}/theme/remix`, {}, 'failed to use theme');
 
+// ─── Profile Discovery (Phase 3) ───
+
+export const getProfileDiscover = () =>
+    publicGet('/profiles/discover', 'failed to load profile discovery');
+
+export const getProfileActivitySummary = (token) =>
+    authedGet(token, '/profile/activity-summary', 'failed to load activity summary');
+
 // ─── Journals ───
 
 export const saveJournalImage = (token, body) =>
