@@ -424,6 +424,7 @@ const PostCards = () => {
 
     return(
         <>
+        <h1 className="sr-only">Home feed</h1>
         <div className={`mobile-top-header ${isScrolling ? 'mobile-top-header-hidden' : ''}`}>
             <div className="mobile-top-header-row">
                 <span className="mobile-brand-text">iskrib</span>

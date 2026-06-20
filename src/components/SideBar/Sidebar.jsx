@@ -21,19 +21,52 @@ const Sidebar = ({links}) =>{
             <div className='sidebar-header'>
                 Iskrib
             </div>
-            {links.map((link, index) => {   
-                return(
-                <div className={link.className ? link.className : location.pathname === link.path ? 'sidebar-links-active' : 'sidebar-links'} onClick={link.action} key={index}>
-                    <div className='icon-container'>
-                        {link.icon}
-                        {link.notifCount && (
-                            <div className='notification-count'>{link.notifCount}</div>
-                        )}
-                    </div>   
-
-                    {link.label}
-                </div>
-                )
+            {links.map((link, index) => {
+                const className = link.className ? link.className : location.pathname === link.path ? 'sidebar-links-active' : 'sidebar-links';
+                const inner = (
+                    <>
+                        <div className='icon-container'>
+                            {link.icon}
+                            {link.notifCount && (
+                                <div className='notification-count'>{link.notifCount}</div>
+                            )}
+                        </div>
+                        {link.label}
+                    </>
+                );
+                // Pure-navigation items become real anchors: open-in-new-tab,
+                // middle-click, and keyboard/AT support for free. Plain left-click
+                // is intercepted for client-side routing; modified clicks fall
+                // through to the browser. Items without a path (e.g. Write) keep
+                // their action handler but gain keyboard activation.
+                if (link.path) {
+                    return (
+                        <a
+                            href={link.path}
+                            className={className}
+                            key={index}
+                            onClick={(e) => {
+                                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                                e.preventDefault();
+                                link.action?.();
+                            }}
+                        >
+                            {inner}
+                        </a>
+                    );
+                }
+                return (
+                    <div
+                        className={className}
+                        onClick={link.action}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); link.action?.(); } }}
+                        key={index}
+                    >
+                        {inner}
+                    </div>
+                );
             })}
             <div className='sidebar-theme-toggle' onClick={toggleTheme}>
                 <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>

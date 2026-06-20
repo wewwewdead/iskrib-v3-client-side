@@ -34,6 +34,11 @@
     margin-bottom: 1.6rem;
     color: var(--text-primary);
 }
+/* Nav items rendered as <a> keep the link semantics but not the default
+   underline; color comes from the .sidebar-links* class. */
+.side-bar-container a {
+    text-decoration: none;
+}
 .sidebar-links-active{
     display: flex;
     justify-content: flex-start;
