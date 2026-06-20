@@ -91,7 +91,10 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    width: 27%;
+    /* Fill the space from the center column (ends at 1000px) to the viewport
+       edge. Previously width:27% overflowed the viewport below ~1370px,
+       clipping the rail on standard laptop widths (1280/1366). */
+    width: calc(100% - 1000px);
     height: 100%;
     border-left: 0.7px solid var(--border-light);
 }
