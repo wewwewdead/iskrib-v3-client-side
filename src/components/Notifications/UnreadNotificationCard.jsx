@@ -14,6 +14,8 @@ import VerifiedBadge from "../Badge/VerifiedBadge";
 import { handleImageFallback } from "../../utils/handleImageFallback";
 import { getBadgeRingClass } from "../../utils/badgeRingClass";
 import { NOTIFICATION_ICON_MAP } from "./notificationIcons";
+import { getPublicProfilePath } from "../../utils/profileRoutes";
+import { getNotificationTargetPath } from "../../utils/notificationRoutes";
 
 const UnreadNotification = () =>{
     const {ref: inviewRef, inView} = useInView({threshold: 0.2});
@@ -69,12 +71,23 @@ const UnreadNotification = () =>{
     const handleClickOpinionNotif = handleClickOpinion(navigate);
     const mutationReadNotif = useReadNotificationMutation(session);
 
+    const handleClickSender = (e, notification) => {
+        e.stopPropagation();
+        const senderPath = getPublicProfilePath(notification?.users);
+        if (senderPath) navigate(senderPath);
+    };
+
     const handleReadNotif = async(e, notification) =>{
         const source = notification?.source || 'journal';
         mutationReadNotif.mutate({notifId: notification.id, source});
 
+        const targetPath = getNotificationTargetPath(notification);
+
         if(source === 'opinion'){
             handleClickOpinionNotif(e, notification?.opinions?.id, notification?.opinions?.user_id)
+        } else if(targetPath){
+            // Type-aware target (guestbook → owner's guestbook; follow/theme_remix → actor profile)
+            navigate(targetPath);
         } else {
             handleClickNotif(
                 e,
@@ -155,7 +168,12 @@ const UnreadNotification = () =>{
 
                                 <div className="notification-sender-user-metadata">
                                     <div className="notification-sender-user-metadata-child">
-                                        <div className={`notif-sender-profilepic-container ${getBadgeRingClass(unreadNotification?.users?.badge, 'notif-avatar-ring')}`}>
+                                        <div
+                                            className={`notif-sender-profilepic-container ${getBadgeRingClass(unreadNotification?.users?.badge, 'notif-avatar-ring')}`}
+                                            onClick={(e) => handleClickSender(e, unreadNotification)}
+                                            style={{ cursor: 'pointer' }}
+                                            title={`View ${unreadNotification?.users?.name || 'user'}'s profile`}
+                                        >
                                             <img className="notif-sender-profilepic" loading="lazy" src={unreadNotification?.users?.image_url || '/assets/profile.jpg'} alt="notificataion sender profile picture" />
                                         </div>
 
@@ -213,6 +231,18 @@ const UnreadNotification = () =>{
                                     {isOpinion ? (
                                         <div className="notification-content-text">
                                             <p className="notif-content-sliced-text">{unreadNotification?.opinions?.opinion?.length > 100 ? unreadNotification?.opinions?.opinion?.substring(0, 100) + '...' : unreadNotification?.opinions?.opinion}</p>
+                                        </div>
+                                    ) : displayType === 'follow' ? (
+                                        <div className="notification-content-text">
+                                            <p className="notif-content-sliced-text">started following you</p>
+                                        </div>
+                                    ) : displayType === 'guestbook' ? (
+                                        <div className="notification-content-text">
+                                            <p className="notif-content-sliced-text">signed your guestbook</p>
+                                        </div>
+                                    ) : displayType === 'theme_remix' ? (
+                                        <div className="notification-content-text">
+                                            <p className="notif-content-sliced-text">used your profile theme</p>
                                         </div>
                                     ) : (
                                         <>

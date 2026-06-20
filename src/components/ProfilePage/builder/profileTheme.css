@@ -1,0 +1,124 @@
+/*
+ * Profile Builder V1 — themed rendering.
+ *
+ * These rules ONLY take effect inside `.pt-scope`, which is added to the
+ * profile center column ONLY when a user has a saved/active theme. Without a
+ * theme the legacy styling is untouched (fallback path). Every value comes from
+ * CSS custom properties produced by profileThemeToCssVars() — no arbitrary CSS.
+ */
+
+.pt-scope {
+    --pt-scale: 1;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+.pt-scope .profile-stats-container,
+.pt-scope .profile-actions-row,
+.pt-scope .profile-name-container,
+.pt-scope .profile-bio-container,
+.pt-scope .visited-profile-stats-container,
+.pt-scope .visited-profile-bio-container,
+.pt-scope .visited-profile-joined-date {
+    background-color: var(--pt-card-bg) !important;
+    border: var(--pt-card-border-width) solid var(--pt-card-border-color) !important;
+    border-radius: var(--pt-card-radius) !important;
+    box-shadow: var(--pt-card-shadow) !important;
+    backdrop-filter: var(--pt-card-blur);
+    -webkit-backdrop-filter: var(--pt-card-blur);
+}
+
+.pt-scope .hero-section,
+.pt-scope .visit-profile-hero-section {
+    position: relative;
+    border-radius: var(--pt-card-radius) !important;
+}
+
+/* ── Accent ──────────────────────────────────────────────────────────────── */
+.pt-scope .stat-number,
+.pt-scope .visited-stat-number {
+    color: var(--pt-accent);
+}
+
+.pt-scope .follow-visited-profile-bttn {
+    background-color: var(--pt-accent) !important;
+    border-color: var(--pt-accent) !important;
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+.pt-scope .profile-name,
+.pt-scope .visited-profile-name,
+.pt-scope .profile-bio,
+.pt-scope .visited-profile-bio-container p {
+    font-family: var(--pt-font);
+}
+
+.pt-scope .profile-name,
+.pt-scope .visited-profile-name {
+    font-size: calc(1.55rem * var(--pt-scale));
+}
+
+.pt-scope .profile-bio,
+.pt-scope .visited-profile-bio-container p {
+    font-size: calc(0.95rem * var(--pt-scale));
+}
+
+/* ── Sticker layer ───────────────────────────────────────────────────────── */
+.pt-sticker-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 3;
+    border-radius: inherit;
+}
+
+.pt-sticker {
+    position: absolute;
+    transform: translate(-50%, -50%) rotate(var(--pt-rot, 0deg)) scale(var(--pt-scl, 1));
+    color: var(--pt-accent, #D4A853);
+    width: 34px;
+    height: 34px;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+    user-select: none;
+}
+
+.pt-sticker svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.pt-sticker.is-editable {
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: none;
+}
+
+.pt-sticker.is-editable:active {
+    cursor: grabbing;
+}
+
+.pt-sticker-remove {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(20, 20, 20, 0.85);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pt-sticker {
+        transition: none !important;
+    }
+}

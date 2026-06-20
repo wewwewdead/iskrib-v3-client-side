@@ -5,6 +5,8 @@ import useStreakData from "../../Streak/useStreakData";
 import formatCounts from "../../../../helpers/fomatCounts";
 import ShareMenu from "../../ShareMenu/ShareMenu";
 import { getProfileShareUrl } from "../../../utils/getShareUrl";
+import StickerLayer from "../builder/StickerLayer";
+import { isSectionVisible } from "../builder/profileThemeUtils";
 
 const ProfileHeroSection = ({
     userData,
@@ -12,13 +14,20 @@ const ProfileHeroSection = ({
     fontColor,
     handleClickEdit,
     handleClickFontColorSelector,
+    handleClickCustomize,
     croppedImage,
     gradientPicked,
+    profileTheme,
 }) => {
     const [showShareMenu, setShowShareMenu] = useState(false);
     const { data: streakData } = useStreakData(userData?.id);
+    const showStats = isSectionVisible(profileTheme, "stats");
+    const showBio = isSectionVisible(profileTheme, "bio");
     return (
         <div style={croppedImage || gradientPicked} className="hero-section">
+            {profileTheme?.stickers?.length > 0 && (
+                <StickerLayer stickers={profileTheme.stickers} accentColor={profileTheme?.colors?.accent} />
+            )}
             <div className="profile-top-row">
                 <div
                     className={`profile-avatar-ring ${userData?.badge === "legend" ? "badge-ring-legend" : userData?.badge === "og" ? "badge-ring-og" : ""}`}
@@ -30,16 +39,18 @@ const ProfileHeroSection = ({
                         alt={`${userData?.name || "User"} profile picture`}
                     />
                 </div>
-                <div className="profile-stats-container">
-                    <div className="profile-stat-item">
-                        <span className="stat-number">{formatCounts(user?.followerCount)}</span>
-                        <span className="stat-label">Followers</span>
+                {showStats && (
+                    <div className="profile-stats-container">
+                        <div className="profile-stat-item">
+                            <span className="stat-number">{formatCounts(user?.followerCount)}</span>
+                            <span className="stat-label">Followers</span>
+                        </div>
+                        <div className="profile-stat-item">
+                            <span className="stat-number">{formatCounts(user?.followingCount)}</span>
+                            <span className="stat-label">Following</span>
+                        </div>
                     </div>
-                    <div className="profile-stat-item">
-                        <span className="stat-number">{formatCounts(user?.followingCount)}</span>
-                        <span className="stat-label">Following</span>
-                    </div>
-                </div>
+                )}
             </div>
 
             <div className="profile-name-container">
@@ -60,7 +71,7 @@ const ProfileHeroSection = ({
                 )}
             </div>
 
-            {userData?.bio && (
+            {showBio && userData?.bio && (
                 <div className="profile-bio-container">
                     <p className="profile-bio">{userData?.bio}</p>
                 </div>
@@ -79,6 +90,25 @@ const ProfileHeroSection = ({
                     </svg>
                     Edit Profile
                 </div>
+                {handleClickCustomize && (
+                    <button
+                        type="button"
+                        onClick={(e) => handleClickCustomize(e)}
+                        className="pt-customize-btn"
+                        title="Customize your profile"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            height="18px"
+                            viewBox="0 -960 960 960"
+                            width="18px"
+                            fill={fontColor || userData?.profile_font_color}
+                        >
+                            <path d="m480-80-10-120h-10q-142 0-241-99T120-640q0-141 99-240t241-99q71 0 132.5 26.5t108 73Q847-833 873.5-771.5T900-639q0 141-99 240t-241 99h-10l10-120ZM320-440q33 0 56.5-23.5T400-520q0-33-23.5-56.5T320-600q-33 0-56.5 23.5T240-520q0 33 23.5 56.5T320-440Zm120-160q33 0 56.5-23.5T520-680q0-33-23.5-56.5T440-760q-33 0-56.5 23.5T360-680q0 33 23.5 56.5T440-600Zm160 0q33 0 56.5-23.5T680-680q0-33-23.5-56.5T600-760q-33 0-56.5 23.5T520-680q0 33 23.5 56.5T600-600Zm120 160q33 0 56.5-23.5T800-520q0-33-23.5-56.5T720-600q-33 0-56.5 23.5T640-520q0 33 23.5 56.5T720-440Z" />
+                        </svg>
+                        Customize
+                    </button>
+                )}
                 <div onClick={(e) => handleClickFontColorSelector(e)} className="font-picker-container" title="Change font color">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"

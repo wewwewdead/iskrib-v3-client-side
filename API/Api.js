@@ -14,6 +14,9 @@ export const updateProfileData = (body, token) =>
 export const getUserByUsername = (username) =>
     publicGet(`/user/${encodeURIComponent(username)}`, 'failed to fetch user by username');
 
+export const getPublicUserById = (userId) =>
+    publicGet(`/users/id/${encodeURIComponent(userId)}`, 'failed to resolve user');
+
 export const checkUsernameAvailability = (username) =>
     publicGet(`/check-username/${encodeURIComponent(username)}`, 'failed to check username');
 
@@ -25,6 +28,37 @@ export const getUserData = (userId) =>
 
 export const updateFontColor = (token, fontColor) =>
     authedFormRequest(token, 'POST', '/updateFontColor', fontColor, 'failed to update font color');
+
+export const updateProfileTheme = (token, profileTheme) =>
+    authedJsonRequest(token, 'PATCH', '/profile/theme', { profileTheme }, 'failed to update profile theme');
+
+// ─── Profile Guestbook ───
+
+export const getProfileGuestbook = (username, before = null, limit = 20) => {
+    if (!username) return Promise.resolve({ entries: [], hasMore: false });
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (before) params.set('before', before);
+    return publicGet(`/users/${encodeURIComponent(username)}/guestbook?${params}`, 'failed to fetch guestbook');
+};
+
+export const createGuestbookEntry = (token, username, message) =>
+    authedJsonRequest(token, 'POST', `/users/${encodeURIComponent(username)}/guestbook`, { message }, 'failed to sign guestbook');
+
+export const deleteGuestbookEntry = (token, entryId) =>
+    authedJsonRequest(token, 'DELETE', `/profile/guestbook/${encodeURIComponent(entryId)}`, undefined, 'failed to delete guestbook entry');
+
+// ─── Profile Visits ───
+
+export const recordProfileVisit = (token, username) => {
+    if (!username) return Promise.resolve({ counted: false });
+    // Works logged-out (no token) or logged-in (token attaches visitor identity).
+    return authedJsonRequest(token, 'POST', `/users/${encodeURIComponent(username)}/visit`, {}, 'failed to record visit');
+};
+
+// ─── Profile Theme Remix ("Use this theme") ───
+
+export const remixProfileTheme = (token, username) =>
+    authedJsonRequest(token, 'POST', `/users/${encodeURIComponent(username)}/theme/remix`, {}, 'failed to use theme');
 
 // ─── Journals ───
 

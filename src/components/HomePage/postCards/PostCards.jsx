@@ -682,7 +682,7 @@ const PostCards = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="var(--text-faint)">
                                     <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
                                 </svg>
-                                <span onClick={(e) => handleClickUserProfile(e, user?.userData?.[0]?.id, journal.users.id)} className="repost-header-name">{journal.users.name}</span>
+                                <span onClick={(e) => handleClickUserProfile(e, user?.userData?.[0]?.id, journal.users.id, journal.users.username)} className="repost-header-name">{journal.users.name}</span>
                                 <span>reposted</span>
                             </div>
                         )}
@@ -773,10 +773,10 @@ const PostCards = () => {
 
                         <div className="card-icons-container">
                             <div className="user-info-child-container">
-                                <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className={`user-avatar-container ${journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
+                                <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id, journal.users.username)} className={`user-avatar-container ${journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : ''}`}>
                                     <img loading="lazy" className="user-info-avatar" src={journal.users.image_url || '/assets/profile.jpg'} alt={`${journal?.users?.name || "User"} profile picture`} />
                                 </div>
-                                <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id)} className="user-name-container">
+                                <div onClick={(e) => handleClickUserProfile(e, user?.userData?.[0].id, journal.users.id, journal.users.username)} className="user-name-container">
                                     <p className="user-newsfeed-name">{journal.users.name}</p>
                                     <VerifiedBadge badge={journal.users.badge} size={14} />
                                 </div>

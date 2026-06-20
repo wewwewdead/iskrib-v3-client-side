@@ -1,0 +1,118 @@
+/* "Use this theme" button + confirmation modal (Phase 2) */
+
+.use-theme-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 25px;
+    background-color: transparent;
+    color: inherit;
+    border: 1.5px solid currentColor;
+    cursor: pointer;
+    user-select: none;
+    font-family: "Lexend Deca", sans-serif;
+    font-weight: 500;
+    font-size: 0.82rem;
+    opacity: 0.85;
+    transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.use-theme-btn:hover {
+    background-color: var(--pt-accent, rgba(255, 255, 255, 0.12));
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.use-theme-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(12, 12, 18, 0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.use-theme-modal {
+    width: min(420px, 100%);
+    padding: 1.6rem;
+    border-radius: 18px;
+    background: var(--bg-elevated, #fff);
+    color: var(--text-primary, #1a1a1a);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+}
+
+.use-theme-title {
+    margin: 0 0 0.6rem;
+    font-family: "Playfair Display", serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.use-theme-body {
+    margin: 0 0 1.2rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    opacity: 0.78;
+}
+
+.use-theme-error {
+    margin: -0.6rem 0 1rem;
+    font-size: 0.82rem;
+    color: #c0392b;
+}
+
+.use-theme-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
+.use-theme-cancel,
+.use-theme-confirm {
+    padding: 0.55rem 1.3rem;
+    border-radius: 999px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.use-theme-cancel {
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.15));
+    background: transparent;
+    color: inherit;
+}
+
+.use-theme-cancel:hover:not(:disabled) {
+    background: var(--bg-glass, rgba(0, 0, 0, 0.05));
+}
+
+.use-theme-confirm {
+    border: none;
+    background: linear-gradient(135deg, #D4A853, #b8893a);
+    color: #fff;
+}
+
+.use-theme-confirm:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(212, 168, 83, 0.4);
+}
+
+.use-theme-confirm:disabled,
+.use-theme-cancel:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .use-theme-overlay,
+    .use-theme-modal {
+        transition: none !important;
+    }
+}

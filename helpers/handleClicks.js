@@ -87,19 +87,18 @@ export const makeAuthedProfileClick = (navigate, session, openAuthModal) => {
 
 export const handleClickProfile = (navigate) => {
     return(e, loggedInUserId, clickedUserId, clickedUsername) =>{
-        if(loggedInUserId === clickedUserId){
+        if(loggedInUserId && loggedInUserId === clickedUserId){
             navigate('/profile');
         } else if(clickedUsername){
-            navigate(`/u/${clickedUsername}`, {
-                state: {
-                    userId: clickedUserId
-                }
+            // Canonical public profile route.
+            navigate(`/u/${encodeURIComponent(clickedUsername)}`, {
+                state: { userId: clickedUserId }
             })
-        } else {
-            navigate(`/visitProfile?userId=${clickedUserId}`, {
-                state: {
-                    userId: clickedUserId
-                }
+        } else if(clickedUserId){
+            // Legacy fallback only when a username isn't available at click time.
+            // This route resolves the id and redirects to /u/:username.
+            navigate(`/visitProfile?userId=${encodeURIComponent(clickedUserId)}`, {
+                state: { userId: clickedUserId }
             })
         }
     }

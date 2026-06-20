@@ -15,6 +15,8 @@ import { handleImageFallback } from "../../utils/handleImageFallback";
 import { getReactionEmoji } from "../../utils/reactionConfig";
 import { getBadgeRingClass } from "../../utils/badgeRingClass";
 import { NOTIFICATION_ICON_MAP } from "./notificationIcons";
+import { getPublicProfilePath } from "../../utils/profileRoutes";
+import { getNotificationTargetPath } from "../../utils/notificationRoutes";
 
 const NotificationCards = () =>{
     const {user, session} = useAuth();
@@ -32,15 +34,24 @@ const NotificationCards = () =>{
     const handleClickOpinionNotif = handleClickOpinion(navigate);
     const mutationReadNotif = useReadNotificationMutation(session);
 
+    const handleClickSender = (e, notification) => {
+        e.stopPropagation();
+        const senderPath = getPublicProfilePath(notification?.users);
+        if (senderPath) navigate(senderPath);
+    };
+
     const handleReadNotif = async(e, notification) => {
         e.stopPropagation();
         const source = notification?.source || 'journal';
         mutationReadNotif.mutate({notifId: notification.id, source})
 
+        const targetPath = getNotificationTargetPath(notification);
+
         if(source === 'opinion'){
             handleClickOpinionNotif(e, notification?.opinions?.id, notification?.opinions?.user_id)
-        } else if(notification?.type === 'follow'){
-            navigate(`/visitProfile?userId=${notification?.sender_id}`);
+        } else if(targetPath){
+            // Type-aware target (guestbook → owner's guestbook; follow/theme_remix → actor profile)
+            navigate(targetPath);
         } else if(notification?.type === 'repost' && notification?.repost_journal_id){
             // Navigate to the repost post (quote + embedded original)
             const repostId = notification.repost_journal_id;
@@ -178,7 +189,12 @@ const NotificationCards = () =>{
 
                             <div className="notification-sender-user-metadata">
                                 <div className="notification-sender-user-metadata-child">
-                                    <div className={`notif-sender-profilepic-container ${getBadgeRingClass(notification?.users?.badge, 'notif-avatar-ring')}`}>
+                                    <div
+                                        className={`notif-sender-profilepic-container ${getBadgeRingClass(notification?.users?.badge, 'notif-avatar-ring')}`}
+                                        onClick={(e) => handleClickSender(e, notification)}
+                                        style={{ cursor: 'pointer' }}
+                                        title={`View ${notification?.users?.name || 'user'}'s profile`}
+                                    >
                                         <img loading="lazy" className="notif-sender-profilepic" src={notification?.users?.image_url || '/assets/profile.jpg'} alt="notificataion sender profile picture" />
                                     </div>
 
@@ -242,6 +258,14 @@ const NotificationCards = () =>{
                                 {displayType === 'follow' ? (
                                     <div className="notification-content-text">
                                         <p className="notif-content-sliced-text">started following you</p>
+                                    </div>
+                                ) : displayType === 'guestbook' ? (
+                                    <div className="notification-content-text">
+                                        <p className="notif-content-sliced-text">signed your guestbook</p>
+                                    </div>
+                                ) : displayType === 'theme_remix' ? (
+                                    <div className="notification-content-text">
+                                        <p className="notif-content-sliced-text">used your profile theme</p>
                                     </div>
                                 ) : isOpinion ? (
                                     <div className="notification-content-text">

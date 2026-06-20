@@ -1,0 +1,270 @@
+/*
+ * Profile Guestbook (Phase 2).
+ * Inherits Profile Builder theme vars (--pt-*) when rendered inside .pt-scope,
+ * and falls back to the app's glass tokens when no theme is active.
+ */
+
+.pt-guestbook {
+    width: 90%;
+    margin: 1rem auto 2rem;
+    padding: 1.2rem 1.3rem 1.4rem;
+    border-radius: var(--pt-card-radius, 18px);
+    background-color: var(--pt-card-bg, var(--bg-glass, rgba(255, 255, 255, 0.55)));
+    border: var(--pt-card-border-width, 0.7px) solid var(--pt-card-border-color, var(--border-light, rgba(0, 0, 0, 0.08)));
+    box-shadow: var(--pt-card-shadow, 0 8px 32px rgba(0, 0, 0, 0.06));
+    backdrop-filter: var(--pt-card-blur, blur(25px));
+    -webkit-backdrop-filter: var(--pt-card-blur, blur(25px));
+    color: inherit;
+    font-family: var(--pt-font, inherit);
+}
+
+.pt-guestbook-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+}
+
+.pt-guestbook-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    font-family: var(--pt-font, "Playfair Display", serif);
+}
+
+.pt-guestbook-count {
+    font-size: 0.78rem;
+    opacity: 0.6;
+}
+
+/* ── Composer ─────────────────────────────────────────────────────────────── */
+.pt-guestbook-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+}
+
+.pt-guestbook-input {
+    width: 100%;
+    resize: vertical;
+    min-height: 48px;
+    padding: 0.7rem 0.85rem;
+    border-radius: 12px;
+    border: 1px solid var(--pt-card-border-color, rgba(0, 0, 0, 0.12));
+    background: rgba(255, 255, 255, 0.14);
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+}
+
+.pt-guestbook-input::placeholder {
+    color: currentColor;
+    opacity: 0.5;
+}
+
+.pt-guestbook-input:focus {
+    outline: 2px solid var(--pt-accent, #D4A853);
+    outline-offset: 1px;
+}
+
+.pt-guestbook-composer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pt-guestbook-charcount {
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+
+.pt-guestbook-charcount.is-near-limit {
+    color: #e0653f;
+    opacity: 1;
+}
+
+.pt-guestbook-sign-btn {
+    padding: 0.45rem 1.3rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--pt-accent, #D4A853);
+    color: #1a1a1a;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.pt-guestbook-sign-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.pt-guestbook-sign-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.pt-guestbook-cta {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    margin-bottom: 1.1rem;
+    border-radius: 12px;
+    border: 1.5px dashed currentColor;
+    background: transparent;
+    color: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    opacity: 0.85;
+    transition: opacity 0.18s ease;
+}
+
+.pt-guestbook-cta:hover {
+    opacity: 1;
+}
+
+.pt-guestbook-error {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #e0653f;
+}
+
+/* ── Entries ──────────────────────────────────────────────────────────────── */
+.pt-guestbook-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.pt-guestbook-empty {
+    margin: 0.4rem 0;
+    font-size: 0.85rem;
+    opacity: 0.6;
+}
+
+.pt-guestbook-entry {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+/* Brief highlight when arriving from a guestbook notification deep-link. */
+.pt-guestbook-entry.is-highlighted {
+    animation: pt-guestbook-highlight 2.4s ease-out;
+}
+
+@keyframes pt-guestbook-highlight {
+    0%,
+    35% {
+        background-color: var(--pt-accent, #D4A853);
+        box-shadow: 0 0 0 3px var(--pt-accent, #D4A853);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: 0 0 0 0 transparent;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* No pulse — show a calm static outline that the JS timer clears. */
+    .pt-guestbook-entry.is-highlighted {
+        animation: none;
+        outline: 2px solid var(--pt-accent, #D4A853);
+        outline-offset: 2px;
+    }
+}
+
+.pt-guestbook-avatar-btn {
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.pt-guestbook-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.pt-guestbook-entry-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.pt-guestbook-entry-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+}
+
+.pt-guestbook-author {
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.pt-guestbook-author:hover {
+    text-decoration: underline;
+}
+
+.pt-guestbook-handle,
+.pt-guestbook-date {
+    opacity: 0.55;
+    font-size: 0.78rem;
+}
+
+.pt-guestbook-delete {
+    margin-left: auto;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.12);
+    color: inherit;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.18s ease, background 0.18s ease;
+}
+
+.pt-guestbook-delete:hover:not(:disabled) {
+    opacity: 1;
+    background: rgba(224, 101, 63, 0.25);
+}
+
+.pt-guestbook-message {
+    margin: 0.15rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+@media (max-width: 760px) {
+    .pt-guestbook {
+        width: 94%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pt-guestbook-sign-btn,
+    .pt-guestbook-cta {
+        transition: none !important;
+    }
+}

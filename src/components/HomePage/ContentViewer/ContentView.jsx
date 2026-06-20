@@ -103,6 +103,7 @@ const ContentView = () => {
                 wholeText: wholeText,
                 title: journal?.title,
                 userId: journal?.users?.id || journal?.user_id,
+                username: journal?.users?.username,
                 name: journal?.users?.name,
                 avatar: journal?.users?.image_url,
                 created_at: journal?.created_at,
@@ -135,6 +136,7 @@ const ContentView = () => {
             title: statePostData?.title,
             userId: statePostData?.userId,
             name: statePostData?.name,
+            username: statePostData?.username,
             avatar: statePostData?.avatar,
             created_at: statePostData?.created_at,
             journalId: statePostData?.journalId,
@@ -327,7 +329,7 @@ const ContentView = () => {
                                         <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
                                     </svg>
                                     <span
-                                        onClick={(e) => handleclickUserProfile(e, user?.userData?.[0]?.id, postData?.userId)}
+                                        onClick={(e) => handleclickUserProfile(e, user?.userData?.[0]?.id, postData?.userId, postData?.username)}
                                         className="cv-repost-badge-name"
                                     >
                                         {postData?.name}
@@ -463,7 +465,7 @@ const ContentView = () => {
 
                             <div className="cv-meta">
                                 <div
-                                    onClick={(e) => handleclickUserProfile(e, user?.userData?.[0]?.id, postData?.userId)}
+                                    onClick={(e) => handleclickUserProfile(e, user?.userData?.[0]?.id, postData?.userId, postData?.username)}
                                     className={`cv-avatar-wrap ${postData?.badge === 'legend' ? 'cv-avatar-ring-legend' : postData?.badge === 'og' ? 'cv-avatar-ring-og' : ''}`}
                                 >
                                     <img src={postData?.avatar || '/assets/profile.jpg'} className="cv-avatar" alt="user avatar" />
@@ -471,7 +473,7 @@ const ContentView = () => {
                                 <div className="cv-meta-info">
                                     <div className="cv-meta-top">
                                         <span
-                                            onClick={(e) => handleclickUserProfile(e, user?.userData?.[0]?.id, postData?.userId)}
+                                            onClick={(e) => handleclickUserProfile(e, user?.userData?.[0]?.id, postData?.userId, postData?.username)}
                                             className="cv-author-name"
                                         >
                                             {postData?.name}

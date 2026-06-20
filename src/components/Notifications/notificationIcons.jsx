@@ -61,6 +61,18 @@ export const ICON_REPOST = (
     </svg>
 );
 
+export const ICON_GUESTBOOK = (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="30px" height="30px" fill="var(--accent-amber)">
+        <path d="M280-280h280v-80H280v80Zm0-160h400v-80H280v80Zm0-160h400v-80H280v80ZM160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm0 0v-560 560Z" />
+    </svg>
+);
+
+export const ICON_THEME_REMIX = (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="30px" height="30px" fill="var(--accent-purple)">
+        <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 17-1 33.5T875-414q-17-21-43-33.5T776-460q-17 0-33.5 6.5T715-433q-29 26-44.5 33.5T620-392q-26 0-44.5-19T557-456q0-26 18.5-44.5T620-519q26 0 50-6t44-22q14-11 21.5-26t7.5-31q0-58-58-98t-152-40q-117 0-198.5 81.5T280-480q0 117 81.5 198.5T560-200q26 0 44.5 18.5T623-137q0 26-18.5 44.5T560-74q-20 6-40 0Zm-200-320q26 0 44.5-18.5T343-483q0-26-18.5-44.5T280-546q-26 0-44.5 18.5T217-483q0 26 18.5 44.5T280-400Zm120-160q26 0 44.5-18.5T463-623q0-26-18.5-44.5T400-686q-26 0-44.5 18.5T337-623q0 26 18.5 44.5T400-560Zm160 0q26 0 44.5-18.5T623-623q0-26-18.5-44.5T560-686q-26 0-44.5 18.5T497-623q0 26 18.5 44.5T560-560Z" />
+    </svg>
+);
+
 /** Map for O(1) icon lookup by notification type */
 export const NOTIFICATION_ICON_MAP = new Map([
     ['like', ICON_LIKE],
@@ -72,4 +84,6 @@ export const NOTIFICATION_ICON_MAP = new Map([
     ['mention', ICON_MENTION],
     ['follow', ICON_FOLLOW],
     ['repost', ICON_REPOST],
+    ['guestbook', ICON_GUESTBOOK],
+    ['theme_remix', ICON_THEME_REMIX],
 ]);

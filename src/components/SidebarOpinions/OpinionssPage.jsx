@@ -198,9 +198,9 @@ const OpinionsPage = () =>{
                         <div className="so-card-content">
                             <div className="so-header-row">
                                 <div className={`so-avatar-outer ${getBadgeRingClass(opinion.users.badge)}`}>
-                                    <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
+                                    <img onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id, opinion.users?.username)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
                                 </div>
-                                <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id)} className="so-username">{opinion.users.name}</span>
+                                <span onClick={(e) => handleClickOpinionProfile(e, user?.userData[0].id, opinion.user_id, opinion.users?.username)} className="so-username">{opinion.users.name}</span>
                                 <VerifiedBadge badge={opinion.users.badge} size={14}/>
                                 <span className="so-dot">·</span>
                                 <span className="so-date">{formatPostDate(opinion.created_at)}</span>

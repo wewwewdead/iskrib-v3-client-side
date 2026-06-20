@@ -94,7 +94,7 @@ const VisitedProfileOpinions = () =>{
                         <div className="so-card-content">
                             <div className="so-header-row">
                                 <div className={`so-avatar-outer ${getBadgeRingClass(opinion.users.badge)}`}>
-                                    <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, userId)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
+                                    <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, userId, opinion.users?.username)} className="so-avatar" src={opinion.users.image_url || "../../assets/profile.jpg"} alt={`${opinion?.users?.name || "User"} profile picture`} />
                                 </div>
                                 <span className="so-username">{opinion.users.name}</span>
                                 <VerifiedBadge badge={opinion.users.badge} size={14} />

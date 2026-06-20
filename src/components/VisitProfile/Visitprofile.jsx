@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import '../ProfilePage/myprofile.css';
 import './visitProfile.css';
 import { useAuth } from '../../Context/useAuth';
-import { getFollowsData, getUserData, getUserJournals, getUserByUsername } from '../../../API/Api';
+import { getFollowsData, getUserData, getUserJournals, getUserByUsername, recordProfileVisit } from '../../../API/Api';
 import { Fragment, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../SideBar/Sidebar';
@@ -23,6 +23,19 @@ import ShareMenu from '../ShareMenu/ShareMenu';
 import { getProfileShareUrl } from '../../utils/getShareUrl';
 import StreakBadge from '../Streak/StreakBadge';
 import useStreakData from '../Streak/useStreakData';
+import StickerLayer from '../ProfilePage/builder/StickerLayer';
+import { profileThemeToCssVars, isSectionVisible } from '../ProfilePage/builder/profileThemeUtils';
+import '../ProfilePage/builder/profileTheme.css';
+import ProfileGuestbook from '../ProfilePage/guestbook/ProfileGuestbook';
+import UseThemeButton from '../ProfilePage/builder/UseThemeButton';
+
+// Maps tab labels to their theme section id so hidden sections drop their tab.
+const TAB_SECTION_ID = {
+    Writings: 'writings',
+    Media: 'media',
+    Opinions: 'opinions',
+    Stories: 'stories',
+};
 
 const Visitprofile = () =>{
     const location = useLocation();
@@ -49,7 +62,7 @@ const Visitprofile = () =>{
         ? urlUsername
         : usernameData?.userData?.[0]?.username;
 
-    const {session, user, notifCount, loading} = useAuth();
+    const {session, user, notifCount, openAuthModal} = useAuth();
 
     const [showSidebar, setShowSidebar]= useState(false)
     const [opendRichTextEditor, setOpenRichTextEditor] = useState(false);
@@ -60,24 +73,15 @@ const Visitprofile = () =>{
 
     const navigate = useNavigate();
     const visitedProfileNavState = { userId: visitedUserId };
-    const visibleProfileSections = [{id: 'stats'}, {id: 'bio'}, {id: 'joined_date'}];
 
-    // Use @username paths when available, fall back to legacy /visitProfile paths
+    // Canonical username is the source of truth. Tabs always build /u/:username.
     const profileUsername = resolvedUsername || usernameData?.userData?.[0]?.username;
-    const useNewUrls = !!profileUsername;
-    const tablists = useNewUrls
-        ? [
-            {label: 'Writings', path: `/u/${profileUsername}`, action: () => navigate(`/u/${profileUsername}`, {state: visitedProfileNavState})},
-            {label: 'Media', path: `/u/${profileUsername}/media`, action: () => navigate(`/u/${profileUsername}/media`, {state: visitedProfileNavState})},
-            {label: 'Opinions', path: `/u/${profileUsername}/opinions`, action: () => navigate(`/u/${profileUsername}/opinions`, {state: visitedProfileNavState})},
-            {label: 'Stories', path: `/u/${profileUsername}/stories`, action: () => navigate(`/u/${profileUsername}/stories`, {state: visitedProfileNavState})}
-        ]
-        : [
-            {label: 'Writings', path: '/visitProfile', action: () => navigate(`/visitProfile?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
-            {label: 'Media', path: '/visitProfile/media', action: () => navigate(`/visitProfile/media?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
-            {label: 'Opinions', path:'/visitProfile/visitedOpinions', action: () => navigate(`/visitProfile/visitedOpinions?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})},
-            {label: 'Stories', path:'/visitProfile/stories', action: () => navigate(`/visitProfile/stories?userId=${visitedUserId || ''}`, {state: visitedProfileNavState})}
-        ]
+    const tablists = [
+        {label: 'Writings', path: `/u/${profileUsername}`, action: () => navigate(`/u/${profileUsername}`, {state: visitedProfileNavState})},
+        {label: 'Media', path: `/u/${profileUsername}/media`, action: () => navigate(`/u/${profileUsername}/media`, {state: visitedProfileNavState})},
+        {label: 'Opinions', path: `/u/${profileUsername}/opinions`, action: () => navigate(`/u/${profileUsername}/opinions`, {state: visitedProfileNavState})},
+        {label: 'Stories', path: `/u/${profileUsername}/stories`, action: () => navigate(`/u/${profileUsername}/stories`, {state: visitedProfileNavState})}
+    ]
 
      const navigatePath = (path) => {
         return navigate(path)
@@ -93,8 +97,12 @@ const Visitprofile = () =>{
         }
     }
 
-    //open rich text editor
+    //open rich text editor (requires auth)
     const handleClickRichtextEditor = () =>{
+        if(!session){
+            openAuthModal?.();
+            return;
+        }
         setOpenRichTextEditor(true);
     }
     //close rich text editor
@@ -153,6 +161,45 @@ const Visitprofile = () =>{
     useProfileSeo(userData, profileUsername);
     const getProfileSectionSize = () => 'md';
 
+    // ── Profile Builder theme ──
+    const profileTheme = userData?.profile_theme || null;
+    const hasTheme = !!profileTheme;
+    const themeVars = hasTheme ? profileThemeToCssVars(profileTheme, userData) : null;
+
+    const visibleProfileSections = [{ id: 'stats' }, { id: 'bio' }, { id: 'joined_date' }].filter(
+        (section) => !hasTheme || isSectionVisible(profileTheme, section.id)
+    );
+
+    const visibleTablists = hasTheme
+        ? tablists.filter((tab) => {
+              const sectionId = TAB_SECTION_ID[tab.label];
+              return !sectionId || isSectionVisible(profileTheme, sectionId);
+          })
+        : tablists;
+
+    const requireLoginThen = (action) => {
+        if (!session) {
+            openAuthModal?.();
+            return;
+        }
+        action();
+    };
+
+    // "Use this theme" eligibility: logged in, not the owner, source has a theme.
+    const currentUserId = user?.userData?.[0]?.id;
+    const isOwnProfile = !!currentUserId && currentUserId === visitedUserId;
+    const canUseTheme = !!session && !isOwnProfile && !!profileTheme;
+    const guestbookUsername = profileUsername || userData?.username;
+
+    // Record a (throttled) profile visit once per loaded profile. Works logged-out.
+    const visitRecordedRef = useRef(null);
+    useEffect(() => {
+        if (!guestbookUsername) return;
+        if (visitRecordedRef.current === guestbookUsername) return;
+        visitRecordedRef.current = guestbookUsername;
+        recordProfileVisit(session?.access_token, guestbookUsername).catch(() => {});
+    }, [guestbookUsername, session?.access_token]);
+
     const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
         queryKey: ['followsData', user?.userData?.[0].id, visitedUserId],
         queryFn: ({queryKey}) => getFollowsData(session?.access_token, queryKey[2]),
@@ -167,13 +214,8 @@ const Visitprofile = () =>{
         // console.log(data)
     }, [data])
 
-    useEffect(() => {
-        if(!session && !loading){
-            return navigate('/login')
-            //check if the user has user metadata on the users table database if not then show a UI that let them input there data and save to database
-        }
-    
-    },[session, loading])
+    // Public profiles are viewable without logging in. Anonymous visitors can
+    // browse freely; actions like Follow/Write open the auth modal on demand.
 
     if(isLoading || isLoadingByUsername){
         return(
@@ -194,10 +236,17 @@ const Visitprofile = () =>{
                 <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
             </div>
 
-            <div style={{color: userData?.profile_font_color}} className="profile-center-bar-container">
+            <div
+                style={hasTheme ? themeVars : {color: userData?.profile_font_color}}
+                className={`profile-center-bar-container${hasTheme ? ' pt-scope' : ''}`}
+            >
                 {userData && (
 
                     <div style={userData?.background} className='visit-profile-hero-section'>
+
+                        {profileTheme?.stickers?.length > 0 && (
+                            <StickerLayer stickers={profileTheme.stickers} accentColor={profileTheme?.colors?.accent} />
+                        )}
 
                         <div className='visited-profile-top-row'>
                             <div className={`profile-avatar-ring ${userData?.badge === 'legend' ? 'badge-ring-legend' : userData?.badge === 'og' ? 'badge-ring-og' : ''}`}>
@@ -272,10 +321,13 @@ const Visitprofile = () =>{
 
                         <div className='visited-profile-actions-row'>
                             <div onMouseMove={() => handleMouseMove(followsData?.isFollowing)} onMouseLeave={() => handleMouseLeave(followsData?.isFollowing)} className='visited-profile-follow-button-container'>
-                                <button onClick={(e) => debounceClickFollow(e, visitedUserId, user?.userData?.[0].id)} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>
+                                <button onClick={(e) => requireLoginThen(() => debounceClickFollow(e, visitedUserId, user?.userData?.[0].id))} ref={buttonRef} className={followsData?.isFollowing ? 'unfollow-visited-profile-bttn' : 'follow-visited-profile-bttn'}>
                                     {followsData?.isFollowing ? 'Following' : 'Follow'}
                                 </button>
                             </div>
+                            {canUseTheme && guestbookUsername && (
+                                <UseThemeButton sourceUsername={guestbookUsername} iconColor={userData?.profile_font_color} />
+                            )}
                             {(profileUsername || userData?.username) && (
                                 <div className="visit-profile-share-btn" style={{ position: 'relative' }} onClick={(e) => { e.stopPropagation(); setShowShareMenu((v) => !v); }}>
                                     <svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 0 24 24" width="18px" fill="currentColor">
@@ -298,7 +350,7 @@ const Visitprofile = () =>{
                 }
 
                 <div className='my-profile-tablist'>
-                    {tablists.map((tab, index) => (
+                    {visibleTablists.map((tab, index) => (
                          <div key={index} onClick={() => tab.action()} className='tab-container'>
                             {tab.label}
                             <div className={location.pathname === tab.path ? 'tab-indicator' : ''}/>
@@ -309,8 +361,12 @@ const Visitprofile = () =>{
 
                 <Outlet/>
 
+                {guestbookUsername && isSectionVisible(profileTheme, 'guestbook') && (
+                    <ProfileGuestbook username={guestbookUsername} profileUserId={visitedUserId} />
+                )}
+
             </div>
-            
+
             <div className="profile-sidebar-right-holder-container" />
 
             {showSidebar && (

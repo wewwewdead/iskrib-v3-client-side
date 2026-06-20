@@ -19,6 +19,7 @@ const PostCards = lazy(() => import('./components/HomePage/postCards/PostCards.j
 const ContentView = lazy(() => import('./components/HomePage/ContentViewer/ContentView.jsx'));
 const Bookmarks = lazy(() => import('./components/Bookmarks/Bookmarks.jsx'));
 const Visitprofile = lazy(() => import('./components/VisitProfile/Visitprofile.jsx'));
+const LegacyVisitProfileRedirect = lazy(() => import('./components/VisitProfile/LegacyVisitProfileRedirect.jsx'));
 const ProfilePostCards = lazy(() => import('./components/HomePage/postCards/ProfilePostCards/ProfilePostCards.jsx'));
 const ProfileMediaSection = lazy(() => import('./components/ProfilePage/components/ProfileMediaSection.jsx'));
 const VisitedProfilePostCards = lazy(() => import('./components/HomePage/postCards/ProfilePostCards/VisitedProfilePostCards.jsx'));
@@ -101,12 +102,11 @@ const App = () => {
               <Route path='stories' element={<ProfileStoriesSection/>}/>
             </Route>
 
-            <Route path='/visitProfile' element={<Visitprofile/>}>
-              <Route index element={<VisitedProfilePostCards/>}/>
-              <Route path='media' element={<VisitedProfileMediaSection/>}/>
-              <Route path='visitedOpinions' element={<VisitedProfileOpinions/>}/>
-              <Route path='stories' element={<VisitedProfileStoriesSection/>}/>
-            </Route>
+            {/* Legacy userId routes now canonicalize to /u/:username */}
+            <Route path='/visitProfile' element={<LegacyVisitProfileRedirect/>}/>
+            <Route path='/visitProfile/media' element={<LegacyVisitProfileRedirect section="media"/>}/>
+            <Route path='/visitProfile/visitedOpinions' element={<LegacyVisitProfileRedirect section="opinions"/>}/>
+            <Route path='/visitProfile/stories' element={<LegacyVisitProfileRedirect section="stories"/>}/>
 
             <Route path='/u/:username' element={<Visitprofile/>}>
               <Route index element={<VisitedProfilePostCards/>}/>

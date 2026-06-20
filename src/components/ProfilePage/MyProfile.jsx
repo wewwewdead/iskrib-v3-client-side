@@ -23,6 +23,17 @@ import ProfileTabList from "./components/ProfileTabList";
 import { PROFILE_GRADIENTS } from "./constants/profileGradients";
 import { createProfileSidebarLinks } from "./constants/profileSidebarLinks";
 import { PROFILE_TABS } from "./constants/profileTabs";
+import ProfileBuilder from "./builder/ProfileBuilder";
+import { profileThemeToCssVars, isSectionVisible } from "./builder/profileThemeUtils";
+import ProfileGuestbook from "./guestbook/ProfileGuestbook";
+
+// Maps profile tab labels to their theme section id so hidden sections drop their tab.
+const TAB_SECTION_ID = {
+    Writings: "writings",
+    Media: "media",
+    Opinions: "opinions",
+    Stories: "stories",
+};
 
 const MyProfile = () => {
     const { user, session, isLoading, notifCount, loading } = useAuth();
@@ -50,6 +61,8 @@ const MyProfile = () => {
     const [showFontColorSelector, setShowFontColorSelector] = useState(false);
     const [fontColor, setFontColor] = useState("");
 
+    const [showBuilder, setShowBuilder] = useState(false);
+
     const inputRef = useRef();
     const bgInputRef = useRef();
     const fontColorInputRef = useRef();
@@ -68,6 +81,12 @@ const MyProfile = () => {
     };
     const location = useLocation();
 
+    // Deep-link support: /profile?focus=guestbook[&entryId=..|&from=<signerId>]
+    const profileFocusParams = new URLSearchParams(location.search);
+    const focusGuestbook = profileFocusParams.get("focus") === "guestbook";
+    const highlightEntryId = profileFocusParams.get("entryId") || null;
+    const highlightFromUserId = profileFocusParams.get("from") || null;
+
     const queryClient = useQueryClient();
 
     const links = createProfileSidebarLinks({
@@ -79,6 +98,17 @@ const MyProfile = () => {
     });
     const gradients = PROFILE_GRADIENTS;
     const tablists = PROFILE_TABS;
+
+    // ── Profile Builder theme ──
+    const profileTheme = userData?.profile_theme || null;
+    const hasTheme = !!profileTheme;
+    const themeVars = hasTheme ? profileThemeToCssVars(profileTheme, userData) : null;
+    const visibleTabs = hasTheme
+        ? tablists.filter((tab) => {
+              const sectionId = TAB_SECTION_ID[tab.label];
+              return !sectionId || isSectionVisible(profileTheme, sectionId);
+          })
+        : tablists;
 
     useEffect(() => {
         setCroppedImage(userData?.background || null);
@@ -272,6 +302,16 @@ const MyProfile = () => {
         setShowFontColorSelector(true);
     };
 
+    const handleClickCustomize = (e) => {
+        e?.stopPropagation?.();
+        setShowFontColorSelector(false);
+        setShowBuilder(true);
+    };
+
+    const handleBuilderSaved = () => {
+        queryClient.invalidateQueries({ queryKey: ["userData", session?.user?.id] });
+    };
+
     const handleClickInputColor = () => {
         if (fontColorInputRef.current) {
             fontColorInputRef.current.click();
@@ -385,20 +425,35 @@ const MyProfile = () => {
                         <Sidebar links={links} />
                     </div>
 
-                    <div style={{ color: fontColor || userData?.profile_font_color }} className="profile-center-bar-container">
+                    <div
+                        style={hasTheme ? themeVars : { color: fontColor || userData?.profile_font_color }}
+                        className={`profile-center-bar-container${hasTheme ? " pt-scope" : ""}`}
+                    >
                         <ProfileHeroSection
                             userData={userData}
                             user={user}
                             fontColor={fontColor}
                             handleClickEdit={handleClickEdit}
                             handleClickFontColorSelector={handleClickFontColorSelector}
+                            handleClickCustomize={handleClickCustomize}
                             croppedImage={croppedImage}
                             gradientPicked={gradientPicked}
+                            profileTheme={profileTheme}
                         />
 
-                        <ProfileTabList tablists={tablists} navigate={navigate} location={location} />
+                        <ProfileTabList tablists={visibleTabs} navigate={navigate} location={location} />
 
                         <Outlet />
+
+                        {userData?.username && isSectionVisible(profileTheme, "guestbook") && (
+                            <ProfileGuestbook
+                                username={userData.username}
+                                profileUserId={userData.id}
+                                focusGuestbook={focusGuestbook}
+                                highlightEntryId={highlightEntryId}
+                                highlightFromUserId={highlightFromUserId}
+                            />
+                        )}
                     </div>
 
                     <div className="profile-sidebar-right-holder-container">{/* Log out */}</div>
@@ -409,6 +464,17 @@ const MyProfile = () => {
                     <WriteJournalButton onOpen={openRichTextEditor} />
                 </div>
             </AnimatePresence>
+
+            <ProfileBuilder
+                open={showBuilder}
+                onClose={() => setShowBuilder(false)}
+                userData={userData}
+                initialTheme={userData?.profile_theme}
+                token={session?.access_token}
+                onSaved={handleBuilderSaved}
+                followerCount={user?.followerCount}
+                followingCount={user?.followingCount}
+            />
 
             {saveError && (
                 <div key={saveError} className="profile-save-error-toast">

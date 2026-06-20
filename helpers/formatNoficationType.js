@@ -19,7 +19,9 @@ const notificationTypeMap = {
     constellation_accepted: 'Accepted your constellation link',
     hottest_post: 'Your post is #1 Hottest on Explore Page!',
     hottest_post_replaced: 'Your post is no longer #1 Hottest on Explore Page',
-    mention: 'Mentioned you in a post'
+    mention: 'Mentioned you in a post',
+    guestbook: 'Signed your guestbook',
+    theme_remix: 'Used your profile theme'
 };
 
 const FormatNotificationType = (type, reactionType) => {

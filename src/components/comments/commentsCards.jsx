@@ -171,13 +171,13 @@ const CommentsCards = ({comments, postId}) =>{
             <div className="cm-card-content">
                 <div className="cm-user-row">
                     <div
-                        onClick={(e) => clickProfile(e, user?.userData[0].id, comments?.user_id)}
+                        onClick={(e) => clickProfile(e, user?.userData[0].id, comments?.user_id, comments?.users?.username)}
                         className={`cm-avatar-container ${getBadgeRingClass(comments?.users?.badge, 'cm-ring')}`}
                     >
                         <img className="cm-avatar" src={comments?.users?.image_url || '/assets/profile.jpg'} alt={`${comments?.users?.name || "User"} profile picture`} />
                     </div>
                     <span
-                        onClick={(e) => clickProfile(e, user?.userData[0].id, comments?.user_id)}
+                        onClick={(e) => clickProfile(e, user?.userData[0].id, comments?.user_id, comments?.users?.username)}
                         className="cm-username"
                     >
                         {comments?.users?.name}

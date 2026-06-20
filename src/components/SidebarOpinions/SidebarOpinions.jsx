@@ -99,9 +99,9 @@ const SidebarOpinions = ({openEditor}) =>{
                                 <div className="so-card-content">
                                     <div className="so-header-row">
                                         <div className={`so-avatar-outer ${getBadgeRingClass(opinionsData.users.badge)}`}>
-                                            <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt={`${opinionsData?.users?.name || "User"} profile picture`} />
+                                            <img onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id, opinionsData.users?.username)} className="so-avatar" src={opinionsData.users.image_url || "../../assets/profile.jpg"} alt={`${opinionsData?.users?.name || "User"} profile picture`} />
                                         </div>
-                                        <span onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id)} className="so-username">{opinionsData.users.name}</span>
+                                        <span onClick={(e) => handleClickOpionionsProfile(e, user?.userData[0].id, opinionsData.user_id, opinionsData.users?.username)} className="so-username">{opinionsData.users.name}</span>
                                         <VerifiedBadge badge={opinionsData.users.badge} size={14} />
                                         <span className="so-dot">·</span>
                                         <span className="so-date">{formatPostDate(opinionsData.created_at)}</span>
