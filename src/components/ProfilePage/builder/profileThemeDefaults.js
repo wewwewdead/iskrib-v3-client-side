@@ -1,4 +1,26 @@
-import { PROFILE_THEME_VERSION, PROFILE_SECTIONS } from "./profileThemeConstants";
+import {
+    PROFILE_THEME_VERSION,
+    PROFILE_SECTIONS,
+    DEFAULT_LAYOUT_BLOCK_TYPES,
+    DEFAULT_LAYOUT_TITLE_BY_TYPE,
+    DEFAULT_LAYOUT_WIDTH_BY_TYPE,
+    ALLOWED_LAYOUT_VARIANTS_BY_TYPE,
+} from "./profileThemeConstants";
+
+/** Build the default ordered layout (content blocks below the hero). */
+export const getDefaultLayout = () => ({
+    mode: "stack",
+    blocks: DEFAULT_LAYOUT_BLOCK_TYPES.map((type, index) => ({
+        id: type,
+        type,
+        visible: true,
+        order: index,
+        width: DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full",
+        style: "inherit",
+        variant: ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type][0],
+        title: DEFAULT_LAYOUT_TITLE_BY_TYPE[type],
+    })),
+});
 
 /**
  * Build a sensible default theme for a user. Existing legacy fields
@@ -36,5 +58,6 @@ export const getDefaultProfileTheme = (userData) => {
             order: index,
         })),
         stickers: [],
+        layout: getDefaultLayout(),
     };
 };

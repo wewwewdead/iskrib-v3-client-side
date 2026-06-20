@@ -65,6 +65,15 @@ export const remixProfileTheme = (token, username) =>
 export const getProfileDiscover = () =>
     publicGet('/profiles/discover', 'failed to load profile discovery');
 
+// ─── Profile Content Preview (V3B — layout home real previews) ───
+
+export const getProfilePreview = (username) => {
+    if (!username) {
+        return Promise.resolve({ writings: [], media: [], opinions: [], stories: [], pinnedWritings: [] });
+    }
+    return publicGet(`/users/${encodeURIComponent(username)}/profile-preview`, 'failed to load profile preview');
+};
+
 export const getProfileActivitySummary = (token) =>
     authedGet(token, '/profile/activity-summary', 'failed to load activity summary');
 

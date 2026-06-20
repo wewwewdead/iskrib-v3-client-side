@@ -1,4 +1,6 @@
-import { profileThemeToCssVars, isSectionVisible } from "./profileThemeUtils";
+import { profileThemeToCssVars, isSectionVisible, getVisibleOrderedLayoutBlocks } from "./profileThemeUtils";
+import { LAYOUT_BLOCK_LABELS } from "./profileThemeConstants";
+import { RENDERABLE_LAYOUT_BLOCK_TYPES, blockWidthClass, blockStyleClass } from "../layout/profileLayoutUtils";
 import StickerLayer from "./StickerLayer";
 import formatCounts from "../../../../helpers/fomatCounts";
 
@@ -14,6 +16,10 @@ const BuilderPreview = ({ theme, userData, followerCount, followingCount, onStic
     const showStats = isSectionVisible(theme, "stats");
     const showBio = isSectionVisible(theme, "bio");
     const showJoined = isSectionVisible(theme, "joined_date");
+
+    const layoutBlocks = getVisibleOrderedLayoutBlocks(theme).filter((b) =>
+        RENDERABLE_LAYOUT_BLOCK_TYPES.includes(b.type)
+    );
 
     return (
         <div className="pt-preview-wrap pt-scope" style={cssVars}>
@@ -73,6 +79,26 @@ const BuilderPreview = ({ theme, userData, followerCount, followingCount, onStic
                         </div>
                     )}
                 </div>
+
+                {/* Layout preview — mirrors the configured block order / width /
+                    style so reordering and styling is visible live. Lightweight
+                    placeholders only (no real content fetched in the builder). */}
+                {layoutBlocks.length > 0 && (
+                    <div className="pt-preview-layout">
+                        {layoutBlocks.map((block) => (
+                            <div
+                                key={block.type}
+                                className={`pt-preview-block ${blockWidthClass(block.width)} ${blockStyleClass(block.style)}`}
+                            >
+                                <span className="pt-preview-block-title">
+                                    {block.title || LAYOUT_BLOCK_LABELS[block.type] || block.type}
+                                </span>
+                                <span className="pt-preview-block-bar" />
+                                <span className="pt-preview-block-bar pt-preview-block-bar--short" />
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

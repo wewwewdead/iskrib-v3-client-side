@@ -10,6 +10,16 @@ import {
     ALLOWED_SECTION_IDS,
     REQUIRED_SECTION_IDS,
     PROFILE_SECTIONS,
+    ALLOWED_LAYOUT_MODES,
+    ALLOWED_LAYOUT_BLOCK_TYPES,
+    ALLOWED_LAYOUT_WIDTHS,
+    ALLOWED_LAYOUT_STYLES,
+    ALLOWED_LAYOUT_VARIANTS_BY_TYPE,
+    MAX_LAYOUT_BLOCKS,
+    MAX_LAYOUT_TITLE_LENGTH,
+    DEFAULT_LAYOUT_BLOCK_TYPES,
+    DEFAULT_LAYOUT_TITLE_BY_TYPE,
+    DEFAULT_LAYOUT_WIDTH_BY_TYPE,
 } from "./profileThemeConstants";
 import { ALLOWED_STICKER_IDS } from "./stickerRegistry";
 import { getDefaultProfileTheme } from "./profileThemeDefaults";
@@ -34,6 +44,77 @@ const clamp = (value, min, max, fallback) => {
 
 const pickEnum = (value, allowedKeys, fallback) =>
     typeof value === "string" && allowedKeys.includes(value) ? value : fallback;
+
+// Is a section id visible in a sections list? Seeds derived layout visibility.
+const sectionVisibleInList = (sections, id) => {
+    if (!Array.isArray(sections)) return true;
+    const found = sections.find((s) => s && s.id === id);
+    if (!found) return true;
+    return found.visible !== false;
+};
+
+// Plain-text title: strip tags, collapse whitespace, clamp length, fall back.
+const sanitizeBlockTitle = (value, fallback) => {
+    if (typeof value !== "string") return fallback;
+    const plain = value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+    if (!plain) return fallback;
+    return plain.slice(0, MAX_LAYOUT_TITLE_LENGTH);
+};
+
+const buildDefaultLayoutBlock = (type, order, sections) => ({
+    id: type,
+    type,
+    visible: sectionVisibleInList(sections, type),
+    order,
+    width: DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full",
+    style: "inherit",
+    variant: ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type][0],
+    title: DEFAULT_LAYOUT_TITLE_BY_TYPE[type],
+});
+
+/**
+ * Client mirror of the server `sanitizeLayout`. Derives a layout from `sections`
+ * when missing (legacy v1), strips unknown block types, dedupes by type, clamps
+ * + re-indexes order, and whitelists width/style/variant. Never throws.
+ */
+const normalizeLayout = (rawLayout, sections) => {
+    const byType = new Map();
+
+    if (rawLayout && typeof rawLayout === "object" && Array.isArray(rawLayout.blocks)) {
+        rawLayout.blocks.forEach((block, index) => {
+            if (!block || typeof block !== "object") return;
+            const type = typeof block.type === "string" ? block.type : block.id;
+            if (!ALLOWED_LAYOUT_BLOCK_TYPES.includes(type)) return;
+            if (byType.has(type)) return;
+            const variants = ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type];
+            byType.set(type, {
+                id: type,
+                type,
+                visible: block.visible !== false,
+                order: clamp(block.order, 0, MAX_LAYOUT_BLOCKS * 4, index),
+                width: pickEnum(block.width, ALLOWED_LAYOUT_WIDTHS, DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full"),
+                style: pickEnum(block.style, ALLOWED_LAYOUT_STYLES, "inherit"),
+                variant: pickEnum(block.variant, variants, variants[0]),
+                title: sanitizeBlockTitle(block.title, DEFAULT_LAYOUT_TITLE_BY_TYPE[type]),
+            });
+        });
+    }
+
+    DEFAULT_LAYOUT_BLOCK_TYPES.forEach((type, index) => {
+        if (!byType.has(type)) {
+            byType.set(type, buildDefaultLayoutBlock(type, MAX_LAYOUT_BLOCKS + index, sections));
+        }
+    });
+
+    let blocks = Array.from(byType.values()).sort((a, b) => a.order - b.order);
+    if (blocks.length > MAX_LAYOUT_BLOCKS) blocks = blocks.slice(0, MAX_LAYOUT_BLOCKS);
+    blocks = blocks.map((block, index) => ({ ...block, order: index }));
+
+    return {
+        mode: pickEnum(rawLayout && rawLayout.mode, ALLOWED_LAYOUT_MODES, "stack"),
+        blocks,
+    };
+};
 
 /**
  * Client-side mirror of the server normalization. Used to render any stored
@@ -112,6 +193,7 @@ export const normalizeProfileTheme = (rawTheme, userData) => {
         },
         sections,
         stickers,
+        layout: normalizeLayout(rawTheme.layout, sections),
     };
 };
 
@@ -187,3 +269,28 @@ export const isSectionVisible = (theme, sectionId) => {
     if (!section) return true;
     return section.visible !== false;
 };
+
+/**
+ * Return the layout's blocks in their stored order, regardless of visibility.
+ * Falls back to a derived default layout for legacy/partial themes.
+ */
+export const getOrderedLayoutBlocks = (theme) => {
+    const layout =
+        theme && theme.layout && Array.isArray(theme.layout.blocks)
+            ? theme.layout
+            : normalizeLayout(null, theme?.sections);
+    return [...layout.blocks]
+        .filter((b) => b && ALLOWED_LAYOUT_BLOCK_TYPES.includes(b.type))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+};
+
+/**
+ * Return only the VISIBLE layout blocks, in order. Used by the renderer so a
+ * profile shows the containers the user chose, where they chose them.
+ */
+export const getVisibleOrderedLayoutBlocks = (theme) =>
+    getOrderedLayoutBlocks(theme).filter((b) => b.visible !== false);
+
+/** Find a single layout block by type (or undefined). */
+export const getLayoutBlock = (theme, type) =>
+    getOrderedLayoutBlocks(theme).find((b) => b.type === type);

@@ -6,7 +6,9 @@
  * normalize anything the client sends that falls outside these sets.
  */
 
-export const PROFILE_THEME_VERSION = 1;
+// V2 adds the `layout` block (Profile Builder V3 — Layout Composer). Older v1
+// themes are still read: a default layout is derived from their `sections`.
+export const PROFILE_THEME_VERSION = 2;
 
 export const MAX_STICKERS = 20;
 
@@ -106,3 +108,103 @@ export const ALLOWED_SECTION_IDS = PROFILE_SECTIONS.map((s) => s.id);
 
 // Sections that are forced visible regardless of theme config.
 export const REQUIRED_SECTION_IDS = PROFILE_SECTIONS.filter((s) => s.togglable === false).map((s) => s.id);
+
+// Hero sub-blocks managed in the Sections tab (the content containers moved to
+// the Layout tab in V3A). These toggle visibility inside the profile header.
+export const HERO_SUBBLOCK_SECTION_IDS = ["stats", "bio", "joined_date"];
+
+// ── Layout (Profile Builder V3A — Layout Composer) ───────────────────────────
+// Mirrors the server whitelist in server/utils/profileThemeValidation.js. The
+// layout controls ORDER, WIDTH, container STYLE and VARIANT of content blocks.
+export const ALLOWED_LAYOUT_MODES = ["stack"];
+
+export const ALLOWED_LAYOUT_BLOCK_TYPES = [
+    "guestbook",
+    "writings",
+    "media",
+    "opinions",
+    "stories",
+    "pinned_writings",
+    "bio",
+    "stats",
+    "joined_date",
+];
+
+export const ALLOWED_LAYOUT_WIDTHS = ["full", "half", "compact"];
+
+export const ALLOWED_LAYOUT_STYLES = ["inherit", "glass", "paper", "minimal", "framed"];
+
+export const ALLOWED_LAYOUT_VARIANTS_BY_TYPE = {
+    guestbook: ["compact", "wall"],
+    writings: ["editorial", "list", "compact"],
+    media: ["grid", "collage", "strip"],
+    opinions: ["cards", "compact", "debate"],
+    stories: ["shelf", "covers", "compact"],
+    pinned_writings: ["featured", "compact"],
+    bio: ["card", "plain"],
+    stats: ["row", "chips"],
+    joined_date: ["plain", "stamp"],
+};
+
+export const MAX_LAYOUT_BLOCKS = 12;
+export const MAX_LAYOUT_TITLE_LENGTH = 32;
+
+// Content blocks shown by default, in order. Guestbook stays near the top.
+// bio/stats/joined_date are valid types but live in the hero by default.
+export const DEFAULT_LAYOUT_BLOCK_TYPES = [
+    "guestbook",
+    "writings",
+    "media",
+    "opinions",
+    "stories",
+    "pinned_writings",
+];
+
+export const DEFAULT_LAYOUT_TITLE_BY_TYPE = {
+    guestbook: "Guestbook",
+    writings: "Writings",
+    media: "Media",
+    opinions: "Opinions",
+    stories: "Stories",
+    pinned_writings: "Pinned",
+    bio: "About",
+    stats: "Stats",
+    joined_date: "Joined",
+};
+
+export const DEFAULT_LAYOUT_WIDTH_BY_TYPE = {
+    guestbook: "full",
+    writings: "full",
+    media: "full",
+    opinions: "full",
+    stories: "full",
+    pinned_writings: "full",
+    bio: "full",
+    stats: "full",
+    joined_date: "compact",
+};
+
+// Builder UI metadata for each layout block: label + which blocks are
+// reorderable in the Layout panel (hero sub-blocks bio/stats/joined_date are
+// managed in the Sections panel for V3A, so they are not listed here).
+export const LAYOUT_BLOCK_LABELS = {
+    guestbook: "Guestbook",
+    writings: "Writings",
+    media: "Media",
+    opinions: "Opinions",
+    stories: "Stories",
+    pinned_writings: "Pinned writings",
+    bio: "Bio",
+    stats: "Stats",
+    joined_date: "Joined date",
+};
+
+// Human labels for the per-block option pickers.
+export const LAYOUT_WIDTH_LABELS = { full: "Full", half: "Half", compact: "Compact" };
+export const LAYOUT_STYLE_LABELS = {
+    inherit: "Theme",
+    glass: "Glass",
+    paper: "Paper",
+    minimal: "Minimal",
+    framed: "Framed",
+};

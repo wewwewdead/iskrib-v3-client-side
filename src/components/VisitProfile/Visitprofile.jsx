@@ -27,6 +27,7 @@ import StickerLayer from '../ProfilePage/builder/StickerLayer';
 import { profileThemeToCssVars, isSectionVisible } from '../ProfilePage/builder/profileThemeUtils';
 import '../ProfilePage/builder/profileTheme.css';
 import ProfileGuestbook from '../ProfilePage/guestbook/ProfileGuestbook';
+import ProfileLayoutRenderer from '../ProfilePage/layout/ProfileLayoutRenderer';
 import UseThemeButton from '../ProfilePage/builder/UseThemeButton';
 import SectionErrorBoundary from '../ErrorBoundary/SectionErrorBoundary';
 
@@ -350,9 +351,22 @@ const Visitprofile = () =>{
                     )
                 }
 
-                {/* Guestbook sits directly below the hero — the social doorway, not buried under posts */}
-                {guestbookUsername && isSectionVisible(profileTheme, 'guestbook') && (
-                    <ProfileGuestbook username={guestbookUsername} profileUserId={visitedUserId} compact />
+                {/* Profile Builder V3A — Layout Composer. Themed profiles render
+                    their configured layout (guestbook + content previews) in order;
+                    un-themed profiles keep the legacy standalone guestbook. */}
+                {hasTheme ? (
+                    guestbookUsername && (
+                        <ProfileLayoutRenderer
+                            theme={profileTheme}
+                            username={guestbookUsername}
+                            profileUserId={visitedUserId}
+                            navigate={navigate}
+                        />
+                    )
+                ) : (
+                    guestbookUsername && isSectionVisible(profileTheme, 'guestbook') && (
+                        <ProfileGuestbook username={guestbookUsername} profileUserId={visitedUserId} compact />
+                    )
                 )}
 
                 <div className='my-profile-tablist'>

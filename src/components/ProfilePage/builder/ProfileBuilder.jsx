@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import "./ProfileBuilder.css";
 import "./profileTheme.css";
+import "../layout/profileLayout.css";
 import { updateProfileTheme } from "../../../../API/Api";
 import { normalizeProfileTheme, getDefaultProfileTheme } from "./profileThemeUtils";
 import { applyPresetToTheme } from "./profileThemePresets";
@@ -11,6 +12,7 @@ import PresetsPanel from "./panels/PresetsPanel";
 import ColorsPanel from "./panels/ColorsPanel";
 import TypographyPanel from "./panels/TypographyPanel";
 import CardsPanel from "./panels/CardsPanel";
+import LayoutPanel from "./panels/LayoutPanel";
 import SectionsPanel from "./panels/SectionsPanel";
 import StickersPanel from "./panels/StickersPanel";
 
@@ -19,6 +21,7 @@ const TABS = [
     { key: "colors", label: "Colors" },
     { key: "typography", label: "Type" },
     { key: "cards", label: "Cards" },
+    { key: "layout", label: "Layout" },
     { key: "sections", label: "Sections" },
     { key: "stickers", label: "Stickers" },
 ];
@@ -96,6 +99,85 @@ const ProfileBuilder = ({
         }));
     }, []);
 
+    // ── Layout (V3A) ──
+    const reindexBlocks = (blocks) => blocks.map((b, i) => ({ ...b, order: i }));
+
+    // Reorder by a fresh ordered list of blocks (from drag).
+    const handleReorderLayout = useCallback((nextBlocks) => {
+        setDraft((prev) =>
+            markCustom({
+                ...prev,
+                layout: { ...prev.layout, blocks: reindexBlocks(nextBlocks) },
+            })
+        );
+    }, []);
+
+    // Move a single block up/down (keyboard / button accessible reordering).
+    const handleMoveBlock = useCallback((type, direction) => {
+        setDraft((prev) => {
+            const blocks = [...prev.layout.blocks].sort((a, b) => a.order - b.order);
+            const idx = blocks.findIndex((b) => b.type === type);
+            if (idx === -1) return prev;
+            const swapWith = direction === "up" ? idx - 1 : idx + 1;
+            if (swapWith < 0 || swapWith >= blocks.length) return prev;
+            [blocks[idx], blocks[swapWith]] = [blocks[swapWith], blocks[idx]];
+            return markCustom({ ...prev, layout: { ...prev.layout, blocks: reindexBlocks(blocks) } });
+        });
+    }, []);
+
+    // Toggle a content block's visibility. Keep the matching `section` in sync so
+    // the page tabs (which read section visibility) stay consistent with the home.
+    const handleToggleLayoutBlock = useCallback((type) => {
+        setDraft((prev) => {
+            const blocks = prev.layout.blocks.map((b) =>
+                b.type === type ? { ...b, visible: !b.visible } : b
+            );
+            const target = blocks.find((b) => b.type === type);
+            const nextVisible = target ? target.visible : true;
+            return markCustom({
+                ...prev,
+                layout: { ...prev.layout, blocks },
+                sections: prev.sections.map((s) =>
+                    s.id === type ? { ...s, visible: nextVisible } : s
+                ),
+            });
+        });
+    }, []);
+
+    // Patch a single block's width / style / variant / title.
+    const handlePatchLayoutBlock = useCallback((type, partial) => {
+        setDraft((prev) =>
+            markCustom({
+                ...prev,
+                layout: {
+                    ...prev.layout,
+                    blocks: prev.layout.blocks.map((b) =>
+                        b.type === type ? { ...b, ...partial } : b
+                    ),
+                },
+            })
+        );
+    }, []);
+
+    // Reset a single block to its default width / style / variant / title.
+    const handleResetLayoutBlock = useCallback((type) => {
+        setDraft((prev) => {
+            const fresh = getDefaultProfileTheme(userData).layout.blocks.find((b) => b.type === type);
+            if (!fresh) return prev;
+            return markCustom({
+                ...prev,
+                layout: {
+                    ...prev.layout,
+                    blocks: prev.layout.blocks.map((b) =>
+                        b.type === type
+                            ? { ...b, width: fresh.width, style: fresh.style, variant: fresh.variant, title: fresh.title }
+                            : b
+                    ),
+                },
+            });
+        });
+    }, [userData]);
+
     const handleAddSticker = useCallback((stickerId) => {
         setDraft((prev) => {
             if (prev.stickers.length >= MAX_STICKERS) return prev;
@@ -144,6 +226,17 @@ const ProfileBuilder = ({
                 return <TypographyPanel theme={draft} onPatchTypography={handlePatchTypography} />;
             case "cards":
                 return <CardsPanel theme={draft} onPatchCards={handlePatchCards} />;
+            case "layout":
+                return (
+                    <LayoutPanel
+                        theme={draft}
+                        onReorder={handleReorderLayout}
+                        onMoveBlock={handleMoveBlock}
+                        onToggleBlock={handleToggleLayoutBlock}
+                        onPatchBlock={handlePatchLayoutBlock}
+                        onResetBlock={handleResetLayoutBlock}
+                    />
+                );
             case "sections":
                 return <SectionsPanel theme={draft} onToggleSection={handleToggleSection} />;
             case "stickers":
@@ -158,6 +251,11 @@ const ProfileBuilder = ({
         handlePatchColors,
         handlePatchTypography,
         handlePatchCards,
+        handleReorderLayout,
+        handleMoveBlock,
+        handleToggleLayoutBlock,
+        handlePatchLayoutBlock,
+        handleResetLayoutBlock,
         handleToggleSection,
         handleAddSticker,
     ]);

@@ -26,6 +26,7 @@ import { PROFILE_TABS } from "./constants/profileTabs";
 import ProfileBuilder from "./builder/ProfileBuilder";
 import { profileThemeToCssVars, isSectionVisible } from "./builder/profileThemeUtils";
 import ProfileGuestbook from "./guestbook/ProfileGuestbook";
+import ProfileLayoutRenderer from "./layout/ProfileLayoutRenderer";
 import ProfileCompletionCard from "./completion/ProfileCompletionCard";
 import ProfileActivitySummary from "./completion/ProfileActivitySummary";
 import NewUserCustomizeCTA from "./completion/NewUserCustomizeCTA";
@@ -465,16 +466,38 @@ const MyProfile = () => {
                             <ProfileActivitySummary token={session?.access_token} />
                         </div>
 
-                        {/* Guestbook sits directly below the hero — the social doorway, not buried under posts */}
-                        {userData?.username && isSectionVisible(profileTheme, "guestbook") && (
-                            <ProfileGuestbook
-                                username={userData.username}
-                                profileUserId={userData.id}
-                                compact
-                                focusGuestbook={focusGuestbook}
-                                highlightEntryId={highlightEntryId}
-                                highlightFromUserId={highlightFromUserId}
-                            />
+                        {/* Profile Builder V3A — Layout Composer.
+                            Themed profiles render their configured layout (guestbook,
+                            writings, media, opinions, stories, pinned) here, in order.
+                            Untouched / un-themed profiles keep the legacy standalone
+                            guestbook directly below the hero — the social doorway. */}
+                        {hasTheme ? (
+                            userData?.username && (
+                                <ProfileLayoutRenderer
+                                    theme={profileTheme}
+                                    isOwn
+                                    username={userData.username}
+                                    profileUserId={userData.id}
+                                    navigate={navigate}
+                                    onWriteJournal={openRichTextEditor}
+                                    guestbookProps={{
+                                        focusGuestbook,
+                                        highlightEntryId,
+                                        highlightFromUserId,
+                                    }}
+                                />
+                            )
+                        ) : (
+                            userData?.username && isSectionVisible(profileTheme, "guestbook") && (
+                                <ProfileGuestbook
+                                    username={userData.username}
+                                    profileUserId={userData.id}
+                                    compact
+                                    focusGuestbook={focusGuestbook}
+                                    highlightEntryId={highlightEntryId}
+                                    highlightFromUserId={highlightFromUserId}
+                                />
+                            )
                         )}
 
                         <ProfileTabList tablists={visibleTabs} navigate={navigate} location={location} />
