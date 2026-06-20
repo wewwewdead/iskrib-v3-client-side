@@ -648,6 +648,7 @@
 }
 .icon-container p{
     font-family: var(--font-ui);
+    font-size: 0.78rem;
 }
 
 .like-button:hover .svg-like path{
@@ -695,7 +696,7 @@
     padding: 0;
     margin: 0;
     font-family: var(--font-ui);
-    font-size: 0.62rem;
+    font-size: 0.75rem;
     font-weight: 550;
     color: var(--accent-sage);
     letter-spacing: 0.01rem;
