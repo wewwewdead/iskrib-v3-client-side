@@ -1,4 +1,4 @@
-export const SITE_NAME = "Iskryb";
+export const SITE_NAME = "Iskrib";
 export const SITE_URL = "https://iskrib.com";
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/og-banner.png`;
 export const DEFAULT_OG_IMAGE_WIDTH = 1200;
@@ -7,7 +7,7 @@ export const DEFAULT_OG_IMAGE_HEIGHT = 630;
 export const DEFAULT_SEO = {
   title: `${SITE_NAME} | Social Journaling and Opinions`,
   description:
-    "Iskryb is a social journaling platform where you can publish journals, share opinions, and read stories.",
+    "Iskrib is a social journaling platform where you can publish journals, share opinions, and read stories.",
   canonicalPath: "/",
   robots: "index,follow",
 };
@@ -27,7 +27,7 @@ export const SEO_ROUTES = [
     path: "/home",
     title: `${SITE_NAME} Home Feed`,
     description:
-      "Explore journals and ideas from the Iskryb community in the home feed.",
+      "Explore journals and ideas from the Iskrib community in the home feed.",
     canonicalPath: "/home",
     robots: "index,follow",
     prerender: true,
@@ -37,7 +37,7 @@ export const SEO_ROUTES = [
     path: "/home/opinions",
     title: `${SITE_NAME} Opinions`,
     description:
-      "Read and respond to community opinions on Iskryb with threaded discussions.",
+      "Read and respond to community opinions on Iskrib with threaded discussions.",
     canonicalPath: "/home/opinions",
     robots: "index,follow",
     prerender: true,
@@ -47,7 +47,7 @@ export const SEO_ROUTES = [
     path: "/home/explore",
     title: `${SITE_NAME} Explore`,
     description:
-      "Discover the hottest posts and search across community journals on Iskryb.",
+      "Discover the hottest posts and search across community journals on Iskrib.",
     canonicalPath: "/home/explore",
     robots: "index,follow",
     prerender: true,
@@ -65,7 +65,7 @@ export const SEO_ROUTES = [
     path: "/signUp",
     title: `Sign Up | ${SITE_NAME}`,
     description:
-      "Create an Iskryb account to publish journals, share opinions, and read stories.",
+      "Create an Iskrib account to publish journals, share opinions, and read stories.",
     canonicalPath: "/signUp",
     robots: "noindex,follow",
     prerender: true,
@@ -80,7 +80,7 @@ const DYNAMIC_PATTERNS = [
       const journalId = match ? match[1] : null;
       return {
         title: `${SITE_NAME} Post`,
-        description: "Read community journals and discussions on Iskryb.",
+        description: "Read community journals and discussions on Iskrib.",
         canonicalPath: journalId ? `/home/post/${journalId}` : null,
         robots: "index,follow",
       };
@@ -92,7 +92,7 @@ const DYNAMIC_PATTERNS = [
       const username = pathname.split("/")[2];
       return {
         title: `${username}'s Profile | ${SITE_NAME}`,
-        description: `View ${username}'s journals and opinions on Iskryb.`,
+        description: `View ${username}'s journals and opinions on Iskrib.`,
         canonicalPath: `/u/${username}`,
         robots: "index,follow",
       };

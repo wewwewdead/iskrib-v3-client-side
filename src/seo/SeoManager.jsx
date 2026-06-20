@@ -34,7 +34,7 @@ const SeoManager = () => {
     ensureMeta("seo-og-image", "property", "og:image", ogImage);
     ensureMeta("seo-og-image-width", "property", "og:image:width", String(DEFAULT_OG_IMAGE_WIDTH));
     ensureMeta("seo-og-image-height", "property", "og:image:height", String(DEFAULT_OG_IMAGE_HEIGHT));
-    ensureMeta("seo-og-site-name", "property", "og:site_name", "Iskryb");
+    ensureMeta("seo-og-site-name", "property", "og:site_name", "Iskrib");
     if (fbAppId) {
       ensureMeta("seo-fb-app-id", "property", "fb:app_id", fbAppId);
     } else {

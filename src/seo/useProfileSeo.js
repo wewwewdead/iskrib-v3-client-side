@@ -20,8 +20,8 @@ const useProfileSeo = (userData, username) => {
     if (!userData?.name) return;
 
     const displayName = userData.name;
-    const title = `${displayName}'s Profile | Iskryb`;
-    const description = userData.bio || `View ${displayName}'s journals and opinions on Iskryb.`;
+    const title = `${displayName}'s Profile | Iskrib`;
+    const description = userData.bio || `View ${displayName}'s journals and opinions on Iskrib.`;
     const profileUrl = username ? `${SITE_URL}/u/${username}` : "";
     const ogImage = userData.image_url || `${SITE_URL}/assets/no-image.png`;
 
@@ -57,7 +57,7 @@ const useProfileSeo = (userData, username) => {
     ensureJsonLd("profile-seo-person-ld", personLd);
 
     return () => {
-      document.title = "Iskryb | Social Journaling and Opinions";
+      document.title = "Iskrib | Social Journaling and Opinions";
       PROFILE_SEO_IDS.forEach(removeElementById);
     };
   }, [userData?.name, userData?.bio, userData?.image_url, username]);

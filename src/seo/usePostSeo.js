@@ -27,8 +27,8 @@ const usePostSeo = (postData) => {
   useEffect(() => {
     if (!postData?.title) return;
 
-    const title = `${postData.title} | Iskryb`;
-    const description = toPreviewText(postData.wholeText) || `Read "${postData.title}" on Iskryb`;
+    const title = `${postData.title} | Iskrib`;
+    const description = toPreviewText(postData.wholeText) || `Read "${postData.title}" on Iskrib`;
     const postUrl = postData.journalId
       ? buildAbsoluteUrl(`/home/post/${postData.journalId}`)
       : "";
@@ -66,7 +66,7 @@ const usePostSeo = (postData) => {
       },
       publisher: {
         "@type": "Organization",
-        name: "Iskryb",
+        name: "Iskrib",
         url: SITE_URL,
       },
     };
@@ -76,7 +76,7 @@ const usePostSeo = (postData) => {
     ensureJsonLd("post-seo-article-ld", articleLd);
 
     return () => {
-      document.title = "Iskryb | Social Journaling and Opinions";
+      document.title = "Iskrib | Social Journaling and Opinions";
       POST_SEO_IDS.forEach(removeElementById);
     };
   }, [
