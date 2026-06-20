@@ -67,7 +67,7 @@ const VisitedProfilePostCards = () =>{
         setViewMode((prev) => (prev === 'list' ? 'grid' : 'list'));
     }, []);
 
-    const journals = useMemo(() => journalData?.pages.flatMap((page) => page.data) || [], [journalData]);
+    const journals = useMemo(() => (journalData?.pages.flatMap((page) => page?.data || []) || []).filter(Boolean), [journalData]);
 
 
    if(isLoadingJournals){
@@ -149,7 +149,7 @@ const VisitedProfilePostCards = () =>{
                                     </div>
                                 ) : null}
                                 <div className="postcards-grid-body">
-                                    <h3 className="postcards-grid-title">{journal.title.length > 32 ? `${journal.title.substring(0, 32)}...` : journal.title}</h3>
+                                    <h3 className="postcards-grid-title">{(journal.title || '').length > 32 ? `${journal.title.substring(0, 32)}...` : (journal.title || '')}</h3>
                                     {previewText && (
                                         <p className="postcards-grid-snippet">{previewText.length > 50 ? `${previewText.substring(0, 50)}...` : previewText}</p>
                                     )}
@@ -168,7 +168,7 @@ const VisitedProfilePostCards = () =>{
                 const thumbnail = !isRepost ? (journal?.thumbnail_url || null) : null;
                 const repostSource = isRepost ? journal?.repost_source : null;
                 const repostSourcePreviewText = repostSource?.preview_text || '';
-                const badgeClass = journal.users.badge === 'legend' ? 'avatar-ring-legend' : journal.users.badge === 'og' ? 'avatar-ring-og' : '';
+                const badgeClass = journal.users?.badge === 'legend' ? 'avatar-ring-legend' : journal.users?.badge === 'og' ? 'avatar-ring-og' : '';
 
                 return(
                     <motion.div
@@ -183,7 +183,7 @@ const VisitedProfilePostCards = () =>{
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="var(--text-faint)">
                                     <path d="M7 7h10l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-1.414-1.414L17 9H7a1 1 0 0 1-1-1V5a1 1 0 0 1 2 0v2zm10 10H7l1.293 1.293a1 1 0 0 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 1 1 1.414 1.414L7 15h10a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0v-2z"/>
                                 </svg>
-                                <span className="repost-header-name">{journal.users.name}</span>
+                                <span className="repost-header-name">{journal.users?.name}</span>
                                 <span>reposted</span>
                             </div>
                         )}
@@ -259,7 +259,7 @@ const VisitedProfilePostCards = () =>{
                                 <div onClick={(e) => viewContent(e, null, '', journal?.title, userId, journal?.users?.name, journal?.users?.image_url, journal?.created_at, journal?.id, journal?.has_liked, journal?.comment_count?.[0].count, journal?.has_bookmarked, journal?.like_count?.[0].count, journal?.bookmark_count?.[0].count, journal?.users?.badge, journal?.post_type, journal?.user_reaction, journal?.reaction_count?.[0]?.count || 0)} className="content-container">
                                     <div className='feed-text-content-container'>
                                         <div className='feed-title-content'>
-                                            <h2 className="feed-title-profile-page">{journal.title.length > 55 ? `${journal.title.substring(0, 55)}...` : journal.title}</h2>
+                                            <h2 className="feed-title-profile-page">{(journal.title || '').length > 55 ? `${journal.title.substring(0, 55)}...` : (journal.title || '')}</h2>
                                         </div>
                                         <p className="feed-text-content-profile-page">{previewText}</p>
                                     </div>
@@ -269,11 +269,11 @@ const VisitedProfilePostCards = () =>{
                             <div className="card-icons-container">
                                 <div className='user-info-child-container'>
                                     <div className={`user-avatar-container ${badgeClass}`}>
-                                        <img src={journal.users.image_url || '/assets/profile.jpg'} alt="user-profile" loading='lazy' className="user-info-avatar"/>
+                                        <img src={journal.users?.image_url || '/assets/profile.jpg'} alt="user-profile" loading='lazy' className="user-info-avatar"/>
                                     </div>
                                     <div className="user-name-container">
-                                        <p className="user-newsfeed-name-profile-page">{journal.users.name}</p>
-                                        <VerifiedBadge badge={journal.users.badge} size={14} />
+                                        <p className="user-newsfeed-name-profile-page">{journal.users?.name}</p>
+                                        <VerifiedBadge badge={journal.users?.badge} size={14} />
                                     </div>
                                     <div className="name-info-separator">•</div>
                                     <p className="user-post-date">{new Date(journal.created_at).toLocaleDateString('en-US', {

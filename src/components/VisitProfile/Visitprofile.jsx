@@ -28,6 +28,7 @@ import { profileThemeToCssVars, isSectionVisible } from '../ProfilePage/builder/
 import '../ProfilePage/builder/profileTheme.css';
 import ProfileGuestbook from '../ProfilePage/guestbook/ProfileGuestbook';
 import UseThemeButton from '../ProfilePage/builder/UseThemeButton';
+import SectionErrorBoundary from '../ErrorBoundary/SectionErrorBoundary';
 
 // Maps tab labels to their theme section id so hidden sections drop their tab.
 const TAB_SECTION_ID = {
@@ -364,7 +365,9 @@ const Visitprofile = () =>{
                    
                 </div>
 
-                <Outlet context={{ visitedUserId }}/>
+                <SectionErrorBoundary resetKey={location.pathname} label="This section couldn't load">
+                    <Outlet context={{ visitedUserId }}/>
+                </SectionErrorBoundary>
 
             </div>
 

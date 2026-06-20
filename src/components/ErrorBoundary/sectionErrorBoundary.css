@@ -1,0 +1,45 @@
+.section-error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 48px 24px;
+  min-height: 240px;
+}
+
+.section-error-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-heading, #1a1612);
+  margin: 0;
+}
+
+.section-error-subtitle {
+  font-size: 14px;
+  color: var(--text-muted, #6b6560);
+  margin: 0;
+}
+
+.section-error-retry {
+  margin-top: 12px;
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-amber, #d4a853);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.section-error-retry:hover {
+  background: var(--accent-dark-hover, #b88c38);
+}
+
+.section-error-retry:focus-visible {
+  outline: 2px solid var(--accent-dark, #a8741f);
+  outline-offset: 2px;
+}
