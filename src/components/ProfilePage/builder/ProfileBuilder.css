@@ -14,6 +14,14 @@
 }
 
 .pt-builder {
+    /* Shared design tokens — most are only consumed by the mobile shell, but
+       declaring them here keeps the mobile rules readable and tweakable. */
+    --pt-touch-target: 44px;
+    --pt-mobile-radius: 18px;
+    --pt-mobile-sheet-collapsed: 7.75rem;
+    --pt-mobile-sheet-half: 58%;
+    --pt-mobile-sheet-expanded: 100%;
+
     display: flex;
     flex-direction: column;
     width: min(1080px, 100%);
@@ -24,6 +32,12 @@
     overflow: hidden;
     box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
     border: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+}
+
+/* The mobile sheet header (grabber + title + chevron) is desktop-hidden; it only
+   renders on mobile, but this keeps it inert if it ever appears elsewhere. */
+.pt-sheet-header {
+    display: none;
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
@@ -63,6 +77,54 @@
 
 .pt-builder-close:hover {
     background: rgba(0, 0, 0, 0.1);
+}
+
+/* Dirty/saved status pill — sits between the title and the close button. */
+.pt-builder-status {
+    margin-left: auto;
+    margin-right: 0.75rem;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    background: var(--bg-glass, rgba(0, 0, 0, 0.05));
+    opacity: 0.55;
+    transition: opacity 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.pt-builder-status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+}
+
+.pt-builder-status.is-dirty {
+    opacity: 1;
+    color: #a9700f;
+    background: rgba(212, 168, 83, 0.16);
+}
+
+.pt-builder-status.is-saved {
+    opacity: 1;
+    color: var(--color-success, #16A34A);
+    background: rgba(22, 163, 74, 0.14);
+}
+
+/* Hide the status pill on narrow screens — the footer Save button carries the
+   saved/saving state there, and header space is tight on mobile. */
+@media (max-width: 560px) {
+    .pt-builder-status {
+        display: none;
+    }
 }
 
 /* ── Body: preview + tools ───────────────────────────────────────────────── */
@@ -335,6 +397,37 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 0.6rem;
+}
+
+/* Undo bar shown after a preset replaces the user's colors/type/cards. */
+.pt-preset-undo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.7rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 10px;
+    background: rgba(212, 168, 83, 0.14);
+    font-size: 0.76rem;
+    line-height: 1.3;
+}
+
+.pt-preset-undo-btn {
+    flex-shrink: 0;
+    padding: 0.32rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(169, 112, 15, 0.4);
+    background: transparent;
+    color: #a9700f;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.pt-preset-undo-btn:hover {
+    background: rgba(212, 168, 83, 0.2);
 }
 
 .pt-preset-card {
@@ -707,6 +800,42 @@
     background: var(--bg-glass, rgba(0, 0, 0, 0.05));
 }
 
+/* Inline two-step confirm for the per-block Reset (avoids a fat-finger wipe). */
+.pt-layout-reset-confirm {
+    flex-shrink: 0;
+    display: inline-flex;
+    gap: 0.3rem;
+}
+
+.pt-layout-reset.is-confirm {
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
+.pt-layout-reset.is-confirm:hover {
+    background: rgba(192, 57, 43, 0.1);
+}
+
+.pt-layout-reset-cancel {
+    flex-shrink: 0;
+    padding: 0.34rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.14));
+    background: transparent;
+    color: inherit;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Live character counter on the block title field. */
+.pt-layout-title-count {
+    margin-left: 0.4rem;
+    font-size: 0.68rem;
+    font-weight: 500;
+    opacity: 0.5;
+}
+
 /* ── Content controls (V3C) — per-block disclosure in the Layout panel ───── */
 .pt-content-disclosure {
     border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
@@ -742,6 +871,14 @@
 
 .pt-content-chevron.is-open {
     transform: rotate(90deg);
+}
+
+/* Inline summary on the collapsed Content disclosure — signals it's tunable. */
+.pt-content-summary {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+    opacity: 0.7;
 }
 
 .pt-content-controls {
@@ -1402,6 +1539,45 @@
     animation: pt-pop-in 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* Discard-changes confirmation — replaces the footer actions when the user
+   tries to close with unsaved edits. */
+.pt-builder-discard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+}
+
+.pt-builder-discard-msg {
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.pt-builder-discard-confirm {
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: #c0392b;
+    color: #fff;
+    transition: all 0.18s ease;
+}
+
+.pt-builder-discard-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(192, 57, 43, 0.35);
+}
+
+@media (max-width: 560px) {
+    .pt-builder-discard {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
 /* Preview gently glows when the theme is saved. */
 .pt-builder-preview {
     transition: box-shadow 0.3s ease;
@@ -1447,7 +1623,7 @@
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* ── Responsive: stack preview over a bottom tool tray ───────────────────── */
+/* ── Mobile: canvas-first shell with a bottom sheet for tools ─────────────── */
 @media (max-width: 760px) {
     .pt-builder-overlay {
         padding: 0;
@@ -1455,53 +1631,230 @@
 
     .pt-builder {
         width: 100%;
-        height: 100%;
+        height: 100vh; /* fallback for browsers without dvh */
+        height: 100dvh;
         border-radius: 0;
+        position: relative;
     }
 
+    /* Compact header — drop the subtitle + status pill to reclaim canvas space. */
+    .pt-builder-header {
+        padding: 0.7rem 1rem;
+        padding-top: calc(0.7rem + env(safe-area-inset-top));
+        flex-shrink: 0;
+    }
+
+    .pt-builder-title h2 {
+        font-size: 1.15rem;
+    }
+
+    .pt-builder-title p {
+        display: none;
+    }
+
+    .pt-builder-status {
+        display: none;
+    }
+
+    .pt-builder-close {
+        width: var(--pt-touch-target);
+        height: var(--pt-touch-target);
+        font-size: 1.7rem;
+    }
+
+    /* The body is the canvas stage; the tools sheet is layered over it. */
     .pt-builder-body {
+        position: relative;
         flex-direction: column;
+        overflow: hidden;
     }
 
+    /* Canvas fills the stage and scrolls beneath the sheet. The bottom padding
+       keeps the last blocks clear of the collapsed sheet. */
     .pt-builder-preview {
-        flex: 0 0 auto;
+        position: absolute;
+        inset: 0;
+        flex: none;
         padding: 1rem;
-    }
-
-    .pt-builder-tools {
-        width: 100%;
-        border-left: none;
-        border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
-        flex: 1;
+        padding-bottom: calc(var(--pt-mobile-sheet-collapsed) + 1.5rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
     }
 
     .pt-preview-wrap {
-        max-width: 320px;
+        max-width: 360px;
     }
 
-    /* Bigger touch target for the drag zone so it's grabbable by thumb. */
+    /* Tools = a real bottom sheet anchored to the bottom of the stage. */
+    .pt-builder-tools {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+        border-radius: var(--pt-mobile-radius) var(--pt-mobile-radius) 0 0;
+        background: var(--bg-elevated, #fff);
+        box-shadow: 0 -10px 34px rgba(0, 0, 0, 0.22);
+        height: var(--pt-mobile-sheet-collapsed);
+        max-height: 100%;
+        overflow: hidden;
+        transition: height 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+        z-index: 4;
+    }
+
+    .pt-builder.sheet-half .pt-builder-tools {
+        height: var(--pt-mobile-sheet-half);
+    }
+
+    .pt-builder.sheet-expanded .pt-builder-tools {
+        height: var(--pt-mobile-sheet-expanded);
+    }
+
+    /* Sheet header: grabber pill + current-tool title + cycle chevron. The whole
+       header is one big (≥44px) tap target that steps the sheet open/closed. */
+    .pt-sheet-header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.3rem;
+        width: 100%;
+        padding: 0.5rem 1rem 0.45rem;
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .pt-sheet-grabber-pill {
+        width: 40px;
+        height: 5px;
+        border-radius: 999px;
+        background: currentColor;
+        opacity: 0.25;
+        margin: 0 auto 0.15rem;
+    }
+
+    .pt-sheet-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        min-height: 34px;
+    }
+
+    .pt-sheet-title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pt-sheet-chevron {
+        display: inline-flex;
+        opacity: 0.55;
+        flex-shrink: 0;
+        transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    /* Chevron points up to invite expansion; flips down once fully expanded. */
+    .pt-sheet-chevron.sheet-expanded {
+        transform: rotate(180deg);
+    }
+
+    /* Tabs become a horizontally scrollable rail (no wrapping). */
+    .pt-builder-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 0.4rem;
+        padding: 0.4rem 1rem 0.6rem;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        flex-shrink: 0;
+    }
+
+    .pt-builder-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pt-builder-tab {
+        flex: 0 0 auto;
+        min-height: var(--pt-touch-target);
+        padding: 0.5rem 0.95rem;
+        font-size: 0.85rem;
+        scroll-snap-align: start;
+    }
+
+    /* Panel scroll fills the remaining sheet height, safe-area aware. */
+    .pt-builder-panel-scroll {
+        flex: 1;
+        min-height: 0;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.9rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    }
+
+    /* Collapsed sheet = Preview mode: only the header + tab rail show; the panel
+       body (and hero editor) tuck away so the canvas owns the screen. */
+    .pt-builder.sheet-collapsed .pt-builder-panel-scroll {
+        display: none;
+    }
+
+    /* Footer = sticky safe-area action bar, always reachable above the sheet. */
+    .pt-builder-footer {
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        justify-content: stretch;
+        gap: 0.5rem;
+        padding: 0.7rem 1rem;
+        padding-bottom: calc(0.7rem + env(safe-area-inset-bottom));
+        position: relative;
+        z-index: 5;
+        background: var(--bg-elevated, #fff);
+    }
+
+    /* Errors wrap onto their own line so they never push Save off-screen. */
+    .pt-builder-error {
+        flex-basis: 100%;
+        margin-right: 0;
+        order: -1;
+    }
+
+    .pt-builder-footer-actions {
+        flex: 1;
+        gap: 0.6rem;
+    }
+
+    .pt-builder-cancel,
+    .pt-builder-save {
+        flex: 1;
+        min-height: var(--pt-touch-target);
+    }
+
+    .pt-builder-save {
+        flex: 2; /* Save is the prominent primary action. */
+    }
+
+    /* ── Touch-target pass (Phase 3) ──────────────────────────────────────── */
     .pt-layout-drag-zone {
-        min-height: 44px;
+        min-height: var(--pt-touch-target);
     }
 
-    /* Bigger touch targets on the live editable canvas. */
-    .pt-pblock__drag {
-        min-height: 40px;
+    .pt-layout-move {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
     }
 
-    .pt-pblock__btn {
-        width: 28px;
-        height: 28px;
-    }
-
-    .pt-pblock__resize {
-        width: 20px;
-        opacity: 1;
-    }
-
-    /* Content controls stack cleanly and stay tappable on narrow viewports. */
-    .pt-layout-controls {
-        grid-template-columns: 1fr 1fr;
+    .pt-content-toggle-btn,
+    .pt-seg-btn {
+        min-height: var(--pt-touch-target);
     }
 
     .pt-seg-btn {
@@ -1511,6 +1864,74 @@
     .pt-content-toggles {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .pt-layout-controls {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Live editable canvas — bigger grips/handles, always-visible affordances. */
+    .pt-pblock__drag {
+        min-height: var(--pt-touch-target);
+    }
+
+    /* Grips are hover-revealed on desktop; on touch there's no hover, so show
+       them — the grip is the dedicated touch reorder handle, so it gets an
+       invisible ≥44px hit zone (the header strip itself stays scroll-safe). */
+    .pt-pblock__grip {
+        position: relative;
+        opacity: 0.55;
+    }
+
+    .pt-pblock__grip::after {
+        content: "";
+        position: absolute;
+        inset: -16px -8px -16px -12px;
+    }
+
+    .pt-pblock__btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* Larger, always-visible edge resize handle with an invisible 44px hit zone. */
+    .pt-pblock__resize {
+        width: 22px;
+        opacity: 1;
+    }
+
+    .pt-pblock__resize::before {
+        content: "";
+        position: absolute;
+        inset: -12px -10px;
+    }
+
+    .pt-pblock__chip {
+        min-height: 36px;
+    }
+
+    /* Sticker handles: keep the visual small, expand the hit zone invisibly. */
+    .pt-sticker-remove::after,
+    .pt-sticker-resize::after,
+    .pt-sticker-rotate::after {
+        content: "";
+        position: absolute;
+        inset: -12px;
+        border-radius: 50%;
+    }
+
+    .pt-sticker-color {
+        width: 34px;
+        height: 34px;
+    }
+
+    /* Hero element handles get matching invisible hit zones. */
+    .pt-freehero-resize::after,
+    .pt-freehero-width-resize::after {
+        content: "";
+        position: absolute;
+        inset: -13px;
+        border-radius: 8px;
     }
 }
 
@@ -1526,7 +1947,9 @@
     .pt-pblock,
     .pt-pblock__grip,
     .pt-pblock__resize,
-    .pt-builder-preview {
+    .pt-builder-preview,
+    .pt-builder-tools,
+    .pt-sheet-chevron {
         transition: none !important;
     }
     /* No glow pulse or pop-in under reduced motion — the state still changes,

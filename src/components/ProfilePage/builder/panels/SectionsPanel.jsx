@@ -8,9 +8,7 @@ import {
     HERO_ELEMENT_STYLE_LABELS,
 } from "../profileThemeConstants";
 import { STICKER_COLORS } from "../stickerRegistry";
-import { isSectionVisible } from "../profileThemeUtils";
-
-const isHex = (v) => typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v);
+import { isSectionVisible, isHexColor } from "../profileThemeUtils";
 
 // V3A: the Sections tab now controls only the hero sub-blocks (stats / bio /
 // joined date). Content containers (writings, media, opinions, stories, guestbook,
@@ -93,7 +91,7 @@ const SectionsPanel = ({
                         <label className="pt-sticker-color pt-sticker-color--custom" title="Custom color">
                             <input
                                 type="color"
-                                value={isHex(selectedHeroElData.color) ? selectedHeroElData.color : "#ffffff"}
+                                value={isHexColor(selectedHeroElData.color) ? selectedHeroElData.color : "#ffffff"}
                                 onChange={(e) => onHeroPatchElement(selectedHeroEl, { color: e.target.value })}
                                 aria-label="Custom text color"
                             />

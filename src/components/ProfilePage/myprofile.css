@@ -24,6 +24,7 @@
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--border-light);
     gap: 1rem;
     color: var(--text-primary);
+    overflow-y: auto;
 }
 .profile-bg-picker-header{
     display: flex;
@@ -34,6 +35,83 @@
     font-size: 0.95rem;
     color: var(--text-heading);
 }
+/* Background type tabs (Gradient / Image / GIF) */
+.profile-bg-tabs{
+    display: flex;
+    gap: 0.4rem;
+    width: 100%;
+    background: var(--bg-subtle, rgba(0,0,0,0.05));
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 0.25rem;
+}
+.profile-bg-tab{
+    flex: 1 1 0;
+    padding: 0.45rem 0.5rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary, inherit);
+    font-family: "Lexend Deca", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.profile-bg-tab.is-active{
+    background: var(--bg-elevated, #fff);
+    color: var(--text-heading, inherit);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* GIF background panel */
+.profile-bg-gif{
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+}
+.profile-bg-gif-note{
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-secondary, inherit);
+    opacity: 0.85;
+}
+.profile-bg-gif-actions{
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+.profile-bg-gif-btn{
+    flex: 1 1 auto;
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-subtle, rgba(0,0,0,0.04));
+    color: var(--text-primary, inherit);
+    font-family: "Lexend Deca", sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.profile-bg-gif-btn--create{
+    background: var(--accent-purple, #8b5cf6);
+    color: #fff;
+    border-color: transparent;
+}
+.profile-bg-gif-preview{
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0b0d16;
+}
+.profile-bg-gif-error{
+    font-size: 0.8rem;
+    color: #dc2626;
+}
+
 .profile-bg-color-palette{
     display: flex;
     justify-content: space-evenly;
@@ -219,7 +297,12 @@
     position: fixed;
     left: 1000px;
     display: flex;
-    width: 25%;
+    justify-content: center;
+    align-items: flex-start;
+    /* Fill from the center column edge (1000px) to the viewport edge, matching
+       Home's .sidebar-right-holder-container so the opinions sidebar sits the
+       same way (avoids overflow/clipping on 1280/1366 laptops). */
+    width: calc(100% - 1000px);
     height: 100%;
     border-left: 0.7px solid var(--border-light);
 }

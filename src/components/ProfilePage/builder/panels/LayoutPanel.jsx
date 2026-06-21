@@ -143,6 +143,7 @@ const LayoutBlockCard = ({
 
     const [showContent, setShowContent] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [confirmReset, setConfirmReset] = useState(false);
 
     return (
         <Reorder.Item
@@ -263,7 +264,12 @@ const LayoutBlockCard = ({
 
             <div className="pt-layout-title-row">
                 <label className="pt-layout-control pt-layout-title-field">
-                    <span className="pt-layout-control-label">Title</span>
+                    <span className="pt-layout-control-label">
+                        Title
+                        <span className="pt-layout-title-count" aria-hidden="true">
+                            {(block.title || "").length}/{MAX_LAYOUT_TITLE_LENGTH}
+                        </span>
+                    </span>
                     <input
                         type="text"
                         value={block.title}
@@ -271,13 +277,36 @@ const LayoutBlockCard = ({
                         onChange={(e) => onPatchBlock(block.type, { title: e.target.value })}
                     />
                 </label>
-                <button
-                    type="button"
-                    className="pt-layout-reset"
-                    onClick={() => onResetBlock(block.type)}
-                >
-                    Reset
-                </button>
+                {confirmReset ? (
+                    <span className="pt-layout-reset-confirm" role="group" aria-label={`Reset ${label}?`}>
+                        <button
+                            type="button"
+                            className="pt-layout-reset is-confirm"
+                            onClick={() => {
+                                onResetBlock(block.type);
+                                setConfirmReset(false);
+                            }}
+                        >
+                            Reset
+                        </button>
+                        <button
+                            type="button"
+                            className="pt-layout-reset-cancel"
+                            onClick={() => setConfirmReset(false)}
+                        >
+                            Cancel
+                        </button>
+                    </span>
+                ) : (
+                    <button
+                        type="button"
+                        className="pt-layout-reset"
+                        aria-label={`Reset ${label} to defaults`}
+                        onClick={() => setConfirmReset(true)}
+                    >
+                        Reset
+                    </button>
+                )}
             </div>
 
             {contentSpec && (
@@ -292,6 +321,11 @@ const LayoutBlockCard = ({
                             ▸
                         </span>
                         Content
+                        {!showContent && (
+                            <span className="pt-content-summary">
+                                {getBlockContent(block).count} shown — tap to tune
+                            </span>
+                        )}
                     </button>
                     {showContent && (
                         <BlockContentControls

@@ -48,6 +48,12 @@ export const isValidColor = (value) => {
     return HEX_COLOR_RE.test(v) || RGB_COLOR_RE.test(v);
 };
 
+// Strict 6-digit hex (#rrggbb) — the only form a native <input type="color">
+// accepts, so the builder panels gate their color pickers on this (narrower than
+// isValidColor, which also allows shorthand/alpha hex and rgb()/rgba()).
+const HEX6_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+export const isHexColor = (value) => typeof value === "string" && HEX6_COLOR_RE.test(value);
+
 const clamp = (value, min, max, fallback) => {
     const n = typeof value === "number" ? value : Number(value);
     if (!Number.isFinite(n)) return fallback;
@@ -483,6 +489,30 @@ export const profileBackgroundToStyle = (theme) => {
         backgroundImage: `linear-gradient(${bg.angle}deg, ${from} 0%, ${to} 100%)`,
         backgroundRepeat: "no-repeat",
     };
+};
+
+/**
+ * Resolve a legacy `users.background` style for the current motion preference.
+ *
+ * GIF backgrounds are stored as a normal style object PLUS two extra keys:
+ *   - mediaType: "gif"
+ *   - backgroundPosterImage: `url(<poster>)`  (static fallback)
+ * Those extra keys aren't valid CSS, so this helper always strips them and
+ * returns a clean style object safe to spread into `style={...}`:
+ *   - non-GIF backgrounds (image / gradient) pass through unchanged
+ *   - GIF + reduced motion + poster → swaps backgroundImage to the poster (still)
+ *   - GIF otherwise → keeps the animated GIF (poster missing falls back to GIF)
+ */
+export const resolveLegacyBackgroundForMotion = (legacyStyle, prefersReducedMotion = false) => {
+    if (!legacyStyle || typeof legacyStyle !== "object") return legacyStyle;
+    if (legacyStyle.mediaType !== "gif") return legacyStyle;
+
+    const { mediaType, backgroundPosterImage, ...cleanStyle } = legacyStyle;
+
+    if (prefersReducedMotion && backgroundPosterImage) {
+        return { ...cleanStyle, backgroundImage: backgroundPosterImage };
+    }
+    return cleanStyle;
 };
 
 /**

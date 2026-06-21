@@ -85,6 +85,17 @@ describe("BuilderPreview — interactive layout canvas", () => {
         expect(screen.getByLabelText("Resize Writings")).toBeInTheDocument();
     });
 
+    it("a touch press on a block header selects it (reorder stays grip-only on touch)", () => {
+        // On touch the header strip must only SELECT — a reorder has to start from
+        // the ⠿ grip — so swiping over a block header scrolls the canvas instead of
+        // accidentally reordering. We prove the select path ran via onSelectType.
+        const onSelectType = vi.fn();
+        setup({ onSelectType, selectedType: null });
+        const title = screen.getByText("Writings");
+        fireEvent.pointerDown(title, { pointerId: 1, pointerType: "touch" });
+        expect(onSelectType).toHaveBeenCalledWith("writings");
+    });
+
     it("hides the per-block toolbar until a block is selected", () => {
         setup();
         // No width chips before selection.

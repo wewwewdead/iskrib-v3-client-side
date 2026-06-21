@@ -88,6 +88,31 @@ describe("LayoutPanel — drag affordance + reorder wiring", () => {
         expect(handlers.onReorder).not.toHaveBeenCalled();
     });
 
+    it("per-block Reset asks to confirm before wiping the block", () => {
+        const { handlers } = setup();
+        fireEvent.click(screen.getByLabelText("Reset Guestbook to defaults"));
+        // First click only arms the confirm — it does NOT reset yet.
+        expect(handlers.onResetBlock).not.toHaveBeenCalled();
+        const group = screen.getByLabelText("Reset Guestbook?");
+        fireEvent.click(within(group).getByText("Reset"));
+        expect(handlers.onResetBlock).toHaveBeenCalledWith("guestbook");
+    });
+
+    it("cancelling the Reset confirm leaves the block untouched", () => {
+        const { handlers } = setup();
+        fireEvent.click(screen.getByLabelText("Reset Guestbook to defaults"));
+        fireEvent.click(within(screen.getByLabelText("Reset Guestbook?")).getByText("Cancel"));
+        expect(handlers.onResetBlock).not.toHaveBeenCalled();
+        // Back to the single Reset button.
+        expect(screen.getByLabelText("Reset Guestbook to defaults")).toBeInTheDocument();
+    });
+
+    it("shows a live character counter on the block title", () => {
+        setup();
+        // Default Guestbook title is "Guestbook" (9 chars).
+        expect(screen.getByText("9/32")).toBeInTheDocument();
+    });
+
     it("renders one card per renderable block in stored order", () => {
         setup();
         // Default order starts with Guestbook then Writings (renderable set).

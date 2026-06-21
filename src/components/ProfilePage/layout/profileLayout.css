@@ -397,6 +397,85 @@
     background-color: rgba(127, 127, 127, 0.12);
 }
 
+/* ── Owner settings (kebab) menu on a writing row (full modal only) ────────── */
+.pl-writing-row-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.pl-writing-row {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pl-writing-row-wrap--has-menu .pl-writing-row {
+    padding-right: 2.4rem;
+}
+
+.pl-writing-menu-wrap {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+}
+
+.pl-writing-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    opacity: 0.5;
+    cursor: pointer;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.pl-writing-menu-btn:hover {
+    opacity: 1;
+    background-color: rgba(127, 127, 127, 0.18);
+}
+
+.pl-writing-menu {
+    position: absolute;
+    top: 34px;
+    right: 0;
+    z-index: 5;
+    min-width: 150px;
+    padding: 0.3rem;
+    border-radius: 12px;
+    background: var(--bg-elevated, #fff);
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.1));
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.pl-writing-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.55rem 0.6rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary, #1a1a1a);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.14s ease;
+}
+
+.pl-writing-menu-item--danger {
+    color: rgb(220, 38, 38);
+}
+
+.pl-writing-menu-item--danger:hover {
+    background-color: rgba(220, 38, 38, 0.1);
+}
+
 .pl-writing-thumb {
     width: 46px;
     height: 46px;

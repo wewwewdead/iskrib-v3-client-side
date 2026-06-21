@@ -82,6 +82,7 @@ const StickerLayer = ({
         if (rect.width === 0 || rect.height === 0) return;
 
         const sticker = stickers[st.index];
+        if (!sticker) return;
         const cx = rect.left + (sticker.x / 100) * rect.width;
         const cy = rect.top + (sticker.y / 100) * rect.height;
         const dist = Math.hypot(event.clientX - cx, event.clientY - cy);
@@ -118,6 +119,7 @@ const StickerLayer = ({
         if (rect.width === 0 || rect.height === 0) return;
 
         const sticker = stickers[st.index];
+        if (!sticker) return;
         const cx = rect.left + (sticker.x / 100) * rect.width;
         const cy = rect.top + (sticker.y / 100) * rect.height;
         // The knob sits at the sticker's top (12 o'clock) when rotation is 0, so

@@ -49,11 +49,7 @@ const SectionSkeleton = () => (
         <div className="pd-grid">
             {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="pdc-card pdc-card--skeleton">
-                    <div className="pd-skeleton pdc-room" />
-                    <div className="pdc-body">
-                        <div className="pd-skeleton pd-skeleton-line" style={{ width: "60%" }} />
-                        <div className="pd-skeleton pd-skeleton-line" style={{ width: "85%" }} />
-                    </div>
+                    <div className="pd-skeleton pdc-skeleton-fill" />
                 </div>
             ))}
         </div>

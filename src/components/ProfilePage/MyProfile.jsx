@@ -3,7 +3,7 @@ import "./myprofile.css";
 import { useAuth } from "../../Context/useAuth";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../SideBar/Sidebar";
-import { updateFontColor, updateProfileData } from "../../../API/Api";
+import { updateFontColor, updateProfileData, uploadBackgroundGif } from "../../../API/Api";
 import { AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import Editor from "../HomePage/Editor/Editor";
@@ -16,6 +16,7 @@ import MobileSidebarLink from "../MobileSidebarLink/MobileSidebarLink";
 import WriteJournalButton from "../WriteJournalButton/WriteJournalButton";
 import Loader from "../loadingComponent/BgLoader";
 import ProfileBackgroundPicker from "./components/ProfileBackgroundPicker";
+import GifCreatorModal from "./components/GifCreatorModal";
 import ProfileEditModal from "./components/ProfileEditModal";
 import ProfileFontColorSelector from "./components/ProfileFontColorSelector";
 import ProfileHeroSection from "./components/ProfileHeroSection";
@@ -24,13 +25,17 @@ import { PROFILE_GRADIENTS } from "./constants/profileGradients";
 import { createProfileSidebarLinks } from "./constants/profileSidebarLinks";
 import { PROFILE_TABS } from "./constants/profileTabs";
 import ProfileBuilder from "./builder/ProfileBuilder";
-import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle } from "./builder/profileThemeUtils";
+import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle, resolveLegacyBackgroundForMotion } from "./builder/profileThemeUtils";
 import { getDefaultProfileTheme } from "./builder/profileThemeDefaults";
+import usePrefersReducedMotion from "../../hooks/usePrefersReducedMotion";
+import { validateGifFile } from "../../utils/gifBackgroundValidation";
+import { posterFromGifFile } from "../../utils/posterFromGifFile";
 import ProfileGuestbook from "./guestbook/ProfileGuestbook";
 import ProfileLayoutRenderer from "./layout/ProfileLayoutRenderer";
 import ProfileCompletionCard from "./completion/ProfileCompletionCard";
-import ProfileActivitySummary from "./completion/ProfileActivitySummary";
 import NewUserCustomizeCTA from "./completion/NewUserCustomizeCTA";
+import SidebarOpinions from "../SidebarOpinions/SidebarOpinions";
+import OpinionEditor from "../SidebarOpinions/OpinionsEditor";
 
 // Maps profile tab labels to their theme section id so hidden sections drop their tab.
 const TAB_SECTION_ID = {
@@ -56,6 +61,15 @@ const MyProfile = () => {
     const [showEditor, setShowEditor] = useState(false);
     const [showBgPicker, setShowBgPicker] = useState(false);
 
+    // GIF background flow (background-only motion). pendingGifFile holds a
+    // user-selected/uploaded .gif awaiting Save; the creator generates one.
+    const [pendingGifFile, setPendingGifFile] = useState(null);
+    const [gifError, setGifError] = useState("");
+    const [showGifCreator, setShowGifCreator] = useState(false);
+    const gifInputRef = useRef();
+
+    const prefersReducedMotion = usePrefersReducedMotion();
+
     const [imageSrc, setImageSrc] = useState(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
@@ -67,6 +81,11 @@ const MyProfile = () => {
     const [fontColor, setFontColor] = useState("");
 
     const [showBuilder, setShowBuilder] = useState(false);
+
+    // Opinion composer, mirrored from Home's right-sidebar wiring.
+    const [showOpinionEditor, setShowOpinionEditor] = useState(false);
+    const handleOpenOpinionTextEditor = () => setShowOpinionEditor(true);
+    const handleCloseOpinionTextEditor = () => setShowOpinionEditor(false);
 
     const inputRef = useRef();
     const bgInputRef = useRef();
@@ -193,6 +212,55 @@ const MyProfile = () => {
         setCroppedImage(userData?.background);
         setImageSrc(null);
         setGradientPicked(null);
+        setPendingGifFile(null);
+        setGifError("");
+    };
+
+    const handleInsertGif = (e) => {
+        e?.stopPropagation?.();
+        setGifError("");
+        if (gifInputRef.current) {
+            gifInputRef.current.value = "";
+            gifInputRef.current.click();
+        }
+    };
+
+    const handleGifInputChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const result = validateGifFile(file);
+        if (!result.ok) {
+            setGifError(result.error);
+            setPendingGifFile(null);
+            return;
+        }
+        // GIFs skip the cropper entirely — clear the image/gradient selections.
+        setGifError("");
+        setImageSrc(null);
+        setGradientPicked(null);
+        setPendingGifFile(file);
+    };
+
+    const handleRemoveGif = () => {
+        setPendingGifFile(null);
+        setGifError("");
+    };
+
+    const handleOpenGifCreator = () => {
+        setGifError("");
+        setShowGifCreator(true);
+    };
+
+    // The creator returns a fully-formed legacy background object (gif already
+    // uploaded). Apply it like any other selected background; persistence to the
+    // users table still happens when the user saves the edit modal (profileBg).
+    const handleApplyGifBackground = (backgroundObject) => {
+        setPendingGifFile(null);
+        setGradientPicked(null);
+        setImageSrc(null);
+        setCroppedImage(backgroundObject);
+        setShowGifCreator(false);
+        setShowBgPicker(false);
     };
 
     const handleSaveProfileEdit = async () => {
@@ -236,7 +304,25 @@ const MyProfile = () => {
         if (isUpdatingProfileConfig) return;
         setIsUpdatingProfileConfig(true);
         try {
-            if (imageSrc) {
+            if (pendingGifFile) {
+                // GIFs upload as-is (no Sharp/WebP) via the dedicated endpoint, with
+                // a static first-frame poster for the reduced-motion fallback.
+                const posterBlob = await posterFromGifFile(pendingGifFile);
+                const formData = new FormData();
+                formData.append("gif", pendingGifFile);
+                if (posterBlob) {
+                    formData.append("poster", posterBlob, "poster.jpg");
+                }
+                const { gifUrl, posterUrl } = await uploadBackgroundGif(session?.access_token, formData);
+                setCroppedImage({
+                    mediaType: "gif",
+                    backgroundImage: `url(${gifUrl})`,
+                    ...(posterUrl ? { backgroundPosterImage: `url(${posterUrl})` } : {}),
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                });
+            } else if (imageSrc) {
                 const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels, userData.id, session?.access_token);
                 if (croppedImageUrl) {
                     setCroppedImage({
@@ -251,6 +337,7 @@ const MyProfile = () => {
             }
             setGradientPicked(null);
             setImageSrc(null);
+            setPendingGifFile(null);
             setShowBgPicker(false);
             queryClient.invalidateQueries({ queryKey: ["userData", session?.user?.id] });
         } catch {
@@ -267,6 +354,8 @@ const MyProfile = () => {
     const handleSelectGradient = useCallback((gradient) => {
         setCroppedImage(null);
         setImageSrc(null);
+        setPendingGifFile(null);
+        setGifError("");
         setGradientPicked(gradient);
     }, []);
 
@@ -281,6 +370,8 @@ const MyProfile = () => {
     const handleBgOnchange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setPendingGifFile(null);
+            setGifError("");
             const reader = new FileReader();
             reader.onloadend = () => {
                 const img = new Image();
@@ -385,6 +476,19 @@ const MyProfile = () => {
                 handleHideGradientPicker={handleHideGradientPicker}
                 handleSaveProfileConfig={handleSaveProfileConfig}
                 isUpdatingProfileConfig={isUpdatingProfileConfig}
+                gifInputRef={gifInputRef}
+                handleInsertGif={handleInsertGif}
+                handleGifInputChange={handleGifInputChange}
+                pendingGifFile={pendingGifFile}
+                handleRemoveGif={handleRemoveGif}
+                onOpenGifCreator={handleOpenGifCreator}
+                gifError={gifError}
+            />
+            <GifCreatorModal
+                open={showGifCreator}
+                onClose={() => setShowGifCreator(false)}
+                token={session?.access_token}
+                onApply={handleApplyGifBackground}
             />
             <AnimatePresence>
                 <ProfileEditModal
@@ -425,14 +529,19 @@ const MyProfile = () => {
                 >
                     {gradientPicked && <div className="blurred-gradient-bg" style={gradientPicked} />}
 
-                    {croppedImage && <div style={croppedImage} className="blurred-img-bg" />}
+                    {croppedImage && (
+                        <div
+                            style={resolveLegacyBackgroundForMotion(croppedImage, prefersReducedMotion)}
+                            className="blurred-img-bg"
+                        />
+                    )}
 
                     <div className="side-bar-holder-container">
                         <Sidebar links={links} />
                     </div>
 
                     <div
-                        style={{ ...themeVars, ...(composeProfileBackgroundStyle(profileTheme, croppedImage || gradientPicked) || {}) }}
+                        style={{ ...themeVars, ...(composeProfileBackgroundStyle(profileTheme, resolveLegacyBackgroundForMotion(croppedImage || gradientPicked, prefersReducedMotion)) || {}) }}
                         className="profile-center-bar-container pt-scope"
                     >
                         <ProfileHeroSection
@@ -465,7 +574,6 @@ const MyProfile = () => {
                                     }}
                                 />
                             )}
-                            <ProfileActivitySummary token={session?.access_token} />
                         </div>
 
                         {/* Profile Builder V3 — Layout Composer. EVERY profile renders
@@ -493,7 +601,9 @@ const MyProfile = () => {
                         <Outlet />
                     </div>
 
-                    <div className="profile-sidebar-right-holder-container">{/* Log out */}</div>
+                    <div className="profile-sidebar-right-holder-container">
+                        <SidebarOpinions openEditor={handleOpenOpinionTextEditor} />
+                    </div>
 
                     {showMobileSideBar && <MobileSidebarLink onclose={handleCloseSidebar} />}
 
@@ -512,6 +622,10 @@ const MyProfile = () => {
                 followerCount={user?.followerCount}
                 followingCount={user?.followingCount}
             />
+
+            {session && showOpinionEditor && (
+                <OpinionEditor onClose={handleCloseOpinionTextEditor} />
+            )}
 
             {saveError && (
                 <div key={saveError} className="profile-save-error-toast">

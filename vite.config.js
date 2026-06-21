@@ -16,6 +16,11 @@ export default defineConfig(({ mode }) => {
         "this-is-undefined-in-esm": "silent",
       },
     },
+    // ES module workers — the GIF background encoder dynamically imports gifenc,
+    // which needs code-splitting (unsupported by the default iife worker format).
+    worker: {
+      format: "es",
+    },
     build: {
       rollupOptions: {
         output: {

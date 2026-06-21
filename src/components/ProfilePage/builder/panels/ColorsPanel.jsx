@@ -7,8 +7,7 @@ import {
     BACKGROUND_TYPE_LABELS,
     BACKGROUND_ANGLE_OPTIONS,
 } from "../profileThemeConstants";
-
-const isHex = (v) => /^#[0-9a-fA-F]{6}$/.test(v || "");
+import { isHexColor } from "../profileThemeUtils";
 
 const hexToRgb = (hex) => {
     let h = (hex || "").replace("#", "");
@@ -113,7 +112,7 @@ const ColorsPanel = ({
                     <input
                         id="pt-text-color"
                         type="color"
-                        value={isHex(textValue) ? textValue : "#ffffff"}
+                        value={isHexColor(textValue) ? textValue : "#ffffff"}
                         onChange={(e) => setText(e.target.value)}
                     />
                     <span className="pt-color-value">
@@ -137,7 +136,7 @@ const ColorsPanel = ({
                     <input
                         id="pt-accent-color"
                         type="color"
-                        value={/^#[0-9a-fA-F]{6}$/.test(theme.colors.accent) ? theme.colors.accent : "#D4A853"}
+                        value={isHexColor(theme.colors.accent) ? theme.colors.accent : "#D4A853"}
                         onChange={(e) => onPatchColors({ accent: e.target.value })}
                     />
                     <span className="pt-color-value">{theme.colors.accent}</span>
@@ -201,7 +200,7 @@ const ColorsPanel = ({
                             <input
                                 id="pt-bg-from"
                                 type="color"
-                                value={isHex(bg.from) ? bg.from : "#7c3aed"}
+                                value={isHexColor(bg.from) ? bg.from : "#7c3aed"}
                                 onChange={(e) => onPatchBackground({ from: e.target.value })}
                             />
                             <span className="pt-color-value">{bg.from}</span>
@@ -214,7 +213,7 @@ const ColorsPanel = ({
                             <input
                                 id="pt-bg-to"
                                 type="color"
-                                value={isHex(bg.to) ? bg.to : "#2563eb"}
+                                value={isHexColor(bg.to) ? bg.to : "#2563eb"}
                                 onChange={(e) => onPatchBackground({ to: e.target.value })}
                             />
                             <span className="pt-color-value">{bg.to}</span>

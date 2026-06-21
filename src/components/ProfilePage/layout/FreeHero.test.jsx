@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import FreeHero from "./FreeHero";
 
 const hero = {
@@ -71,5 +71,28 @@ describe("FreeHero — fixed reorderable stack", () => {
     it("renders the badge ring + verified badge when a badge is set", () => {
         const { container } = setup({ badge: "og" });
         expect(container.querySelector(".pt-freehero-avatar.badge-ring-og")).toBeTruthy();
+    });
+
+    it("exposes the ⠿ tag as a labelled reorder grip on every element", () => {
+        const { getByLabelText } = setup();
+        ["Avatar", "Name", "Stats", "Bio"].forEach((t) =>
+            expect(getByLabelText(`Drag to reorder ${t}`)).toBeTruthy()
+        );
+    });
+
+    it("tapping a row (touch) selects it without requiring the grip", () => {
+        const onSelectEl = vi.fn();
+        const { container } = setup({ onSelectEl, selectedEl: null });
+        const nameRow = container.querySelector(".pt-freehero-el--name");
+        // A touch press on the body selects the element (reorder is grip-only on
+        // touch, so the canvas stays scroll-safe).
+        fireEvent.pointerDown(nameRow, { pointerId: 1, pointerType: "touch" });
+        expect(onSelectEl).toHaveBeenCalledWith("name");
+    });
+
+    it("labels the resize handles on the selected element", () => {
+        const { getByLabelText } = setup({ selectedEl: "name", onSelectEl: vi.fn() });
+        expect(getByLabelText("Resize Name")).toBeTruthy();
+        expect(getByLabelText("Resize Name width")).toBeTruthy();
     });
 });

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../Context/useAuth";
@@ -14,6 +14,8 @@ import {
     getProfileMedia,
     getVisitedProfileMedia,
     getUserOpinions,
+    deleteJournal,
+    deleteJournalImage,
 } from "../../../../API/Api";
 import { getUserStories } from "../../../../API/StoryApi";
 import WritingsPreview from "./previewCards/WritingsPreview";
@@ -55,9 +57,17 @@ const pageItems = (page) =>
 const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClose }) => {
     const { session } = useAuth();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const token = session?.access_token;
     const loggedInUserId = session?.user?.id || null;
     const [lightbox, setLightbox] = useState(null);
+
+    // Owner-only delete (writings / pinned writings). pendingDelete holds the item
+    // awaiting confirmation; isDeleting/justDeleted drive the confirm UI.
+    const canDelete = isOwn && (type === "writings" || type === "pinned_writings");
+    const [pendingDelete, setPendingDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [justDeleted, setJustDeleted] = useState(false);
 
     const { ref: sentinelRef, inView } = useInView({ threshold: 0.1 });
 
@@ -152,6 +162,68 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
     };
     const openMedia = (e, item) => setLightbox(item);
 
+    // ── Owner delete ──
+    // Remove a journal id from this block's cached pages (handles both the
+    // {pages:[{data:[]}]} writings shape and the bare-array pinned shape).
+    const removeFromCache = (queryKey, id) =>
+        queryClient.setQueryData(queryKey, (old) => {
+            if (!old || !Array.isArray(old.pages)) return old;
+            return {
+                ...old,
+                pages: old.pages.map((page) =>
+                    Array.isArray(page)
+                        ? page.filter((j) => j?.id !== id)
+                        : {
+                              ...page,
+                              data: Array.isArray(page?.data)
+                                  ? page.data.filter((j) => j?.id !== id)
+                                  : page?.data,
+                          }
+                ),
+            };
+        });
+
+    const confirmDelete = async () => {
+        if (!pendingDelete || isDeleting) return;
+        const item = pendingDelete;
+        const queryKey = ["blockContent", type, profileUserId];
+        const previous = queryClient.getQueryData(queryKey);
+        try {
+            setIsDeleting(true);
+            removeFromCache(queryKey, item.id); // optimistic
+
+            const imgs = item.thumbnail_url ? [item.thumbnail_url] : null;
+            const [deleteRes] = await Promise.allSettled([
+                deleteJournal(item.id, token),
+                imgs ? deleteJournalImage(token, imgs) : Promise.resolve(null),
+            ]);
+            if (deleteRes.status !== "fulfilled") {
+                queryClient.setQueryData(queryKey, previous); // revert
+                throw deleteRes.reason || new Error("failed to delete journal");
+            }
+
+            setJustDeleted(true);
+            // Refresh this list + every other surface that shows the post.
+            queryClient.invalidateQueries({ queryKey: ["blockContent", "writings", profileUserId] });
+            queryClient.invalidateQueries({ queryKey: ["blockContent", "pinned_writings", profileUserId] });
+            queryClient.invalidateQueries({ queryKey: ["profilePreview", username] });
+            queryClient.invalidateQueries({ queryKey: ["userJournals"] });
+            queryClient.invalidateQueries({ queryKey: ["journals"], refetchType: "none" });
+            queryClient.invalidateQueries({ queryKey: ["visitedProfileJournals"], refetchType: "none" });
+            queryClient.invalidateQueries({ queryKey: ["pinnedJournals"] });
+            queryClient.invalidateQueries({ queryKey: ["userPinnedIds"] });
+
+            setTimeout(() => {
+                setIsDeleting(false);
+                setJustDeleted(false);
+                setPendingDelete(null);
+            }, 1200);
+        } catch (err) {
+            console.error("Error deleting writing:", err);
+            setIsDeleting(false);
+        }
+    };
+
     const renderBody = () => {
         if (isLoading) return <PreviewSkeleton type={type} />;
         if (isError) return <p className="pl-modal-msg">Couldn&apos;t load this right now.</p>;
@@ -161,7 +233,17 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
         switch (type) {
             case "writings":
             case "pinned_writings":
-                return <WritingsPreview items={items} variant="list" onItemClick={openJournal} count={count} showExcerpt showMeta />;
+                return (
+                    <WritingsPreview
+                        items={items}
+                        variant="list"
+                        onItemClick={openJournal}
+                        count={count}
+                        showExcerpt
+                        showMeta
+                        onDeleteItem={canDelete ? setPendingDelete : undefined}
+                    />
+                );
             case "media":
                 return <MediaPreview items={items} variant="grid" onItemClick={openMedia} count={count} />;
             case "opinions":
@@ -211,6 +293,47 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
                 {lightbox && (
                     <div className="pl-modal-lightbox" onClick={(e) => { e.stopPropagation(); setLightbox(null); }}>
                         <img src={lightbox.fullUrl || lightbox.thumbnail_url} alt="" className="pl-modal-lightbox-img" />
+                    </div>
+                )}
+
+                {pendingDelete && (
+                    <div
+                        className="pl-modal-confirm-overlay"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isDeleting && !justDeleted) setPendingDelete(null);
+                        }}
+                    >
+                        <div className="pl-modal-confirm" onClick={(e) => e.stopPropagation()}>
+                            {justDeleted ? (
+                                <p className="pl-modal-confirm-done">Post deleted</p>
+                            ) : (
+                                <>
+                                    <h3 className="pl-modal-confirm-title">Delete this post?</h3>
+                                    <p className="pl-modal-confirm-text">
+                                        “{pendingDelete.title || "Untitled"}” will be permanently removed. This can&apos;t be undone.
+                                    </p>
+                                    <div className="pl-modal-confirm-actions">
+                                        <button
+                                            type="button"
+                                            className="pl-modal-confirm-cancel"
+                                            onClick={() => setPendingDelete(null)}
+                                            disabled={isDeleting}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="pl-modal-confirm-delete"
+                                            onClick={confirmDelete}
+                                            disabled={isDeleting}
+                                        >
+                                            {isDeleting ? "Deleting…" : "Delete"}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 )}
             </motion.div>

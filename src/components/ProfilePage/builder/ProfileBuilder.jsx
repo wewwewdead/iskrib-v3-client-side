@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion as Motion } from "framer-motion";
+import { useMediaQuery } from "react-responsive";
 import "./ProfileBuilder.css";
 import "./profileTheme.css";
 import "../layout/profileLayout.css";
@@ -27,6 +28,15 @@ const TABS = [
     { key: "stickers", label: "Stickers" },
 ];
 
+// Pure draft helpers — module-scope so they're stable references (no per-render
+// allocation, and no implicit hook dependency).
+const markCustom = (next) => ({ ...next, presetId: "custom" });
+const reindexBlocks = (blocks) => blocks.map((b, i) => ({ ...b, order: i }));
+
+// Mobile bottom-sheet states, cycled by the sheet grabber. "collapsed" keeps the
+// canvas in focus (Preview mode); "half"/"expanded" surface the tool panel.
+const SHEET_NEXT = { collapsed: "half", half: "expanded", expanded: "collapsed" };
+
 const ProfileBuilder = ({
     open,
     onClose,
@@ -37,6 +47,10 @@ const ProfileBuilder = ({
     followerCount,
     followingCount,
 }) => {
+    // Mobile gets a dedicated app-shell: a canvas-first preview with a bottom
+    // sheet for tools. Desktop ignores all of this (the sheet state is harmless).
+    const isMobile = useMediaQuery({ query: "(max-width: 760px)" });
+    const [mobileSheetState, setMobileSheetState] = useState("collapsed");
     const [activeTab, setActiveTab] = useState("presets");
     const [draft, setDraft] = useState(() => getDefaultProfileTheme(userData));
     // The container selected in the live preview. When set, the Cards tab edits
@@ -48,56 +62,144 @@ const ProfileBuilder = ({
     const [selectedHeroEl, setSelectedHeroEl] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
+    const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+    // Snapshot of the presentation (colors/typography/cards) the LAST applied
+    // preset overwrote, so the user can undo a preset without losing tuning.
+    const [presetUndo, setPresetUndo] = useState(null);
     const [error, setError] = useState("");
     const closeTimerRef = useRef(null);
+    // Serialized snapshot of the theme the session opened with. Lets us tell when
+    // the draft has unsaved edits (dirty) so we can surface it + guard the close.
+    const baselineRef = useRef(null);
 
     // (Re)initialize the draft each time the builder opens.
     useEffect(() => {
         if (open) {
-            setDraft(
-                initialTheme
-                    ? normalizeProfileTheme(initialTheme, userData)
-                    : getDefaultProfileTheme(userData)
-            );
+            const init = initialTheme
+                ? normalizeProfileTheme(initialTheme, userData)
+                : getDefaultProfileTheme(userData);
+            setDraft(init);
+            baselineRef.current = JSON.stringify(init);
             setActiveTab("presets");
             setError("");
             setJustSaved(false);
+            setConfirmingDiscard(false);
+            setPresetUndo(null);
             setSelectedBlockType(null);
             setSelectedStickerIndex(-1);
             setSelectedHeroEl(null);
+            // Mobile opens canvas-first — the sheet is tucked away until a tool
+            // is picked, so the preview is fully visible the moment it opens.
+            setMobileSheetState("collapsed");
         }
     }, [open, initialTheme, userData]);
+
+    // Lock the page behind the modal so the body never scrolls under the builder
+    // (especially on mobile, where the overlay covers the full dynamic viewport).
+    useEffect(() => {
+        if (!open) return undefined;
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = prevOverflow;
+        };
+    }, [open]);
+
+    // Step the mobile bottom sheet through collapsed → half → expanded → collapsed.
+    const cycleSheet = useCallback(() => {
+        setMobileSheetState((s) => SHEET_NEXT[s] || "half");
+    }, []);
+
+    // Picking a tool surfaces the sheet (half) on mobile if it's tucked away, so
+    // the chosen panel is actually visible. Desktop just switches tabs.
+    const handleSelectTab = useCallback(
+        (key) => {
+            setActiveTab(key);
+            if (isMobile) setMobileSheetState((s) => (s === "collapsed" ? "half" : s));
+        },
+        [isMobile]
+    );
+
+    // Has the draft diverged from the snapshot it opened with?
+    const isDirty = useMemo(
+        () => baselineRef.current != null && JSON.stringify(draft) !== baselineRef.current,
+        [draft]
+    );
 
     // Clear any pending post-save close timer on unmount.
     useEffect(() => () => {
         if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     }, []);
 
-    // Close on Escape.
+    // Request a close. With unsaved edits this asks to confirm first (so a stray
+    // Escape / Cancel never silently throws away the user's work); otherwise it
+    // closes immediately. After a successful save the draft is no longer dirty.
+    const requestClose = useCallback(() => {
+        if (isSaving) return;
+        if (isDirty && !justSaved) {
+            setConfirmingDiscard(true);
+            return;
+        }
+        onClose?.();
+    }, [isDirty, isSaving, justSaved, onClose]);
+
+    const handleDiscard = useCallback(() => {
+        setConfirmingDiscard(false);
+        onClose?.();
+    }, [onClose]);
+
+    // Close on Escape — Escape backs out of the discard prompt first, then guards
+    // the close the same way the Cancel/× buttons do.
     useEffect(() => {
         if (!open) return undefined;
         const onKeyDown = (e) => {
-            if (e.key === "Escape") onClose?.();
+            if (e.key !== "Escape") return;
+            if (confirmingDiscard) {
+                setConfirmingDiscard(false);
+            } else {
+                requestClose();
+            }
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [open, onClose]);
-
-    const markCustom = (next) => ({ ...next, presetId: "custom" });
+    }, [open, confirmingDiscard, requestClose]);
 
     const handleApplyPreset = useCallback((presetId) => {
+        // Remember the presentation we're about to replace so it can be undone.
+        setPresetUndo({
+            colors: draft.colors,
+            typography: draft.typography,
+            cards: draft.cards,
+            presetId: draft.presetId,
+        });
         setDraft((prev) => applyPresetToTheme(prev, presetId));
-    }, []);
+    }, [draft]);
+
+    // Restore the presentation a preset overwrote (one level of undo).
+    const handleUndoPreset = useCallback(() => {
+        if (!presetUndo) return;
+        setDraft((prev) => ({
+            ...prev,
+            colors: { ...presetUndo.colors },
+            typography: { ...presetUndo.typography },
+            cards: { ...presetUndo.cards },
+            presetId: presetUndo.presetId,
+        }));
+        setPresetUndo(null);
+    }, [presetUndo]);
 
     const handlePatchColors = useCallback((partial) => {
+        setPresetUndo(null);
         setDraft((prev) => markCustom({ ...prev, colors: { ...prev.colors, ...partial } }));
     }, []);
 
     const handlePatchTypography = useCallback((partial) => {
+        setPresetUndo(null);
         setDraft((prev) => markCustom({ ...prev, typography: { ...prev.typography, ...partial } }));
     }, []);
 
     const handlePatchCards = useCallback((partial) => {
+        setPresetUndo(null);
         setDraft((prev) => markCustom({ ...prev, cards: { ...prev.cards, ...partial } }));
     }, []);
 
@@ -115,8 +217,6 @@ const ProfileBuilder = ({
     }, []);
 
     // ── Layout (V3A) ──
-    const reindexBlocks = (blocks) => blocks.map((b, i) => ({ ...b, order: i }));
-
     // Reorder by a fresh ordered list of blocks (from drag).
     const handleReorderLayout = useCallback((nextBlocks) => {
         setDraft((prev) =>
@@ -296,8 +396,12 @@ const ProfileBuilder = ({
     // Select a sticker (clicking it on the canvas) and surface its editor.
     const handleSelectSticker = useCallback((index) => {
         setSelectedStickerIndex(index);
-        if (index >= 0) setActiveTab("stickers");
-    }, []);
+        if (index >= 0) {
+            setActiveTab("stickers");
+            // Bring the sheet up on mobile so the sticker's controls are reachable.
+            if (isMobile) setMobileSheetState((s) => (s === "collapsed" ? "half" : s));
+        }
+    }, [isMobile]);
 
     // Patch one sticker's color / scale / rotation.
     const handleUpdateSticker = useCallback((index, partial) => {
@@ -323,7 +427,9 @@ const ProfileBuilder = ({
     // already on Colors we keep them there; otherwise we jump to Sections.
     const handleSelectHeroEl = useCallback((key) => {
         setSelectedHeroEl(key);
-    }, []);
+        // Surface the hero element's editor in the bottom sheet on mobile.
+        if (key && isMobile) setMobileSheetState((s) => (s === "collapsed" ? "half" : s));
+    }, [isMobile]);
 
     // Patch ONE hero element's align / style (isolated to that container).
     const handleHeroPatchElement = useCallback((key, partial) => {
@@ -348,6 +454,8 @@ const ProfileBuilder = ({
         try {
             const response = await updateProfileTheme(token, draft);
             onSaved?.(response?.profileTheme || draft);
+            // The saved draft is the new baseline — it's no longer "unsaved".
+            baselineRef.current = JSON.stringify(draft);
             // Calm success beat: confirm "Saved", let the preview settle, then close.
             setIsSaving(false);
             setJustSaved(true);
@@ -363,7 +471,14 @@ const ProfileBuilder = ({
     const activePanel = useMemo(() => {
         switch (activeTab) {
             case "presets":
-                return <PresetsPanel theme={draft} onApplyPreset={handleApplyPreset} />;
+                return (
+                    <PresetsPanel
+                        theme={draft}
+                        onApplyPreset={handleApplyPreset}
+                        canUndo={!!presetUndo}
+                        onUndo={handleUndoPreset}
+                    />
+                );
             case "colors":
                 return (
                     <ColorsPanel
@@ -441,6 +556,8 @@ const ProfileBuilder = ({
         activeTab,
         draft,
         handleApplyPreset,
+        handleUndoPreset,
+        presetUndo,
         handlePatchColors,
         handlePatchBackground,
         handlePatchTypography,
@@ -463,6 +580,13 @@ const ProfileBuilder = ({
         handleHeroPatchElement,
     ]);
 
+    // Label shown in the mobile sheet header so it's always clear what the sheet
+    // is editing — the active tool, or the hero element being tuned.
+    const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label || "Tools";
+    const sheetTitle = selectedHeroEl
+        ? `Editing ${HERO_ELEMENT_LABELS[selectedHeroEl] || selectedHeroEl}`
+        : activeTabLabel;
+
     return (
         <AnimatePresence>
             {open && (
@@ -477,7 +601,7 @@ const ProfileBuilder = ({
                     transition={{ duration: 0.2 }}
                 >
                     <Motion.div
-                        className="pt-builder"
+                        className={`pt-builder${isMobile ? ` is-mobile sheet-${mobileSheetState}` : ""}`}
                         initial={{ scale: 0.96, y: 16, opacity: 0 }}
                         animate={{ scale: 1, y: 0, opacity: 1 }}
                         exit={{ scale: 0.97, y: 8, opacity: 0 }}
@@ -488,10 +612,23 @@ const ProfileBuilder = ({
                                 <h2>Customize profile</h2>
                                 <p>Design your space — changes apply after you save.</p>
                             </div>
+                            <span
+                                className={`pt-builder-status${
+                                    justSaved ? " is-saved" : isDirty ? " is-dirty" : ""
+                                }`}
+                                role="status"
+                                aria-live="polite"
+                            >
+                                {justSaved
+                                    ? "Saved"
+                                    : isDirty
+                                      ? "Unsaved changes"
+                                      : "All changes saved"}
+                            </span>
                             <button
                                 type="button"
                                 className="pt-builder-close"
-                                onClick={onClose}
+                                onClick={requestClose}
                                 aria-label="Close customizer"
                             >
                                 ×
@@ -524,6 +661,30 @@ const ProfileBuilder = ({
                             </section>
 
                             <section className="pt-builder-tools">
+                                {isMobile && (
+                                    <button
+                                        type="button"
+                                        className="pt-sheet-header"
+                                        onClick={cycleSheet}
+                                        aria-expanded={mobileSheetState !== "collapsed"}
+                                        aria-label={`Tools — ${sheetTitle}. ${
+                                            mobileSheetState === "expanded" ? "Tap to collapse" : "Tap to expand"
+                                        }`}
+                                    >
+                                        <span className="pt-sheet-grabber-pill" aria-hidden="true" />
+                                        <span className="pt-sheet-header-row">
+                                            <span className="pt-sheet-title">{sheetTitle}</span>
+                                            <span
+                                                className={`pt-sheet-chevron sheet-${mobileSheetState}`}
+                                                aria-hidden="true"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="m6 15 6-6 6 6" />
+                                                </svg>
+                                            </span>
+                                        </span>
+                                    </button>
+                                )}
                                 {selectedHeroEl ? (
                                     <>
                                         <div className="pt-hero-edit-banner">
@@ -552,7 +713,7 @@ const ProfileBuilder = ({
                                                     type="button"
                                                     className={`pt-builder-tab${activeTab === tab.key ? " is-active" : ""}`}
                                                     aria-pressed={activeTab === tab.key}
-                                                    onClick={() => setActiveTab(tab.key)}
+                                                    onClick={() => handleSelectTab(tab.key)}
                                                 >
                                                     {tab.label}
                                                 </button>
@@ -566,26 +727,50 @@ const ProfileBuilder = ({
 
                         <footer className="pt-builder-footer">
                             {error && <span className="pt-builder-error" role="alert">{error}</span>}
-                            <div className="pt-builder-footer-actions" aria-live="polite">
-                                <button type="button" className="pt-builder-cancel" onClick={onClose} disabled={isSaving || justSaved}>
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`pt-builder-save${justSaved ? " is-saved" : ""}`}
-                                    onClick={handleSave}
-                                    disabled={isSaving || justSaved}
-                                >
-                                    {justSaved ? (
-                                        <>
-                                            <svg className="pt-save-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                                <path d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            Saved
-                                        </>
-                                    ) : isSaving ? "Saving…" : "Save profile"}
-                                </button>
-                            </div>
+                            {confirmingDiscard ? (
+                                <div className="pt-builder-discard" role="alertdialog" aria-label="Discard unsaved changes">
+                                    <span className="pt-builder-discard-msg">
+                                        Discard your unsaved changes?
+                                    </span>
+                                    <div className="pt-builder-footer-actions">
+                                        <button
+                                            type="button"
+                                            className="pt-builder-cancel"
+                                            onClick={() => setConfirmingDiscard(false)}
+                                        >
+                                            Keep editing
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="pt-builder-discard-confirm"
+                                            onClick={handleDiscard}
+                                        >
+                                            Discard
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="pt-builder-footer-actions" aria-live="polite">
+                                    <button type="button" className="pt-builder-cancel" onClick={requestClose} disabled={isSaving || justSaved}>
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`pt-builder-save${justSaved ? " is-saved" : ""}`}
+                                        onClick={handleSave}
+                                        disabled={isSaving || justSaved}
+                                    >
+                                        {justSaved ? (
+                                            <>
+                                                <svg className="pt-save-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                                    <path d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Saved
+                                            </>
+                                        ) : isSaving ? "Saving…" : "Save profile"}
+                                    </button>
+                                </div>
+                            )}
                         </footer>
                     </Motion.div>
                 </Motion.div>

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Reorder, useDragControls } from "framer-motion";
 import {
     profileThemeToCssVars,
@@ -8,7 +8,9 @@ import {
     getBlockContent,
     getBlockCardCssVars,
     composeProfileBackgroundStyle,
+    resolveLegacyBackgroundForMotion,
 } from "./profileThemeUtils";
+import usePrefersReducedMotion from "../../../hooks/usePrefersReducedMotion";
 import {
     LAYOUT_BLOCK_LABELS,
     CONTENT_SOURCE_LABELS,
@@ -159,18 +161,33 @@ const PreviewLayoutBlock = ({
             }}
         >
             <div className="pt-pblock__head">
-                {/* Whole grip+title is the reorder drag zone. */}
+                {/* The header strip selects the block, and with a mouse/pen it also
+                    starts a reorder drag (desktop behaviour, unchanged). On TOUCH
+                    the strip stays scroll-safe — a reorder must be started from the
+                    ⠿ grip — so swiping over a block header scrolls the canvas
+                    instead of accidentally reordering it (mirrors FreeHero). */}
                 <span
                     className="pt-pblock__drag"
-                    role="button"
-                    aria-label={`Drag to reorder ${label}`}
-                    title="Drag to reorder"
                     onPointerDown={(e) => {
                         e.stopPropagation();
-                        dragControls.start(e);
+                        onSelect(block.type);
+                        if (e.pointerType !== "touch") dragControls.start(e);
                     }}
                 >
-                    <span className="pt-pblock__grip" aria-hidden="true">
+                    {/* The ⠿ grip is the dedicated reorder handle — it starts a drag
+                        on every pointer type, so touch users get a clear, scroll-safe
+                        way to reorder from the preview. */}
+                    <span
+                        className="pt-pblock__grip"
+                        role="button"
+                        aria-label={`Drag to reorder ${label}`}
+                        title="Drag to reorder"
+                        onPointerDown={(e) => {
+                            e.stopPropagation();
+                            onSelect(block.type);
+                            dragControls.start(e);
+                        }}
+                    >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="8" cy="6" r="1.6" />
                             <circle cx="16" cy="6" r="1.6" />
@@ -319,10 +336,21 @@ const BuilderPreview = ({
     selectedHeroEl,
     onSelectHeroEl,
 }) => {
-    const cssVars = profileThemeToCssVars(theme, userData);
+    // Both are pure derivations of (theme, userData) — memoized so selection-only
+    // re-renders (clicking a block/sticker) don't re-run the full theme normalize.
+    const cssVars = useMemo(() => profileThemeToCssVars(theme, userData), [theme, userData]);
+    const prefersReducedMotion = usePrefersReducedMotion();
     // The theme's gradient OVERLAYS the legacy image (so opacity < 1 tints rather
-    // than hides it); the preview matches the live page.
-    const background = composeProfileBackgroundStyle(theme, userData?.background) || null;
+    // than hides it); the preview matches the live page. GIF backgrounds resolve
+    // to their poster under reduced motion (and shed their metadata keys).
+    const background = useMemo(
+        () =>
+            composeProfileBackgroundStyle(
+                theme,
+                resolveLegacyBackgroundForMotion(userData?.background, prefersReducedMotion)
+            ) || null,
+        [theme, userData, prefersReducedMotion]
+    );
     // Selection is controlled when the parent supplies onSelectType (so the
     // Cards tab can edit the selected container); otherwise it's self-managed.
     const [internalSelected, setInternalSelected] = useState(null);

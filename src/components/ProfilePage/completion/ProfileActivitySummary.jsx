@@ -44,9 +44,9 @@ const ProfileActivitySummary = ({ token }) => {
 
     return (
         <motion.section
-            className="pas-card"
+            className="pas"
             aria-label="This week in your room"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
@@ -54,7 +54,6 @@ const ProfileActivitySummary = ({ token }) => {
             <ul className="pas-lines">
                 {lines.map((line, i) => (
                     <li className="pas-line" key={i}>
-                        <span className="pas-spark" aria-hidden="true">✦</span>
                         {line}
                     </li>
                 ))}

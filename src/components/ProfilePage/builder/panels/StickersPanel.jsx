@@ -6,8 +6,7 @@ import {
     STICKER_SCALE_MAX,
 } from "../stickerRegistry";
 import { MAX_STICKERS } from "../profileThemeConstants";
-
-const isHex = (v) => typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v);
+import { isHexColor } from "../profileThemeUtils";
 
 /**
  * Editor for the currently-selected sticker: color, size and rotation. Shown
@@ -49,7 +48,7 @@ const SelectedStickerEditor = ({ index, sticker, onUpdate, onRemove, onDeselect 
                     <label className="pt-sticker-color pt-sticker-color--custom" title="Custom color">
                         <input
                             type="color"
-                            value={isHex(sticker.color) ? sticker.color : "#d4a853"}
+                            value={isHexColor(sticker.color) ? sticker.color : "#d4a853"}
                             onChange={(e) => onUpdate(index, { color: e.target.value })}
                             aria-label="Custom sticker color"
                         />

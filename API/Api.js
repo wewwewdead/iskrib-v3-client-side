@@ -29,6 +29,11 @@ export const getUserData = (userId) =>
 export const updateFontColor = (token, fontColor) =>
     authedFormRequest(token, 'POST', '/updateFontColor', fontColor, 'failed to update font color');
 
+// Animated GIF profile background. `formData` carries `gif` (required) and an
+// optional `poster` (static reduced-motion fallback). Returns { gifUrl, posterUrl }.
+export const uploadBackgroundGif = (token, formData) =>
+    authedFormRequest(token, 'POST', '/uploadBackgroundGif', formData, 'failed to upload background gif');
+
 export const updateProfileTheme = (token, profileTheme) =>
     authedJsonRequest(token, 'PATCH', '/profile/theme', { profileTheme }, 'failed to update profile theme');
 

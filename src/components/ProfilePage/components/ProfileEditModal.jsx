@@ -1,6 +1,8 @@
 import React from "react";
 import { BarLoader } from "react-spinners";
 import { motion as Motion } from "framer-motion";
+import { resolveLegacyBackgroundForMotion } from "../builder/profileThemeUtils";
+import usePrefersReducedMotion from "../../../hooks/usePrefersReducedMotion";
 
 const ProfileEditModal = ({
     showProfileEditor,
@@ -20,9 +22,16 @@ const ProfileEditModal = ({
     handleSaveProfileEdit,
     isSavingProfile,
 }) => {
+    const prefersReducedMotion = usePrefersReducedMotion();
+
     if (!showProfileEditor) {
         return null;
     }
+
+    // Strip the GIF metadata keys (mediaType / poster) before using as a style,
+    // and swap to the poster under reduced motion.
+    const heroBackground =
+        resolveLegacyBackgroundForMotion(croppedImage, prefersReducedMotion) || gradientPicked;
 
     return (
         <div key={"profile-editor"} className="profile-editor-bg" onClick={(e) => closeEditor(e)}>
@@ -48,7 +57,7 @@ const ProfileEditModal = ({
                     </div>
                 </div>
 
-                <div style={croppedImage || gradientPicked} className="edit-profile-hero-section">
+                <div style={heroBackground} className="edit-profile-hero-section">
                     <div className="profile-edit-image-container">
                         <div className="profile-edit-image-bg">
                             <div onClick={(e) => insertImageFromFile(e)} className="edit-profile-addImage-icon">

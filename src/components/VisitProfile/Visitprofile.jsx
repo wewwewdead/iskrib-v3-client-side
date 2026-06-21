@@ -24,8 +24,9 @@ import { getProfileShareUrl } from '../../utils/getShareUrl';
 import StreakBadge from '../Streak/StreakBadge';
 import useStreakData from '../Streak/useStreakData';
 import StickerLayer from '../ProfilePage/builder/StickerLayer';
-import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle } from '../ProfilePage/builder/profileThemeUtils';
+import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle, resolveLegacyBackgroundForMotion } from '../ProfilePage/builder/profileThemeUtils';
 import { getDefaultProfileTheme } from '../ProfilePage/builder/profileThemeDefaults';
+import usePrefersReducedMotion from '../../hooks/usePrefersReducedMotion';
 import '../ProfilePage/builder/profileTheme.css';
 import ProfileGuestbook from '../ProfilePage/guestbook/ProfileGuestbook';
 import ProfileLayoutRenderer from '../ProfilePage/layout/ProfileLayoutRenderer';
@@ -173,6 +174,8 @@ const Visitprofile = () =>{
     const hasTheme = !!rawProfileTheme;
     const profileTheme = rawProfileTheme || getDefaultProfileTheme(userData);
     const themeVars = profileThemeToCssVars(profileTheme, userData);
+    const prefersReducedMotion = usePrefersReducedMotion();
+    const resolvedBackground = resolveLegacyBackgroundForMotion(userData?.background, prefersReducedMotion);
 
     const visibleProfileSections = [{ id: 'stats' }, { id: 'bio' }, { id: 'joined_date' }].filter(
         (section) => !hasTheme || isSectionVisible(profileTheme, section.id)
@@ -237,7 +240,7 @@ const Visitprofile = () =>{
         
         <div className='profile-parent-container'>
             {userData?.background && (
-                <div className="blurred-img-bg" style={userData?.background}/>
+                <div className="blurred-img-bg" style={resolvedBackground}/>
             )}
 
             <div className="side-bar-holder-container">
@@ -245,7 +248,7 @@ const Visitprofile = () =>{
             </div>
 
             <div
-                style={{ ...themeVars, ...(composeProfileBackgroundStyle(profileTheme, userData?.background) || {}) }}
+                style={{ ...themeVars, ...(composeProfileBackgroundStyle(profileTheme, resolvedBackground) || {}) }}
                 className="profile-center-bar-container pt-scope"
             >
                 {userData && (

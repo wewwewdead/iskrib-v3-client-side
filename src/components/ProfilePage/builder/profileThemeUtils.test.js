@@ -12,6 +12,7 @@ import {
     normalizeHero,
     profileBackgroundToStyle,
     composeProfileBackgroundStyle,
+    isHexColor,
 } from "./profileThemeUtils";
 import {
     PROFILE_THEME_VERSION,
@@ -180,6 +181,71 @@ describe("content controls (V3C)", () => {
         expect(() => normalizeBlockContent("writings", null)).not.toThrow();
         expect(() => normalizeBlockContent("writings", [1, 2])).not.toThrow();
         expect(normalizeBlockContent("writings", "bad")).toEqual(DEFAULT_BLOCK_CONTENT.writings);
+    });
+});
+
+describe("isHexColor (shared color-input guard)", () => {
+    it("accepts only strict 6-digit hex (what <input type=color> needs)", () => {
+        expect(isHexColor("#ffffff")).toBe(true);
+        expect(isHexColor("#D4A853")).toBe(true);
+    });
+
+    it("rejects shorthand/alpha hex, rgb(), and non-strings", () => {
+        expect(isHexColor("#fff")).toBe(false);
+        expect(isHexColor("#ffffffaa")).toBe(false);
+        expect(isHexColor("rgba(0,0,0,0.5)")).toBe(false);
+        expect(isHexColor("red")).toBe(false);
+        expect(isHexColor(null)).toBe(false);
+        expect(isHexColor(undefined)).toBe(false);
+    });
+});
+
+describe("normalizeProfileTheme — stability / idempotency", () => {
+    it("re-normalizing a default theme is a no-op (saved themes stay accepted)", () => {
+        const once = normalizeProfileTheme({}, userData);
+        const twice = normalizeProfileTheme(once, userData);
+        expect(twice).toEqual(once);
+    });
+
+    it("preserves a rich customized theme across a second normalize pass", () => {
+        const rich = normalizeProfileTheme(
+            {
+                presetId: "midnight",
+                colors: {
+                    text: "#112233",
+                    accent: "#aabbcc",
+                    cardBackground: "rgba(0,0,0,0.4)",
+                    cardBorder: "rgba(255,255,255,0.2)",
+                },
+                typography: { font: "lora", scale: "spacious" },
+                cards: { style: "paper", radius: "sharp", border: "bold", shadow: "strong" },
+                background: { type: "gradient", angle: 90, from: "#112233", to: "#445566", opacity: 0.5 },
+                stickers: [{ id: "star-01", x: 10, y: 20, rotation: 15, scale: 1.5, color: "#ff0000" }],
+                layout: {
+                    mode: "stack",
+                    blocks: [
+                        {
+                            type: "writings",
+                            order: 0,
+                            width: "half",
+                            style: "paper",
+                            variant: "list",
+                            title: "Words",
+                            content: { count: 1, source: "pinned_first", density: "compact", imageShape: "square", showMeta: false, showExcerpt: false },
+                        },
+                        { type: "media", order: 1, card: { style: "glass", radius: "round", border: "soft", shadow: "soft" } },
+                    ],
+                },
+                hero: {
+                    mode: "stack",
+                    order: ["name", "avatar", "stats", "bio"],
+                    layout: { name: { align: "center", style: "glass", color: "#ffffff" } },
+                },
+            },
+            userData
+        );
+        const again = normalizeProfileTheme(rich, userData);
+        expect(again).toEqual(rich);
     });
 });
 

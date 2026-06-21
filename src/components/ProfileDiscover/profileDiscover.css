@@ -26,61 +26,49 @@
     color: var(--pd-ink);
 }
 
-/* ── Hero ── */
+/* ── Hero ── A single flat, solid block: a soft pill label, a chunky
+   geometric-sans headline, and quiet supporting text. No gradients, grain, or
+   glow — the colour and the type do the work. */
 .pd-hero {
-    position: relative;
-    padding: 30px 30px 32px;
-    margin-bottom: 30px;
-    border-radius: var(--radius-room);
-    background:
-        radial-gradient(120% 140% at 100% 0%, var(--accent-amber-soft), transparent 55%),
-        linear-gradient(160deg, var(--pd-paper) 0%, var(--pd-paper-2) 100%);
-    border: 1px solid var(--pd-line);
-    box-shadow: var(--pd-card-shadow);
-    overflow: hidden;
+    padding: 38px 36px 40px;
+    margin-bottom: 34px;
+    border-radius: 28px;
+    /* One solid colour — a soft amber wash mixed onto the card surface, so it
+       stays flat (not a gradient) and still adapts to every theme. */
+    background-color: color-mix(in srgb, var(--accent-amber) 13%, var(--bg-elevated));
 }
 
-.pd-hero::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(var(--border-light) 1px, transparent 1px);
-    background-size: 18px 18px;
-    pointer-events: none;
-    opacity: 0.6;
-}
-
+/* Pill label, like the reference — not an uppercase tracked eyebrow. */
 .pd-hero-eyebrow {
-    position: relative;
     display: inline-block;
-    font-family: "Outfit", sans-serif;
-    font-size: 0.7rem;
+    padding: 7px 16px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-elevated);
+    color: var(--accent-amber-strong);
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
     font-weight: 600;
-    letter-spacing: 0.26em;
-    text-transform: uppercase;
-    color: var(--pd-ember-deep);
-    margin-bottom: 12px;
+    letter-spacing: 0.005em;
 }
 
 .pd-hero-title {
-    position: relative;
-    margin: 0 0 10px;
+    margin: 0 0 14px;
     font-family: "Lexend Deca", sans-serif;
-    font-weight: 700;
-    font-size: clamp(1.9rem, 4.4vw, 2.9rem);
-    line-height: 1.06;
-    letter-spacing: -0.025em;
-    color: var(--pd-ink);
+    font-weight: 800;
+    font-size: clamp(2.1rem, 5.2vw, 3.3rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    color: var(--text-heading);
 }
 
 .pd-hero-sub {
-    position: relative;
     margin: 0;
-    max-width: 48ch;
-    font-family: "Outfit", sans-serif;
-    font-size: 0.98rem;
+    max-width: 46ch;
+    font-family: var(--font-ui);
+    font-size: 1rem;
     line-height: 1.55;
-    color: var(--pd-ink-soft);
+    color: var(--text-body);
 }
 
 /* ── Section ── */
@@ -106,30 +94,32 @@
 
 .pd-section-title {
     margin: 0 0 4px;
-    font-family: "Lexend Deca", sans-serif;
+    font-family: "Playfair Display", Georgia, serif;
     font-weight: 700;
-    font-size: clamp(1.3rem, 2.6vw, 1.6rem);
+    font-size: clamp(1.4rem, 2.8vw, 1.72rem);
     color: var(--pd-ink);
-    letter-spacing: -0.022em;
+    letter-spacing: -0.012em;
 }
 
 .pd-section-blurb {
     margin: 0;
-    font-family: "Outfit", sans-serif;
-    font-size: 0.86rem;
+    font-family: "Lora", Georgia, serif;
+    font-size: 0.9rem;
     font-style: italic;
     color: var(--pd-ink-faint);
 }
 
 .pd-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(264px, 1fr));
+    gap: 20px;
 }
 
-/* ── Card — flat & calm: no hover movement, no border highlight, no gradients.
-   The link's global .pressable class still gives a subtle press on tap. ── */
+/* ── Premium "room" card — static (no hover effects) ──
+   Each card still adopts the room's own accent (--pdc-accent) for its static
+   details: the room lines, the "themed" tag, and a bare room's soft wash. */
 .pdc-card {
+    position: relative;
     border-radius: var(--radius-room);
     background: var(--bg-elevated);
     border: 1px solid var(--pd-line);
@@ -137,107 +127,101 @@
     overflow: hidden;
 }
 
+/* The link IS the card surface: a full-bleed background with the info overlaid
+   at the foot. White text by default (over a photo); flipped to ink on bare. */
 .pdc-card-link {
+    --pdc-fg: #fff;
+    --pdc-fg-soft: rgba(255, 255, 255, 0.86);
+    --pdc-fg-faint: rgba(255, 255, 255, 0.7);
+
+    position: relative;
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
+    min-height: 360px;
     height: 100%;
+    padding: 18px;
+    box-sizing: border-box;
     text-decoration: none;
-    color: inherit;
+    color: var(--pdc-fg);
+    isolation: isolate;
 }
 
-/* room preview window */
-.pdc-room {
-    position: relative;
-    height: 92px;
-    overflow: hidden;
-    background: var(--bg-secondary);
+.pdc-card-link--bare {
+    --pdc-fg: var(--pd-ink);
+    --pdc-fg-soft: var(--pd-ink-soft);
+    --pdc-fg-faint: var(--pd-ink-faint);
 }
 
-.pdc-room-backdrop {
+/* Full-bleed background image. */
+.pdc-bg {
     position: absolute;
     inset: 0;
+    z-index: 0;
     background-size: cover !important;
     background-position: center !important;
 }
 
-.pdc-room-backdrop--bare {
-    background: var(--bg-secondary);
+/* No background → a soft accent wash on the card surface instead of a photo. */
+.pdc-bg--bare {
+    background:
+        radial-gradient(120% 110% at 50% 0%, color-mix(in srgb, var(--pdc-accent) 26%, transparent), transparent 62%),
+        var(--bg-elevated) !important;
 }
 
-.pdc-room-veil {
+/* Legibility scrim — dark, weighted to the foot where the text sits. */
+.pdc-scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(28, 18, 8, 0) 30%, rgba(28, 18, 8, 0.34) 100%);
+    z-index: 1;
+    background: linear-gradient(
+        180deg,
+        rgba(10, 8, 5, 0) 26%,
+        rgba(10, 8, 5, 0.42) 58%,
+        rgba(10, 8, 5, 0.82) 100%
+    );
 }
 
-.pdc-room-lines {
-    position: absolute;
-    left: 16px;
-    bottom: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.pdc-room-line {
-    display: block;
-    width: 64px;
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
-}
-
-.pdc-room-line--short {
-    width: 44px;
-    background: rgba(255, 255, 255, 0.6);
-}
-
-.pdc-room-line--shorter {
-    width: 30px;
-    background: rgba(255, 255, 255, 0.42);
+/* Bare cards stay light — just a faint base wash under the dark text. */
+.pdc-card-link--bare .pdc-scrim {
+    background: linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--bg-elevated) 55%, transparent) 100%);
 }
 
 .pdc-room-tag {
     position: absolute;
-    top: 11px;
-    right: 11px;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
     font-family: "Outfit", sans-serif;
     font-size: 0.58rem;
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    padding: 3px 8px;
+    padding: 3px 9px;
     border-radius: 999px;
     border: 1px solid currentColor;
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
-/* body */
-.pdc-body {
-    flex: 1;
-    padding: 16px 16px 4px;
+/* Overlaid content, pinned to the foot of the card. */
+.pdc-content {
+    position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
-    gap: 11px;
-}
-
-.pdc-identity {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    margin-top: -34px; /* lift avatar to straddle the room preview */
+    gap: 9px;
 }
 
 .pdc-avatar-ring {
     flex-shrink: 0;
-    width: 52px;
-    height: 52px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     padding: 3px;
-    background: var(--pd-paper);
-    box-shadow: var(--shadow-card);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
 }
 
 /* ── Badge glow rings (Legend / OG only) — no badge means a plain ring,
@@ -301,33 +285,39 @@
 
 .pdc-names {
     min-width: 0;
-    padding-top: 28px;
 }
 
 .pdc-name-row {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
 .pdc-name {
     margin: 0;
-    font-family: "Lexend Deca", sans-serif;
+    font-family: "Playfair Display", Georgia, serif;
     font-weight: 700;
-    font-size: 1.02rem;
-    line-height: 1.15;
-    letter-spacing: -0.015em;
-    color: var(--pd-ink);
+    font-size: 1.28rem;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--pdc-fg);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Soft shadow lifts the name off a busy photo. */
+.pdc-card-link--photo .pdc-name,
+.pdc-card-link--photo .pdc-handle,
+.pdc-card-link--photo .pdc-bio {
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
 }
 
 .pdc-handle {
     display: block;
     font-family: "Outfit", sans-serif;
     font-size: 0.78rem;
-    color: var(--pd-ink-faint);
+    color: var(--pdc-fg-faint);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -337,62 +327,82 @@
     margin: 0;
     font-family: "Outfit", sans-serif;
     font-size: 0.86rem;
-    line-height: 1.5;
-    color: var(--pd-ink-soft);
+    line-height: 1.45;
+    color: var(--pdc-fg-soft);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
+/* Footer: stats on the left, action pill on the right (like the reference). */
+.pdc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 4px;
+}
+
 .pdc-stats {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 14px;
-    margin-top: auto;
-    padding-top: 2px;
+    min-width: 0;
 }
 
 .pdc-stat {
     display: inline-flex;
-    align-items: baseline;
-    gap: 4px;
+    align-items: center;
+    gap: 5px;
     font-family: "Outfit", sans-serif;
-    font-size: 0.74rem;
-    color: var(--pd-ink-faint);
+    font-size: 0.78rem;
+    color: var(--pdc-fg-faint);
+}
+
+.pdc-stat-icon {
+    flex-shrink: 0;
+    opacity: 0.85;
 }
 
 .pdc-stat strong {
-    font-size: 0.92rem;
     font-weight: 700;
-    color: var(--pd-ink);
-}
-
-.pdc-stats--quiet {
-    min-height: 18px;
+    color: var(--pdc-fg);
 }
 
 .pdc-stat-empty {
     font-family: "Outfit", sans-serif;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-style: italic;
-    color: var(--pd-ink-faint);
+    color: var(--pdc-fg-faint);
 }
 
+/* Action pill — white over a photo (like "Follow"), amber on bare cards. */
 .pdc-visit-cta {
-    display: flex;
+    flex-shrink: 0;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
     gap: 6px;
-    margin: 12px 16px 16px;
-    padding: 10px 14px;
-    border-radius: var(--radius-md);
-    background: var(--accent-amber-soft);
-    color: var(--pd-ember-deep);
+    padding: 9px 15px;
+    border-radius: var(--radius-pill);
+    background: #fff;
+    color: #1a1208;
     font-family: var(--font-ui);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.pdc-card-link--bare .pdc-visit-cta {
+    background: var(--accent-amber);
+    color: #fff;
+    box-shadow: none;
+}
+
+.pdc-cta-arrow {
+    flex-shrink: 0;
 }
 
 /* ── Empty / error ── */
@@ -435,13 +445,13 @@
 
 .pdc-card--skeleton {
     pointer-events: none;
+    min-height: 360px;
 }
-.pdc-card--skeleton .pdc-room {
+.pdc-skeleton-fill {
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
     border-radius: 0;
-    height: 92px;
-}
-.pdc-card--skeleton .pdc-body {
-    padding-top: 22px;
 }
 
 @keyframes pd-shimmer {

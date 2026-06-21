@@ -45,15 +45,29 @@ const HeroEditRow = ({
             style={style}
             dragListener={false}
             dragControls={controls}
-            // The whole container body is a reorder drag zone: press anywhere to
-            // select it AND start a drag. The resize handles stopPropagation on
-            // their own pointer-down, so grabbing an edge never starts a reorder.
+            // Pressing the body always SELECTS the element. With a mouse/pen it
+            // also starts a reorder drag (desktop behaviour, unchanged). On TOUCH
+            // the body stays scroll-safe — a reorder must be started from the ⠿
+            // grip — so swiping over the hero scrolls the canvas instead of
+            // accidentally dragging the row. The resize handles stopPropagation.
             onPointerDown={(e) => {
                 onSelect(keyName);
-                controls.start(e);
+                if (e.pointerType !== "touch") controls.start(e);
             }}
         >
-            <span className="pt-freehero-tag" aria-hidden="true">
+            {/* The ⠿ tag is the dedicated reorder grip — it starts a drag on every
+                pointer type, so touch users have a clear, scroll-safe handle. */}
+            <span
+                className="pt-freehero-tag"
+                role="button"
+                aria-label={`Drag to reorder ${label}`}
+                title="Drag to reorder"
+                onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onSelect(keyName);
+                    controls.start(e);
+                }}
+            >
                 ⠿ {label}
             </span>
             {children}

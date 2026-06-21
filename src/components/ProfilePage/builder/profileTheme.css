@@ -189,6 +189,20 @@
     transform: translateX(-50%);
 }
 
+/* Stickers are positioned by % of the hero but sized in fixed px, so on a narrow
+   mobile hero a desktop-sized 34px sticker becomes proportionally huge and the
+   profile looks crowded. Scale the sticker size with the viewport on mobile so it
+   stays the same *relative* size it has on desktop. The clamp caps at 34px (so
+   wider screens / the breakpoint edge match desktop exactly — no jump) and floors
+   at 18px so stickers never vanish. Applies to both the builder preview and the
+   live public profile (StickerLayer is shared). */
+@media (max-width: 760px) {
+    .pt-sticker {
+        width: clamp(18px, 5.4vw, 34px);
+        height: clamp(18px, 5.4vw, 34px);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .pt-sticker {
         transition: none !important;

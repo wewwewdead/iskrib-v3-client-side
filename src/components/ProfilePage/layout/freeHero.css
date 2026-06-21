@@ -18,10 +18,12 @@
     min-width: 0;
 }
 
-/* In the builder the whole container body is a reorder drag zone. */
+/* In the builder, pressing the body selects (and, with a mouse, reorders). Touch
+   reorder happens from the ⠿ grip, so the body stays vertically scrollable —
+   pan-y lets a swipe scroll the canvas instead of fighting a drag. */
 .pt-freehero-el.is-editable {
     cursor: grab;
-    touch-action: none;
+    touch-action: pan-y;
 }
 
 .pt-freehero-el.is-editable:active {
@@ -276,6 +278,34 @@
 
 .pt-freehero-el.is-selected {
     outline: 2px solid var(--pt-accent, #d4a853);
+}
+
+/* ── Mobile: a clear, thumb-friendly reorder grip ────────────────────────── */
+@media (max-width: 760px) {
+    /* The grip is the only touch reorder handle, so make it obvious and big.
+       Always visible (no hover on touch) and with an invisible 44px hit zone. */
+    .pt-freehero-el.is-editable .pt-freehero-tag {
+        opacity: 0.92;
+        padding: 4px 9px;
+        font-size: 0.6rem;
+        top: -11px;
+    }
+
+    .pt-freehero-el.is-editable .pt-freehero-tag::after {
+        content: "";
+        position: absolute;
+        inset: -10px -8px;
+    }
+
+    /* Slightly larger drag/scale handles on the selected element. */
+    .pt-freehero-resize {
+        width: 18px;
+        height: 18px;
+    }
+
+    .pt-freehero-width-resize {
+        width: 13px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

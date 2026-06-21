@@ -1,8 +1,16 @@
 import { PROFILE_THEME_PRESETS } from "../profileThemePresets";
 
-const PresetsPanel = ({ theme, onApplyPreset }) => (
+const PresetsPanel = ({ theme, onApplyPreset, canUndo = false, onUndo }) => (
     <div className="pt-panel">
         <p className="pt-panel-hint">Start from a preset, then fine-tune anything you like.</p>
+        {canUndo && onUndo && (
+            <div className="pt-preset-undo">
+                <span>Preset applied — your previous colors, type &amp; cards were replaced.</span>
+                <button type="button" className="pt-preset-undo-btn" onClick={onUndo}>
+                    Undo
+                </button>
+            </div>
+        )}
         <div className="pt-preset-grid">
             {PROFILE_THEME_PRESETS.map((preset) => (
                 <button

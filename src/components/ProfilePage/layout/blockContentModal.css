@@ -101,6 +101,95 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
+/* ── Delete confirmation (owner deleting a writing) ──────────────────────── */
+.pl-modal-confirm-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(12, 12, 18, 0.5);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+}
+
+.pl-modal-confirm {
+    width: min(360px, 100%);
+    padding: 1.4rem 1.4rem 1.2rem;
+    border-radius: 16px;
+    background: var(--bg-elevated, #fff);
+    color: var(--text-primary, #1a1a1a);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+    text-align: center;
+}
+
+.pl-modal-confirm-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.pl-modal-confirm-text {
+    margin: 0 0 1.2rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    opacity: 0.75;
+}
+
+.pl-modal-confirm-actions {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+}
+
+.pl-modal-confirm-cancel,
+.pl-modal-confirm-delete {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.pl-modal-confirm-cancel {
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.15));
+    background: transparent;
+    color: inherit;
+}
+
+.pl-modal-confirm-cancel:hover:not(:disabled) {
+    background: rgba(127, 127, 127, 0.12);
+}
+
+.pl-modal-confirm-delete {
+    border: none;
+    background: rgb(220, 38, 38);
+    color: #fff;
+}
+
+.pl-modal-confirm-delete:hover:not(:disabled) {
+    background: rgb(185, 28, 28);
+}
+
+.pl-modal-confirm-cancel:disabled,
+.pl-modal-confirm-delete:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.pl-modal-confirm-done {
+    margin: 0;
+    padding: 0.6rem 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: rgb(22, 163, 74);
+}
+
 @media (max-width: 760px) {
     .pl-modal-overlay {
         padding: 0;
