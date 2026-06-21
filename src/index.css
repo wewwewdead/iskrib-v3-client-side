@@ -126,6 +126,18 @@ html {
   background-color: var(--bg-primary);
 }
 
+/* Mobile guard: stop any stray wide element from making the page wider than the
+   screen. On iOS Safari, horizontal overflow triggers "shrink-to-fit", which
+   inflates the layout viewport and prevents the mobile media queries from
+   firing (the page renders the desktop/tablet layout on a phone). `clip`
+   prevents that without creating a scroll container or breaking position:sticky. */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 [data-theme="dark"] {
   --bg-primary: #1A1916;
   --bg-secondary: #222220;
