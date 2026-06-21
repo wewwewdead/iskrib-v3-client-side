@@ -6,7 +6,7 @@ import "../layout/profileLayout.css";
 import { updateProfileTheme } from "../../../../API/Api";
 import { normalizeProfileTheme, getDefaultProfileTheme } from "./profileThemeUtils";
 import { applyPresetToTheme } from "./profileThemePresets";
-import { MAX_STICKERS } from "./profileThemeConstants";
+import { MAX_STICKERS, HERO_ELEMENT_LABELS } from "./profileThemeConstants";
 import BuilderPreview from "./BuilderPreview";
 import PresetsPanel from "./panels/PresetsPanel";
 import ColorsPanel from "./panels/ColorsPanel";
@@ -15,6 +15,7 @@ import CardsPanel from "./panels/CardsPanel";
 import LayoutPanel from "./panels/LayoutPanel";
 import SectionsPanel from "./panels/SectionsPanel";
 import StickersPanel from "./panels/StickersPanel";
+import HeroElementEditor from "./panels/HeroElementEditor";
 
 const TABS = [
     { key: "presets", label: "Presets" },
@@ -38,6 +39,13 @@ const ProfileBuilder = ({
 }) => {
     const [activeTab, setActiveTab] = useState("presets");
     const [draft, setDraft] = useState(() => getDefaultProfileTheme(userData));
+    // The container selected in the live preview. When set, the Cards tab edits
+    // THAT container's card style instead of the page-wide default.
+    const [selectedBlockType, setSelectedBlockType] = useState(null);
+    // The sticker selected on the canvas (-1 = none) — drives the Stickers editor.
+    const [selectedStickerIndex, setSelectedStickerIndex] = useState(-1);
+    // The free-hero element selected on the canvas — drives its per-element editor.
+    const [selectedHeroEl, setSelectedHeroEl] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const [error, setError] = useState("");
@@ -54,6 +62,9 @@ const ProfileBuilder = ({
             setActiveTab("presets");
             setError("");
             setJustSaved(false);
+            setSelectedBlockType(null);
+            setSelectedStickerIndex(-1);
+            setSelectedHeroEl(null);
         }
     }, [open, initialTheme, userData]);
 
@@ -88,6 +99,10 @@ const ProfileBuilder = ({
 
     const handlePatchCards = useCallback((partial) => {
         setDraft((prev) => markCustom({ ...prev, cards: { ...prev.cards, ...partial } }));
+    }, []);
+
+    const handlePatchBackground = useCallback((partial) => {
+        setDraft((prev) => markCustom({ ...prev, background: { ...(prev.background || {}), ...partial } }));
     }, []);
 
     const handleToggleSection = useCallback((sectionId) => {
@@ -144,22 +159,93 @@ const ProfileBuilder = ({
         });
     }, []);
 
-    // Patch a single block's width / style / variant / title.
+    // Patch a single block's width / style / variant / title. Choosing a fixed
+    // style preset (anything but "inherit") clears a per-container card override,
+    // since the preset fully defines that container's look.
     const handlePatchLayoutBlock = useCallback((type, partial) => {
         setDraft((prev) =>
             markCustom({
                 ...prev,
                 layout: {
                     ...prev.layout,
+                    blocks: prev.layout.blocks.map((b) => {
+                        if (b.type !== type) return b;
+                        const next = { ...b, ...partial };
+                        if (partial.style && partial.style !== "inherit") {
+                            delete next.card;
+                        }
+                        return next;
+                    }),
+                },
+            })
+        );
+    }, []);
+
+    // Patch a single container's card override (style / radius / border / shadow).
+    // Seeds from the block's existing override or the page default, and pins the
+    // block to the "inherit" surface so the override is what renders.
+    const handlePatchBlockCard = useCallback((type, partial) => {
+        setDraft((prev) =>
+            markCustom({
+                ...prev,
+                layout: {
+                    ...prev.layout,
+                    blocks: prev.layout.blocks.map((b) => {
+                        if (b.type !== type) return b;
+                        const baseCard = b.card || prev.cards;
+                        return {
+                            ...b,
+                            style: "inherit",
+                            card: {
+                                style: baseCard.style,
+                                radius: baseCard.radius,
+                                border: baseCard.border,
+                                shadow: baseCard.shadow,
+                                ...partial,
+                            },
+                        };
+                    }),
+                },
+            })
+        );
+    }, []);
+
+    // Drop a container's card override → it follows the page-wide card style again.
+    const handleResetBlockCard = useCallback((type) => {
+        setDraft((prev) =>
+            markCustom({
+                ...prev,
+                layout: {
+                    ...prev.layout,
+                    blocks: prev.layout.blocks.map((b) => {
+                        if (b.type !== type || !b.card) return b;
+                        const { card, ...rest } = b;
+                        void card;
+                        return rest;
+                    }),
+                },
+            })
+        );
+    }, []);
+
+    // Patch a single block's content controls (count / source / density / …).
+    const handlePatchLayoutBlockContent = useCallback((type, partial) => {
+        setDraft((prev) =>
+            markCustom({
+                ...prev,
+                layout: {
+                    ...prev.layout,
                     blocks: prev.layout.blocks.map((b) =>
-                        b.type === type ? { ...b, ...partial } : b
+                        b.type === type
+                            ? { ...b, content: { ...(b.content || {}), ...partial } }
+                            : b
                     ),
                 },
             })
         );
     }, []);
 
-    // Reset a single block to its default width / style / variant / title.
+    // Reset a single block to its default width / style / variant / title / content.
     const handleResetLayoutBlock = useCallback((type) => {
         setDraft((prev) => {
             const fresh = getDefaultProfileTheme(userData).layout.blocks.find((b) => b.type === type);
@@ -168,11 +254,19 @@ const ProfileBuilder = ({
                 ...prev,
                 layout: {
                     ...prev.layout,
-                    blocks: prev.layout.blocks.map((b) =>
-                        b.type === type
-                            ? { ...b, width: fresh.width, style: fresh.style, variant: fresh.variant, title: fresh.title }
-                            : b
-                    ),
+                    blocks: prev.layout.blocks.map((b) => {
+                        if (b.type !== type) return b;
+                        const { card, ...rest } = b;
+                        void card;
+                        return {
+                            ...rest,
+                            width: fresh.width,
+                            style: fresh.style,
+                            variant: fresh.variant,
+                            title: fresh.title,
+                            ...(fresh.content ? { content: { ...fresh.content } } : {}),
+                        };
+                    }),
                 },
             });
         });
@@ -183,6 +277,8 @@ const ProfileBuilder = ({
             if (prev.stickers.length >= MAX_STICKERS) return prev;
             // Stagger new stickers slightly so they don't stack perfectly.
             const offset = (prev.stickers.length % 5) * 6;
+            // Select the freshly-added sticker so its controls show immediately.
+            setSelectedStickerIndex(prev.stickers.length);
             return {
                 ...prev,
                 stickers: [
@@ -195,6 +291,54 @@ const ProfileBuilder = ({
 
     const handleStickersChange = useCallback((nextStickers) => {
         setDraft((prev) => ({ ...prev, stickers: nextStickers }));
+    }, []);
+
+    // Select a sticker (clicking it on the canvas) and surface its editor.
+    const handleSelectSticker = useCallback((index) => {
+        setSelectedStickerIndex(index);
+        if (index >= 0) setActiveTab("stickers");
+    }, []);
+
+    // Patch one sticker's color / scale / rotation.
+    const handleUpdateSticker = useCallback((index, partial) => {
+        setDraft((prev) => ({
+            ...prev,
+            stickers: prev.stickers.map((s, i) => (i === index ? { ...s, ...partial } : s)),
+        }));
+    }, []);
+
+    const handleRemoveSticker = useCallback((index) => {
+        setDraft((prev) => ({ ...prev, stickers: prev.stickers.filter((_, i) => i !== index) }));
+        setSelectedStickerIndex(-1);
+    }, []);
+
+    // ── Hero (fixed reorderable stack) ──
+    // Reorder (drag a hero element up/down in the preview) → persist the new order.
+    const handleHeroChange = useCallback((nextHero) => {
+        setDraft((prev) => markCustom({ ...prev, hero: nextHero }));
+    }, []);
+
+    // Select a hero element (clicking it on the preview) → surface its editor.
+    // Both the Sections and Colors tabs are element-aware, so if the user is
+    // already on Colors we keep them there; otherwise we jump to Sections.
+    const handleSelectHeroEl = useCallback((key) => {
+        setSelectedHeroEl(key);
+    }, []);
+
+    // Patch ONE hero element's align / style (isolated to that container).
+    const handleHeroPatchElement = useCallback((key, partial) => {
+        setDraft((prev) =>
+            markCustom({
+                ...prev,
+                hero: {
+                    ...prev.hero,
+                    layout: {
+                        ...prev.hero.layout,
+                        [key]: { ...prev.hero.layout[key], ...partial },
+                    },
+                },
+            })
+        );
     }, []);
 
     const handleSave = useCallback(async () => {
@@ -221,11 +365,36 @@ const ProfileBuilder = ({
             case "presets":
                 return <PresetsPanel theme={draft} onApplyPreset={handleApplyPreset} />;
             case "colors":
-                return <ColorsPanel theme={draft} onPatchColors={handlePatchColors} />;
+                return (
+                    <ColorsPanel
+                        theme={draft}
+                        onPatchColors={handlePatchColors}
+                        onPatchBackground={handlePatchBackground}
+                        selectedHeroEl={selectedHeroEl}
+                        selectedHeroElData={
+                            selectedHeroEl ? draft.hero?.layout?.[selectedHeroEl] || null : null
+                        }
+                        onHeroPatchElement={handleHeroPatchElement}
+                        onClearHeroSelection={() => setSelectedHeroEl(null)}
+                    />
+                );
             case "typography":
                 return <TypographyPanel theme={draft} onPatchTypography={handlePatchTypography} />;
             case "cards":
-                return <CardsPanel theme={draft} onPatchCards={handlePatchCards} />;
+                return (
+                    <CardsPanel
+                        theme={draft}
+                        onPatchCards={handlePatchCards}
+                        selectedBlock={
+                            selectedBlockType
+                                ? draft.layout.blocks.find((b) => b.type === selectedBlockType) || null
+                                : null
+                        }
+                        onPatchBlockCard={handlePatchBlockCard}
+                        onResetBlockCard={handleResetBlockCard}
+                        onClearSelection={() => setSelectedBlockType(null)}
+                    />
+                );
             case "layout":
                 return (
                     <LayoutPanel
@@ -234,13 +403,37 @@ const ProfileBuilder = ({
                         onMoveBlock={handleMoveBlock}
                         onToggleBlock={handleToggleLayoutBlock}
                         onPatchBlock={handlePatchLayoutBlock}
+                        onPatchBlockContent={handlePatchLayoutBlockContent}
                         onResetBlock={handleResetLayoutBlock}
                     />
                 );
             case "sections":
-                return <SectionsPanel theme={draft} onToggleSection={handleToggleSection} />;
+                return (
+                    <SectionsPanel
+                        theme={draft}
+                        onToggleSection={handleToggleSection}
+                        selectedHeroEl={selectedHeroEl}
+                        selectedHeroElData={
+                            selectedHeroEl ? draft.hero?.layout?.[selectedHeroEl] || null : null
+                        }
+                        onHeroPatchElement={handleHeroPatchElement}
+                        onClearHeroSelection={() => setSelectedHeroEl(null)}
+                    />
+                );
             case "stickers":
-                return <StickersPanel theme={draft} onAddSticker={handleAddSticker} />;
+                return (
+                    <StickersPanel
+                        theme={draft}
+                        onAddSticker={handleAddSticker}
+                        selectedIndex={selectedStickerIndex}
+                        selectedSticker={
+                            selectedStickerIndex >= 0 ? draft.stickers[selectedStickerIndex] || null : null
+                        }
+                        onUpdateSticker={handleUpdateSticker}
+                        onRemoveSticker={handleRemoveSticker}
+                        onDeselect={() => setSelectedStickerIndex(-1)}
+                    />
+                );
             default:
                 return null;
         }
@@ -249,15 +442,25 @@ const ProfileBuilder = ({
         draft,
         handleApplyPreset,
         handlePatchColors,
+        handlePatchBackground,
         handlePatchTypography,
         handlePatchCards,
         handleReorderLayout,
         handleMoveBlock,
         handleToggleLayoutBlock,
         handlePatchLayoutBlock,
+        handlePatchLayoutBlockContent,
         handleResetLayoutBlock,
+        handlePatchBlockCard,
+        handleResetBlockCard,
+        selectedBlockType,
         handleToggleSection,
         handleAddSticker,
+        selectedStickerIndex,
+        handleUpdateSticker,
+        handleRemoveSticker,
+        selectedHeroEl,
+        handleHeroPatchElement,
     ]);
 
     return (
@@ -306,24 +509,58 @@ const ProfileBuilder = ({
                                     followerCount={followerCount}
                                     followingCount={followingCount}
                                     onStickersChange={handleStickersChange}
+                                    selectedStickerIndex={selectedStickerIndex}
+                                    onSelectSticker={handleSelectSticker}
+                                    onReorderBlocks={handleReorderLayout}
+                                    onPatchBlock={handlePatchLayoutBlock}
+                                    onMoveBlock={handleMoveBlock}
+                                    onToggleBlock={handleToggleLayoutBlock}
+                                    selectedType={selectedBlockType}
+                                    onSelectType={setSelectedBlockType}
+                                    onHeroChange={handleHeroChange}
+                                    selectedHeroEl={selectedHeroEl}
+                                    onSelectHeroEl={handleSelectHeroEl}
                                 />
                             </section>
 
                             <section className="pt-builder-tools">
-                                <nav className="pt-builder-tabs" aria-label="Customization tools">
-                                    {TABS.map((tab) => (
-                                        <button
-                                            key={tab.key}
-                                            type="button"
-                                            className={`pt-builder-tab${activeTab === tab.key ? " is-active" : ""}`}
-                                            aria-pressed={activeTab === tab.key}
-                                            onClick={() => setActiveTab(tab.key)}
-                                        >
-                                            {tab.label}
-                                        </button>
-                                    ))}
-                                </nav>
-                                <div className="pt-builder-panel-scroll">{activePanel}</div>
+                                {selectedHeroEl ? (
+                                    <>
+                                        <div className="pt-hero-edit-banner">
+                                            <span>
+                                                Editing <strong>{HERO_ELEMENT_LABELS[selectedHeroEl] || selectedHeroEl}</strong>
+                                                {" "}— only this container is affected
+                                            </span>
+                                            <button type="button" onClick={() => setSelectedHeroEl(null)}>
+                                                Done
+                                            </button>
+                                        </div>
+                                        <div className="pt-builder-panel-scroll">
+                                            <HeroElementEditor
+                                                elementKey={selectedHeroEl}
+                                                data={draft.hero?.layout?.[selectedHeroEl]}
+                                                onPatch={handleHeroPatchElement}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <nav className="pt-builder-tabs" aria-label="Customization tools">
+                                            {TABS.map((tab) => (
+                                                <button
+                                                    key={tab.key}
+                                                    type="button"
+                                                    className={`pt-builder-tab${activeTab === tab.key ? " is-active" : ""}`}
+                                                    aria-pressed={activeTab === tab.key}
+                                                    onClick={() => setActiveTab(tab.key)}
+                                                >
+                                                    {tab.label}
+                                                </button>
+                                            ))}
+                                        </nav>
+                                        <div className="pt-builder-panel-scroll">{activePanel}</div>
+                                    </>
+                                )}
                             </section>
                         </div>
 

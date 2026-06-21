@@ -89,6 +89,95 @@ export const CARD_BLUR_BY_STYLE = {
     minimal: "blur(0px)",
 };
 
+// ── Page background (Profile Builder — gradient background) ───────────────────
+// Mirrors the server whitelist in server/utils/profileThemeValidation.js. A
+// `gradient` background paints the whole profile column; its opacity is tunable
+// so the user can dial in good contrast against their text/cards.
+export const ALLOWED_BACKGROUND_TYPES = ["none", "gradient"];
+
+export const DEFAULT_BACKGROUND = {
+    type: "none",
+    angle: 135,
+    from: "#7c3aed",
+    to: "#2563eb",
+    opacity: 1,
+};
+
+export const BACKGROUND_TYPE_LABELS = { none: "None", gradient: "Gradient" };
+
+// Quick direction presets for the gradient angle picker (degrees → arrow label).
+export const BACKGROUND_ANGLE_OPTIONS = [
+    { key: 180, label: "↓" },
+    { key: 135, label: "↘" },
+    { key: 90, label: "→" },
+    { key: 45, label: "↗" },
+];
+
+// ── Hero (free-canvas layout) ────────────────────────────────────────────────
+// Mirrors the server whitelist. Only "stack" now — the hero is a fixed vertical
+// stack whose elements can be drag-REORDERED (free-canvas drag was removed).
+export const ALLOWED_HERO_MODES = ["stack"];
+export const HERO_ELEMENT_KEYS = ["avatar", "name", "stats", "bio"];
+// Default top-to-bottom order of the hero elements in the stack.
+export const DEFAULT_HERO_ORDER = ["avatar", "name", "stats", "bio"];
+export const HERO_ELEMENT_LABELS = {
+    avatar: "Avatar",
+    name: "Name",
+    stats: "Stats",
+    bio: "Bio",
+};
+export const HERO_HEIGHT_MIN = 160;
+export const HERO_HEIGHT_MAX = 520;
+export const DEFAULT_HERO_HEIGHT = 260;
+
+// Per-element (isolated) styling for a free-hero container.
+export const HERO_ELEMENT_ALIGNS = ["left", "center", "right"];
+export const HERO_ELEMENT_STYLES = ["none", "glass", "paper", "minimal", "framed"];
+export const HERO_ELEMENT_STYLE_LABELS = {
+    none: "None",
+    glass: "Glass",
+    paper: "Paper",
+    minimal: "Minimal",
+    framed: "Framed",
+};
+export const HERO_ELEMENT_ALIGN_LABELS = { left: "Left", center: "Center", right: "Right" };
+
+// Per-element container width (resize), border, corner radius and a break-line
+// divider below the element. All whitelisted enums — no raw CSS.
+export const HERO_ELEMENT_WIDTHS = ["full", "wide", "narrow"];
+export const HERO_ELEMENT_WIDTH_LABELS = { full: "Full", wide: "Wide", narrow: "Narrow" };
+export const HERO_ELEMENT_BORDERS = ["none", "hairline", "solid", "thick", "dashed"];
+export const HERO_ELEMENT_BORDER_LABELS = {
+    none: "None",
+    hairline: "Hairline",
+    solid: "Solid",
+    thick: "Thick",
+    dashed: "Dashed",
+};
+export const HERO_ELEMENT_RADII = ["sharp", "soft", "round"];
+export const HERO_ELEMENT_RADIUS_LABELS = { sharp: "Sharp", soft: "Soft", round: "Round" };
+export const HERO_ELEMENT_DIVIDERS = ["none", "line", "dashed", "dotted"];
+export const HERO_ELEMENT_DIVIDER_LABELS = {
+    none: "None",
+    line: "Line",
+    dashed: "Dashed",
+    dotted: "Dotted",
+};
+
+// Per-element style defaults (no positioning — the stack lays them out).
+export const DEFAULT_HERO_LAYOUT = {
+    avatar: {},
+    name: {},
+    stats: {},
+    bio: {},
+};
+
+export const DEFAULT_HERO = {
+    mode: "stack",
+    order: DEFAULT_HERO_ORDER,
+    layout: DEFAULT_HERO_LAYOUT,
+};
+
 // ── Sections ─────────────────────────────────────────────────────────────────
 // `togglable: false` means the section can never be hidden in the builder UI.
 export const PROFILE_SECTIONS = [
@@ -208,3 +297,69 @@ export const LAYOUT_STYLE_LABELS = {
     minimal: "Minimal",
     framed: "Framed",
 };
+
+// ── Container content controls (Profile Builder V3C) ─────────────────────────
+// Mirrors the server whitelist in server/utils/profileThemeValidation.js. These
+// control PRESENTATION only (count / source / density / image shape / meta /
+// excerpt). The server is the source of truth and re-clamps everything.
+export const ALLOWED_BLOCK_CONTENT_BY_TYPE = {
+    writings: {
+        count: [1, 2, 3],
+        source: ["latest", "pinned_first"],
+        density: ["comfortable", "compact"],
+        imageShape: ["rounded", "square", "soft"],
+        booleans: ["showMeta", "showExcerpt"],
+    },
+    pinned_writings: {
+        count: [1, 2, 3],
+        density: ["comfortable", "compact"],
+        imageShape: ["rounded", "square", "soft"],
+        booleans: ["showMeta", "showExcerpt"],
+    },
+    media: {
+        count: [4, 6],
+        source: ["latest"],
+        density: ["comfortable", "compact"],
+        imageShape: ["rounded", "square", "soft"],
+        booleans: ["showMeta"],
+    },
+    opinions: {
+        count: [2, 3],
+        source: ["latest", "most_discussed"],
+        density: ["comfortable", "compact"],
+        booleans: ["showMeta", "showExcerpt"],
+    },
+    stories: {
+        count: [3, 4],
+        source: ["latest", "popular"],
+        density: ["comfortable", "compact"],
+        imageShape: ["rounded", "square", "soft"],
+        booleans: ["showMeta", "showExcerpt"],
+    },
+    guestbook: {
+        count: [3, 5],
+        source: ["latest"],
+        density: ["compact", "comfortable"],
+        booleans: ["showMeta"],
+    },
+};
+
+export const DEFAULT_BLOCK_CONTENT = {
+    writings: { count: 3, source: "latest", density: "comfortable", imageShape: "rounded", showMeta: true, showExcerpt: true },
+    pinned_writings: { count: 3, density: "comfortable", imageShape: "rounded", showMeta: true, showExcerpt: true },
+    media: { count: 6, source: "latest", density: "comfortable", imageShape: "rounded", showMeta: false },
+    opinions: { count: 3, source: "latest", density: "comfortable", showMeta: true, showExcerpt: true },
+    stories: { count: 4, source: "latest", density: "comfortable", imageShape: "rounded", showMeta: true, showExcerpt: true },
+    guestbook: { count: 3, source: "latest", density: "compact", showMeta: true },
+};
+
+// Human labels for the content-control pickers.
+export const CONTENT_SOURCE_LABELS = {
+    latest: "Latest",
+    pinned_first: "Pinned first",
+    most_discussed: "Most discussed",
+    popular: "Popular",
+};
+export const CONTENT_DENSITY_LABELS = { comfortable: "Comfortable", compact: "Compact" };
+export const CONTENT_IMAGE_SHAPE_LABELS = { rounded: "Rounded", square: "Square", soft: "Soft" };
+export const CONTENT_BOOLEAN_LABELS = { showMeta: "Show meta", showExcerpt: "Show excerpt" };

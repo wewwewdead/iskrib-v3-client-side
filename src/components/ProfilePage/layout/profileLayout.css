@@ -6,28 +6,30 @@
  * fixed, safe treatments — every value here is static CSS, never user input.
  */
 
+/* Two-column grid (matches the builder's edit canvas 1:1). Block width drives
+   the COLUMN SPAN, so what you arrange in the editor is what gets saved &
+   rendered: full blocks span the row; half/compact blocks take one column and
+   flow side by side. */
 .profile-layout-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
     gap: 1rem;
     width: 100%;
     margin: 0 0 1.2rem;
-    align-items: start;
 }
 
-/* ── Widths → column spans ───────────────────────────────────────────────── */
+/* ── Widths → grid column spans (match the editor preview) ─────────────────── */
 .pl-block--full {
     grid-column: 1 / -1;
+    width: auto;
 }
 
-.pl-block--half {
-    grid-column: span 1;
-}
-
-/* compact = a single column but visually narrower, centered in its track */
+.pl-block--half,
 .pl-block--compact {
     grid-column: span 1;
-    max-width: 320px;
+    width: auto;
+    min-width: 0;
 }
 
 /* ── Block base ──────────────────────────────────────────────────────────── */
@@ -256,8 +258,71 @@
     height: 0.6rem;
 }
 
-/* ── Mobile: everything stacks to one column ─────────────────────────────── */
+/* ── Fixed-width centered column for themed profiles (desktop) ───────────────
+   Constrains the hero, owner cards and the layout to ONE column width so the
+   live page mirrors the builder preview. Non-themed profiles (no .pt-scope) and
+   mobile keep their existing full-bleed behavior. */
+/* One shared column width for the live page AND the builder preview, so the
+   editor canvas is a true 1:1 of the saved page (sticker placement matches). */
+.pt-scope {
+    --pt-page-width: 600px;
+}
+
+.profile-center-bar-container.pt-scope .hero-section,
+.profile-center-bar-container.pt-scope .visit-profile-hero-section,
+.profile-center-bar-container.pt-scope .profile-owner-cards,
+.profile-center-bar-container.pt-scope .profile-layout-grid {
+    width: 100%;
+    max-width: var(--pt-page-width, 600px);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+}
+
+/* Free-canvas hero wrapper: drop the card padding/border so the FreeHero canvas
+   is the full column width (= the builder preview) and positions match 1:1. */
+.hero-section.hero-section--free,
+.visit-profile-hero-section.visit-profile-hero-section--free {
+    padding: 0;
+    border: none;
+    gap: 0.6rem;
+    overflow: visible;
+}
+
+.pt-freehero-mount {
+    position: relative;
+    width: 100%;
+}
+
+/* Themed profiles are the curated layout grid only — clicking a block opens a
+   modal with all of that block's content, so the legacy tablist / pinned section
+   / full posts list below are redundant and hidden. */
+.profile-center-bar-container.pt-scope .my-profile-tablist,
+.profile-center-bar-container.pt-scope .pinned-section,
+.profile-center-bar-container.pt-scope .profile-postcards-parent-container {
+    display: none;
+}
+
+/* A content block reads as one clickable "folder" that opens its modal. */
+.pl-block--content {
+    cursor: pointer;
+}
+
+.hero-section--free .profile-actions-row {
+    width: 100%;
+    margin-top: 0.2rem;
+}
+
+/* ── Mobile: every block is full width ───────────────────────────────────── */
 @media (max-width: 768px) {
+    .profile-center-bar-container.pt-scope .hero-section,
+    .profile-center-bar-container.pt-scope .visit-profile-hero-section,
+    .profile-center-bar-container.pt-scope .profile-owner-cards,
+    .profile-center-bar-container.pt-scope .profile-layout-grid {
+        max-width: none;
+    }
+
+    /* Single column on mobile — every block spans the full width. */
     .profile-layout-grid {
         grid-template-columns: 1fr;
         gap: 0.9rem;
@@ -267,6 +332,8 @@
     .pl-block--half,
     .pl-block--compact {
         grid-column: 1 / -1;
+        width: auto;
+        min-width: 0;
         max-width: none;
     }
 }
@@ -732,4 +799,89 @@
     .pl-opinion {
         transition: none !important;
     }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * V3C — Container content controls (presentation only).
+ * Image shape + density are fixed, safe class suffixes mapped from whitelisted
+ * enum values; no value here comes from user input.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Image shape (applied to thumbs / tiles / covers) ────────────────────────*/
+.pl-shape-square {
+    border-radius: 2px;
+}
+.pl-shape-rounded {
+    border-radius: 10px;
+}
+.pl-shape-soft {
+    border-radius: 18px;
+}
+/* Story covers are taller — keep their radius proportionate per shape. */
+.pl-story-cover.pl-shape-square {
+    border-radius: 2px;
+}
+.pl-story-cover.pl-shape-soft {
+    border-radius: 22px;
+}
+.pl-writing-lead-thumb.pl-shape-soft {
+    border-radius: 20px;
+}
+
+/* ── Density (tighter spacing for "compact") ─────────────────────────────────*/
+.pl-density-compact.pl-writings,
+.pl-density-compact.pl-opinions {
+    gap: 0.3rem;
+}
+.pl-density-compact .pl-writing-row {
+    padding: 0.25rem 0.4rem;
+}
+.pl-density-compact.pl-writings .pl-writing-excerpt {
+    -webkit-line-clamp: 1;
+}
+.pl-density-compact.pl-opinions .pl-opinion {
+    padding: 0.4rem 0.6rem;
+}
+.pl-density-compact.pl-opinions .pl-opinion-text {
+    -webkit-line-clamp: 2;
+}
+.pl-density-compact.pl-media {
+    gap: 0.25rem;
+}
+.pl-density-compact.pl-stories {
+    gap: 0.4rem;
+}
+.pl-density-comfortable.pl-media {
+    gap: 0.5rem;
+}
+
+/* ── Media caption (showMeta) ────────────────────────────────────────────────*/
+.pl-media-tile {
+    position: relative;
+}
+.pl-media-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.5rem 0.4rem 0.3rem;
+    font-size: 0.66rem;
+    line-height: 1.2;
+    color: #fff;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ── Story description (showExcerpt on compact rows) ─────────────────────────*/
+.pl-story-desc {
+    font-size: 0.72rem;
+    opacity: 0.65;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }

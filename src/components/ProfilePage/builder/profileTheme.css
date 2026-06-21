@@ -110,6 +110,14 @@
     cursor: grabbing;
 }
 
+/* Selected sticker (builder only): ring + always-on controls. */
+.pt-sticker.is-selected {
+    outline: 2px dashed var(--pt-accent, #d4a853);
+    outline-offset: 5px;
+    border-radius: 4px;
+    z-index: 6;
+}
+
 .pt-sticker-remove {
     position: absolute;
     top: -10px;
@@ -127,6 +135,58 @@
     justify-content: center;
     cursor: pointer;
     padding: 0;
+    /* Counter the sticker's scale so the control stays a constant size. */
+    transform: scale(calc(1 / var(--pt-scl, 1)));
+    transform-origin: center;
+}
+
+/* Corner handle — drag to resize the selected sticker. */
+.pt-sticker-resize {
+    position: absolute;
+    bottom: -9px;
+    right: -9px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--pt-accent, #d4a853);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+    cursor: nwse-resize;
+    touch-action: none;
+    transform: scale(calc(1 / var(--pt-scl, 1)));
+    transform-origin: center;
+}
+
+/* Top knob — drag to rotate the selected sticker (with a short stem). */
+.pt-sticker-rotate {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 7px);
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--pt-accent, #d4a853);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+    cursor: grab;
+    touch-action: none;
+    transform: translateX(-50%) scale(calc(1 / var(--pt-scl, 1)));
+    transform-origin: center bottom;
+}
+
+.pt-sticker-rotate:active {
+    cursor: grabbing;
+}
+
+.pt-sticker-rotate::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 2px;
+    height: 7px;
+    background: var(--pt-accent, #d4a853);
+    transform: translateX(-50%);
 }
 
 @media (prefers-reduced-motion: reduce) {

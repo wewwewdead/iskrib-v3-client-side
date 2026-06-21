@@ -20,6 +20,18 @@ import {
     DEFAULT_LAYOUT_BLOCK_TYPES,
     DEFAULT_LAYOUT_TITLE_BY_TYPE,
     DEFAULT_LAYOUT_WIDTH_BY_TYPE,
+    ALLOWED_BLOCK_CONTENT_BY_TYPE,
+    DEFAULT_BLOCK_CONTENT,
+    HERO_ELEMENT_KEYS,
+    HERO_ELEMENT_ALIGNS,
+    HERO_ELEMENT_STYLES,
+    HERO_ELEMENT_WIDTHS,
+    HERO_ELEMENT_BORDERS,
+    HERO_ELEMENT_RADII,
+    HERO_ELEMENT_DIVIDERS,
+    DEFAULT_HERO_ORDER,
+    ALLOWED_BACKGROUND_TYPES,
+    DEFAULT_BACKGROUND,
 } from "./profileThemeConstants";
 import { ALLOWED_STICKER_IDS } from "./stickerRegistry";
 import { getDefaultProfileTheme } from "./profileThemeDefaults";
@@ -61,16 +73,61 @@ const sanitizeBlockTitle = (value, fallback) => {
     return plain.slice(0, MAX_LAYOUT_TITLE_LENGTH);
 };
 
-const buildDefaultLayoutBlock = (type, order, sections) => ({
-    id: type,
-    type,
-    visible: sectionVisibleInList(sections, type),
-    order,
-    width: DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full",
-    style: "inherit",
-    variant: ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type][0],
-    title: DEFAULT_LAYOUT_TITLE_BY_TYPE[type],
-});
+/**
+ * Client mirror of the server `sanitizeBlockContent` (Profile Builder V3C).
+ * Returns undefined for block types that carry no content controls. Rebuilds the
+ * object from scratch: only whitelisted keys survive, count is clamped to the
+ * allowed set, enums fall back to the per-type default, booleans coerce to the
+ * default unless an explicit boolean is given. Never throws.
+ */
+export const normalizeBlockContent = (type, raw) => {
+    const spec = ALLOWED_BLOCK_CONTENT_BY_TYPE[type];
+    if (!spec) return undefined;
+    const def = DEFAULT_BLOCK_CONTENT[type];
+    const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const out = {};
+
+    if (spec.count) {
+        const n = typeof src.count === "number" ? src.count : Number(src.count);
+        out.count = spec.count.includes(n) ? n : def.count;
+    }
+    if (spec.source) out.source = pickEnum(src.source, spec.source, def.source);
+    if (spec.density) out.density = pickEnum(src.density, spec.density, def.density);
+    if (spec.imageShape) out.imageShape = pickEnum(src.imageShape, spec.imageShape, def.imageShape);
+    (spec.booleans || []).forEach((key) => {
+        out[key] = typeof src[key] === "boolean" ? src[key] : def[key];
+    });
+
+    return out;
+};
+
+// Attach a sanitized `content` config to a block, but only for content blocks.
+const withBlockContent = (block, rawContent) => {
+    const content = normalizeBlockContent(block.type, rawContent);
+    return content ? { ...block, content } : block;
+};
+
+/**
+ * Resolve a block's content config for rendering: returns a complete content
+ * object (defaults filled) for content blocks, or {} for blocks without content
+ * controls. Safe on old v2 themes whose blocks predate V3C (no `content` key).
+ */
+export const getBlockContent = (block) => normalizeBlockContent(block?.type, block?.content) || {};
+
+const buildDefaultLayoutBlock = (type, order, sections) =>
+    withBlockContent(
+        {
+            id: type,
+            type,
+            visible: sectionVisibleInList(sections, type),
+            order,
+            width: DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full",
+            style: "inherit",
+            variant: ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type][0],
+            title: DEFAULT_LAYOUT_TITLE_BY_TYPE[type],
+        },
+        undefined
+    );
 
 /**
  * Client mirror of the server `sanitizeLayout`. Derives a layout from `sections`
@@ -87,16 +144,24 @@ const normalizeLayout = (rawLayout, sections) => {
             if (!ALLOWED_LAYOUT_BLOCK_TYPES.includes(type)) return;
             if (byType.has(type)) return;
             const variants = ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type];
-            byType.set(type, {
-                id: type,
+            const card = normalizeBlockCard(block.card);
+            byType.set(
                 type,
-                visible: block.visible !== false,
-                order: clamp(block.order, 0, MAX_LAYOUT_BLOCKS * 4, index),
-                width: pickEnum(block.width, ALLOWED_LAYOUT_WIDTHS, DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full"),
-                style: pickEnum(block.style, ALLOWED_LAYOUT_STYLES, "inherit"),
-                variant: pickEnum(block.variant, variants, variants[0]),
-                title: sanitizeBlockTitle(block.title, DEFAULT_LAYOUT_TITLE_BY_TYPE[type]),
-            });
+                withBlockContent(
+                    {
+                        id: type,
+                        type,
+                        visible: block.visible !== false,
+                        order: clamp(block.order, 0, MAX_LAYOUT_BLOCKS * 4, index),
+                        width: pickEnum(block.width, ALLOWED_LAYOUT_WIDTHS, DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full"),
+                        style: pickEnum(block.style, ALLOWED_LAYOUT_STYLES, "inherit"),
+                        variant: pickEnum(block.variant, variants, variants[0]),
+                        title: sanitizeBlockTitle(block.title, DEFAULT_LAYOUT_TITLE_BY_TYPE[type]),
+                        ...(card ? { card } : {}),
+                    },
+                    block.content
+                )
+            );
         });
     }
 
@@ -113,6 +178,22 @@ const normalizeLayout = (rawLayout, sections) => {
     return {
         mode: pickEnum(rawLayout && rawLayout.mode, ALLOWED_LAYOUT_MODES, "stack"),
         blocks,
+    };
+};
+
+/**
+ * Client mirror of the server `sanitizeBackground`. Rebuilds the page background
+ * from scratch: type is whitelisted, angle/opacity are clamped, and the two
+ * gradient stops fall back to safe defaults when not valid colors. Never throws.
+ */
+export const normalizeBackground = (raw) => {
+    const obj = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    return {
+        type: pickEnum(obj.type, ALLOWED_BACKGROUND_TYPES, DEFAULT_BACKGROUND.type),
+        angle: clamp(obj.angle, 0, 360, DEFAULT_BACKGROUND.angle),
+        from: isValidColor(obj.from) ? obj.from.trim() : DEFAULT_BACKGROUND.from,
+        to: isValidColor(obj.to) ? obj.to.trim() : DEFAULT_BACKGROUND.to,
+        opacity: clamp(obj.opacity, 0, 1, DEFAULT_BACKGROUND.opacity),
     };
 };
 
@@ -173,6 +254,7 @@ export const normalizeProfileTheme = (rawTheme, userData) => {
                 y: clamp(sticker.y, 0, 100, 50),
                 rotation: clamp(sticker.rotation, -180, 180, 0),
                 scale: clamp(sticker.scale, 0.3, 3, 1),
+                ...(isValidColor(sticker.color) ? { color: sticker.color.trim() } : {}),
             });
         }
     }
@@ -191,20 +273,75 @@ export const normalizeProfileTheme = (rawTheme, userData) => {
             border: pickEnum(cards.border, Object.keys(BORDER_WIDTH_BY_KEY), base.cards.border),
             shadow: pickEnum(cards.shadow, Object.keys(SHADOW_VALUE_BY_KEY), base.cards.shadow),
         },
+        background: normalizeBackground(rawTheme.background),
         sections,
         stickers,
         layout: normalizeLayout(rawTheme.layout, sections),
+        hero: normalizeHero(rawTheme.hero),
     };
+};
+
+/**
+ * Resolve the hero element order: a deduped list of valid element keys, with any
+ * missing keys appended in default order. Safe on un-normalized themes.
+ */
+export const getHeroOrder = (hero) => {
+    const raw = Array.isArray(hero?.order) ? hero.order : [];
+    const seen = new Set();
+    const order = [];
+    for (const k of raw) {
+        if (HERO_ELEMENT_KEYS.includes(k) && !seen.has(k)) {
+            order.push(k);
+            seen.add(k);
+        }
+    }
+    for (const k of DEFAULT_HERO_ORDER) if (!seen.has(k)) order.push(k);
+    return order;
+};
+
+/**
+ * Normalize the hero config. The hero is a fixed vertical stack: `order` is the
+ * top-to-bottom element order (drag-reorderable), and `layout[key]` holds each
+ * element's isolated style (align / card style / color / font / size). Free-canvas
+ * x/y/w positioning was removed. Never throws.
+ */
+export const normalizeHero = (rawHero) => {
+    const order = getHeroOrder(rawHero);
+    const rawLayout =
+        rawHero && rawHero.layout && typeof rawHero.layout === "object" ? rawHero.layout : {};
+    const layout = {};
+    for (const key of HERO_ELEMENT_KEYS) {
+        const el = rawLayout[key] && typeof rawLayout[key] === "object" ? rawLayout[key] : {};
+        layout[key] = {
+            align: pickEnum(el.align, HERO_ELEMENT_ALIGNS, "left"),
+            style: pickEnum(el.style, HERO_ELEMENT_STYLES, "none"),
+            ...(HERO_ELEMENT_WIDTHS.includes(el.width) ? { width: el.width } : {}),
+            ...(HERO_ELEMENT_BORDERS.includes(el.border) ? { border: el.border } : {}),
+            ...(HERO_ELEMENT_RADII.includes(el.radius) ? { radius: el.radius } : {}),
+            ...(HERO_ELEMENT_DIVIDERS.includes(el.divider) ? { divider: el.divider } : {}),
+            ...(isValidColor(el.color) ? { color: el.color.trim() } : {}),
+            ...(isValidColor(el.bgColor) ? { bgColor: el.bgColor.trim() } : {}),
+            ...(typeof el.font === "string" && Object.keys(FONT_STACK_BY_KEY).includes(el.font)
+                ? { font: el.font }
+                : {}),
+            ...(typeof el.size === "string" && Object.keys(SCALE_MULTIPLIER_BY_KEY).includes(el.size)
+                ? { size: el.size }
+                : {}),
+            ...(Number.isFinite(Number(el.scale)) && Number(el.scale) >= 0.5 && Number(el.scale) <= 2.5
+                ? { scale: Number(el.scale) }
+                : {}),
+        };
+    }
+    return { mode: "stack", order, layout };
 };
 
 /**
  * Compute the card surface treatment (background / border / blur) for a card
  * style. Colors come from the theme so the user's accent/card choices apply.
  */
-const cardSurface = (theme) => {
-    const { style } = theme.cards;
-    const cardBg = theme.colors.cardBackground;
-    const cardBorder = theme.colors.cardBorder;
+const cardSurfaceFor = (style, colors) => {
+    const cardBg = colors.cardBackground;
+    const cardBorder = colors.cardBorder;
 
     switch (style) {
         case "solid":
@@ -217,6 +354,57 @@ const cardSurface = (theme) => {
         default:
             return { background: cardBg, border: cardBorder, blur: CARD_BLUR_BY_STYLE.glass };
     }
+};
+
+const cardSurface = (theme) => cardSurfaceFor(theme.cards.style, theme.colors);
+
+// Build the `--pt-card-*` CSS vars for a single card config (style/radius/
+// border/shadow) using the theme's colors. Shared by the global preview and
+// per-block card overrides.
+const cardCssVars = (card, colors) => {
+    const surface = cardSurfaceFor(card.style, colors);
+    const borderWidth = card.border === "none" ? "0px" : BORDER_WIDTH_BY_KEY[card.border];
+    return {
+        "--pt-card-bg": surface.background,
+        "--pt-card-border-color": surface.border,
+        "--pt-card-border-width": borderWidth,
+        "--pt-card-blur": surface.blur,
+        "--pt-card-radius": RADIUS_VALUE_BY_KEY[card.radius],
+        "--pt-card-shadow": SHADOW_VALUE_BY_KEY[card.shadow],
+    };
+};
+
+// Whitelisted keys for a per-block card override (mirrors the global cards set).
+const CARD_STYLE_KEYS = Object.keys(CARD_BLUR_BY_STYLE);
+const CARD_RADIUS_KEYS = Object.keys(RADIUS_VALUE_BY_KEY);
+const CARD_BORDER_KEYS = Object.keys(BORDER_WIDTH_BY_KEY);
+const CARD_SHADOW_KEYS = Object.keys(SHADOW_VALUE_BY_KEY);
+
+/**
+ * Normalize a per-block `card` override to a full {style,radius,border,shadow}.
+ * Returns undefined when there's no override object — the block then inherits
+ * the page (global) card style. Missing fields fall back to `fallback` (the
+ * effective surface the block is currently showing) then to safe defaults.
+ */
+export const normalizeBlockCard = (raw, fallback) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+    const base = fallback && typeof fallback === "object" ? fallback : {};
+    return {
+        style: pickEnum(raw.style, CARD_STYLE_KEYS, base.style || "glass"),
+        radius: pickEnum(raw.radius, CARD_RADIUS_KEYS, base.radius || "round"),
+        border: pickEnum(raw.border, CARD_BORDER_KEYS, base.border || "soft"),
+        shadow: pickEnum(raw.shadow, CARD_SHADOW_KEYS, base.shadow || "soft"),
+    };
+};
+
+/**
+ * Per-block card CSS vars for rendering, or null when the block has no override
+ * (it then inherits the global `--pt-card-*` vars from the profile scope).
+ */
+export const getBlockCardCssVars = (theme, block) => {
+    const card = block && block.card;
+    if (!card || !theme || !theme.colors) return null;
+    return cardCssVars(card, theme.colors);
 };
 
 /**
@@ -241,6 +429,90 @@ export const profileThemeToCssVars = (theme, userData) => {
         "--pt-card-shadow": SHADOW_VALUE_BY_KEY[safe.cards.shadow],
         "--pt-font": FONT_STACK_BY_KEY[safe.typography.font],
         "--pt-scale": String(SCALE_MULTIPLIER_BY_KEY[safe.typography.scale]),
+    };
+};
+
+/**
+ * Apply an opacity multiplier to a hex (#rgb/#rgba/#rrggbb/#rrggbbaa) or
+ * rgb()/rgba() color, returning an `rgba(...)` string. The color's own alpha (if
+ * any) is multiplied by `opacity`, so lowering opacity always fades the color.
+ * Falls back to the original string for anything it can't parse.
+ */
+const colorWithAlpha = (color, opacity) => {
+    const o = clamp(opacity, 0, 1, 1);
+    if (typeof color !== "string") return color;
+    const v = color.trim();
+
+    const hexMatch = /^#([0-9a-fA-F]{3,8})$/.exec(v);
+    if (hexMatch) {
+        let h = hexMatch[1];
+        if (h.length === 3 || h.length === 4) {
+            h = h.split("").map((c) => c + c).join("");
+        }
+        if (h.length === 6 || h.length === 8) {
+            const r = parseInt(h.slice(0, 2), 16);
+            const g = parseInt(h.slice(2, 4), 16);
+            const b = parseInt(h.slice(4, 6), 16);
+            const baseA = h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1;
+            return `rgba(${r},${g},${b},${+(baseA * o).toFixed(3)})`;
+        }
+    }
+
+    const rgbMatch = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*(0|1|0?\.\d+)\s*)?\)$/.exec(v);
+    if (rgbMatch) {
+        const baseA = rgbMatch[4] !== undefined ? parseFloat(rgbMatch[4]) : 1;
+        return `rgba(${rgbMatch[1]},${rgbMatch[2]},${rgbMatch[3]},${+(baseA * o).toFixed(3)})`;
+    }
+
+    return v;
+};
+
+/**
+ * Build the inline background style for the profile column from the theme's
+ * `background` config. Returns null when the theme uses no gradient background
+ * (so the caller can fall back to the legacy image / app shell). The gradient's
+ * opacity is baked into its color stops, so a lower opacity lets the page behind
+ * show through — giving the user a contrast knob.
+ */
+export const profileBackgroundToStyle = (theme) => {
+    const bg = normalizeBackground(theme && theme.background);
+    if (bg.type !== "gradient") return null;
+    const from = colorWithAlpha(bg.from, bg.opacity);
+    const to = colorWithAlpha(bg.to, bg.opacity);
+    return {
+        backgroundImage: `linear-gradient(${bg.angle}deg, ${from} 0%, ${to} 100%)`,
+        backgroundRepeat: "no-repeat",
+    };
+};
+
+/**
+ * Compose the profile column's background style by OVERLAYING the theme gradient
+ * on top of the legacy image/gradient background (rather than replacing it). CSS
+ * stacks comma-separated background layers with the FIRST listed on top, so the
+ * gradient sits over the image — at opacity < 1 the image shows through, giving a
+ * tint. Falls back to whichever layer exists:
+ *   - gradient only      → the gradient
+ *   - legacy image only  → the image (unchanged behavior)
+ *   - both               → gradient over image
+ *   - neither            → null
+ */
+export const composeProfileBackgroundStyle = (theme, legacyStyle) => {
+    const gradient = profileBackgroundToStyle(theme);
+    const legacy = legacyStyle && typeof legacyStyle === "object" ? legacyStyle : null;
+    const legacyHasBg = legacy && (legacy.backgroundImage || legacy.background);
+
+    if (!gradient) return legacyHasBg ? legacy : null;
+    if (!legacyHasBg) return gradient;
+
+    const layers = [gradient.backgroundImage];
+    if (legacy.backgroundImage) layers.push(legacy.backgroundImage);
+
+    return {
+        ...legacy,
+        backgroundImage: layers.join(", "),
+        backgroundSize: legacy.backgroundSize || "cover",
+        backgroundPosition: legacy.backgroundPosition || "center",
+        backgroundRepeat: legacy.backgroundRepeat || "no-repeat",
     };
 };
 

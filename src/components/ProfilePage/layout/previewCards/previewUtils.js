@@ -33,6 +33,51 @@ const DISPLAY_COUNT = {
 export const displayCount = (type, variant, fallback = 3) =>
     DISPLAY_COUNT[type]?.[variant] ?? fallback;
 
+/**
+ * How many items to show: prefer the block's explicit content `count` (V3C),
+ * else fall back to the variant's default. Always a sane positive integer.
+ */
+export const resolveCount = (count, type, variant, fallback = 3) => {
+    const n = typeof count === "number" ? count : Number(count);
+    if (Number.isFinite(n) && n > 0) return n;
+    return displayCount(type, variant, fallback);
+};
+
+// ── V3C content-control presentation helpers (fixed, safe class suffixes) ─────
+const IMAGE_SHAPE_CLASS = {
+    rounded: "pl-shape-rounded",
+    square: "pl-shape-square",
+    soft: "pl-shape-soft",
+};
+
+/** Map a whitelisted image-shape value → a fixed CSS class (never user input). */
+export const imageShapeClass = (shape) => IMAGE_SHAPE_CLASS[shape] || IMAGE_SHAPE_CLASS.rounded;
+
+/** Map a whitelisted density value → a fixed CSS class. */
+export const densityClass = (density) => (density === "compact" ? "pl-density-compact" : "pl-density-comfortable");
+
+/**
+ * Sort a small opinions preview array by reply_count desc (most_discussed).
+ * Pure + non-mutating; only used over the already-bounded preview array.
+ */
+export const sortOpinions = (items, source) => {
+    if (source !== "most_discussed") return items;
+    return [...items].sort((a, b) => (b.reply_count || 0) - (a.reply_count || 0));
+};
+
+/**
+ * Sort a small stories preview array by popularity (vote_count, then read_count)
+ * desc. Pure + non-mutating; only used over the already-bounded preview array.
+ */
+export const sortStories = (items, source) => {
+    if (source !== "popular") return items;
+    return [...items].sort(
+        (a, b) =>
+            (b.vote_count || 0) - (a.vote_count || 0) ||
+            (b.read_count || 0) - (a.read_count || 0)
+    );
+};
+
 const STORY_STATUS_LABEL = {
     ongoing: "Ongoing",
     completed: "Completed",

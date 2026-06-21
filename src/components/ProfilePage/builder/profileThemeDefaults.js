@@ -5,7 +5,20 @@ import {
     DEFAULT_LAYOUT_TITLE_BY_TYPE,
     DEFAULT_LAYOUT_WIDTH_BY_TYPE,
     ALLOWED_LAYOUT_VARIANTS_BY_TYPE,
+    DEFAULT_BLOCK_CONTENT,
+    DEFAULT_HERO_ORDER,
+    DEFAULT_HERO_LAYOUT,
+    DEFAULT_BACKGROUND,
 } from "./profileThemeConstants";
+
+/** Fresh copy of the default hero (fixed reorderable stack) config. */
+export const getDefaultHero = () => ({
+    mode: "stack",
+    order: [...DEFAULT_HERO_ORDER],
+    layout: Object.fromEntries(
+        Object.entries(DEFAULT_HERO_LAYOUT).map(([k, v]) => [k, { ...v }])
+    ),
+});
 
 /** Build the default ordered layout (content blocks below the hero). */
 export const getDefaultLayout = () => ({
@@ -19,6 +32,7 @@ export const getDefaultLayout = () => ({
         style: "inherit",
         variant: ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type][0],
         title: DEFAULT_LAYOUT_TITLE_BY_TYPE[type],
+        ...(DEFAULT_BLOCK_CONTENT[type] ? { content: { ...DEFAULT_BLOCK_CONTENT[type] } } : {}),
     })),
 });
 
@@ -52,6 +66,7 @@ export const getDefaultProfileTheme = (userData) => {
             border: "soft",
             shadow: "soft",
         },
+        background: { ...DEFAULT_BACKGROUND },
         sections: PROFILE_SECTIONS.map((section, index) => ({
             id: section.id,
             visible: true,
@@ -59,5 +74,6 @@ export const getDefaultProfileTheme = (userData) => {
         })),
         stickers: [],
         layout: getDefaultLayout(),
+        hero: getDefaultHero(),
     };
 };

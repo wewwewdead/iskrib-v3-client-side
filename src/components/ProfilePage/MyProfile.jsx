@@ -24,7 +24,8 @@ import { PROFILE_GRADIENTS } from "./constants/profileGradients";
 import { createProfileSidebarLinks } from "./constants/profileSidebarLinks";
 import { PROFILE_TABS } from "./constants/profileTabs";
 import ProfileBuilder from "./builder/ProfileBuilder";
-import { profileThemeToCssVars, isSectionVisible } from "./builder/profileThemeUtils";
+import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle } from "./builder/profileThemeUtils";
+import { getDefaultProfileTheme } from "./builder/profileThemeDefaults";
 import ProfileGuestbook from "./guestbook/ProfileGuestbook";
 import ProfileLayoutRenderer from "./layout/ProfileLayoutRenderer";
 import ProfileCompletionCard from "./completion/ProfileCompletionCard";
@@ -104,15 +105,16 @@ const MyProfile = () => {
     const tablists = PROFILE_TABS;
 
     // ── Profile Builder theme ──
-    const profileTheme = userData?.profile_theme || null;
-    const hasTheme = !!profileTheme;
-    const themeVars = hasTheme ? profileThemeToCssVars(profileTheme, userData) : null;
-    const visibleTabs = hasTheme
-        ? tablists.filter((tab) => {
-              const sectionId = TAB_SECTION_ID[tab.label];
-              return !sectionId || isSectionVisible(profileTheme, sectionId);
-          })
-        : tablists;
+    // hasTheme = did the user actually customize (drives the owner CTA). Every
+    // profile renders the modern layout though, falling back to a default theme
+    // so an un-customized profile looks the same as a themed one.
+    const hasTheme = !!userData?.profile_theme;
+    const profileTheme = userData?.profile_theme || getDefaultProfileTheme(userData);
+    const themeVars = profileThemeToCssVars(profileTheme, userData);
+    const visibleTabs = tablists.filter((tab) => {
+        const sectionId = TAB_SECTION_ID[tab.label];
+        return !sectionId || isSectionVisible(profileTheme, sectionId);
+    });
 
     useEffect(() => {
         setCroppedImage(userData?.background || null);
@@ -430,8 +432,8 @@ const MyProfile = () => {
                     </div>
 
                     <div
-                        style={hasTheme ? themeVars : { color: fontColor || userData?.profile_font_color }}
-                        className={`profile-center-bar-container${hasTheme ? " pt-scope" : ""}`}
+                        style={{ ...themeVars, ...(composeProfileBackgroundStyle(profileTheme, croppedImage || gradientPicked) || {}) }}
+                        className="profile-center-bar-container pt-scope"
                     >
                         <ProfileHeroSection
                             userData={userData}
@@ -466,38 +468,24 @@ const MyProfile = () => {
                             <ProfileActivitySummary token={session?.access_token} />
                         </div>
 
-                        {/* Profile Builder V3A — Layout Composer.
-                            Themed profiles render their configured layout (guestbook,
-                            writings, media, opinions, stories, pinned) here, in order.
-                            Untouched / un-themed profiles keep the legacy standalone
-                            guestbook directly below the hero — the social doorway. */}
-                        {hasTheme ? (
-                            userData?.username && (
-                                <ProfileLayoutRenderer
-                                    theme={profileTheme}
-                                    isOwn
-                                    username={userData.username}
-                                    profileUserId={userData.id}
-                                    navigate={navigate}
-                                    onWriteJournal={openRichTextEditor}
-                                    guestbookProps={{
-                                        focusGuestbook,
-                                        highlightEntryId,
-                                        highlightFromUserId,
-                                    }}
-                                />
-                            )
-                        ) : (
-                            userData?.username && isSectionVisible(profileTheme, "guestbook") && (
-                                <ProfileGuestbook
-                                    username={userData.username}
-                                    profileUserId={userData.id}
-                                    compact
-                                    focusGuestbook={focusGuestbook}
-                                    highlightEntryId={highlightEntryId}
-                                    highlightFromUserId={highlightFromUserId}
-                                />
-                            )
+                        {/* Profile Builder V3 — Layout Composer. EVERY profile renders
+                            its configured layout (guestbook, writings, media, opinions,
+                            stories, pinned) here; un-customized profiles use a default
+                            theme so they look the same as customized ones. */}
+                        {userData?.username && (
+                            <ProfileLayoutRenderer
+                                theme={profileTheme}
+                                isOwn
+                                username={userData.username}
+                                profileUserId={userData.id}
+                                navigate={navigate}
+                                onWriteJournal={openRichTextEditor}
+                                guestbookProps={{
+                                    focusGuestbook,
+                                    highlightEntryId,
+                                    highlightFromUserId,
+                                }}
+                            />
                         )}
 
                         <ProfileTabList tablists={visibleTabs} navigate={navigate} location={location} />

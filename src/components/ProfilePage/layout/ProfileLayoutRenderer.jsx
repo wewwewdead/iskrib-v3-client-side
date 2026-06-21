@@ -49,6 +49,7 @@ const ProfileLayoutRenderer = ({
                 <ProfileLayoutBlock
                     key={block.id || block.type}
                     block={block}
+                    theme={theme}
                     isOwn={isOwn}
                     username={username}
                     profileUserId={profileUserId}

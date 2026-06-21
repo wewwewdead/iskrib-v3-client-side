@@ -224,6 +224,7 @@
     border-left: 0.7px solid var(--border-light);
 }
 .hero-section{
+    position: relative; /* anchors the decorative sticker layer to the hero */
     display: flex;
     flex-direction: column;
     align-items: flex-start;

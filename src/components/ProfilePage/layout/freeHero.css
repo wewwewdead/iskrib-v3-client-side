@@ -1,0 +1,285 @@
+/* Hero = a fixed vertical stack. Elements are drag-REORDERED (not free-placed). */
+.pt-freehero {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pt-freehero--stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    align-items: stretch;
+}
+
+.pt-freehero-el {
+    position: relative;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+/* In the builder the whole container body is a reorder drag zone. */
+.pt-freehero-el.is-editable {
+    cursor: grab;
+    touch-action: none;
+}
+
+.pt-freehero-el.is-editable:active {
+    cursor: grabbing;
+}
+
+/* A little name tag so it's obvious each element is a draggable row. */
+.pt-freehero-tag {
+    position: absolute;
+    top: -9px;
+    left: 6px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--pt-accent, #d4a853);
+    color: #2b2208;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+/* In the builder the tag is the REORDER grip — always grabbable. */
+.pt-freehero-el.is-editable .pt-freehero-tag {
+    opacity: 0.5;
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: none;
+}
+
+.pt-freehero-el.is-editable:hover .pt-freehero-tag,
+.pt-freehero-el.is-selected .pt-freehero-tag {
+    opacity: 1;
+}
+
+.pt-freehero-el.is-editable .pt-freehero-tag:active {
+    cursor: grabbing;
+}
+
+/* Corner resize handle (shown on the selected element) → overall SCALE. */
+.pt-freehero-resize {
+    position: absolute;
+    right: -7px;
+    bottom: -7px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--pt-accent, #d4a853);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    cursor: nwse-resize;
+    touch-action: none;
+    z-index: 3;
+}
+
+/* Right-edge resize bar (shown on the selected element) → WIDTH (x-axis). A
+   tall vertical handle on the right edge; drag horizontally to snap width. */
+.pt-freehero-width-resize {
+    position: absolute;
+    top: 50%;
+    right: -5px;
+    width: 10px;
+    height: 38px;
+    max-height: 70%;
+    transform: translateY(-50%);
+    border-radius: 6px;
+    background: var(--pt-accent, #d4a853);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    cursor: ew-resize;
+    touch-action: none;
+    z-index: 3;
+}
+
+/* Avatar ring (square→circle); border-box keeps the ring padding inside. */
+.pt-freehero-avatar {
+    width: 96px;
+    aspect-ratio: 1;
+    box-sizing: border-box;
+    flex: none;
+}
+
+.pt-freehero-avatar .my-profile-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Name + verified badge + tier pill + streak on one line. */
+.pt-freehero-name-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    vertical-align: middle;
+}
+
+.pt-freehero-name-row .profile-name {
+    margin: 0;
+}
+
+.pt-freehero-streak {
+    font-size: 0.8rem;
+    font-weight: 700;
+    opacity: 0.85;
+}
+
+/* Per-element alignment (isolated to the one container). */
+.pt-freehero-el--align-center {
+    text-align: center;
+}
+
+.pt-freehero-el--align-right {
+    text-align: right;
+}
+
+.pt-freehero-el--align-center .profile-stats-container {
+    justify-content: center;
+}
+
+.pt-freehero-el--align-right .profile-stats-container {
+    justify-content: flex-end;
+}
+
+.pt-freehero-el--align-center .pt-freehero-avatar {
+    margin-inline: auto;
+}
+
+.pt-freehero-el--align-right .pt-freehero-avatar {
+    margin-left: auto;
+}
+
+/* Per-element background style (reuses the .pl-block--* card treatments). */
+.pt-freehero-el--carded {
+    padding: 0.55rem 0.75rem;
+}
+
+/* ── Container width (resize) ─────────────────────────────────────────────── */
+.pt-freehero-el--w-wide {
+    width: 70%;
+    align-self: flex-start;
+}
+.pt-freehero-el--w-narrow {
+    width: 46%;
+    align-self: flex-start;
+}
+.pt-freehero-el--align-center.pt-freehero-el--w-wide,
+.pt-freehero-el--align-center.pt-freehero-el--w-narrow {
+    align-self: center;
+}
+.pt-freehero-el--align-right.pt-freehero-el--w-wide,
+.pt-freehero-el--align-right.pt-freehero-el--w-narrow {
+    align-self: flex-end;
+}
+
+/* Corner-drag resize scales the avatar DIAMETER too (shares --el-fontscale). */
+.pt-freehero-el--sized .pt-freehero-avatar {
+    width: calc(96px * var(--el-fontscale, 1));
+}
+
+/* ── Corner radius ───────────────────────────────────────────────────────── */
+.pt-freehero-el--radius-sharp {
+    border-radius: 0;
+}
+.pt-freehero-el--radius-soft {
+    border-radius: 12px;
+}
+.pt-freehero-el--radius-round {
+    border-radius: 26px;
+}
+
+/* ── Border (borderline) ─────────────────────────────────────────────────── */
+.pt-freehero-el--border-hairline {
+    border: 1px solid var(--pt-accent, rgba(0, 0, 0, 0.25));
+}
+.pt-freehero-el--border-solid {
+    border: 2px solid var(--pt-accent, rgba(0, 0, 0, 0.4));
+}
+.pt-freehero-el--border-thick {
+    border: 3px solid var(--pt-accent, rgba(0, 0, 0, 0.55));
+}
+.pt-freehero-el--border-dashed {
+    border: 2px dashed var(--pt-accent, rgba(0, 0, 0, 0.4));
+}
+
+/* ── Divider / break-line below the element ──────────────────────────────── */
+.pt-freehero-el--divider-line::after,
+.pt-freehero-el--divider-dashed::after,
+.pt-freehero-el--divider-dotted::after {
+    content: "";
+    display: block;
+    width: 100%;
+    margin-top: 0.65rem;
+}
+.pt-freehero-el--divider-line::after {
+    border-top: 1px solid var(--pt-accent, rgba(0, 0, 0, 0.25));
+}
+.pt-freehero-el--divider-dashed::after {
+    border-top: 1px dashed var(--pt-accent, rgba(0, 0, 0, 0.3));
+}
+.pt-freehero-el--divider-dotted::after {
+    border-top: 2px dotted var(--pt-accent, rgba(0, 0, 0, 0.35));
+}
+
+/* Per-element font family — overrides the hardcoded text fonts for THIS element
+   only (the descendant selector out-specifies the base .profile-* rules). */
+.pt-freehero-el--fonted .profile-name,
+.pt-freehero-el--fonted .profile-user-handle,
+.pt-freehero-el--fonted .profile-bio,
+.pt-freehero-el--fonted .stat-number,
+.pt-freehero-el--fonted .stat-label {
+    font-family: var(--el-font) !important;
+}
+
+/* Per-element text size — scales each text style around its base size. */
+.pt-freehero-el--sized .profile-name {
+    font-size: calc(1.55rem * var(--el-fontscale, 1));
+}
+.pt-freehero-el--sized .profile-user-handle {
+    font-size: calc(0.78rem * var(--el-fontscale, 1));
+}
+.pt-freehero-el--sized .profile-bio {
+    font-size: calc(0.88rem * var(--el-fontscale, 1));
+}
+.pt-freehero-el--sized .stat-number {
+    font-size: calc(1.5rem * var(--el-fontscale, 1));
+}
+.pt-freehero-el--sized .stat-label {
+    font-size: calc(0.8rem * var(--el-fontscale, 1));
+}
+
+/* Editable affordances (builder preview only). Click selects; the ⠿ grip
+   reorders; the corner dot resizes. */
+.pt-freehero-el.is-editable {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: 1px dashed transparent;
+    outline-offset: 3px;
+    transition: outline-color 0.14s ease;
+}
+
+.pt-freehero-el.is-editable:hover {
+    outline-color: rgba(212, 168, 83, 0.45);
+}
+
+.pt-freehero-el.is-selected {
+    outline: 2px solid var(--pt-accent, #d4a853);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pt-freehero-el.is-editable {
+        transition: none !important;
+    }
+}

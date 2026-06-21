@@ -24,10 +24,12 @@ import { getProfileShareUrl } from '../../utils/getShareUrl';
 import StreakBadge from '../Streak/StreakBadge';
 import useStreakData from '../Streak/useStreakData';
 import StickerLayer from '../ProfilePage/builder/StickerLayer';
-import { profileThemeToCssVars, isSectionVisible } from '../ProfilePage/builder/profileThemeUtils';
+import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle } from '../ProfilePage/builder/profileThemeUtils';
+import { getDefaultProfileTheme } from '../ProfilePage/builder/profileThemeDefaults';
 import '../ProfilePage/builder/profileTheme.css';
 import ProfileGuestbook from '../ProfilePage/guestbook/ProfileGuestbook';
 import ProfileLayoutRenderer from '../ProfilePage/layout/ProfileLayoutRenderer';
+import FreeHero from '../ProfilePage/layout/FreeHero';
 import UseThemeButton from '../ProfilePage/builder/UseThemeButton';
 import SectionErrorBoundary from '../ErrorBoundary/SectionErrorBoundary';
 
@@ -164,9 +166,13 @@ const Visitprofile = () =>{
     const getProfileSectionSize = () => 'md';
 
     // ── Profile Builder theme ──
-    const profileTheme = userData?.profile_theme || null;
-    const hasTheme = !!profileTheme;
-    const themeVars = hasTheme ? profileThemeToCssVars(profileTheme, userData) : null;
+    // hasTheme = did this user actually customize (drives "Use this theme").
+    // Every visited profile renders the modern layout though, falling back to a
+    // default theme so an un-customized user looks the same as a themed one.
+    const rawProfileTheme = userData?.profile_theme || null;
+    const hasTheme = !!rawProfileTheme;
+    const profileTheme = rawProfileTheme || getDefaultProfileTheme(userData);
+    const themeVars = profileThemeToCssVars(profileTheme, userData);
 
     const visibleProfileSections = [{ id: 'stats' }, { id: 'bio' }, { id: 'joined_date' }].filter(
         (section) => !hasTheme || isSectionVisible(profileTheme, section.id)
@@ -190,7 +196,7 @@ const Visitprofile = () =>{
     // "Use this theme" eligibility: logged in, not the owner, source has a theme.
     const currentUserId = user?.userData?.[0]?.id;
     const isOwnProfile = !!currentUserId && currentUserId === visitedUserId;
-    const canUseTheme = !!session && !isOwnProfile && !!profileTheme;
+    const canUseTheme = !!session && !isOwnProfile && hasTheme;
     const guestbookUsername = profileUsername || userData?.username;
 
     // Record a (throttled) profile visit once per loaded profile. Works logged-out.
@@ -239,86 +245,30 @@ const Visitprofile = () =>{
             </div>
 
             <div
-                style={hasTheme ? themeVars : {color: userData?.profile_font_color}}
-                className={`profile-center-bar-container${hasTheme ? ' pt-scope' : ''}`}
+                style={{ ...themeVars, ...(composeProfileBackgroundStyle(profileTheme, userData?.background) || {}) }}
+                className="profile-center-bar-container pt-scope"
             >
                 {userData && (
 
-                    <div style={userData?.background} className='visit-profile-hero-section'>
+                    <div className="visit-profile-hero-section visit-profile-hero-section--stack">
 
-                        {profileTheme?.stickers?.length > 0 && (
-                            <StickerLayer stickers={profileTheme.stickers} accentColor={profileTheme?.colors?.accent} />
-                        )}
-
-                        <div className='visited-profile-top-row'>
-                            <div className={`profile-avatar-ring ${userData?.badge === 'legend' ? 'badge-ring-legend' : userData?.badge === 'og' ? 'badge-ring-og' : ''}`}>
-                                <img className='visited-profile-image' src={userData?.image_url || '/assets/profile.jpg'} alt={`${userData?.name || "User"} profile picture`} />
-                            </div>
-                        </div>
-
-                        <div className='visited-profile-name-container'>
-                            <div className='visited-profile-name-row'>
-                                <p className='visited-profile-name'>{userData?.name}</p>
-                                <VerifiedBadge badge={userData?.badge} size={22} />
-                                <StreakBadge count={visitedStreakData?.current_streak} size={18} />
-                                {userData?.badge && (
-                                    <span className={`badge-pill ${userData.badge === 'legend' ? 'badge-pill-legend' : 'badge-pill-og'}`}>
-                                        {userData.badge === 'legend' ? 'Legend' : 'OG'}
-                                    </span>
-                                )}
-                            </div>
-                            {(profileUsername || userData?.username) && (
-                                <p className="visited-profile-handle">@{profileUsername || userData.username}</p>
+                        <div className="pt-freehero-mount">
+                            {profileTheme?.stickers?.length > 0 && (
+                                <StickerLayer stickers={profileTheme.stickers} accentColor={profileTheme?.colors?.accent} />
                             )}
-                        </div>
-
-                        <div className='visited-profile-layout-sections'>
-                            {visibleProfileSections.map((section) => {
-                                const sectionSize = getProfileSectionSize(section.id);
-
-                                if(section.id === 'stats'){
-                                    return (
-                                        <Fragment key={section.id}>
-                                            <div className={`visited-profile-stats-container profile-section-size-${sectionSize}`}>
-                                                <div className='visited-profile-stat-item'>
-                                                    <span className='visited-stat-number'>{formatCounts(followsData?.followersCount)}</span>
-                                                    <span className='visited-stat-label'>Followers</span>
-                                                </div>
-                                                <div className='visited-profile-stat-item'>
-                                                    <span className='visited-stat-number'>{formatCounts(followsData?.followingsCount)}</span>
-                                                    <span className='visited-stat-label'>Following</span>
-                                                </div>
-                                            </div>
-                                        </Fragment>
-                                    );
-                                }
-
-                                if(section.id === 'bio'){
-                                    return (
-                                        <Fragment key={section.id}>
-                                            <div className={`visited-profile-bio-container profile-section-size-${sectionSize}`}>
-                                                <p style={{margin: 0, padding: 0}}>{userData?.bio}</p>
-                                            </div>
-                                        </Fragment>
-                                    );
-                                }
-
-                                if(section.id === 'joined_date'){
-                                    return (
-                                        <Fragment key={section.id}>
-                                            <div className={`visited-profile-joined-date profile-section-size-${sectionSize}`}>
-                                                <p className='visited-profile-date-joined'>{new Date(userData?.created_at).toLocaleDateString('en-US', {
-                                                    month: 'long',
-                                                    day: '2-digit',
-                                                    year: 'numeric'
-                                                })}</p>
-                                            </div>
-                                        </Fragment>
-                                    );
-                                }
-
-                                return null;
-                            })}
+                            <FreeHero
+                                hero={profileTheme?.hero}
+                                name={userData?.name}
+                                username={profileUsername || userData?.username}
+                                bio={userData?.bio}
+                                avatarUrl={userData?.image_url}
+                                badge={userData?.badge}
+                                streak={visitedStreakData?.current_streak}
+                                followers={followsData?.followersCount}
+                                following={followsData?.followingsCount}
+                                showStats={isSectionVisible(profileTheme, 'stats')}
+                                showBio={isSectionVisible(profileTheme, 'bio')}
+                            />
                         </div>
 
                         <div className='visited-profile-actions-row'>
@@ -354,19 +304,13 @@ const Visitprofile = () =>{
                 {/* Profile Builder V3A — Layout Composer. Themed profiles render
                     their configured layout (guestbook + content previews) in order;
                     un-themed profiles keep the legacy standalone guestbook. */}
-                {hasTheme ? (
-                    guestbookUsername && (
-                        <ProfileLayoutRenderer
-                            theme={profileTheme}
-                            username={guestbookUsername}
-                            profileUserId={visitedUserId}
-                            navigate={navigate}
-                        />
-                    )
-                ) : (
-                    guestbookUsername && isSectionVisible(profileTheme, 'guestbook') && (
-                        <ProfileGuestbook username={guestbookUsername} profileUserId={visitedUserId} compact />
-                    )
+                {guestbookUsername && (
+                    <ProfileLayoutRenderer
+                        theme={profileTheme}
+                        username={guestbookUsername}
+                        profileUserId={visitedUserId}
+                        navigate={navigate}
+                    />
                 )}
 
                 <div className='my-profile-tablist'>

@@ -1,5 +1,14 @@
 import { useState } from "react";
 import { FieldLabel, OptionButtons } from "./BuilderControls";
+import {
+    HERO_ELEMENT_LABELS,
+    DEFAULT_BACKGROUND,
+    ALLOWED_BACKGROUND_TYPES,
+    BACKGROUND_TYPE_LABELS,
+    BACKGROUND_ANGLE_OPTIONS,
+} from "../profileThemeConstants";
+
+const isHex = (v) => /^#[0-9a-fA-F]{6}$/.test(v || "");
 
 const hexToRgb = (hex) => {
     let h = (hex || "").replace("#", "");
@@ -20,8 +29,34 @@ const BASES = [
     { key: "tint", label: "Tint", rgb: null }, // derived from accent
 ];
 
-const ColorsPanel = ({ theme, onPatchColors }) => {
+const ColorsPanel = ({
+    theme,
+    onPatchColors,
+    onPatchBackground,
+    selectedHeroEl,
+    selectedHeroElData,
+    onHeroPatchElement,
+    onClearHeroSelection,
+}) => {
     const [base, setBase] = useState("light");
+
+    // Page background (gradient + opacity). Falls back to defaults for legacy
+    // themes saved before the background config existed.
+    const bg = { ...DEFAULT_BACKGROUND, ...(theme.background || {}) };
+    const isGradient = bg.type === "gradient";
+    const closestAngle =
+        BACKGROUND_ANGLE_OPTIONS.reduce(
+            (best, opt) =>
+                Math.abs(opt.key - bg.angle) < Math.abs(best - bg.angle) ? opt.key : best,
+            BACKGROUND_ANGLE_OPTIONS[0].key
+        );
+
+    // When a hero container is selected, the Text color edits THAT element only.
+    const editingEl = Boolean(selectedHeroElData);
+    const elLabel = selectedHeroEl ? HERO_ELEMENT_LABELS[selectedHeroEl] || selectedHeroEl : null;
+    const textValue = editingEl ? selectedHeroElData.color || theme.colors.text : theme.colors.text;
+    const setText = (val) =>
+        editingEl ? onHeroPatchElement(selectedHeroEl, { color: val }) : onPatchColors({ text: val });
 
     const baseRgb = () => {
         const found = BASES.find((b) => b.key === base);
@@ -62,15 +97,37 @@ const ColorsPanel = ({ theme, onPatchColors }) => {
     return (
         <div className="pt-panel">
             <div className="pt-field">
-                <FieldLabel htmlFor="pt-text-color">Text color</FieldLabel>
+                {editingEl ? (
+                    <div className="pt-cards-scope">
+                        <span className="pt-cards-scope-label">
+                            Text color · <strong>{elLabel}</strong>
+                        </span>
+                        <button type="button" className="pt-cards-scope-btn" onClick={onClearHeroSelection}>
+                            Whole page
+                        </button>
+                    </div>
+                ) : (
+                    <FieldLabel htmlFor="pt-text-color">Text color</FieldLabel>
+                )}
                 <div className="pt-color-input-row">
                     <input
                         id="pt-text-color"
                         type="color"
-                        value={/^#[0-9a-fA-F]{6}$/.test(theme.colors.text) ? theme.colors.text : "#ffffff"}
-                        onChange={(e) => onPatchColors({ text: e.target.value })}
+                        value={isHex(textValue) ? textValue : "#ffffff"}
+                        onChange={(e) => setText(e.target.value)}
                     />
-                    <span className="pt-color-value">{theme.colors.text}</span>
+                    <span className="pt-color-value">
+                        {editingEl ? selectedHeroElData.color || "Default (page)" : theme.colors.text}
+                    </span>
+                    {editingEl && selectedHeroElData.color && (
+                        <button
+                            type="button"
+                            className="pt-cards-scope-btn"
+                            onClick={() => onHeroPatchElement(selectedHeroEl, { color: undefined })}
+                        >
+                            Reset
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -122,6 +179,74 @@ const ColorsPanel = ({ theme, onPatchColors }) => {
                     onChange={(e) => updateBorder(parseFloat(e.target.value))}
                 />
             </div>
+
+            <div className="pt-field pt-field--divided">
+                <FieldLabel>Page background</FieldLabel>
+                <OptionButtons
+                    ariaLabel="Page background type"
+                    options={ALLOWED_BACKGROUND_TYPES.map((t) => ({
+                        key: t,
+                        label: BACKGROUND_TYPE_LABELS[t] || t,
+                    }))}
+                    value={bg.type}
+                    onChange={(type) => onPatchBackground({ type })}
+                />
+            </div>
+
+            {isGradient && (
+                <>
+                    <div className="pt-field">
+                        <FieldLabel htmlFor="pt-bg-from">Gradient — from</FieldLabel>
+                        <div className="pt-color-input-row">
+                            <input
+                                id="pt-bg-from"
+                                type="color"
+                                value={isHex(bg.from) ? bg.from : "#7c3aed"}
+                                onChange={(e) => onPatchBackground({ from: e.target.value })}
+                            />
+                            <span className="pt-color-value">{bg.from}</span>
+                        </div>
+                    </div>
+
+                    <div className="pt-field">
+                        <FieldLabel htmlFor="pt-bg-to">Gradient — to</FieldLabel>
+                        <div className="pt-color-input-row">
+                            <input
+                                id="pt-bg-to"
+                                type="color"
+                                value={isHex(bg.to) ? bg.to : "#2563eb"}
+                                onChange={(e) => onPatchBackground({ to: e.target.value })}
+                            />
+                            <span className="pt-color-value">{bg.to}</span>
+                        </div>
+                    </div>
+
+                    <div className="pt-field">
+                        <FieldLabel>Direction</FieldLabel>
+                        <OptionButtons
+                            ariaLabel="Gradient direction"
+                            options={BACKGROUND_ANGLE_OPTIONS}
+                            value={closestAngle}
+                            onChange={(angle) => onPatchBackground({ angle })}
+                        />
+                    </div>
+
+                    <div className="pt-field">
+                        <FieldLabel htmlFor="pt-bg-opacity">
+                            Background opacity — lower it for better contrast
+                        </FieldLabel>
+                        <input
+                            id="pt-bg-opacity"
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={bg.opacity}
+                            onChange={(e) => onPatchBackground({ opacity: parseFloat(e.target.value) })}
+                        />
+                    </div>
+                </>
+            )}
         </div>
     );
 };

@@ -1,14 +1,14 @@
-import { formatPreviewDate, excerpt, displayCount } from "./previewUtils";
+import { formatPreviewDate, excerpt, resolveCount, imageShapeClass, densityClass } from "./previewUtils";
 
 const hideOnError = (e) => {
     e.currentTarget.style.display = "none";
 };
 
-const WritingRow = ({ item, onItemClick, showThumb = true, showExcerpt = true }) => (
+const WritingRow = ({ item, onItemClick, showThumb = true, showExcerpt = true, showMeta = true, shapeCls }) => (
     <button type="button" className="pl-writing-row" onClick={(e) => onItemClick(e, item)}>
         {showThumb && item.thumbnail_url && (
             <img
-                className="pl-writing-thumb"
+                className={`pl-writing-thumb ${shapeCls}`}
                 src={item.thumbnail_url}
                 alt=""
                 loading="lazy"
@@ -20,7 +20,7 @@ const WritingRow = ({ item, onItemClick, showThumb = true, showExcerpt = true })
             {showExcerpt && item.preview_text && (
                 <span className="pl-writing-excerpt">{excerpt(item.preview_text, 110)}</span>
             )}
-            <span className="pl-writing-date">{formatPreviewDate(item.created_at)}</span>
+            {showMeta && <span className="pl-writing-date">{formatPreviewDate(item.created_at)}</span>}
         </span>
     </button>
 );
@@ -31,18 +31,32 @@ const WritingRow = ({ item, onItemClick, showThumb = true, showExcerpt = true })
  *   - editorial: a larger lead item (serif excerpt) + smaller rows beneath
  *   - list:      stacked rows with thumb + one-line excerpt
  *   - compact:   tight title + date rows
+ *
+ * V3C content controls (count / density / imageShape / showExcerpt / showMeta)
+ * tune how many items, how dense, how visual, and whether excerpt/meta show.
  */
-const WritingsPreview = ({ items, variant = "editorial", onItemClick }) => {
-    const shown = items.slice(0, displayCount("writings", variant, 3));
+const WritingsPreview = ({
+    items,
+    variant = "editorial",
+    onItemClick,
+    count,
+    density = "comfortable",
+    imageShape = "rounded",
+    showExcerpt = true,
+    showMeta = true,
+}) => {
+    const shown = items.slice(0, resolveCount(count, "writings", variant, 3));
+    const shapeCls = imageShapeClass(imageShape);
+    const densityCls = densityClass(density);
 
     if (variant === "editorial" && shown.length > 0) {
         const [lead, ...rest] = shown;
         return (
-            <div className="pl-writings pl-writings--editorial">
+            <div className={`pl-writings pl-writings--editorial ${densityCls}`}>
                 <button type="button" className="pl-writing-lead" onClick={(e) => onItemClick(e, lead)}>
                     {lead.thumbnail_url && (
                         <img
-                            className="pl-writing-lead-thumb"
+                            className={`pl-writing-lead-thumb ${shapeCls}`}
                             src={lead.thumbnail_url}
                             alt=""
                             loading="lazy"
@@ -50,15 +64,23 @@ const WritingsPreview = ({ items, variant = "editorial", onItemClick }) => {
                         />
                     )}
                     <span className="pl-writing-lead-title">{lead.title || "Untitled"}</span>
-                    {lead.preview_text && (
+                    {showExcerpt && lead.preview_text && (
                         <span className="pl-writing-lead-excerpt">{excerpt(lead.preview_text, 180)}</span>
                     )}
-                    <span className="pl-writing-date">{formatPreviewDate(lead.created_at)}</span>
+                    {showMeta && <span className="pl-writing-date">{formatPreviewDate(lead.created_at)}</span>}
                 </button>
                 {rest.length > 0 && (
                     <div className="pl-writing-rest">
                         {rest.map((item) => (
-                            <WritingRow key={item.id} item={item} onItemClick={onItemClick} showThumb={false} showExcerpt={false} />
+                            <WritingRow
+                                key={item.id}
+                                item={item}
+                                onItemClick={onItemClick}
+                                showThumb={false}
+                                showExcerpt={false}
+                                showMeta={showMeta}
+                                shapeCls={shapeCls}
+                            />
                         ))}
                     </div>
                 )}
@@ -68,14 +90,16 @@ const WritingsPreview = ({ items, variant = "editorial", onItemClick }) => {
 
     const compact = variant === "compact";
     return (
-        <div className={`pl-writings pl-writings--${compact ? "compact" : "list"}`}>
+        <div className={`pl-writings pl-writings--${compact ? "compact" : "list"} ${densityCls}`}>
             {shown.map((item) => (
                 <WritingRow
                     key={item.id}
                     item={item}
                     onItemClick={onItemClick}
                     showThumb={!compact}
-                    showExcerpt={!compact}
+                    showExcerpt={!compact && showExcerpt}
+                    showMeta={showMeta}
+                    shapeCls={shapeCls}
                 />
             ))}
         </div>

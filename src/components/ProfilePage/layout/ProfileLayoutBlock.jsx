@@ -1,13 +1,27 @@
+import { useState } from "react";
 import ProfileGuestbook from "../guestbook/ProfileGuestbook";
-import { handleCLickContent, handleClickOpinion } from "../../../../helpers/handleClicks";
-import { getBlockRoute, blockWidthClass, blockStyleClass } from "./profileLayoutUtils";
+import { blockWidthClass, blockStyleClass } from "./profileLayoutUtils";
+import { getBlockContent, getBlockCardCssVars } from "../builder/profileThemeUtils";
+import BlockContentModal from "./BlockContentModal";
 import WritingsPreview from "./previewCards/WritingsPreview";
 import MediaPreview from "./previewCards/MediaPreview";
 import OpinionsPreview from "./previewCards/OpinionsPreview";
 import StoriesPreview from "./previewCards/StoriesPreview";
 import PreviewEmptyState from "./previewCards/PreviewEmptyState";
 import PreviewSkeleton from "./previewCards/PreviewSkeleton";
-import { EMPTY_STATE_COPY } from "./previewCards/previewUtils";
+import { EMPTY_STATE_COPY, sortOpinions, sortStories } from "./previewCards/previewUtils";
+
+/** Merge pinned writings ahead of latest writings, deduped by id (pinned_first). */
+const mergePinnedFirst = (pinned, latest) => {
+    const seen = new Set();
+    const out = [];
+    for (const item of [...(pinned || []), ...(latest || [])]) {
+        if (!item || seen.has(item.id)) continue;
+        seen.add(item.id);
+        out.push(item);
+    }
+    return out;
+};
 
 /**
  * Renders a single configured layout block with REAL lightweight content (V3B).
@@ -18,6 +32,7 @@ import { EMPTY_STATE_COPY } from "./previewCards/previewUtils";
  */
 const ProfileLayoutBlock = ({
     block,
+    theme,
     isOwn,
     username,
     profileUserId,
@@ -27,60 +42,60 @@ const ProfileLayoutBlock = ({
     isPreviewLoading,
     onWriteJournal,
 }) => {
+    const [showModal, setShowModal] = useState(false);
     const widthCls = blockWidthClass(block.width);
+    const content = getBlockContent(block);
+    // A per-block card override sets its own --pt-card-* vars and renders as the
+    // inherit surface (so it reads them); otherwise the block uses its own style
+    // preset and the page-wide vars from the profile scope.
+    const cardVars = getBlockCardCssVars(theme, block);
+    const styleCls = cardVars ? "pl-block--inherit" : blockStyleClass(block.style);
 
     if (block.type === "guestbook") {
-        // variant "wall" = full list; "compact" = condensed near-hero view.
+        // variant "wall" = fuller list; "compact" = condensed near-hero view.
+        // content.count controls how many notes show before "view all".
         return (
-            <div className={`pl-block pl-block--guestbook ${widthCls}`}>
+            <div className={`pl-block pl-block--guestbook ${widthCls}`} style={cardVars || undefined}>
                 <ProfileGuestbook
                     username={username}
                     profileUserId={profileUserId}
                     compact={block.variant !== "wall"}
+                    initialVisibleCount={content.count}
+                    density={content.density}
+                    showMeta={content.showMeta}
                     {...(guestbookProps || {})}
                 />
             </div>
         );
     }
 
-    const route = getBlockRoute(block.type, { isOwn, username });
-    const author = preview?.user || { id: profileUserId };
+    // The whole content block is one click target: clicking it (a card, the
+    // header, or "View all") opens a modal showing ALL of that block's content.
+    const openModal = () => setShowModal(true);
 
-    // Reuse the app's existing navigation helpers so previews open the exact same
-    // content viewer / opinion viewer / story reader the rest of the app uses.
-    const clickContent = handleCLickContent(navigate);
-    const clickOpinion = handleClickOpinion(navigate);
-
-    const openJournal = (e, item) =>
-        clickContent(
-            e,
-            null, // content fetched on demand by the viewer when state lacks it
-            "",
-            item.title,
-            author.id,
-            author.name,
-            author.image_url,
-            item.created_at,
-            item.id,
-            false,
-            0,
-            false,
-            0,
-            0,
-            author.badge,
-            item.post_type || null
-        );
-    const openOpinion = (e, item) => clickOpinion(e, item.id, author.id);
-    const openStory = (id) => navigate?.(`/home/stories/${id}`);
-
-    const dataByType = {
-        writings: preview?.writings,
-        media: preview?.media,
-        opinions: preview?.opinions,
-        stories: preview?.stories,
-        pinned_writings: preview?.pinnedWritings,
+    // Resolve the items for this block, applying V3C source controls:
+    //  - writings + pinned_first → pinned writings ahead of latest (deduped)
+    //  - opinions + most_discussed → sort by reply_count (within the preview)
+    //  - stories + popular → sort by vote_count/read_count (within the preview)
+    const resolveItems = () => {
+        switch (block.type) {
+            case "writings":
+                return content.source === "pinned_first"
+                    ? mergePinnedFirst(preview?.pinnedWritings, preview?.writings)
+                    : preview?.writings || [];
+            case "media":
+                return preview?.media || [];
+            case "opinions":
+                return sortOpinions(preview?.opinions || [], content.source);
+            case "stories":
+                return sortStories(preview?.stories || [], content.source);
+            case "pinned_writings":
+                return preview?.pinnedWritings || [];
+            default:
+                return [];
+        }
     };
-    const items = dataByType[block.type] || [];
+    const items = resolveItems();
 
     const ownerAction = () => {
         switch (block.type) {
@@ -114,43 +129,117 @@ const ProfileLayoutBlock = ({
 
         switch (block.type) {
             case "writings":
-                return <WritingsPreview items={items} variant={block.variant} onItemClick={openJournal} />;
+                return (
+                    <WritingsPreview
+                        items={items}
+                        variant={block.variant}
+                        onItemClick={openModal}
+                        count={content.count}
+                        density={content.density}
+                        imageShape={content.imageShape}
+                        showExcerpt={content.showExcerpt}
+                        showMeta={content.showMeta}
+                    />
+                );
             case "pinned_writings":
                 // pinned variants (featured/compact) → writings layouts (editorial/compact)
                 return (
                     <WritingsPreview
                         items={items}
                         variant={block.variant === "compact" ? "compact" : "editorial"}
-                        onItemClick={openJournal}
+                        onItemClick={openModal}
+                        count={content.count}
+                        density={content.density}
+                        imageShape={content.imageShape}
+                        showExcerpt={content.showExcerpt}
+                        showMeta={content.showMeta}
                     />
                 );
             case "media":
-                return <MediaPreview items={items} variant={block.variant} onItemClick={openJournal} />;
+                return (
+                    <MediaPreview
+                        items={items}
+                        variant={block.variant}
+                        onItemClick={openModal}
+                        count={content.count}
+                        density={content.density}
+                        imageShape={content.imageShape}
+                        showMeta={content.showMeta}
+                    />
+                );
             case "opinions":
-                return <OpinionsPreview items={items} variant={block.variant} onItemClick={openOpinion} />;
+                return (
+                    <OpinionsPreview
+                        items={items}
+                        variant={block.variant}
+                        onItemClick={openModal}
+                        count={content.count}
+                        density={content.density}
+                        showExcerpt={content.showExcerpt}
+                        showMeta={content.showMeta}
+                    />
+                );
             case "stories":
-                return <StoriesPreview items={items} variant={block.variant} onStoryClick={openStory} />;
+                return (
+                    <StoriesPreview
+                        items={items}
+                        variant={block.variant}
+                        onStoryClick={openModal}
+                        count={content.count}
+                        density={content.density}
+                        imageShape={content.imageShape}
+                        showMeta={content.showMeta}
+                        showExcerpt={content.showExcerpt}
+                    />
+                );
             default:
                 return null;
         }
     };
 
+    const hasContent = items.length > 0 && !isPreviewLoading;
+
     return (
-        <section
-            className={`pl-block pl-block--content ${widthCls} ${blockStyleClass(block.style)}`}
-            aria-label={block.title}
-        >
-            <div className="pl-block-head">
-                <h3 className="pl-block-title">{block.title}</h3>
-                {route && (
-                    <button type="button" className="pl-block-viewall" onClick={() => navigate?.(route)}>
-                        View all
-                        <span aria-hidden="true"> →</span>
-                    </button>
-                )}
-            </div>
-            {renderBody()}
-        </section>
+        <>
+            <section
+                className={`pl-block pl-block--content ${widthCls} ${styleCls}`}
+                aria-label={block.title}
+                style={cardVars || undefined}
+                onClick={hasContent ? openModal : undefined}
+                role={hasContent ? "button" : undefined}
+                tabIndex={hasContent ? 0 : undefined}
+                onKeyDown={hasContent ? (e) => (e.key === "Enter" || e.key === " ") && openModal() : undefined}
+            >
+                <div className="pl-block-head">
+                    <h3 className="pl-block-title">{block.title}</h3>
+                    {hasContent && (
+                        <button
+                            type="button"
+                            className="pl-block-viewall"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                openModal();
+                            }}
+                        >
+                            View all
+                            <span aria-hidden="true"> →</span>
+                        </button>
+                    )}
+                </div>
+                {renderBody()}
+            </section>
+
+            {showModal && (
+                <BlockContentModal
+                    type={block.type}
+                    title={block.title}
+                    username={username}
+                    profileUserId={profileUserId}
+                    isOwn={isOwn}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
+        </>
     );
 };
 

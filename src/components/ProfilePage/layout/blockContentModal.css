@@ -1,0 +1,121 @@
+/* Modal that shows ALL of a content block's items (writings/media/etc). */
+.pl-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: rgba(12, 12, 18, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.pl-modal {
+    display: flex;
+    flex-direction: column;
+    width: min(680px, 100%);
+    max-height: min(820px, 90vh);
+    background: var(--bg-elevated, #fff);
+    color: var(--text-primary, #1a1a1a);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+}
+
+.pl-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.3rem;
+    border-bottom: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+    flex-shrink: 0;
+}
+
+.pl-modal-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.pl-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-glass, rgba(0, 0, 0, 0.05));
+    color: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.pl-modal-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.pl-modal-body {
+    padding: 1.1rem 1.3rem 1.4rem;
+    overflow-y: auto;
+}
+
+.pl-modal-msg {
+    text-align: center;
+    opacity: 0.65;
+    padding: 2rem 0;
+}
+
+.pl-modal-sentinel {
+    display: flex;
+    justify-content: center;
+    padding: 0.8rem 0 0.2rem;
+    min-height: 1.5rem;
+}
+
+.pl-modal-loading {
+    font-size: 0.85rem;
+    opacity: 0.6;
+}
+
+.pl-modal-lightbox {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.82);
+    cursor: zoom-out;
+}
+
+.pl-modal-lightbox-img {
+    max-width: 92%;
+    max-height: 88%;
+    border-radius: 10px;
+    object-fit: contain;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 760px) {
+    .pl-modal-overlay {
+        padding: 0;
+    }
+    .pl-modal {
+        width: 100%;
+        max-height: 100%;
+        height: 100%;
+        border-radius: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pl-modal-overlay,
+    .pl-modal {
+        transition: none !important;
+    }
+}

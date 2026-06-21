@@ -25,6 +25,9 @@ const ProfileGuestbook = ({
     username,
     profileUserId,
     compact = false,
+    initialVisibleCount = COMPACT_VISIBLE_COUNT,
+    density = "compact",
+    showMeta = true,
     focusGuestbook = false,
     highlightEntryId = null,
     highlightFromUserId = null,
@@ -57,10 +60,17 @@ const ProfileGuestbook = ({
 
     const entries = data?.entries || [];
 
-    // In compact mode (near the hero) show only the latest few notes until the
-    // visitor expands. Full list otherwise.
-    const isCondensed = compact && !expanded;
-    const visibleEntries = isCondensed ? entries.slice(0, COMPACT_VISIBLE_COUNT) : entries;
+    // How many notes show before "view all". Driven by the layout block's content
+    // count (V3C); falls back to the compact default for direct/legacy usages.
+    const visibleCount =
+        typeof initialVisibleCount === "number" && initialVisibleCount > 0
+            ? initialVisibleCount
+            : COMPACT_VISIBLE_COUNT;
+
+    // Show only the latest few notes until the visitor expands; full list once
+    // expanded. Applies whenever there are more notes than the visible count.
+    const isCondensed = !expanded && entries.length > visibleCount;
+    const visibleEntries = isCondensed ? entries.slice(0, visibleCount) : entries;
     const hiddenCount = entries.length - visibleEntries.length;
 
     // Deep-link from a guestbook notification: scroll the section into view and
@@ -80,12 +90,12 @@ const ProfileGuestbook = ({
 
         const key = `${highlightEntryId || ""}:${highlightFromUserId || ""}`;
 
-        // If the target note is collapsed in compact mode, expand it once so it
-        // can render; the effect re-runs after `expanded` changes and scrolls.
-        // Tracked per-key so a later manual collapse isn't fought.
-        if (targetId && compact && !expanded && focusExpandedRef.current !== key) {
+        // If the target note is collapsed, expand it once so it can render; the
+        // effect re-runs after `expanded` changes and scrolls. Tracked per-key so
+        // a later manual collapse isn't fought.
+        if (targetId && !expanded && focusExpandedRef.current !== key) {
             const idx = entries.findIndex((entry) => entry.id === targetId);
-            if (idx >= COMPACT_VISIBLE_COUNT) {
+            if (idx >= visibleCount) {
                 focusExpandedRef.current = key;
                 setExpanded(true);
                 return undefined;
@@ -117,7 +127,7 @@ const ProfileGuestbook = ({
             cancelAnimationFrame(raf);
             clearTimeout(timer);
         };
-    }, [focusGuestbook, highlightEntryId, highlightFromUserId, isLoading, entries, compact, expanded]);
+    }, [focusGuestbook, highlightEntryId, highlightFromUserId, isLoading, entries, visibleCount, expanded]);
 
     // Optimistic signing: the note appears instantly, then reconciles with the
     // server on settle. The query holds { entries, hasMore, profileUserId } —
@@ -191,7 +201,7 @@ const ProfileGuestbook = ({
 
     return (
         <section
-            className={`pt-guestbook${compact ? " pt-guestbook--compact" : ""}`}
+            className={`pt-guestbook${compact ? " pt-guestbook--compact" : ""}${density === "comfortable" ? " pt-guestbook--cozy" : ""}`}
             id="profile-guestbook"
             ref={sectionRef}
             aria-label="Guestbook"
@@ -279,7 +289,9 @@ const ProfileGuestbook = ({
                                     {entry.author?.username && (
                                         <span className="pt-guestbook-handle">@{entry.author.username}</span>
                                     )}
-                                    <span className="pt-guestbook-date">· {formatDate(entry.created_at)}</span>
+                                    {showMeta && (
+                                        <span className="pt-guestbook-date">· {formatDate(entry.created_at)}</span>
+                                    )}
                                     {canDeleteEntry(entry) && (
                                         <button
                                             type="button"
@@ -299,7 +311,7 @@ const ProfileGuestbook = ({
                 </AnimatePresence>
             </div>
 
-            {compact && (hiddenCount > 0 || expanded) && entries.length > COMPACT_VISIBLE_COUNT && (
+            {(hiddenCount > 0 || expanded) && entries.length > visibleCount && (
                 <button
                     type="button"
                     className="pt-guestbook-toggle"
