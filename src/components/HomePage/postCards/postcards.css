@@ -901,8 +901,8 @@
     z-index: 10;
 }
 
-/* ── Mobile responsive ── */
-@media (max-width: 480px){
+/* ── Mobile responsive ── covers the single-column shell range (≤768px) ── */
+@media (max-width: 768px){
 
     /* ── Mobile top header ── */
     .mobile-top-header{

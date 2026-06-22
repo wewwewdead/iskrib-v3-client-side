@@ -32,7 +32,9 @@ const HomePage = () => {
 
     const userId = user?.userData?.[0]?.id || null;
 
-    const isMobile = useMediaQuery({query: '(max-width: 480px)'});
+    // ≤768px is the single-column shell (right rail is hidden), so don't mount
+    // the right-rail opinions widget there.
+    const isMobile = useMediaQuery({query: '(max-width: 768px)'});
 
     const navigate = useNavigate();
     const location = useLocation();

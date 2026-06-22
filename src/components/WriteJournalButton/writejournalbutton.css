@@ -4,8 +4,8 @@
     display: none;
 }
 
-/* ── Mobile FAB ── */
-@media (max-width: 480px) {
+/* ── Mobile FAB ── shown across the single-column range (≤768px) ── */
+@media (max-width: 768px) {
     .write-journal-fab {
         position: fixed;
         right: 1.25rem;

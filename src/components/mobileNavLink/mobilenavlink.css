@@ -6,8 +6,9 @@
     display: none;
 }
 
-/* ── Mobile breakpoint ── */
-@media (max-width: 480px){
+/* ── Mobile breakpoint ── covers phones + small tablets/foldables (≤768px),
+   matching the single-column shell so navigation is always available. ── */
+@media (max-width: 768px){
 
     /* ── Floating bar ── */
     .mobile-navlink-container{

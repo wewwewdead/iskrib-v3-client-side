@@ -46,12 +46,22 @@ const ProfileBackgroundPicker = ({
     return (
         <AnimatePresence>
             <Motion.div
+                key="profile-bg-picker-backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ type: "spring", stiffness: 250, damping: 25 }}
-                className="profile-bg-picker-container"
+                transition={{ duration: 0.2 }}
+                className="profile-bg-picker-backdrop"
+                onClick={(e) => handleHideGradientPicker(e)}
             >
+                <Motion.div
+                    initial={{ opacity: 0, scale: 0.94, y: 16 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                    transition={{ type: "spring", stiffness: 250, damping: 25 }}
+                    className="profile-bg-picker-container"
+                    onClick={(e) => e.stopPropagation()}
+                >
                 <div className="profile-bg-picker-header">Pick a background</div>
 
                 <div className="profile-bg-tabs" role="tablist" aria-label="Background type">
@@ -205,6 +215,7 @@ const ProfileBackgroundPicker = ({
                         speedMultiplier={0.7}
                     />
                 )}
+                </Motion.div>
             </Motion.div>
         </AnimatePresence>
     );

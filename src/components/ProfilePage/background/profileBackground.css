@@ -8,12 +8,18 @@
  */
 
 .profile-bg-media-layer {
+    /* Pinned behind the column's content so the background stays put and covers
+       the full page as you scroll. This sticky + margin-bottom:-100vh technique
+       (which adds zero scroll height) only works in BLOCK flow — so the parent
+       .profile-center-bar-container is display:block and the real content lives
+       in a flex .profile-content-wrap that does the horizontal centering. When
+       the column itself was a flex column, this -100vh margin pushed the hero
+       (the next child) above the scroll origin, making it unreachable — you
+       couldn't scroll up to the profile header / Customize button. */
     position: sticky;
     top: 0;
-    align-self: stretch;
     width: 100%;
     height: 100vh;
-    /* Pull the following content back up so this layer adds no scroll height. */
     margin-bottom: -100vh;
     z-index: 0;
     pointer-events: none;

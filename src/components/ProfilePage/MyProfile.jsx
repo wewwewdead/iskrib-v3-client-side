@@ -563,6 +563,7 @@ const MyProfile = () => {
                             />
                         )}
 
+                        <div className="profile-content-wrap">
                         <ProfileHeroSection
                             userData={userData}
                             user={user}
@@ -618,6 +619,7 @@ const MyProfile = () => {
                         <ProfileTabList tablists={visibleTabs} navigate={navigate} location={location} />
 
                         <Outlet />
+                        </div>
                     </div>
 
                     <div className="profile-sidebar-right-holder-container">
