@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { profileThemeToCssVars } from "../ProfilePage/builder/profileThemeUtils";
+import { getStaticBackgroundStyle } from "../ProfilePage/background/backgroundUtils";
 import VerifiedBadge from "../Badge/VerifiedBadge";
 
 const fmtCount = (n) => {
@@ -53,8 +54,10 @@ const ProfileDiscoverCard = ({ card, index = 0 }) => {
     const hasStats = card.visit_count || card.guestbook_count || card.remix_count;
     const isRoom = !!card.profile_theme;
     const ctaLabel = isRoom ? "Visit room" : "Visit profile";
-    const backdrop =
-        card.background && typeof card.background === "object" ? card.background : null;
+    // Resolve to a CSS-safe style: animated (GIF/video) backgrounds become their
+    // STATIC poster here — a discovery grid must never animate many GIFs/videos
+    // at once, and the raw manifest's non-CSS fields must never leak into style.
+    const backdrop = getStaticBackgroundStyle(card.background) || null;
 
     // Legend / OG keep their glowing avatar ring.
     const ringClass =

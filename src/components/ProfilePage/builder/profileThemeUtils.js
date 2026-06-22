@@ -35,6 +35,7 @@ import {
 } from "./profileThemeConstants";
 import { ALLOWED_STICKER_IDS } from "./stickerRegistry";
 import { getDefaultProfileTheme } from "./profileThemeDefaults";
+import { getStaticBackgroundStyle } from "../background/backgroundUtils";
 
 export { getDefaultProfileTheme };
 
@@ -505,6 +506,15 @@ export const profileBackgroundToStyle = (theme) => {
  */
 export const resolveLegacyBackgroundForMotion = (legacyStyle, prefersReducedMotion = false) => {
     if (!legacyStyle || typeof legacyStyle !== "object") return legacyStyle;
+
+    // Production animated-background manifest (optimized video, or the GIF
+    // fallback manifest): NEVER spread its non-CSS fields (mp4Url, processing, …)
+    // into a style. Animated media is rendered by ProfileBackgroundLayer; any
+    // CSS consumer here resolves to the static poster instead.
+    if (legacyStyle.type === "animated_background" || legacyStyle.mp4Url || legacyStyle.webmUrl) {
+        return getStaticBackgroundStyle(legacyStyle, { posterForAnimated: true }) || {};
+    }
+
     if (legacyStyle.mediaType !== "gif") return legacyStyle;
 
     const { mediaType, backgroundPosterImage, ...cleanStyle } = legacyStyle;

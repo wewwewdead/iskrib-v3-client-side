@@ -16,6 +16,7 @@ import {
     getUserOpinions,
     deleteJournal,
     deleteJournalImage,
+    deleteProfileMediaImage,
 } from "../../../../API/Api";
 import { getUserStories } from "../../../../API/StoryApi";
 import WritingsPreview from "./previewCards/WritingsPreview";
@@ -62,9 +63,9 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
     const loggedInUserId = session?.user?.id || null;
     const [lightbox, setLightbox] = useState(null);
 
-    // Owner-only delete (writings / pinned writings). pendingDelete holds the item
-    // awaiting confirmation; isDeleting/justDeleted drive the confirm UI.
-    const canDelete = isOwn && (type === "writings" || type === "pinned_writings");
+    // Owner-only delete (writings / pinned writings / media). pendingDelete holds
+    // the item awaiting confirmation; isDeleting/justDeleted drive the confirm UI.
+    const canDelete = isOwn && (type === "writings" || type === "pinned_writings" || type === "media");
     const [pendingDelete, setPendingDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [justDeleted, setJustDeleted] = useState(false);
@@ -137,6 +138,10 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
                   title: "",
                   thumbnail_url: m.cardUrl || m.thumbnailUrl || m.url,
                   fullUrl: m.originalUrl || m.detailUrl || m.url,
+                  // kept so the owner can delete the underlying storage object
+                  bucket: m.bucket,
+                  path: m.path,
+                  url: m.url,
               }))
             : rawItems;
 
@@ -192,26 +197,42 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
             setIsDeleting(true);
             removeFromCache(queryKey, item.id); // optimistic
 
-            const imgs = item.thumbnail_url ? [item.thumbnail_url] : null;
-            const [deleteRes] = await Promise.allSettled([
-                deleteJournal(item.id, token),
-                imgs ? deleteJournalImage(token, imgs) : Promise.resolve(null),
-            ]);
-            if (deleteRes.status !== "fulfilled") {
-                queryClient.setQueryData(queryKey, previous); // revert
-                throw deleteRes.reason || new Error("failed to delete journal");
-            }
+            if (type === "media") {
+                // Deletes the storage object (+ all size variants); clears the
+                // avatar/background reference if this image was either of those.
+                const res = await deleteProfileMediaImage(token, {
+                    bucket: item.bucket,
+                    path: item.path,
+                    url: item.url,
+                });
+                setJustDeleted(true);
+                queryClient.invalidateQueries({ queryKey: ["blockContent", "media", profileUserId] });
+                queryClient.invalidateQueries({ queryKey: ["profileMedia", profileUserId] });
+                queryClient.invalidateQueries({ queryKey: ["profilePreview", username] });
+                if (res?.clearedAvatar || res?.clearedBackground) {
+                    queryClient.invalidateQueries({ queryKey: ["userData", loggedInUserId] });
+                }
+            } else {
+                const imgs = item.thumbnail_url ? [item.thumbnail_url] : null;
+                const [deleteRes] = await Promise.allSettled([
+                    deleteJournal(item.id, token),
+                    imgs ? deleteJournalImage(token, imgs) : Promise.resolve(null),
+                ]);
+                if (deleteRes.status !== "fulfilled") {
+                    throw deleteRes.reason || new Error("failed to delete journal");
+                }
 
-            setJustDeleted(true);
-            // Refresh this list + every other surface that shows the post.
-            queryClient.invalidateQueries({ queryKey: ["blockContent", "writings", profileUserId] });
-            queryClient.invalidateQueries({ queryKey: ["blockContent", "pinned_writings", profileUserId] });
-            queryClient.invalidateQueries({ queryKey: ["profilePreview", username] });
-            queryClient.invalidateQueries({ queryKey: ["userJournals"] });
-            queryClient.invalidateQueries({ queryKey: ["journals"], refetchType: "none" });
-            queryClient.invalidateQueries({ queryKey: ["visitedProfileJournals"], refetchType: "none" });
-            queryClient.invalidateQueries({ queryKey: ["pinnedJournals"] });
-            queryClient.invalidateQueries({ queryKey: ["userPinnedIds"] });
+                setJustDeleted(true);
+                // Refresh this list + every other surface that shows the post.
+                queryClient.invalidateQueries({ queryKey: ["blockContent", "writings", profileUserId] });
+                queryClient.invalidateQueries({ queryKey: ["blockContent", "pinned_writings", profileUserId] });
+                queryClient.invalidateQueries({ queryKey: ["profilePreview", username] });
+                queryClient.invalidateQueries({ queryKey: ["userJournals"] });
+                queryClient.invalidateQueries({ queryKey: ["journals"], refetchType: "none" });
+                queryClient.invalidateQueries({ queryKey: ["visitedProfileJournals"], refetchType: "none" });
+                queryClient.invalidateQueries({ queryKey: ["pinnedJournals"] });
+                queryClient.invalidateQueries({ queryKey: ["userPinnedIds"] });
+            }
 
             setTimeout(() => {
                 setIsDeleting(false);
@@ -219,7 +240,8 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
                 setPendingDelete(null);
             }, 1200);
         } catch (err) {
-            console.error("Error deleting writing:", err);
+            console.error("Error deleting:", err);
+            queryClient.setQueryData(queryKey, previous); // revert optimistic removal
             setIsDeleting(false);
         }
     };
@@ -245,7 +267,15 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
                     />
                 );
             case "media":
-                return <MediaPreview items={items} variant="grid" onItemClick={openMedia} count={count} />;
+                return (
+                    <MediaPreview
+                        items={items}
+                        variant="grid"
+                        onItemClick={openMedia}
+                        count={count}
+                        onDeleteItem={canDelete ? setPendingDelete : undefined}
+                    />
+                );
             case "opinions":
                 return <OpinionsPreview items={items} variant="cards" onItemClick={openOpinion} count={count} showExcerpt showMeta />;
             case "stories":
@@ -306,12 +336,14 @@ const BlockContentModal = ({ type, title, username, profileUserId, isOwn, onClos
                     >
                         <div className="pl-modal-confirm" onClick={(e) => e.stopPropagation()}>
                             {justDeleted ? (
-                                <p className="pl-modal-confirm-done">Post deleted</p>
+                                <p className="pl-modal-confirm-done">{type === "media" ? "Image deleted" : "Post deleted"}</p>
                             ) : (
                                 <>
-                                    <h3 className="pl-modal-confirm-title">Delete this post?</h3>
+                                    <h3 className="pl-modal-confirm-title">{type === "media" ? "Delete this image?" : "Delete this post?"}</h3>
                                     <p className="pl-modal-confirm-text">
-                                        “{pendingDelete.title || "Untitled"}” will be permanently removed. This can&apos;t be undone.
+                                        {type === "media"
+                                            ? "This image will be permanently removed. This can’t be undone."
+                                            : `“${pendingDelete.title || "Untitled"}” will be permanently removed. This can’t be undone.`}
                                     </p>
                                     <div className="pl-modal-confirm-actions">
                                         <button

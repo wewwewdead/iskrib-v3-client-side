@@ -26,6 +26,8 @@ import useStreakData from '../Streak/useStreakData';
 import StickerLayer from '../ProfilePage/builder/StickerLayer';
 import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle, resolveLegacyBackgroundForMotion } from '../ProfilePage/builder/profileThemeUtils';
 import { getDefaultProfileTheme } from '../ProfilePage/builder/profileThemeDefaults';
+import ProfileBackgroundLayer from '../ProfilePage/background/ProfileBackgroundLayer';
+import { isAnimatedBackground } from '../ProfilePage/background/backgroundUtils';
 import usePrefersReducedMotion from '../../hooks/usePrefersReducedMotion';
 import '../ProfilePage/builder/profileTheme.css';
 import ProfileGuestbook from '../ProfilePage/guestbook/ProfileGuestbook';
@@ -176,6 +178,12 @@ const Visitprofile = () =>{
     const themeVars = profileThemeToCssVars(profileTheme, userData);
     const prefersReducedMotion = usePrefersReducedMotion();
     const resolvedBackground = resolveLegacyBackgroundForMotion(userData?.background, prefersReducedMotion);
+    // Animated (GIF/video) backgrounds render via ProfileBackgroundLayer; the
+    // column only carries static image/gradient backgrounds.
+    const animatedBg = isAnimatedBackground(userData?.background);
+    const columnBackgroundStyle = animatedBg
+        ? null
+        : composeProfileBackgroundStyle(profileTheme, resolvedBackground);
 
     const visibleProfileSections = [{ id: 'stats' }, { id: 'bio' }, { id: 'joined_date' }].filter(
         (section) => !hasTheme || isSectionVisible(profileTheme, section.id)
@@ -239,18 +247,26 @@ const Visitprofile = () =>{
         )}
         
         <div className='profile-parent-container'>
-            {userData?.background && (
-                <div className="blurred-img-bg" style={resolvedBackground}/>
-            )}
+            {/* Ambient blur — never animates (animated backgrounds blur a poster). */}
+            <ProfileBackgroundLayer mode="ambient" background={userData?.background} profileTheme={profileTheme} />
 
             <div className="side-bar-holder-container">
                 <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
             </div>
 
             <div
-                style={{ ...themeVars, ...(composeProfileBackgroundStyle(profileTheme, resolvedBackground) || {}) }}
-                className="profile-center-bar-container pt-scope"
+                style={{ ...themeVars, ...(columnBackgroundStyle || {}) }}
+                className={`profile-center-bar-container pt-scope${animatedBg ? ' profile-has-animated-bg' : ''}`}
             >
+                {/* The one animated background renderer for this page. */}
+                {animatedBg && (
+                    <ProfileBackgroundLayer
+                        mode="main"
+                        background={userData?.background}
+                        profileTheme={profileTheme}
+                    />
+                )}
+
                 {userData && (
 
                     <div className="visit-profile-hero-section visit-profile-hero-section--stack">

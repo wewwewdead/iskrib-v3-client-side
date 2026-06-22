@@ -30,7 +30,9 @@ export const updateFontColor = (token, fontColor) =>
     authedFormRequest(token, 'POST', '/updateFontColor', fontColor, 'failed to update font color');
 
 // Animated GIF profile background. `formData` carries `gif` (required) and an
-// optional `poster` (static reduced-motion fallback). Returns { gifUrl, posterUrl }.
+// optional `poster` hint. The server converts the GIF into optimized animated
+// assets (poster + MP4/H.264 + optional WebM) and returns the manifest the
+// client stores in users.background and renders with a dedicated <video> layer.
 export const uploadBackgroundGif = (token, formData) =>
     authedFormRequest(token, 'POST', '/uploadBackgroundGif', formData, 'failed to upload background gif');
 

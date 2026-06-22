@@ -36,10 +36,13 @@ describe("GifCreatorModal", () => {
         const gifBlob = new Blob(["gif"], { type: "image/gif" });
         const posterBlob = new Blob(["poster"], { type: "image/webp" });
         generateBackgroundGif.mockResolvedValue({ gifBlob, posterBlob });
-        uploadBackgroundGif.mockResolvedValue({
-            gifUrl: "https://cdn.test/a.gif",
-            posterUrl: "https://cdn.test/a.webp",
-        });
+        const manifest = {
+            type: "animated_background",
+            mediaType: "video",
+            posterUrl: "https://cdn.test/a__poster.webp",
+            mp4Url: "https://cdn.test/a.mp4",
+        };
+        uploadBackgroundGif.mockResolvedValue(manifest);
         const onApply = vi.fn();
         const onClose = vi.fn();
 
@@ -58,10 +61,12 @@ describe("GifCreatorModal", () => {
         expect(formData.get("poster")).toBeInstanceOf(Blob);
 
         await waitFor(() => expect(onApply).toHaveBeenCalled());
+        // The server manifest is applied verbatim.
         expect(onApply.mock.calls[0][0]).toMatchObject({
-            mediaType: "gif",
-            backgroundImage: "url(https://cdn.test/a.gif)",
-            backgroundPosterImage: "url(https://cdn.test/a.webp)",
+            type: "animated_background",
+            mediaType: "video",
+            mp4Url: "https://cdn.test/a.mp4",
+            posterUrl: "https://cdn.test/a__poster.webp",
         });
         expect(onClose).toHaveBeenCalled();
     });

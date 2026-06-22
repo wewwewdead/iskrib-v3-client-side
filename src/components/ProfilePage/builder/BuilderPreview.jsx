@@ -10,6 +10,7 @@ import {
     composeProfileBackgroundStyle,
     resolveLegacyBackgroundForMotion,
 } from "./profileThemeUtils";
+import { isAnimatedBackground, getStaticBackgroundStyle } from "../background/backgroundUtils";
 import usePrefersReducedMotion from "../../../hooks/usePrefersReducedMotion";
 import {
     LAYOUT_BLOCK_LABELS,
@@ -340,17 +341,18 @@ const BuilderPreview = ({
     // re-renders (clicking a block/sticker) don't re-run the full theme normalize.
     const cssVars = useMemo(() => profileThemeToCssVars(theme, userData), [theme, userData]);
     const prefersReducedMotion = usePrefersReducedMotion();
-    // The theme's gradient OVERLAYS the legacy image (so opacity < 1 tints rather
-    // than hides it); the preview matches the live page. GIF backgrounds resolve
-    // to their poster under reduced motion (and shed their metadata keys).
-    const background = useMemo(
-        () =>
-            composeProfileBackgroundStyle(
-                theme,
-                resolveLegacyBackgroundForMotion(userData?.background, prefersReducedMotion)
-            ) || null,
-        [theme, userData, prefersReducedMotion]
-    );
+    // The theme's gradient OVERLAYS the background. The builder is an editing
+    // surface, so animated (GIF/video) backgrounds ALWAYS render as a static
+    // poster here — keeping drag/resize/content editing smooth (no FPS drops on
+    // a profile with a GIF background). Static image/gradient backgrounds compose
+    // normally; the live page is where motion plays.
+    const background = useMemo(() => {
+        const raw = userData?.background;
+        const base = isAnimatedBackground(raw)
+            ? getStaticBackgroundStyle(raw, { posterForAnimated: true })
+            : resolveLegacyBackgroundForMotion(raw, prefersReducedMotion);
+        return composeProfileBackgroundStyle(theme, base) || null;
+    }, [theme, userData, prefersReducedMotion]);
     // Selection is controlled when the parent supplies onSelectType (so the
     // Cards tab can edit the selected container); otherwise it's self-managed.
     const [internalSelected, setInternalSelected] = useState(null);

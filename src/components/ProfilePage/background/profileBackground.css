@@ -1,0 +1,100 @@
+/*
+ * Profile animated background — production renderer.
+ *
+ * The main media layer is pinned inside the scrolling profile column with
+ * `position: sticky` so it stays put behind the content as the page scrolls
+ * (mimicking the old `background-attachment: scroll` look) without ever being
+ * rendered as an expensive animated CSS background.
+ */
+
+.profile-bg-media-layer {
+    position: sticky;
+    top: 0;
+    align-self: stretch;
+    width: 100%;
+    height: 100vh;
+    /* Pull the following content back up so this layer adds no scroll height. */
+    margin-bottom: -100vh;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: inherit;
+}
+
+.profile-animated-bg-video,
+.profile-animated-bg-poster,
+.profile-animated-bg-gif,
+.profile-bg-gradient-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.profile-animated-bg-video,
+.profile-animated-bg-poster,
+.profile-animated-bg-gif {
+    object-fit: cover;
+    /* A small fade-in so the poster→video swap isn't jarring. */
+    animation: profileBgFadeIn 0.5s ease-out;
+}
+
+.profile-bg-gradient-overlay {
+    /* backgroundImage (the theme gradient) is supplied inline; it composites over
+       the media to tint it, exactly like the legacy gradient-over-image overlay. */
+    background-size: cover;
+    background-position: center;
+}
+
+@keyframes profileBgFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Lift the column's real content above the pinned background layer. */
+.profile-center-bar-container.profile-has-animated-bg > *:not(.profile-bg-media-layer) {
+    position: relative;
+    z-index: 1;
+}
+
+/* When the builder is open the main layer shows a frozen poster (no <video>);
+   suppress the fade so the swap reads as an instant freeze. */
+.profile-center-bar-container.profile-builder-open .profile-animated-bg-poster {
+    animation: none;
+}
+
+/*
+ * Mobile performance budget.
+ *
+ * The whole point of converting GIFs to <video> is to KEEP the animation safely
+ * on mobile — so we do NOT freeze the video here. Instead we strip the expensive
+ * frosted-glass backdrop-filters that would otherwise be composited over an
+ * actively animating video every frame (the real thermal cost on iPhone). Card
+ * surfaces fall back to their (semi-opaque) background colour.
+ */
+@media (max-width: 768px) {
+    .profile-center-bar-container.profile-has-animated-bg * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* The ambient blur is a static poster, but a 40px blur on a full-screen layer
+       is still costly on mobile — lighten it when it's backing an animation. */
+    .blurred-img-bg.profile-ambient-poster {
+        filter: blur(24px) saturate(1.1);
+        transform: scale(1.2);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .profile-animated-bg-video,
+    .profile-animated-bg-poster,
+    .profile-animated-bg-gif {
+        animation: none;
+    }
+}

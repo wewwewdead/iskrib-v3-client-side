@@ -161,15 +161,10 @@ const GifCreatorModal = ({ open, onClose, token, onApply }) => {
             if (result.posterBlob) {
                 formData.append("poster", result.posterBlob, "poster.webp");
             }
-            const { gifUrl, posterUrl } = await uploadBackgroundGif(token, formData);
-            onApply?.({
-                mediaType: "gif",
-                backgroundImage: `url(${gifUrl})`,
-                ...(posterUrl ? { backgroundPosterImage: `url(${posterUrl})` } : {}),
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-            });
+            // The server converts the GIF into optimized animated assets and
+            // returns the manifest, which we apply (and persist) verbatim.
+            const manifest = await uploadBackgroundGif(token, formData);
+            onApply?.(manifest);
             onClose?.();
         } catch {
             setError("Couldn't save the GIF background. Please try again.");

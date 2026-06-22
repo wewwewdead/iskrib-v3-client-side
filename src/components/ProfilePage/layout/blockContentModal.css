@@ -23,6 +23,10 @@
     overflow: hidden;
     box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
     border: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+    /* Trap inner z-indexes (tile menus) so they can't paint over the lightbox /
+       confirm overlay once Framer Motion drops the transform (transform: none
+       would otherwise stop creating a stacking context). */
+    isolation: isolate;
 }
 
 .pl-modal-head {

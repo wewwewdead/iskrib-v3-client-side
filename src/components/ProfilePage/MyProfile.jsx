@@ -27,6 +27,8 @@ import { PROFILE_TABS } from "./constants/profileTabs";
 import ProfileBuilder from "./builder/ProfileBuilder";
 import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle, resolveLegacyBackgroundForMotion } from "./builder/profileThemeUtils";
 import { getDefaultProfileTheme } from "./builder/profileThemeDefaults";
+import ProfileBackgroundLayer from "./background/ProfileBackgroundLayer";
+import { isAnimatedBackground } from "./background/backgroundUtils";
 import usePrefersReducedMotion from "../../hooks/usePrefersReducedMotion";
 import { validateGifFile } from "../../utils/gifBackgroundValidation";
 import { posterFromGifFile } from "../../utils/posterFromGifFile";
@@ -130,6 +132,18 @@ const MyProfile = () => {
     const hasTheme = !!userData?.profile_theme;
     const profileTheme = userData?.profile_theme || getDefaultProfileTheme(userData);
     const themeVars = profileThemeToCssVars(profileTheme, userData);
+
+    // Animated (GIF/video) backgrounds are rendered by ProfileBackgroundLayer
+    // (a dedicated <video>/poster layer), NOT as a CSS background — so the column
+    // only carries the (cheap) theme gradient/static image; the media layer owns
+    // the animation, ambient blur uses a poster, and the builder freezes it.
+    const animatedBg = isAnimatedBackground(croppedImage);
+    const columnBackgroundStyle = animatedBg
+        ? null
+        : composeProfileBackgroundStyle(
+              profileTheme,
+              resolveLegacyBackgroundForMotion(croppedImage || gradientPicked, prefersReducedMotion)
+          );
     const visibleTabs = tablists.filter((tab) => {
         const sectionId = TAB_SECTION_ID[tab.label];
         return !sectionId || isSectionVisible(profileTheme, sectionId);
@@ -305,23 +319,18 @@ const MyProfile = () => {
         setIsUpdatingProfileConfig(true);
         try {
             if (pendingGifFile) {
-                // GIFs upload as-is (no Sharp/WebP) via the dedicated endpoint, with
-                // a static first-frame poster for the reduced-motion fallback.
+                // The server converts the GIF into optimized animated assets
+                // (poster + MP4/H.264 + optional WebM) and returns the manifest we
+                // store verbatim. A client-side poster is still sent as a hint for
+                // the legacy fallback path when server-side ffmpeg is unavailable.
                 const posterBlob = await posterFromGifFile(pendingGifFile);
                 const formData = new FormData();
                 formData.append("gif", pendingGifFile);
                 if (posterBlob) {
                     formData.append("poster", posterBlob, "poster.jpg");
                 }
-                const { gifUrl, posterUrl } = await uploadBackgroundGif(session?.access_token, formData);
-                setCroppedImage({
-                    mediaType: "gif",
-                    backgroundImage: `url(${gifUrl})`,
-                    ...(posterUrl ? { backgroundPosterImage: `url(${posterUrl})` } : {}),
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                });
+                const manifest = await uploadBackgroundGif(session?.access_token, formData);
+                setCroppedImage(manifest);
             } else if (imageSrc) {
                 const croppedImageUrl = await getCroppedImage(imageSrc, croppedAreaPixels, userData.id, session?.access_token);
                 if (croppedImageUrl) {
@@ -529,21 +538,31 @@ const MyProfile = () => {
                 >
                     {gradientPicked && <div className="blurred-gradient-bg" style={gradientPicked} />}
 
-                    {croppedImage && (
-                        <div
-                            style={resolveLegacyBackgroundForMotion(croppedImage, prefersReducedMotion)}
-                            className="blurred-img-bg"
-                        />
-                    )}
+                    {/* Ambient blur — never animates: animated backgrounds blur a
+                        static poster, so a GIF/video is never re-decoded per frame. */}
+                    <ProfileBackgroundLayer mode="ambient" background={croppedImage} profileTheme={profileTheme} />
 
                     <div className="side-bar-holder-container">
                         <Sidebar links={links} />
                     </div>
 
                     <div
-                        style={{ ...themeVars, ...(composeProfileBackgroundStyle(profileTheme, resolveLegacyBackgroundForMotion(croppedImage || gradientPicked, prefersReducedMotion)) || {}) }}
-                        className="profile-center-bar-container pt-scope"
+                        style={{ ...themeVars, ...(columnBackgroundStyle || {}) }}
+                        className={`profile-center-bar-container pt-scope${
+                            animatedBg ? " profile-has-animated-bg" : ""
+                        }${animatedBg && showBuilder ? " profile-builder-open" : ""}`}
                     >
+                        {/* The one animated background renderer for this page. Static
+                            image/gradient backgrounds stay on the column CSS above. */}
+                        {animatedBg && (
+                            <ProfileBackgroundLayer
+                                mode="main"
+                                background={croppedImage}
+                                profileTheme={profileTheme}
+                                builderOpen={showBuilder}
+                            />
+                        )}
+
                         <ProfileHeroSection
                             userData={userData}
                             user={user}

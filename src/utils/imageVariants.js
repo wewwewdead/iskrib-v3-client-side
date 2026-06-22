@@ -29,15 +29,21 @@ export const toThumbnailUrl = (url) => {
 };
 
 /**
- * Extract the image URL from a profile `background` style object, if it holds one.
- * Profile backgrounds are stored either as an image style object
- * (`{ backgroundImage: "url(...)", ... }`) or a CSS gradient (`{ background: "linear-gradient(...)" }`).
+ * Extract a STATIC image URL from a profile `background` object, if it holds one.
+ * Profile backgrounds may be: an image style (`{ backgroundImage:"url(...)" }`),
+ * a CSS gradient (`{ background:"linear-gradient(...)" }`), a legacy GIF style
+ * (`{ backgroundImage:"url(...gif)", backgroundPosterImage:"url(...)" }`), or the
+ * production animated manifest (`{ posterUrl, mp4Url, ... }`). Animated backgrounds
+ * resolve to their POSTER so thumbnails are always static (never an animated GIF).
  * @param {object|null|undefined} background
  * @returns {string|null} the image URL, or null when there's no image (e.g. a gradient)
  */
 export const getBackgroundImageUrl = (background) => {
     if (!background || typeof background !== "object") return null;
-    const raw = background.backgroundImage || background.background || "";
+    // Prefer the static poster for animated backgrounds (video manifest / GIF).
+    if (typeof background.posterUrl === "string" && background.posterUrl) return background.posterUrl;
+    const raw =
+        background.backgroundPosterImage || background.backgroundImage || background.background || "";
     if (typeof raw !== "string") return null;
     const match = /url\(\s*(['"]?)([^'")]+)\1\s*\)/i.exec(raw);
     return match ? match[2] : null;

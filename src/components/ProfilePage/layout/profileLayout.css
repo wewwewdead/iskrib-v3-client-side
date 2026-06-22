@@ -605,6 +605,98 @@
     flex-shrink: 0;
 }
 
+/* ── Owner settings (kebab) menu on a media tile (full modal only) ─────────── */
+.pl-media-tile-wrap {
+    position: relative;
+}
+
+.pl-media-tile-wrap .pl-media-tile {
+    display: block;
+    width: 100%;
+}
+
+.pl-media-menu-wrap {
+    position: absolute;
+    top: 0.35rem;
+    right: 0.35rem;
+    z-index: 3;
+}
+
+.pl-media-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    /* Hidden until hover so it never covers the image or steals corner clicks. */
+    opacity: 0;
+    pointer-events: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+/* Reveal on hover (mouse) or focus-within (keyboard / open menu). */
+.pl-media-tile-wrap:hover .pl-media-menu-btn,
+.pl-media-tile-wrap:focus-within .pl-media-menu-btn {
+    opacity: 0.9;
+    pointer-events: auto;
+}
+
+.pl-media-menu-btn:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.75);
+}
+
+/* Touch devices can't hover — keep the control reachable there. */
+@media (hover: none) {
+    .pl-media-menu-btn {
+        opacity: 0.9;
+        pointer-events: auto;
+    }
+}
+
+.pl-media-menu {
+    position: absolute;
+    top: 36px;
+    right: 0;
+    z-index: 5;
+    min-width: 150px;
+    padding: 0.3rem;
+    border-radius: 12px;
+    background: var(--bg-elevated, #fff);
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.1));
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.pl-media-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.55rem 0.6rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary, #1a1a1a);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.14s ease;
+}
+
+.pl-media-menu-item--danger {
+    color: rgb(220, 38, 38);
+}
+
+.pl-media-menu-item--danger:hover {
+    background-color: rgba(220, 38, 38, 0.1);
+}
+
 /* ── Opinions ────────────────────────────────────────────────────────────── */
 .pl-opinions {
     display: flex;
