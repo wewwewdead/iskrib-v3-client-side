@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import './mobilesidebarlink.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../Context/useAuth';
@@ -30,7 +31,12 @@ const MobileSidebarLink = ({onclose}) => {
         return onclose()
     }
 
-    return(
+    // Rendered through a portal to <body>. The overlay is position:fixed, but
+    // it used to live inside #root, which is an overflow:auto scroll container.
+    // iOS Safari mispositions/clips fixed elements nested inside a scrolled
+    // overflow container, so the menu rendered off-screen ("nothing shows").
+    // As a direct child of <body> the fixed overlay anchors to the viewport.
+    return createPortal(
         <>
         <AnimatePresence>
         <div onClick={(e) => handleClose(e)} className="mobile-sidebar-bg">
@@ -132,7 +138,8 @@ const MobileSidebarLink = ({onclose}) => {
             </motion.div>
         </div>
         </AnimatePresence>
-        </>
+        </>,
+        document.body
     )
 }
 
