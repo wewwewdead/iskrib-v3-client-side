@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useMediaQuery } from "react-responsive";
 import "./myprofile.css";
 import { useAuth } from "../../Context/useAuth";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -49,6 +50,7 @@ const TAB_SECTION_ID = {
 
 const MyProfile = () => {
     const { user, session, isLoading, notifCount, loading } = useAuth();
+    const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
 
     const userData = user?.userData?.[0];
 
@@ -542,9 +544,14 @@ const MyProfile = () => {
                         static poster, so a GIF/video is never re-decoded per frame. */}
                     <ProfileBackgroundLayer mode="ambient" background={croppedImage} profileTheme={profileTheme} />
 
-                    <div className="side-bar-holder-container">
-                        <Sidebar links={links} />
-                    </div>
+                    {/* Desktop sidebar kept out of the DOM on mobile — CSS
+                        display:none lets it ghost through MobileSidebarLink's
+                        backdrop-filter overlay on iOS Safari. */}
+                    {!isMobile && (
+                        <div className="side-bar-holder-container">
+                            <Sidebar links={links} />
+                        </div>
+                    )}
 
                     <div
                         style={{ ...themeVars, ...(columnBackgroundStyle || {}) }}

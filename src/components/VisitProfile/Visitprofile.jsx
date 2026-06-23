@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useMediaQuery } from 'react-responsive';
 import '../ProfilePage/myprofile.css';
 import './visitProfile.css';
 import { useAuth } from '../../Context/useAuth';
@@ -46,6 +47,7 @@ const TAB_SECTION_ID = {
 
 const Visitprofile = () =>{
     const location = useLocation();
+    const isMobile = useMediaQuery({ query: '(max-width: 768px)' });
     const stateData = location.state;
     const { username: urlUsername } = useParams();
     const queryUserId = new URLSearchParams(location.search).get('userId');
@@ -250,9 +252,14 @@ const Visitprofile = () =>{
             {/* Ambient blur — never animates (animated backgrounds blur a poster). */}
             <ProfileBackgroundLayer mode="ambient" background={userData?.background} profileTheme={profileTheme} />
 
-            <div className="side-bar-holder-container">
-                <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
-            </div>
+            {/* Desktop sidebar kept out of the DOM on mobile — CSS display:none
+                lets it ghost through MobileSidebarLink's backdrop-filter overlay
+                on iOS Safari. */}
+            {!isMobile && (
+                <div className="side-bar-holder-container">
+                    <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
+                </div>
+            )}
 
             <div
                 style={{ ...themeVars, ...(columnBackgroundStyle || {}) }}

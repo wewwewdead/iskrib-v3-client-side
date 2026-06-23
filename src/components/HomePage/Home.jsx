@@ -301,9 +301,16 @@ const HomePage = () => {
         </AnimatePresence>
         
         <div className="home-parent-container">
-             <div className="side-bar-holder-container">
-                <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
-            </div>
+             {/* Desktop sidebar is only rendered on non-mobile. CSS display:none
+                 alone isn't enough on iOS Safari: a position:fixed element can
+                 still "ghost" through the MobileSidebarLink's backdrop-filter
+                 overlay when the blur forces a recomposite. Keeping it out of the
+                 DOM entirely on mobile removes the bleed-through for good. */}
+             {!isMobile && (
+                <div className="side-bar-holder-container">
+                    <Sidebar links={links}/> {/*passing the setShowEditor to this component to be used as a state setter inside this component*/}
+                </div>
+             )}
             <div id="main-content" className="center-bar-holder-container">
 
                 {/* <AnimatePresence>
