@@ -1475,19 +1475,21 @@
 
 /* mobile responsive */
 @media(max-width: 768px){
-    .side-bar-holder-container{
-        width: 200px;
-    }
-
+    /* The desktop Sidebar is removed from the DOM at this breakpoint (isMobile
+       = max-width:768px in MyProfile/Visitprofile), so the center column must
+       go full-width here — NOT reserve a 200px sidebar gutter. Reserving it
+       left a ~195px empty gap and pushed the profile off the right edge on
+       phones whose CSS viewport sits between 481–768px (e.g. iOS "Default"
+       Display Zoom). Matches Home, which already goes full mobile at ≤768px. */
     .profile-sidebar-right-holder-container {
         display: none;
     }
 
     .profile-center-bar-container {
         position: relative;
-        left: 195px;
+        left: 0;
         display: block;
-        width: 550px;
+        width: 100%;
         height: 100vh;
         overflow-y: auto;
     }
