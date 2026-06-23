@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Reorder, useDragControls } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import {
     profileThemeToCssVars,
     isSectionVisible,
@@ -14,13 +15,19 @@ import { isAnimatedBackground, getStaticBackgroundStyle } from "../background/ba
 import usePrefersReducedMotion from "../../../hooks/usePrefersReducedMotion";
 import {
     LAYOUT_BLOCK_LABELS,
-    CONTENT_SOURCE_LABELS,
     LAYOUT_WIDTH_LABELS,
     LAYOUT_STYLE_LABELS,
     ALLOWED_LAYOUT_STYLES,
 } from "./profileThemeConstants";
 import { RENDERABLE_LAYOUT_BLOCK_TYPES, blockWidthClass, blockStyleClass } from "../layout/profileLayoutUtils";
-import { imageShapeClass, densityClass } from "../layout/previewCards/previewUtils";
+import { resolveBlockItems, EMPTY_STATE_COPY } from "../layout/previewCards/previewUtils";
+import WritingsPreview from "../layout/previewCards/WritingsPreview";
+import MediaPreview from "../layout/previewCards/MediaPreview";
+import OpinionsPreview from "../layout/previewCards/OpinionsPreview";
+import StoriesPreview from "../layout/previewCards/StoriesPreview";
+import PreviewSkeleton from "../layout/previewCards/PreviewSkeleton";
+import PreviewEmptyState from "../layout/previewCards/PreviewEmptyState";
+import { getProfilePreview } from "../../../../API/Api";
 import StickerLayer from "./StickerLayer";
 import FreeHero from "../layout/FreeHero";
 import formatCounts from "../../../../helpers/fomatCounts";
@@ -32,41 +39,72 @@ const previewWidthClass = (width) =>
     `pt-pblock--${PREVIEW_WIDTHS.includes(width) ? width : "full"}`;
 
 /**
- * Lightweight placeholder body for a layout block in the live builder preview.
- * Reflects the block's V3C content controls (count / density / image shape /
- * excerpt / meta / source) WITHOUT fetching any real content.
+ * Live body for a layout block in the builder preview — renders the user's REAL
+ * content (writings/media/opinions/stories) using the exact same preview cards
+ * the published profile uses, so the builder is true WYSIWYG. The body is purely
+ * visual: it's wrapped in a `pointer-events: none` layer so every gesture (tap to
+ * select, drag to reorder, edge-drag to resize) lands on the block shell, never
+ * on a card inside it. Falls back to a skeleton while loading and a calm empty
+ * state when the user has no content of that kind yet. Guestbook keeps a light
+ * placeholder (its real component is a separate, interactive fetch).
  */
-const PreviewBlockBody = ({ type, content }) => {
-    const count = Math.min(typeof content.count === "number" ? content.count : 3, 6);
-    const shapeCls = imageShapeClass(content.imageShape);
-    const densityCls = densityClass(content.density);
-    const sourceLabel =
-        content.source && content.source !== "latest" ? CONTENT_SOURCE_LABELS[content.source] : null;
-
-    if (type === "media") {
+const PreviewBlockBody = ({ type, content, variant, preview, isPreviewLoading, isOwn }) => {
+    if (type === "guestbook") {
         return (
-            <div className={`pt-preview-mini pt-preview-mini--tiles ${densityCls}`}>
-                {Array.from({ length: count }).map((_, i) => (
-                    <span key={i} className={`pt-preview-tile ${shapeCls}`} />
-                ))}
-                {sourceLabel && <span className="pt-preview-source">{sourceLabel}</span>}
+            <div className="pt-pblock__realbody" aria-hidden="true">
+                <div className="pt-preview-mini pt-preview-mini--rows pl-density-comfortable">
+                    {Array.from({ length: Math.min(content.count || 3, 4) }).map((_, i) => (
+                        <span key={i} className="pt-preview-row">
+                            <span className="pt-preview-block-bar" />
+                            <span className="pt-preview-block-bar pt-preview-block-bar--short" />
+                        </span>
+                    ))}
+                </div>
             </div>
         );
     }
 
-    const showExcerpt = content.showExcerpt !== false && type !== "guestbook" && type !== "media";
-    const showMeta = content.showMeta !== false;
+    const items = resolveBlockItems(type, content.source, preview);
 
+    const inner = () => {
+        if (isPreviewLoading) return <PreviewSkeleton type={type} />;
+        if (!items.length) {
+            const copy = EMPTY_STATE_COPY[type] || { message: "Nothing here yet." };
+            return <PreviewEmptyState message={copy.message} hint={isOwn ? copy.ownerHint : undefined} />;
+        }
+        const common = {
+            items,
+            variant,
+            count: content.count,
+            density: content.density,
+            imageShape: content.imageShape,
+            showMeta: content.showMeta,
+            showExcerpt: content.showExcerpt,
+            // Display-only in the builder: no-op click handlers so a card never
+            // throws if it's reached (the body is also pointer-events:none).
+            onItemClick: () => {},
+            onStoryClick: () => {},
+        };
+        switch (type) {
+            case "writings":
+                return <WritingsPreview {...common} />;
+            case "pinned_writings":
+                return <WritingsPreview {...common} variant={variant === "compact" ? "compact" : "editorial"} />;
+            case "media":
+                return <MediaPreview {...common} />;
+            case "opinions":
+                return <OpinionsPreview {...common} />;
+            case "stories":
+                return <StoriesPreview {...common} />;
+            default:
+                return null;
+        }
+    };
+
+    // pointer-events:none keeps the real cards display-only so block gestures win.
     return (
-        <div className={`pt-preview-mini pt-preview-mini--rows ${densityCls}`}>
-            {Array.from({ length: count }).map((_, i) => (
-                <span key={i} className="pt-preview-row">
-                    <span className="pt-preview-block-bar" />
-                    {showExcerpt && <span className="pt-preview-block-bar pt-preview-block-bar--short" />}
-                    {showMeta && <span className="pt-preview-block-bar pt-preview-block-bar--meta" />}
-                </span>
-            ))}
-            {sourceLabel && <span className="pt-preview-source">{sourceLabel}</span>}
+        <div className="pt-pblock__realbody" aria-hidden="true">
+            {inner()}
         </div>
     );
 };
@@ -86,9 +124,13 @@ const PreviewLayoutBlock = ({
     total,
     selected,
     onSelect,
+    onEditBlock,
     onPatchBlock,
     onMoveBlock,
     onToggleBlock,
+    preview,
+    isPreviewLoading,
+    isOwn,
 }) => {
     const dragControls = useDragControls();
     const [isDragging, setIsDragging] = useState(false);
@@ -159,6 +201,8 @@ const PreviewLayoutBlock = ({
             onClick={(e) => {
                 e.stopPropagation();
                 onSelect(block.type);
+                // Tap (not drag) → surface this container's controls on mobile.
+                onEditBlock?.(block.type);
             }}
         >
             <div className="pt-pblock__head">
@@ -249,7 +293,14 @@ const PreviewLayoutBlock = ({
                 )}
             </div>
 
-            <PreviewBlockBody type={block.type} content={content} />
+            <PreviewBlockBody
+                type={block.type}
+                content={content}
+                variant={block.variant}
+                preview={preview}
+                isPreviewLoading={isPreviewLoading}
+                isOwn={isOwn}
+            />
 
             {selected && (
                 <div className="pt-pblock__edit">
@@ -331,6 +382,7 @@ const BuilderPreview = ({
     onToggleBlock,
     selectedType: selectedTypeProp,
     onSelectType,
+    onEditBlock,
     selectedStickerIndex = -1,
     onSelectSticker,
     onHeroChange,
@@ -353,6 +405,28 @@ const BuilderPreview = ({
             : resolveLegacyBackgroundForMotion(raw, prefersReducedMotion);
         return composeProfileBackgroundStyle(theme, base) || null;
     }, [theme, userData, prefersReducedMotion]);
+
+    // Fetch the user's REAL content for the preview — same React Query key the
+    // published profile uses, so it's a shared cache hit (no extra request). The
+    // builder always edits the owner's own profile (isOwn), so empty blocks show
+    // the gentle owner hint. Only fetched when the layout has a content block.
+    const previewUsername = userData?.username;
+    const themeHasContentBlocks = useMemo(
+        () =>
+            getVisibleOrderedLayoutBlocks(theme).some(
+                (b) => b.type !== "guestbook" && RENDERABLE_LAYOUT_BLOCK_TYPES.includes(b.type)
+            ),
+        [theme]
+    );
+    const { data: livePreview, isLoading: previewLoading } = useQuery({
+        queryKey: ["profilePreview", previewUsername],
+        queryFn: () => getProfilePreview(previewUsername),
+        enabled: !!previewUsername && themeHasContentBlocks,
+        staleTime: 1000 * 60,
+        refetchOnWindowFocus: false,
+    });
+    const isPreviewLoading = previewLoading && themeHasContentBlocks;
+
     // Selection is controlled when the parent supplies onSelectType (so the
     // Cards tab can edit the selected container); otherwise it's self-managed.
     const [internalSelected, setInternalSelected] = useState(null);
@@ -454,9 +528,13 @@ const BuilderPreview = ({
                                     total={layoutBlocks.length}
                                     selected={selectedType === block.type}
                                     onSelect={setSelectedType}
+                                    onEditBlock={onEditBlock}
                                     onPatchBlock={onPatchBlock}
                                     onMoveBlock={onMoveBlock}
                                     onToggleBlock={onToggleBlock}
+                                    preview={livePreview}
+                                    isPreviewLoading={isPreviewLoading}
+                                    isOwn
                                 />
                             ))}
                         </Reorder.Group>
@@ -478,7 +556,14 @@ const BuilderPreview = ({
                                 <span className="pt-preview-block-title">
                                     {block.title || LAYOUT_BLOCK_LABELS[block.type] || block.type}
                                 </span>
-                                <PreviewBlockBody type={block.type} content={getBlockContent(block)} />
+                                <PreviewBlockBody
+                                    type={block.type}
+                                    content={getBlockContent(block)}
+                                    variant={block.variant}
+                                    preview={livePreview}
+                                    isPreviewLoading={isPreviewLoading}
+                                    isOwn
+                                />
                             </div>
                             );
                         })}

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import usePrefersReducedMotion from '../../hooks/usePrefersReducedMotion';
 
 const ICONS = {
     success: (
@@ -23,19 +24,26 @@ const ICONS = {
     ),
 };
 
-const Toast = ({ id, type, message, duration, onDismiss }) => {
+const Toast = ({ id, type, message, duration, onDismiss, index = 0, total = 1 }) => {
+    const reduceMotion = usePrefersReducedMotion();
+    // The newest toast (last in the list) sits in front at full size; older ones
+    // recede a touch so a stack reads as layered cards (Sonner-style depth).
+    const depth = Math.max(0, total - 1 - index);
+    const scale = reduceMotion ? 1 : Math.max(0.9, 1 - depth * 0.025);
+    const restOpacity = Math.max(0.8, 1 - depth * 0.06);
+
     return (
         <motion.div
             layout
             className={`toast-item toast-${type}`}
             role="alert"
             aria-live="polite"
-            initial={{ opacity: 0, y: 20, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.12 } }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.96 }}
+            animate={reduceMotion ? { opacity: restOpacity } : { opacity: restOpacity, y: 0, scale }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, transition: { duration: 0.12 } }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
         >
-            <span className="toast-icon">{ICONS[type]}</span>
+            <span className="toast-icon" aria-hidden="true">{ICONS[type]}</span>
             <span className="toast-message">{message}</span>
             <button className="toast-close" onClick={() => onDismiss(id)} aria-label="Dismiss notification">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

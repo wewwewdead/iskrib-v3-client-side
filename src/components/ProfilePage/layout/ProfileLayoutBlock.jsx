@@ -9,19 +9,7 @@ import OpinionsPreview from "./previewCards/OpinionsPreview";
 import StoriesPreview from "./previewCards/StoriesPreview";
 import PreviewEmptyState from "./previewCards/PreviewEmptyState";
 import PreviewSkeleton from "./previewCards/PreviewSkeleton";
-import { EMPTY_STATE_COPY, sortOpinions, sortStories } from "./previewCards/previewUtils";
-
-/** Merge pinned writings ahead of latest writings, deduped by id (pinned_first). */
-const mergePinnedFirst = (pinned, latest) => {
-    const seen = new Set();
-    const out = [];
-    for (const item of [...(pinned || []), ...(latest || [])]) {
-        if (!item || seen.has(item.id)) continue;
-        seen.add(item.id);
-        out.push(item);
-    }
-    return out;
-};
+import { EMPTY_STATE_COPY, resolveBlockItems } from "./previewCards/previewUtils";
 
 /**
  * Renders a single configured layout block with REAL lightweight content (V3B).
@@ -73,29 +61,9 @@ const ProfileLayoutBlock = ({
     // header, or "View all") opens a modal showing ALL of that block's content.
     const openModal = () => setShowModal(true);
 
-    // Resolve the items for this block, applying V3C source controls:
-    //  - writings + pinned_first → pinned writings ahead of latest (deduped)
-    //  - opinions + most_discussed → sort by reply_count (within the preview)
-    //  - stories + popular → sort by vote_count/read_count (within the preview)
-    const resolveItems = () => {
-        switch (block.type) {
-            case "writings":
-                return content.source === "pinned_first"
-                    ? mergePinnedFirst(preview?.pinnedWritings, preview?.writings)
-                    : preview?.writings || [];
-            case "media":
-                return preview?.media || [];
-            case "opinions":
-                return sortOpinions(preview?.opinions || [], content.source);
-            case "stories":
-                return sortStories(preview?.stories || [], content.source);
-            case "pinned_writings":
-                return preview?.pinnedWritings || [];
-            default:
-                return [];
-        }
-    };
-    const items = resolveItems();
+    // Resolve the items for this block, applying V3C source controls (shared with
+    // the builder preview via resolveBlockItems so the two never drift).
+    const items = resolveBlockItems(block.type, content.source, preview);
 
     const ownerAction = () => {
         switch (block.type) {

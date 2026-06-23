@@ -7,8 +7,8 @@ const ToastContainer = ({ toasts, onDismiss }) => {
     return createPortal(
         <div className="toast-container" aria-label="Notifications">
             <AnimatePresence mode="popLayout">
-                {toasts.map((t) => (
-                    <Toast key={t.id} {...t} onDismiss={onDismiss} />
+                {toasts.map((t, i) => (
+                    <Toast key={t.id} {...t} index={i} total={toasts.length} onDismiss={onDismiss} />
                 ))}
             </AnimatePresence>
         </div>,

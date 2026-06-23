@@ -28,6 +28,36 @@ const BASES = [
     { key: "tint", label: "Tint", rgb: null }, // derived from accent
 ];
 
+// Curated one-tap palettes — common, good-looking choices so the raw color
+// picker is the exception, not the rule.
+const TEXT_SWATCHES = ["#FFFFFF", "#F0EBE3", "#1A1612", "#3B2F22", "#5E5851", "#A7B2C8"];
+const ACCENT_SWATCHES = [
+    "#D4A853", "#E07A5F", "#EF476F", "#9B5DE5", "#4F8DFB", "#06B6D4", "#2A9D8F", "#F4A261",
+];
+
+/** A row of one-tap color swatches; the matching swatch is ringed as active. */
+const SwatchRow = ({ colors, value, onPick }) => {
+    const current = (value || "").toLowerCase();
+    return (
+        <div className="pt-swatch-row" role="group" aria-label="Quick colors">
+            {colors.map((c) => {
+                const active = current === c.toLowerCase();
+                return (
+                    <button
+                        key={c}
+                        type="button"
+                        className={`pt-swatch${active ? " is-active" : ""}`}
+                        style={{ "--sw": c }}
+                        aria-label={`Use ${c}`}
+                        aria-pressed={active}
+                        onClick={() => onPick(c)}
+                    />
+                );
+            })}
+        </div>
+    );
+};
+
 const ColorsPanel = ({
     theme,
     onPatchColors,
@@ -128,6 +158,7 @@ const ColorsPanel = ({
                         </button>
                     )}
                 </div>
+                <SwatchRow colors={TEXT_SWATCHES} value={textValue} onPick={setText} />
             </div>
 
             <div className="pt-field">
@@ -141,6 +172,11 @@ const ColorsPanel = ({
                     />
                     <span className="pt-color-value">{theme.colors.accent}</span>
                 </div>
+                <SwatchRow
+                    colors={ACCENT_SWATCHES}
+                    value={theme.colors.accent}
+                    onPick={(c) => onPatchColors({ accent: c })}
+                />
             </div>
 
             <div className="pt-field">

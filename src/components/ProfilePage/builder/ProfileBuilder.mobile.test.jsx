@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Force the mobile shell on: useMediaQuery always reports a match so the builder
 // renders its bottom-sheet / canvas-first layout regardless of jsdom's viewport.
@@ -7,9 +8,12 @@ vi.mock("react-responsive", () => ({
     useMediaQuery: () => true,
 }));
 
-// No real save request.
+// No real save request; preview fetch resolves empty.
 vi.mock("../../../../API/Api", () => ({
     updateProfileTheme: vi.fn(() => Promise.resolve({ profileTheme: null })),
+    getProfilePreview: vi.fn(() =>
+        Promise.resolve({ writings: [], media: [], opinions: [], stories: [], pinnedWritings: [] })
+    ),
 }));
 
 import ProfileBuilder from "./ProfileBuilder";
@@ -23,24 +27,37 @@ const userData = {
     background: null,
 };
 
+const builderEl = (props = {}, overrides = {}) => (
+    <ProfileBuilder
+        open
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        userData={userData}
+        initialTheme={null}
+        token="t"
+        followerCount={3}
+        followingCount={5}
+        {...props}
+        {...overrides}
+    />
+);
+
 const setup = (props = {}) => {
     const onClose = vi.fn();
     const onSaved = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const utils = render(
-        <ProfileBuilder
-            open
-            onClose={onClose}
-            onSaved={onSaved}
-            userData={userData}
-            initialTheme={null}
-            token="t"
-            followerCount={3}
-            followingCount={5}
-            {...props}
-        />
+        <QueryClientProvider client={client}>{builderEl({ onClose, onSaved, ...props })}</QueryClientProvider>
     );
     const builder = () => utils.container.querySelector(".pt-builder");
-    return { ...utils, onClose, onSaved, builder };
+    return { ...utils, onClose, onSaved, builder, client };
+};
+
+// Tap the sheet grabber: a pointer press/release with no vertical travel reads as
+// a tap and cycles the sheet (swiping up/down steps between snap points instead).
+const tapGrabber = (grabber) => {
+    fireEvent.pointerDown(grabber, { clientY: 100 });
+    fireEvent.pointerUp(grabber, { clientY: 100 });
 };
 
 describe("ProfileBuilder — mobile shell", () => {
@@ -72,15 +89,28 @@ describe("ProfileBuilder — mobile shell", () => {
         expect(builder()).not.toHaveClass("sheet-collapsed");
     });
 
-    it("the sheet grabber cycles collapsed → half → expanded → collapsed", () => {
+    it("tapping the sheet grabber cycles collapsed → half → expanded → collapsed", () => {
         const { builder } = setup();
         const grabber = screen.getByRole("button", { name: /tools —/i });
         expect(builder()).toHaveClass("sheet-collapsed");
-        fireEvent.click(grabber);
+        tapGrabber(grabber);
         expect(builder()).toHaveClass("sheet-half");
-        fireEvent.click(grabber);
+        tapGrabber(grabber);
         expect(builder()).toHaveClass("sheet-expanded");
-        fireEvent.click(grabber);
+        tapGrabber(grabber);
+        expect(builder()).toHaveClass("sheet-collapsed");
+    });
+
+    it("swiping the grabber up opens the sheet, swiping down closes it", () => {
+        const { builder } = setup();
+        const grabber = screen.getByRole("button", { name: /tools —/i });
+        // Swipe up (negative dy) → collapsed → half.
+        fireEvent.pointerDown(grabber, { clientY: 200 });
+        fireEvent.pointerUp(grabber, { clientY: 150 });
+        expect(builder()).toHaveClass("sheet-half");
+        // Swipe down (positive dy) → half → collapsed.
+        fireEvent.pointerDown(grabber, { clientY: 150 });
+        fireEvent.pointerUp(grabber, { clientY: 200 });
         expect(builder()).toHaveClass("sheet-collapsed");
     });
 
@@ -91,19 +121,10 @@ describe("ProfileBuilder — mobile shell", () => {
     });
 
     it("locks body scroll while open and restores it on close", () => {
-        const { rerender } = setup();
+        const { rerender, client } = setup();
         expect(document.body.style.overflow).toBe("hidden");
         rerender(
-            <ProfileBuilder
-                open={false}
-                onClose={vi.fn()}
-                onSaved={vi.fn()}
-                userData={userData}
-                initialTheme={null}
-                token="t"
-                followerCount={3}
-                followingCount={5}
-            />
+            <QueryClientProvider client={client}>{builderEl({}, { open: false })}</QueryClientProvider>
         );
         expect(document.body.style.overflow).not.toBe("hidden");
     });

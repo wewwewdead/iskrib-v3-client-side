@@ -114,6 +114,24 @@
   --shadow-hover-lift: 0 6px 20px rgba(80,60,40,0.10), 0 2px 6px rgba(80,60,40,0.06);
   --shadow-warm-glow: 0 0 0 1px rgba(212,168,83,0.25), 0 8px 28px rgba(212,168,83,0.18);
 
+  /* ── Cozy-editorial nav + toast tokens (one family across every nav surface) ──
+     Most reference existing theme-aware tokens so they adapt to every app theme;
+     only the frosted-glass bg + crisp shadow carry explicit light/dark values. */
+  --nav-active-bg: var(--accent-amber-soft);
+  --nav-active-fg: var(--accent-amber-strong);
+  --nav-hover-bg: var(--bg-pill);
+  --nav-shadow: 0 8px 28px rgba(80,60,40,0.12), 0 2px 8px rgba(80,60,40,0.07);
+  --nav-glass-bg: rgba(254,254,254,0.78);
+  --nav-glass-border: var(--bg-glass-border);
+
+  --toast-surface: var(--bg-elevated);
+  --toast-border: var(--border-light);
+  --toast-shadow: 0 8px 28px rgba(80,60,40,0.16), 0 2px 6px rgba(80,60,40,0.10);
+  --toast-accent-success: var(--color-success);
+  --toast-accent-error: var(--color-danger);
+  --toast-accent-warning: var(--accent-amber-strong);
+  --toast-accent-info: var(--accent-sage);
+
   /* global */
   color-scheme: light;
   color: var(--text-primary);
@@ -198,6 +216,12 @@ body,
   --accent-amber-soft: rgba(224,186,106,0.14);
   --shadow-hover-lift: 0 6px 20px rgba(0,0,0,0.30), 0 2px 6px rgba(0,0,0,0.20);
   --shadow-warm-glow: 0 0 0 1px rgba(224,186,106,0.25), 0 8px 28px rgba(224,186,106,0.16);
+
+  /* Cozy-editorial nav + toast (dark) — glass + crisp shadow need real values;
+     the var()-referencing tokens auto-adapt via the dark palette above. */
+  --nav-shadow: 0 8px 28px rgba(0,0,0,0.34), 0 2px 8px rgba(0,0,0,0.22);
+  --nav-glass-bg: rgba(32,30,27,0.82);
+  --toast-shadow: 0 10px 30px rgba(0,0,0,0.42), 0 2px 6px rgba(0,0,0,0.30);
 
   color-scheme: dark;
   color: var(--text-primary);

@@ -56,15 +56,23 @@
         gap: 1rem;
         padding: 0.5rem;
     }
+    /* Ghost button — quiet and warm, not a loud solid-dark block. */
     .sidebar-signout-bttn{
         display: flex;
         justify-content: center;
         align-items: center;
-        font-weight: 660;
-        padding: 0.5rem 0.8rem;
-        border-radius: 10px;
-        background-color: var(--accent-dark);
-        color: rgb(255, 255, 255);
+        font-weight: 640;
+        padding: 0.45rem 0.9rem;
+        border-radius: var(--radius-pill, 999px);
+        background-color: var(--bg-pill);
+        border: 1px solid var(--border-light);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    }
+    .sidebar-signout-bttn:hover{
+        background-color: var(--nav-hover-bg);
+        color: var(--text-primary);
     }
     .sidebar-profile-avatar-container{
         display: flex;
@@ -95,26 +103,33 @@
     .sidebar-nav-container{
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         justify-content: center;
-        padding: 0.5rem;
+        padding: 0.12rem 0.4rem;
         font-weight: 660;
+        cursor: pointer;
     }
-    .sidebar-nav-bttn{
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-        padding: 0.2rem 0.1rem;
-        color: var(--text-body);
-    }
+    .sidebar-nav-bttn,
     .sidebar-nav-bttn-active{
         display: flex;
-        justify-content: flex-start;
+        justify-content: space-between;
         align-items: center;
-        padding: 0.2rem 0.2rem;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.55rem 0.7rem;
+        border-radius: var(--radius-md, 12px);
+        transition: background-color 0.16s var(--ease-out-quart, ease), color 0.16s ease;
+    }
+    .sidebar-nav-bttn{
+        color: var(--text-body);
+    }
+    .sidebar-nav-container:hover .sidebar-nav-bttn{
+        background-color: var(--nav-hover-bg);
         color: var(--text-primary);
-        background-color: var(--bg-hover);
-        border-radius: 5px;
+    }
+    .sidebar-nav-bttn-active{
+        color: var(--nav-active-fg);
+        background-color: var(--nav-active-bg);
     }
 
     /* ── Notification badge in sidebar ── */

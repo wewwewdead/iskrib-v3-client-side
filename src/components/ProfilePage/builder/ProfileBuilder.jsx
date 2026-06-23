@@ -17,6 +17,7 @@ import LayoutPanel from "./panels/LayoutPanel";
 import SectionsPanel from "./panels/SectionsPanel";
 import StickersPanel from "./panels/StickersPanel";
 import HeroElementEditor from "./panels/HeroElementEditor";
+import useThemeHistory from "./useThemeHistory";
 
 const TABS = [
     { key: "presets", label: "Presets" },
@@ -36,6 +37,12 @@ const reindexBlocks = (blocks) => blocks.map((b, i) => ({ ...b, order: i }));
 // Mobile bottom-sheet states, cycled by the sheet grabber. "collapsed" keeps the
 // canvas in focus (Preview mode); "half"/"expanded" surface the tool panel.
 const SHEET_NEXT = { collapsed: "half", half: "expanded", expanded: "collapsed" };
+// Ordered snap points for the swipe gesture (drag up = open more, down = close).
+const SHEET_ORDER = ["collapsed", "half", "expanded"];
+const SHEET_SWIPE_THRESHOLD = 26; // px of travel before a drag counts as a swipe
+// Tabs that already act on the selected container — tapping a block keeps you
+// here instead of yanking you over to Layout.
+const CONTAINER_AWARE_TABS = new Set(["layout", "cards"]);
 
 const ProfileBuilder = ({
     open,
@@ -49,10 +56,21 @@ const ProfileBuilder = ({
 }) => {
     // Mobile gets a dedicated app-shell: a canvas-first preview with a bottom
     // sheet for tools. Desktop ignores all of this (the sheet state is harmless).
-    const isMobile = useMediaQuery({ query: "(max-width: 760px)" });
+    const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
     const [mobileSheetState, setMobileSheetState] = useState("collapsed");
     const [activeTab, setActiveTab] = useState("presets");
-    const [draft, setDraft] = useState(() => getDefaultProfileTheme(userData));
+    // Draft theme with full undo/redo history. `set` is aliased to `setDraft` so
+    // every existing mutation handler works unchanged; rapid drags coalesce into
+    // one undo entry inside the hook.
+    const {
+        draft,
+        set: setDraft,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
+        reset: resetHistory,
+    } = useThemeHistory(getDefaultProfileTheme(userData));
     // The container selected in the live preview. When set, the Cards tab edits
     // THAT container's card style instead of the page-wide default.
     const [selectedBlockType, setSelectedBlockType] = useState(null);
@@ -63,9 +81,6 @@ const ProfileBuilder = ({
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const [confirmingDiscard, setConfirmingDiscard] = useState(false);
-    // Snapshot of the presentation (colors/typography/cards) the LAST applied
-    // preset overwrote, so the user can undo a preset without losing tuning.
-    const [presetUndo, setPresetUndo] = useState(null);
     const [error, setError] = useState("");
     const closeTimerRef = useRef(null);
     // Serialized snapshot of the theme the session opened with. Lets us tell when
@@ -78,13 +93,12 @@ const ProfileBuilder = ({
             const init = initialTheme
                 ? normalizeProfileTheme(initialTheme, userData)
                 : getDefaultProfileTheme(userData);
-            setDraft(init);
+            resetHistory(init);
             baselineRef.current = JSON.stringify(init);
             setActiveTab("presets");
             setError("");
             setJustSaved(false);
             setConfirmingDiscard(false);
-            setPresetUndo(null);
             setSelectedBlockType(null);
             setSelectedStickerIndex(-1);
             setSelectedHeroEl(null);
@@ -92,7 +106,7 @@ const ProfileBuilder = ({
             // is picked, so the preview is fully visible the moment it opens.
             setMobileSheetState("collapsed");
         }
-    }, [open, initialTheme, userData]);
+    }, [open, initialTheme, userData, resetHistory]);
 
     // Lock the page behind the modal so the body never scrolls under the builder
     // (especially on mobile, where the overlay covers the full dynamic viewport).
@@ -109,6 +123,46 @@ const ProfileBuilder = ({
     const cycleSheet = useCallback(() => {
         setMobileSheetState((s) => SHEET_NEXT[s] || "half");
     }, []);
+
+    // Swipe the sheet up/down between snap points; a near-stationary press is a
+    // tap and just cycles. Pointer-captured so the gesture keeps tracking after
+    // the finger leaves the grabber (mirrors the StickerLayer drag pattern).
+    const sheetDragRef = useRef(null);
+    const onSheetPointerDown = useCallback((e) => {
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        sheetDragRef.current = { y: e.clientY, id: e.pointerId };
+    }, []);
+    const onSheetPointerUp = useCallback(
+        (e) => {
+            const st = sheetDragRef.current;
+            if (!st) return;
+            sheetDragRef.current = null;
+            e.currentTarget.releasePointerCapture?.(st.id);
+            const dy = e.clientY - st.y;
+            if (dy <= -SHEET_SWIPE_THRESHOLD) {
+                setMobileSheetState(
+                    (s) => SHEET_ORDER[Math.min(SHEET_ORDER.indexOf(s) + 1, SHEET_ORDER.length - 1)]
+                );
+            } else if (dy >= SHEET_SWIPE_THRESHOLD) {
+                setMobileSheetState((s) => SHEET_ORDER[Math.max(SHEET_ORDER.indexOf(s) - 1, 0)]);
+            } else {
+                cycleSheet();
+            }
+        },
+        [cycleSheet]
+    );
+
+    // Tap a container in the preview → surface its controls on mobile (the core
+    // "edit this container" gesture). Only fires from a real tap (onClick), never
+    // mid-drag, so reordering a block never shrinks the canvas out from under it.
+    const handleEditBlock = useCallback(
+        (type) => {
+            if (!isMobile || !type) return;
+            setMobileSheetState((s) => (s === "collapsed" ? "half" : s));
+            setActiveTab((t) => (CONTAINER_AWARE_TABS.has(t) ? t : "layout"));
+        },
+        [isMobile]
+    );
 
     // Picking a tool surfaces the sheet (half) on mobile if it's tucked away, so
     // the chosen panel is actually visible. Desktop just switches tabs.
@@ -148,60 +202,49 @@ const ProfileBuilder = ({
         onClose?.();
     }, [onClose]);
 
-    // Close on Escape — Escape backs out of the discard prompt first, then guards
-    // the close the same way the Cancel/× buttons do.
+    // Keyboard: Escape backs out of the discard prompt then guards the close
+    // (same as Cancel/×); Cmd/Ctrl+Z undoes, Cmd/Ctrl+Shift+Z (or Ctrl+Y) redoes.
     useEffect(() => {
         if (!open) return undefined;
         const onKeyDown = (e) => {
-            if (e.key !== "Escape") return;
-            if (confirmingDiscard) {
-                setConfirmingDiscard(false);
-            } else {
-                requestClose();
+            if (e.key === "Escape") {
+                if (confirmingDiscard) setConfirmingDiscard(false);
+                else requestClose();
+                return;
+            }
+            const mod = e.metaKey || e.ctrlKey;
+            if (!mod) return;
+            const key = e.key.toLowerCase();
+            if (key === "z") {
+                e.preventDefault();
+                if (e.shiftKey) redo();
+                else undo();
+            } else if (key === "y") {
+                e.preventDefault();
+                redo();
             }
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [open, confirmingDiscard, requestClose]);
+    }, [open, confirmingDiscard, requestClose, undo, redo]);
 
+    // Applying a preset is just a normal committed change now — global undo
+    // (Cmd/Ctrl+Z) restores the previous look, no special-case snapshot needed.
     const handleApplyPreset = useCallback((presetId) => {
-        // Remember the presentation we're about to replace so it can be undone.
-        setPresetUndo({
-            colors: draft.colors,
-            typography: draft.typography,
-            cards: draft.cards,
-            presetId: draft.presetId,
-        });
         setDraft((prev) => applyPresetToTheme(prev, presetId));
-    }, [draft]);
-
-    // Restore the presentation a preset overwrote (one level of undo).
-    const handleUndoPreset = useCallback(() => {
-        if (!presetUndo) return;
-        setDraft((prev) => ({
-            ...prev,
-            colors: { ...presetUndo.colors },
-            typography: { ...presetUndo.typography },
-            cards: { ...presetUndo.cards },
-            presetId: presetUndo.presetId,
-        }));
-        setPresetUndo(null);
-    }, [presetUndo]);
+    }, [setDraft]);
 
     const handlePatchColors = useCallback((partial) => {
-        setPresetUndo(null);
         setDraft((prev) => markCustom({ ...prev, colors: { ...prev.colors, ...partial } }));
-    }, []);
+    }, [setDraft]);
 
     const handlePatchTypography = useCallback((partial) => {
-        setPresetUndo(null);
         setDraft((prev) => markCustom({ ...prev, typography: { ...prev.typography, ...partial } }));
-    }, []);
+    }, [setDraft]);
 
     const handlePatchCards = useCallback((partial) => {
-        setPresetUndo(null);
         setDraft((prev) => markCustom({ ...prev, cards: { ...prev.cards, ...partial } }));
-    }, []);
+    }, [setDraft]);
 
     const handlePatchBackground = useCallback((partial) => {
         setDraft((prev) => markCustom({ ...prev, background: { ...(prev.background || {}), ...partial } }));
@@ -471,14 +514,7 @@ const ProfileBuilder = ({
     const activePanel = useMemo(() => {
         switch (activeTab) {
             case "presets":
-                return (
-                    <PresetsPanel
-                        theme={draft}
-                        onApplyPreset={handleApplyPreset}
-                        canUndo={!!presetUndo}
-                        onUndo={handleUndoPreset}
-                    />
-                );
+                return <PresetsPanel theme={draft} onApplyPreset={handleApplyPreset} />;
             case "colors":
                 return (
                     <ColorsPanel
@@ -556,8 +592,6 @@ const ProfileBuilder = ({
         activeTab,
         draft,
         handleApplyPreset,
-        handleUndoPreset,
-        presetUndo,
         handlePatchColors,
         handlePatchBackground,
         handlePatchTypography,
@@ -625,6 +659,34 @@ const ProfileBuilder = ({
                                       ? "Unsaved changes"
                                       : "All changes saved"}
                             </span>
+                            <div className="pt-builder-history" role="group" aria-label="Undo and redo">
+                                <button
+                                    type="button"
+                                    className="pt-builder-history-btn"
+                                    onClick={undo}
+                                    disabled={!canUndo}
+                                    aria-label="Undo"
+                                    title="Undo (Ctrl/Cmd+Z)"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <path d="M9 14 4 9l5-5" />
+                                        <path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5H9" />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    className="pt-builder-history-btn"
+                                    onClick={redo}
+                                    disabled={!canRedo}
+                                    aria-label="Redo"
+                                    title="Redo (Ctrl/Cmd+Shift+Z)"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <path d="m15 14 5-5-5-5" />
+                                        <path d="M20 9H9a5 5 0 0 0-5 5v0a5 5 0 0 0 5 5h6" />
+                                    </svg>
+                                </button>
+                            </div>
                             <button
                                 type="button"
                                 className="pt-builder-close"
@@ -654,6 +716,7 @@ const ProfileBuilder = ({
                                     onToggleBlock={handleToggleLayoutBlock}
                                     selectedType={selectedBlockType}
                                     onSelectType={setSelectedBlockType}
+                                    onEditBlock={handleEditBlock}
                                     onHeroChange={handleHeroChange}
                                     selectedHeroEl={selectedHeroEl}
                                     onSelectHeroEl={handleSelectHeroEl}
@@ -665,10 +728,17 @@ const ProfileBuilder = ({
                                     <button
                                         type="button"
                                         className="pt-sheet-header"
-                                        onClick={cycleSheet}
+                                        onPointerDown={onSheetPointerDown}
+                                        onPointerUp={onSheetPointerUp}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                cycleSheet();
+                                            }
+                                        }}
                                         aria-expanded={mobileSheetState !== "collapsed"}
-                                        aria-label={`Tools — ${sheetTitle}. ${
-                                            mobileSheetState === "expanded" ? "Tap to collapse" : "Tap to expand"
+                                        aria-label={`Tools — ${sheetTitle}. Swipe up or down, or tap to ${
+                                            mobileSheetState === "expanded" ? "collapse" : "expand"
                                         }`}
                                     >
                                         <span className="pt-sheet-grabber-pill" aria-hidden="true" />
@@ -719,7 +789,19 @@ const ProfileBuilder = ({
                                                 </button>
                                             ))}
                                         </nav>
-                                        <div className="pt-builder-panel-scroll">{activePanel}</div>
+                                        <div className="pt-builder-panel-scroll">
+                                            <AnimatePresence mode="wait" initial={false}>
+                                                <Motion.div
+                                                    key={activeTab}
+                                                    initial={{ opacity: 0, y: 6 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -4 }}
+                                                    transition={{ duration: 0.16, ease: [0.25, 1, 0.5, 1] }}
+                                                >
+                                                    {activePanel}
+                                                </Motion.div>
+                                            </AnimatePresence>
+                                        </div>
                                     </>
                                 )}
                             </section>

@@ -23,14 +23,16 @@
     height: fit-content;
     width: 90%;
     margin-top: 1rem;
-    padding: 0.9rem 0.8rem;
-    /* FINDING-003: demoted from a saturated solid #D4A853 block (which
-       out-shouted the feed) to a calm gold-tinted card. The dark CTA button
-       below is now the section's focal action, not the whole panel. */
-    border: 1px solid rgba(212, 168, 83, 0.4);
+    padding: 1rem 0.9rem;
+    /* A calm, cozy card — a soft surface with a hairline + gentle lift, rather
+       than a gold-tinted box that reads like a warning. The CTA button below is
+       the focal action. A faint amber top accent keeps the editorial warmth. */
+    border: 1px solid var(--border-light);
+    border-top: 2px solid var(--accent-amber-soft);
     gap: 0.8rem;
-    background-color: rgba(212, 168, 83, 0.12);
-    border-radius: 15px;
+    background-color: var(--bg-elevated);
+    border-radius: var(--radius-room, 16px);
+    box-shadow: var(--shadow-card);
 }
 .signal-header{
     font-weight: 700;
@@ -43,15 +45,22 @@
 .write-opinions-bttn {
   cursor: pointer;
   border: none;
-  padding: 0.5rem 0.8rem;
-  color: rgb(255, 255, 255);
-  font-weight: 650;
-  border-radius: 15px;
-  background-color: rgb(4, 20, 29);
-  transition: ease-in-out 0.2s;
+  padding: 0.55rem 0.95rem;
+  /* Warm amber CTA — on-brand and theme-safe (a dark button would vanish on the
+     dark card). Fixed deep-brown text keeps contrast in both themes. */
+  color: #2b2208;
+  font-weight: 680;
+  border-radius: var(--radius-pill, 999px);
+  background-color: var(--accent-amber);
+  transition: background-color 0.2s ease, transform 0.18s var(--ease-out-quart, ease), box-shadow 0.2s ease;
 }
 .write-opinions-bttn:hover{
-    background-color: #B8862D;
+    background-color: var(--accent-amber-strong);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-warm-glow);
+}
+@media (prefers-reduced-motion: reduce){
+    .write-opinions-bttn:hover{ transform: none; }
 }
 
 .latest-opinions-container{
@@ -659,7 +668,7 @@
     transition: background-color 0.15s ease;
 }
 .so-card-wrapper:hover {
-    background-color: rgba(128, 128, 128, 0.03);
+    background-color: var(--nav-hover-bg);
 }
 .so-avatar-outer {
     flex-shrink: 0;

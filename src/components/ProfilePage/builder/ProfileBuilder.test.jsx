@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Mock the API the builder saves through so no real request is made.
+// Mock the API the builder saves through (and the preview fetch) so no real
+// request is made.
 vi.mock("../../../../API/Api", () => ({
     updateProfileTheme: vi.fn(() => Promise.resolve({ profileTheme: null })),
+    getProfilePreview: vi.fn(() =>
+        Promise.resolve({ writings: [], media: [], opinions: [], stories: [], pinnedWritings: [] })
+    ),
 }));
 
 import ProfileBuilder from "./ProfileBuilder";
@@ -21,18 +26,21 @@ const userData = {
 const setup = (props = {}) => {
     const onClose = vi.fn();
     const onSaved = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const utils = render(
-        <ProfileBuilder
-            open
-            onClose={onClose}
-            onSaved={onSaved}
-            userData={userData}
-            initialTheme={null}
-            token="t"
-            followerCount={3}
-            followingCount={5}
-            {...props}
-        />
+        <QueryClientProvider client={client}>
+            <ProfileBuilder
+                open
+                onClose={onClose}
+                onSaved={onSaved}
+                userData={userData}
+                initialTheme={null}
+                token="t"
+                followerCount={3}
+                followingCount={5}
+                {...props}
+            />
+        </QueryClientProvider>
     );
     return { ...utils, onClose, onSaved };
 };
@@ -84,16 +92,20 @@ describe("ProfileBuilder — unsaved-changes guard", () => {
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 
-    it("lets the user undo a preset, restoring the previous presentation", () => {
+    it("global undo reverts a preset back to the opening baseline", () => {
         setup();
-        makeDirty(); // clicking a preset applies it
-        expect(screen.getByRole("status")).toHaveTextContent("Unsaved changes");
-        // The undo affordance appears…
+        // Undo starts disabled (nothing to undo yet).
         const undoBtn = screen.getByRole("button", { name: /^undo$/i });
+        expect(undoBtn).toBeDisabled();
+
+        makeDirty(); // clicking a preset applies it — a committed, undoable change
+        expect(screen.getByRole("status")).toHaveTextContent("Unsaved changes");
+        expect(undoBtn).toBeEnabled();
+
         fireEvent.click(undoBtn);
-        // …and reverts cleanly back to the opening baseline.
+        // …reverts cleanly back to the opening baseline, and undo disables again.
         expect(screen.getByRole("status")).toHaveTextContent("All changes saved");
-        expect(screen.queryByRole("button", { name: /^undo$/i })).not.toBeInTheDocument();
+        expect(undoBtn).toBeDisabled();
     });
 
     it("saves the draft and reports a saved state", async () => {

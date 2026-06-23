@@ -1,7 +1,22 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// The preview fetches the user's real content via React Query; mock it so the
+// tests stay offline and deterministic (they assert layout/interaction, not data).
+vi.mock("../../../../API/Api", () => ({
+    getProfilePreview: vi.fn(() =>
+        Promise.resolve({ writings: [], media: [], opinions: [], stories: [], pinnedWritings: [] })
+    ),
+}));
+
 import BuilderPreview from "./BuilderPreview";
 import { getDefaultProfileTheme } from "./profileThemeUtils";
+
+const renderWithClient = (ui) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+};
 
 const userData = {
     name: "Alice",
@@ -23,7 +38,7 @@ const editHandlers = () => ({
 const setup = (props = {}) => {
     const handlers = editHandlers();
     const theme = getDefaultProfileTheme(userData);
-    const utils = render(
+    const utils = renderWithClient(
         <BuilderPreview
             theme={theme}
             userData={userData}
@@ -41,7 +56,7 @@ describe("BuilderPreview — sticker selection", () => {
         const onSelectSticker = vi.fn();
         const theme = getDefaultProfileTheme(userData);
         theme.stickers = [{ id: "star-01", x: 50, y: 30, rotation: 0, scale: 1 }];
-        const { container } = render(
+        const { container } = renderWithClient(
             <BuilderPreview
                 theme={theme}
                 userData={userData}
@@ -60,7 +75,7 @@ describe("BuilderPreview — sticker selection", () => {
         const onSelectSticker = vi.fn();
         const theme = getDefaultProfileTheme(userData);
         theme.stickers = [{ id: "star-01", x: 50, y: 30, rotation: 0, scale: 1 }];
-        const { container } = render(
+        const { container } = renderWithClient(
             <BuilderPreview
                 theme={theme}
                 userData={userData}
@@ -182,7 +197,7 @@ describe("BuilderPreview — interactive layout canvas", () => {
     });
 
     it("falls back to a read-only grid when no edit handlers are supplied", () => {
-        render(
+        renderWithClient(
             <BuilderPreview
                 theme={getDefaultProfileTheme(userData)}
                 userData={userData}

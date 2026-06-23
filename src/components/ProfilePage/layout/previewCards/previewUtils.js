@@ -78,6 +78,43 @@ export const sortStories = (items, source) => {
     );
 };
 
+/** Merge pinned writings ahead of latest writings, deduped by id (pinned_first). */
+export const mergePinnedFirst = (pinned, latest) => {
+    const seen = new Set();
+    const out = [];
+    for (const item of [...(pinned || []), ...(latest || [])]) {
+        if (!item || seen.has(item.id)) continue;
+        seen.add(item.id);
+        out.push(item);
+    }
+    return out;
+};
+
+/**
+ * Resolve the items for a layout block from the fetched profile preview, applying
+ * the block's V3C `source` control (pinned_first / most_discussed / popular).
+ * Shared by the live profile (ProfileLayoutBlock) and the builder's live preview
+ * so the two never drift. Pure + non-mutating.
+ */
+export const resolveBlockItems = (type, source, preview) => {
+    switch (type) {
+        case "writings":
+            return source === "pinned_first"
+                ? mergePinnedFirst(preview?.pinnedWritings, preview?.writings)
+                : preview?.writings || [];
+        case "media":
+            return preview?.media || [];
+        case "opinions":
+            return sortOpinions(preview?.opinions || [], source);
+        case "stories":
+            return sortStories(preview?.stories || [], source);
+        case "pinned_writings":
+            return preview?.pinnedWritings || [];
+        default:
+            return [];
+    }
+};
+
 const STORY_STATUS_LABEL = {
     ongoing: "Ongoing",
     completed: "Completed",

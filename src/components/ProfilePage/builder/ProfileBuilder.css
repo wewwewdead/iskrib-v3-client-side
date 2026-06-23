@@ -30,7 +30,7 @@
     --pt-touch-target: 44px;
     --pt-mobile-radius: 18px;
     --pt-mobile-sheet-collapsed: 7.75rem;
-    --pt-mobile-sheet-half: 58%;
+    --pt-mobile-sheet-half: 72%;
     --pt-mobile-sheet-expanded: 100%;
 
     display: flex;
@@ -130,11 +130,52 @@
     background: rgba(22, 163, 74, 0.14);
 }
 
+/* Undo / redo — compact icon buttons between the status pill and the close X. */
+.pt-builder-history {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    align-self: center;
+    margin-right: 0.55rem;
+}
+
+.pt-builder-history-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: none;
+    background: var(--bg-glass, rgba(0, 0, 0, 0.05));
+    color: inherit;
+    cursor: pointer;
+    transition: background 0.18s ease, opacity 0.18s ease, transform 0.12s ease;
+}
+
+.pt-builder-history-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.pt-builder-history-btn:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+.pt-builder-history-btn:disabled {
+    opacity: 0.32;
+    cursor: default;
+}
+
 /* Hide the status pill on narrow screens — the footer Save button carries the
-   saved/saving state there, and header space is tight on mobile. */
+   saved/saving state there, and header space is tight on mobile. The history
+   group then takes the auto-margin so it stays pinned beside the close button. */
 @media (max-width: 560px) {
     .pt-builder-status {
         display: none;
+    }
+
+    .pt-builder-history {
+        margin-left: auto;
     }
 }
 
@@ -401,6 +442,33 @@
 .pt-field input[type="range"] {
     width: 100%;
     accent-color: #D4A853;
+}
+
+/* One-tap color swatches under the colour inputs. */
+.pt-swatch-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+}
+
+.pt-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--sw);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.16s ease;
+}
+
+.pt-swatch:hover {
+    transform: scale(1.12);
+}
+
+.pt-swatch.is-active {
+    box-shadow: 0 0 0 2px var(--bg-elevated, #fff), 0 0 0 4px var(--pt-accent, #d4a853);
 }
 
 /* Presets */
@@ -1139,12 +1207,22 @@
 
 .pt-pblock.is-selected {
     outline-color: var(--pt-accent, #d4a853);
+    box-shadow: 0 0 0 4px rgba(212, 168, 83, 0.12);
 }
 
 .pt-pblock.is-dragging {
     z-index: 6;
     cursor: grabbing;
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+}
+
+/* The block's real-content body is display-only: every pointer gesture
+   (tap-select, drag-reorder, edge-resize) must land on the block shell, never on
+   a card inside it. The real preview cards style themselves via profileLayout.css. */
+.pt-pblock__realbody {
+    pointer-events: none;
+    width: 100%;
+    min-width: 0;
 }
 
 .pt-pblock.is-resizing {
@@ -1350,25 +1428,45 @@
         conic-gradient(from 180deg, #d4a853, #e0556e, #5a8dee, #3fb27f, #d4a853);
 }
 
+/* Custom-color swatch: ONE clean "colour wheel" control. The native colour
+   input is laid over it at opacity:0, so the browser never draws its OWN swatch
+   inside the styled circle — that nested native swatch (esp. on iOS Safari) read
+   as a second colour picker. The conic rainbow reads as "pick any colour"; the
+   invisible input is the actual trigger. */
 .pt-sticker-color--custom {
     position: relative;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background:
-        repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 / 10px 10px;
+    padding: 0;
+    background: conic-gradient(from 0deg, #e0556e, #d4a853, #3fb27f, #5a8dee, #a06cd5, #e0556e);
 }
 
 .pt-sticker-color--custom input[type="color"] {
     position: absolute;
-    inset: -4px;
-    width: calc(100% + 8px);
-    height: calc(100% + 8px);
-    border: none;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
     padding: 0;
-    background: transparent;
+    border: none;
+    opacity: 0;
     cursor: pointer;
+}
+
+/* A "+" marks this as the pick-your-own swatch, distinct from the rainbow
+   "Theme accent" default. pointer-events:none so the tap reaches the input. */
+.pt-sticker-color--custom::after {
+    content: "+";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
 }
 
 .pt-sticker-val {
@@ -1635,7 +1733,7 @@
 }
 
 /* ── Mobile: canvas-first shell with a bottom sheet for tools ─────────────── */
-@media (max-width: 760px) {
+@media (max-width: 768px) {
     .pt-builder-overlay {
         padding: 0;
     }
@@ -1671,6 +1769,11 @@
         width: var(--pt-touch-target);
         height: var(--pt-touch-target);
         font-size: 1.7rem;
+    }
+
+    .pt-builder-history-btn {
+        width: var(--pt-touch-target);
+        height: var(--pt-touch-target);
     }
 
     /* The body is the canvas stage; the tools sheet is layered over it. */
@@ -1777,7 +1880,9 @@
         transform: rotate(180deg);
     }
 
-    /* Tabs become a horizontally scrollable rail (no wrapping). */
+    /* Tabs become a horizontally scrollable rail (no wrapping). The right-edge
+       mask fade is a standing cue that the rail scrolls horizontally (there's no
+       hover scrollbar on touch), so no tools get silently hidden off-screen. */
     .pt-builder-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -1788,6 +1893,8 @@
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         flex-shrink: 0;
+        -webkit-mask-image: linear-gradient(to right, #000 86%, transparent 100%);
+        mask-image: linear-gradient(to right, #000 86%, transparent 100%);
     }
 
     .pt-builder-tabs::-webkit-scrollbar {
@@ -1932,6 +2039,25 @@
     }
 
     .pt-sticker-color {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Comfortable colour input + 16px form text so iOS Safari never auto-zooms
+       the page when a select / text field is focused. */
+    .pt-color-input-row input[type="color"] {
+        width: var(--pt-touch-target);
+        height: var(--pt-touch-target);
+    }
+
+    .pt-builder select,
+    .pt-builder input[type="text"],
+    .pt-builder input[type="number"],
+    .pt-builder textarea {
+        font-size: 16px;
+    }
+
+    .pt-swatch {
         width: 34px;
         height: 34px;
     }

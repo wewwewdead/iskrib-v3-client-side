@@ -118,7 +118,7 @@ const MobileNavlink = () => {
                     return (
                         <div
                             key={index}
-                            className="mobile-navlink-item"
+                            className={`mobile-navlink-item ${isActive ? 'is-active' : ''}`}
                             onClick={() => link.action(link.path)}
                         >
                             <div className="mobile-navlink-icons">
@@ -127,7 +127,6 @@ const MobileNavlink = () => {
                             <p className={`mobile-navlink-label ${isActive ? 'mobile-navlink-label-active' : ''}`}>
                                 {link.label}
                             </p>
-                            {isActive && <div className="mobile-navlink-active-dot" />}
                         </div>
                     );
                 })}
