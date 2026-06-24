@@ -9,6 +9,7 @@ vi.mock("../../../../API/Api", () => ({
     getProfilePreview: vi.fn(() =>
         Promise.resolve({ writings: [], media: [], opinions: [], stories: [], pinnedWritings: [] })
     ),
+    getProfileGuestbook: vi.fn(() => Promise.resolve({ entries: [] })),
 }));
 
 import ProfileBuilder from "./ProfileBuilder";
@@ -65,6 +66,36 @@ describe("ProfileBuilder — unsaved-changes guard", () => {
         expect(screen.getByRole("status")).toHaveTextContent("All changes saved");
         fireEvent.click(screen.getByRole("button", { name: /close customizer/i }));
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders the desktop tool rail as icon tabs with tooltips (tools, not words)", () => {
+        setup();
+        const colorsTab = screen.getByRole("tab", { name: "Colors" });
+        // Tooltip carrier + icon, but no visible word label on the button itself.
+        expect(colorsTab).toHaveClass("pt-tip");
+        expect(colorsTab).toHaveAttribute("data-tip", "Colors");
+        expect(colorsTab.querySelector("svg")).toBeTruthy();
+        expect(colorsTab).not.toHaveTextContent("Colors");
+        // Switching tab still works via the icon button.
+        fireEvent.click(colorsTab);
+        expect(colorsTab).toHaveAttribute("aria-selected", "true");
+    });
+
+    it("focuses the tool panel on one container when selected (desktop); Done returns to tabs", () => {
+        setup();
+        // Normal tabbed panel to start.
+        expect(screen.getByRole("tab", { name: "Colors" })).toBeInTheDocument();
+
+        // Selecting a container in the canvas focuses the panel on ONLY its editor.
+        fireEvent.click(document.querySelector(".pt-pblock"));
+        expect(screen.getByText(/only this container is affected/i)).toBeInTheDocument();
+        // The global tabs are hidden while a container is focused.
+        expect(screen.queryByRole("tab", { name: "Colors" })).not.toBeInTheDocument();
+
+        // "Done" exits back to the normal tabbed panel.
+        fireEvent.click(screen.getByRole("button", { name: /^done$/i }));
+        expect(screen.getByRole("tab", { name: "Colors" })).toBeInTheDocument();
+        expect(screen.queryByText(/only this container is affected/i)).not.toBeInTheDocument();
     });
 
     it("marks the draft dirty after an edit", () => {

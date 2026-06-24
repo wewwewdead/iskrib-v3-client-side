@@ -60,6 +60,8 @@
     box-shadow: var(--pt-card-shadow, 0 8px 32px rgba(0, 0, 0, 0.1));
     backdrop-filter: var(--pt-card-blur, none);
     -webkit-backdrop-filter: var(--pt-card-blur, none);
+    /* Surfaces that carry their own ink (paper) stay legible; others inherit. */
+    color: var(--pt-card-text, inherit);
 }
 
 .pl-block--glass {
@@ -101,9 +103,10 @@
 
 .pl-block-title {
     margin: 0;
-    font-family: var(--pt-font, inherit);
-    font-size: calc(1.1rem * var(--pt-scale, 1));
-    font-weight: 600;
+    font-family: var(--pl-font, var(--pt-font, inherit));
+    font-size: calc(1.1rem * var(--pt-scale, 1) * var(--pl-title-size, 1));
+    font-weight: var(--pl-title-weight, 600);
+    letter-spacing: var(--pl-title-spacing, normal);
     color: inherit;
 }
 
@@ -117,7 +120,7 @@
     flex-shrink: 0;
     background: none;
     border: none;
-    color: var(--pt-accent, #d4a853);
+    color: var(--pl-accent, var(--pt-accent, #d4a853));
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
@@ -492,7 +495,7 @@
 }
 
 .pl-writing-title {
-    font-family: var(--pt-font, inherit);
+    font-family: var(--pl-font, var(--pt-font, inherit));
     font-weight: 600;
     font-size: calc(0.92rem * var(--pt-scale, 1));
     line-height: 1.3;
@@ -538,7 +541,7 @@
 }
 
 .pl-writing-lead-title {
-    font-family: var(--pt-font, inherit);
+    font-family: var(--pl-font, var(--pt-font, inherit));
     font-weight: 700;
     font-size: calc(1.05rem * var(--pt-scale, 1));
     line-height: 1.25;
@@ -707,7 +710,7 @@
 .pl-opinion {
     position: relative;
     padding: 0.55rem 0.7rem;
-    border-left: 2px solid var(--pt-accent, #d4a853);
+    border-left: 2px solid var(--pl-accent, var(--pt-accent, #d4a853));
     border-radius: 0 10px 10px 0;
     background-color: rgba(127, 127, 127, 0.08);
     display: flex;
@@ -762,7 +765,7 @@
     font-size: 1.6rem;
     opacity: 0.5;
     line-height: 1;
-    color: var(--pt-accent, #d4a853);
+    color: var(--pl-accent, var(--pt-accent, #d4a853));
 }
 
 /* ── Stories ─────────────────────────────────────────────────────────────── */
@@ -1055,4 +1058,198 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * V5 — Container Design Studio (per-block design controls).
+ *
+ * Every layout block (live page AND builder preview) carries .pl-block--design
+ * plus data-surface / data-tone / data-radius / data-shadow / data-border /
+ * data-padding / data-header / data-title-align / data-accent. Every value is a
+ * whitelisted enum (see profileThemeConstants.js / profileThemeValidation.js) and
+ * maps here to FIXED, safe CSS — no value comes from user input. One rule set
+ * styles the live page and the builder preview identically (both carry the class).
+ *
+ * Cascade order matters: surface sets the base background + its characteristic
+ * border; data-radius / data-shadow always own those; data-border only overrides
+ * for the non-default none/accent values (hairline keeps the surface's border);
+ * the minimal surface flattens last so it always reads as bare.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* Per-block accent (used by titles, view-all, opinion rules; falls back to theme). */
+.pl-block--design[data-accent="theme"] { --pl-accent: var(--pt-accent, #d4a853); }
+.pl-block--design[data-accent="amber"] { --pl-accent: #d4a853; }
+.pl-block--design[data-accent="blue"] { --pl-accent: #5a8dee; }
+.pl-block--design[data-accent="green"] { --pl-accent: #3fb27f; }
+.pl-block--design[data-accent="rose"] { --pl-accent: #e0556e; }
+
+/* Base box for a design-driven block. A per-container font (set inline as the
+   --pl-font var) cascades to all the block's text; unset falls back to the page
+   font. Custom text color / fill are applied inline (validated colors). */
+.pl-block--design {
+    background-color: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    font-family: var(--pl-font, var(--pt-font, inherit));
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* ── Surfaces (background + characteristic hairline border) ────────────────── */
+.pl-block--design[data-surface="glass"] {
+    background-color: var(--pt-card-bg, rgba(255, 255, 255, 0.12));
+    border-color: var(--pt-card-border-color, rgba(255, 255, 255, 0.28));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+.pl-block--design[data-surface="solid"] {
+    background-color: var(--pt-card-bg, rgba(255, 255, 255, 0.92));
+    border-color: var(--pt-card-border-color, rgba(127, 127, 127, 0.22));
+}
+.pl-block--design[data-surface="paper"] {
+    background-color: rgba(255, 250, 240, 0.94);
+    border-color: rgba(120, 95, 55, 0.2);
+    color: #3b2f1c;
+}
+.pl-block--design[data-surface="framed"] {
+    background-color: rgba(127, 127, 127, 0.06);
+    border: 2px solid var(--pl-accent, var(--pt-accent, #d4a853));
+}
+.pl-block--design[data-surface="minimal"] {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+/* ── Tone wash (subtle tint layered over the surface background) ───────────── */
+.pl-block--design[data-tone="warm"] { background-image: linear-gradient(rgba(212, 168, 83, 0.12), rgba(212, 168, 83, 0.12)); }
+.pl-block--design[data-tone="cool"] { background-image: linear-gradient(rgba(90, 141, 238, 0.12), rgba(90, 141, 238, 0.12)); }
+.pl-block--design[data-tone="ink"] { background-image: linear-gradient(rgba(18, 20, 32, 0.16), rgba(18, 20, 32, 0.16)); }
+.pl-block--design[data-tone="rose"] { background-image: linear-gradient(rgba(224, 85, 110, 0.12), rgba(224, 85, 110, 0.12)); }
+.pl-block--design[data-tone="forest"] { background-image: linear-gradient(rgba(63, 178, 127, 0.12), rgba(63, 178, 127, 0.12)); }
+.pl-block--design[data-tone="ocean"] { background-image: linear-gradient(rgba(38, 120, 180, 0.14), rgba(38, 120, 180, 0.14)); }
+
+/* ── Corners (always own the radius) ──────────────────────────────────────── */
+.pl-block--design[data-radius="sharp"] { border-radius: 6px; }
+.pl-block--design[data-radius="soft"] { border-radius: 16px; }
+.pl-block--design[data-radius="round"] { border-radius: 26px; }
+
+/* ── Shadow (always own the shadow) ───────────────────────────────────────── */
+.pl-block--design[data-shadow="none"] { box-shadow: none; }
+.pl-block--design[data-shadow="soft"] { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06); }
+.pl-block--design[data-shadow="lifted"] { box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22), 0 6px 16px rgba(0, 0, 0, 0.14); }
+
+/* ── Border overrides (hairline = keep surface border; none/accent override) ── */
+.pl-block--design[data-border="none"] { border-width: 0; border-color: transparent; }
+.pl-block--design[data-border="accent"] {
+    border-width: 1.5px;
+    border-style: solid;
+    border-color: var(--pl-accent, var(--pt-accent, #d4a853));
+}
+
+/* Minimal flattens last so it always reads as a bare, frameless block. */
+.pl-block--design[data-surface="minimal"] {
+    box-shadow: none;
+}
+
+/* ── Padding (content blocks; overrides the .pl-block--content default) ─────── */
+.pl-block--content[data-padding="compact"] { padding: 0.7rem 0.8rem; }
+.pl-block--content[data-padding="comfortable"] { padding: 1.1rem 1.2rem; }
+.pl-block--content[data-padding="spacious"] { padding: 1.55rem 1.7rem; }
+
+/* ── Header treatments ─────────────────────────────────────────────────────── */
+.pl-block--design[data-header="label"] .pl-block-title {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: calc(0.82rem * var(--pt-scale, 1));
+    font-weight: 700;
+    opacity: 0.82;
+}
+.pl-block--design[data-header="banner"] .pl-block-head {
+    border-bottom: 2px solid var(--pl-accent, var(--pt-accent, #d4a853));
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.15rem;
+}
+.pl-block--design[data-header="tab"] .pl-block-title {
+    display: inline-block;
+    padding: 0.22rem 0.7rem;
+    border-radius: 10px 10px 0 0;
+    background: var(--pl-accent, var(--pt-accent, #d4a853));
+    color: #fff;
+}
+
+/* ── Title alignment + case ────────────────────────────────────────────────── */
+.pl-block--design[data-title-align="center"] .pl-block-head {
+    justify-content: center;
+    text-align: center;
+}
+.pl-block--design[data-title-case="upper"] .pl-block-title {
+    text-transform: uppercase;
+}
+
+/* ── Effects (V5.1): tilt + hover. Tilt is a CSS var so :hover transforms can
+   compose with it. Only blocks that opt in (data-tilt / data-hover) get a
+   transform, so untilted blocks never create a needless compositing layer. ── */
+.pl-block--design[data-tilt] {
+    transform: rotate(var(--pl-tilt, 0deg));
+}
+.pl-block--design[data-hover="lift"] {
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+.pl-block--design[data-hover="lift"]:hover {
+    transform: rotate(var(--pl-tilt, 0deg)) translateY(-5px);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
+}
+.pl-block--design[data-hover="glow"] {
+    transition: box-shadow 0.22s ease;
+}
+.pl-block--design[data-hover="glow"]:hover {
+    box-shadow: 0 0 26px var(--pl-accent, rgba(212, 168, 83, 0.55));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pl-block--design {
+        transition: none !important;
+    }
+    .pl-block--design[data-hover="lift"]:hover {
+        transform: rotate(var(--pl-tilt, 0deg));
+    }
+}
+
+/* ── Guestbook mini-notes (builder preview, read-only WYSIWYG) ──────────────── */
+/* Inherit the container's text colour so design controls (text color / surface)
+   preview accurately on the guestbook too. */
+.pl-gb-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.pl-gb-mininote {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+.pl-gb-miniavatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.pl-gb-minibody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    min-width: 0;
+}
+.pl-gb-miniauthor {
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.pl-gb-minimsg {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    line-height: 1.35;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }

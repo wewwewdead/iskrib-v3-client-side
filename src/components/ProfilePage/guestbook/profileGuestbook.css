@@ -332,6 +332,46 @@
     word-break: break-word;
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+ * V5.1 — as a layout container, the guestbook ADOPTS the container's design.
+ *
+ * The wrapper (.pl-block--guestbook) carries the container's design surface / fill
+ * / skin, radius, shadow, tilt and text colour. The guestbook itself then defers
+ * its own card chrome and INHERITS the container's colour + font, so a skin (e.g.
+ * the sticky-note) applies coherently and stays readable — instead of keeping its
+ * own app-token surface (which clashed on a coloured/skinned container).
+ * ════════════════════════════════════════════════════════════════════════════ */
+.pl-block--guestbook .pt-guestbook {
+    width: 100%;
+    /* The container supplies the box; fill it exactly so padding doesn't push the
+       composer / Sign button past the right edge. */
+    box-sizing: border-box;
+    margin: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    color: inherit;
+    font-family: inherit;
+}
+
+.pl-block--guestbook .pt-guestbook-title {
+    font-family: inherit;
+}
+
+/* The composer adapts to any container background instead of a fixed app surface. */
+.pl-block--guestbook .pt-guestbook-input {
+    background: rgba(127, 127, 127, 0.14);
+    border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+    color: inherit;
+}
+
+.pl-block--guestbook .pt-guestbook-input::placeholder {
+    color: inherit;
+    opacity: 0.5;
+}
+
 @media (max-width: 760px) {
     .pt-guestbook {
         width: 94%;

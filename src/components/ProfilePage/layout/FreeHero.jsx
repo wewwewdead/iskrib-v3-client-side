@@ -8,7 +8,12 @@ import {
     HERO_ELEMENT_LABELS,
     HERO_ELEMENT_WIDTHS,
 } from "../builder/profileThemeConstants";
-import { getHeroOrder } from "../builder/profileThemeUtils";
+import {
+    getHeroOrder,
+    getHeroElementDesign,
+    getBlockDesignStyle,
+    getBlockDesignDataAttrs,
+} from "../builder/profileThemeUtils";
 import "./freeHero.css";
 
 const SCALE_MIN = 0.5;
@@ -26,6 +31,7 @@ const HeroEditRow = ({
     label,
     className,
     style,
+    dataAttrs,
     selected,
     onSelect,
     onResizeStart,
@@ -43,6 +49,7 @@ const HeroEditRow = ({
             value={keyName}
             className={className}
             style={style}
+            {...(dataAttrs || {})}
             dragListener={false}
             dragControls={controls}
             // Pressing the body always SELECTS the element. With a mouse/pen it
@@ -221,14 +228,45 @@ const FreeHero = ({
     const elProps = (key) => {
         const el = layout[key] || {};
         const align = el.align || "left";
-        const style = el.style || "none";
         const width = el.width || "full";
-        const border = el.border || "none";
-        const radius = el.radius || "soft";
         const divider = el.divider || "none";
-        const fontStack = el.font && FONT_STACK_BY_KEY[el.font];
         // Continuous corner-drag `scale` wins; the Text-size preset is a fallback.
         const scaleVal = baseScale(el);
+        const editAffordances =
+            (editable ? " is-editable" : "") + (editable && selectedEl === key ? " is-selected" : "");
+
+        // V5.2 — design-driven path: the element carries the SAME container design
+        // object, rendered with the SAME design system (surface/fill/border/radius/
+        // shadow/tilt/hover/opacity via .pl-block--design + data-* + getBlockDesignStyle).
+        // The font reuses the hero `--el-font` mechanism (which out-specifies the
+        // hardcoded .profile-* fonts), and size stays the hero scale.
+        if (el.design && typeof el.design === "object") {
+            const design = getHeroElementDesign(el);
+            const dataAttrs = getBlockDesignDataAttrs(design);
+            const designStyle = getBlockDesignStyle(design);
+            const fontStack = design.font && FONT_STACK_BY_KEY[design.font];
+            const carded = design.surface && design.surface !== "minimal";
+            const className =
+                `pt-freehero-el pt-freehero-el--${key} pt-freehero-el--align-${align}` +
+                ` pt-freehero-el--w-${width} pl-block--design` +
+                (carded ? " pt-freehero-el--carded" : "") +
+                (fontStack ? " pt-freehero-el--fonted" : "") +
+                (divider !== "none" ? ` pt-freehero-el--divider-${divider}` : "") +
+                (scaleVal !== 1 ? " pt-freehero-el--sized" : "") +
+                editAffordances;
+            const style = {
+                ...designStyle,
+                ...(fontStack ? { "--el-font": fontStack } : {}),
+                ...(scaleVal !== 1 ? { "--el-fontscale": scaleVal } : {}),
+            };
+            return { className, style, dataAttrs };
+        }
+
+        // Legacy path (elements without a design): unchanged.
+        const style = el.style || "none";
+        const border = el.border || "none";
+        const radius = el.radius || "soft";
+        const fontStack = el.font && FONT_STACK_BY_KEY[el.font];
         // A "card" (padding + surface) is implied by any of: a style preset, a
         // custom background, or a border.
         const carded = style !== "none" || !!el.bgColor || border !== "none";
@@ -241,8 +279,7 @@ const FreeHero = ({
             (divider !== "none" ? ` pt-freehero-el--divider-${divider}` : "") +
             (fontStack ? " pt-freehero-el--fonted" : "") +
             (scaleVal !== 1 ? " pt-freehero-el--sized" : "") +
-            (editable ? " is-editable" : "") +
-            (editable && selectedEl === key ? " is-selected" : "");
+            editAffordances;
         const style2 = {
             ...(el.color ? { color: el.color } : {}),
             ...(el.bgColor ? { background: el.bgColor } : {}),
@@ -314,9 +351,9 @@ const FreeHero = ({
         return (
             <div className="pt-freehero pt-freehero--stack">
                 {keys.map((key) => {
-                    const { className, style } = elProps(key);
+                    const { className, style, dataAttrs } = elProps(key);
                     return (
-                        <div key={key} className={className} style={style}>
+                        <div key={key} className={className} style={style} {...(dataAttrs || {})}>
                             {content(key)}
                         </div>
                     );
@@ -335,7 +372,7 @@ const FreeHero = ({
             className="pt-freehero pt-freehero--stack is-editable"
         >
             {keys.map((key) => {
-                const { className, style } = elProps(key);
+                const { className, style, dataAttrs } = elProps(key);
                 return (
                     <HeroEditRow
                         key={key}
@@ -343,6 +380,7 @@ const FreeHero = ({
                         label={HERO_ELEMENT_LABELS[key]}
                         className={className}
                         style={style}
+                        dataAttrs={dataAttrs}
                         selected={selectedEl === key}
                         onSelect={selectEl}
                         onResizeStart={onResizeStart}

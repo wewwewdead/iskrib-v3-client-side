@@ -35,6 +35,29 @@ describe("FreeHero — fixed reorderable stack", () => {
         );
     });
 
+    it("renders a hero element's `design` via the container design system (V5.2)", () => {
+        const designedHero = {
+            mode: "stack",
+            order: ["avatar", "name", "stats", "bio"],
+            layout: {
+                avatar: {},
+                name: { design: { surface: "paper", tilt: -3, textColor: "#ff0000" } },
+                stats: {},
+                bio: {},
+            },
+        };
+        const { container } = setup({ hero: designedHero, editable: false });
+        const nameEl = container.querySelector(".pt-freehero-el--name");
+        // It opts into the design system (so surface/tilt/etc CSS applies)...
+        expect(nameEl.className).toContain("pl-block--design");
+        expect(nameEl.getAttribute("data-surface")).toBe("paper");
+        expect(nameEl.getAttribute("data-tilt")).toBe("-3");
+        // ...and the validated text colour is applied inline.
+        expect(nameEl.getAttribute("style")).toMatch(/color/);
+        // an element WITHOUT a design stays on the legacy path (no design class).
+        expect(container.querySelector(".pt-freehero-el--avatar").className).not.toContain("pl-block--design");
+    });
+
     it("hides stats / bio when their section is off (builder and live)", () => {
         const { container } = setup({ showStats: false, showBio: false });
         expect(container.querySelector(".pt-freehero-el--stats")).toBeNull();

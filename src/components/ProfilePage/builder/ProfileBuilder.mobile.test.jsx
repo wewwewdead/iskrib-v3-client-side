@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Force the mobile shell on: useMediaQuery always reports a match so the builder
-// renders its bottom-sheet / canvas-first layout regardless of jsdom's viewport.
+// renders its V5 container-first canvas (no tool sheet) regardless of the viewport.
 vi.mock("react-responsive", () => ({
     useMediaQuery: () => true,
 }));
@@ -14,6 +14,7 @@ vi.mock("../../../../API/Api", () => ({
     getProfilePreview: vi.fn(() =>
         Promise.resolve({ writings: [], media: [], opinions: [], stories: [], pinnedWritings: [] })
     ),
+    getProfileGuestbook: vi.fn(() => Promise.resolve({ entries: [] })),
 }));
 
 import ProfileBuilder from "./ProfileBuilder";
@@ -53,65 +54,49 @@ const setup = (props = {}) => {
     return { ...utils, onClose, onSaved, builder, client };
 };
 
-// Tap the sheet grabber: a pointer press/release with no vertical travel reads as
-// a tap and cycles the sheet (swiping up/down steps between snap points instead).
-const tapGrabber = (grabber) => {
-    fireEvent.pointerDown(grabber, { clientY: 100 });
-    fireEvent.pointerUp(grabber, { clientY: 100 });
-};
-
-describe("ProfileBuilder — mobile shell", () => {
+describe("ProfileBuilder — mobile room-builder (container-first, no sheet)", () => {
     beforeEach(() => {
         document.body.style.overflow = "";
     });
 
-    it("renders the mobile shell with a horizontal tab rail", () => {
+    it("renders the mobile shell with NO tool sheet or tab rail", () => {
         const { builder, container } = setup();
         expect(builder()).toHaveClass("is-mobile");
-        // The tab rail exists and holds the tool tabs (no wrapping in the rail).
-        const rail = container.querySelector(".pt-builder-tabs");
-        expect(rail).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Colors" })).toBeInTheDocument();
+        // The whole point: the bottom sheet + tab rail are gone on mobile.
+        expect(container.querySelector(".pt-builder-tools")).toBeNull();
+        expect(container.querySelector(".pt-builder-tabs")).toBeNull();
     });
 
-    it("opens collapsed (canvas-first) and the sheet header is present", () => {
-        const { builder } = setup();
-        expect(builder()).toHaveClass("sheet-collapsed");
-        // The grabber header doubles as the expand/collapse control.
-        expect(screen.getByRole("button", { name: /tools —/i })).toBeInTheDocument();
+    it("shows a tappable Page container that opens the global theme tools inline", () => {
+        const { container } = setup();
+        const pageBtn = screen.getByRole("button", { name: /page.*theme/i });
+        // Closed by default.
+        expect(container.querySelector(".pt-page-container.is-selected")).toBeNull();
+        fireEvent.click(pageBtn);
+        expect(container.querySelector(".pt-page-container.is-selected")).toBeTruthy();
+        // The accordion exposes the global tool sections inline.
+        expect(screen.getByRole("button", { name: /^presets$/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /colors.*background/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^type$/i })).toBeInTheDocument();
     });
 
-    it("selecting a tool opens the bottom sheet to half height", () => {
-        const { builder } = setup();
-        expect(builder()).toHaveClass("sheet-collapsed");
-        fireEvent.click(screen.getByRole("button", { name: "Colors" }));
-        expect(builder()).toHaveClass("sheet-half");
-        expect(builder()).not.toHaveClass("sheet-collapsed");
+    it("tapping a container opens its full editor inline (content + design)", () => {
+        const { container } = setup();
+        fireEvent.click(screen.getByLabelText("Drag to reorder Writings"));
+        const editor = container.querySelector(".pt-pblock__edit--studio");
+        expect(editor).toBeTruthy();
+        // The container's FULL per-container controls live inside it.
+        expect(within(editor).getByRole("button", { name: /content/i })).toBeInTheDocument();
+        expect(within(editor).getByRole("button", { name: /design/i })).toBeInTheDocument();
     });
 
-    it("tapping the sheet grabber cycles collapsed → half → expanded → collapsed", () => {
-        const { builder } = setup();
-        const grabber = screen.getByRole("button", { name: /tools —/i });
-        expect(builder()).toHaveClass("sheet-collapsed");
-        tapGrabber(grabber);
-        expect(builder()).toHaveClass("sheet-half");
-        tapGrabber(grabber);
-        expect(builder()).toHaveClass("sheet-expanded");
-        tapGrabber(grabber);
-        expect(builder()).toHaveClass("sheet-collapsed");
-    });
-
-    it("swiping the grabber up opens the sheet, swiping down closes it", () => {
-        const { builder } = setup();
-        const grabber = screen.getByRole("button", { name: /tools —/i });
-        // Swipe up (negative dy) → collapsed → half.
-        fireEvent.pointerDown(grabber, { clientY: 200 });
-        fireEvent.pointerUp(grabber, { clientY: 150 });
-        expect(builder()).toHaveClass("sheet-half");
-        // Swipe down (positive dy) → half → collapsed.
-        fireEvent.pointerDown(grabber, { clientY: 150 });
-        fireEvent.pointerUp(grabber, { clientY: 200 });
-        expect(builder()).toHaveClass("sheet-collapsed");
+    it("only one inline editor is open at a time (Page selection closes a container)", () => {
+        const { container } = setup();
+        fireEvent.click(screen.getByLabelText("Drag to reorder Writings"));
+        expect(container.querySelector(".pt-pblock__edit--studio")).toBeTruthy();
+        fireEvent.click(screen.getByRole("button", { name: /page.*theme/i }));
+        expect(container.querySelector(".pt-pblock__edit--studio")).toBeNull();
+        expect(container.querySelector(".pt-page-container.is-selected")).toBeTruthy();
     });
 
     it("keeps Save and Cancel reachable in the sticky action bar", () => {

@@ -75,25 +75,48 @@
 }
 
 /*
- * Mobile performance budget.
+ * Performance mode — the real thermal fix.
  *
- * The whole point of converting GIFs to <video> is to KEEP the animation safely
- * on mobile — so we do NOT freeze the video here. Instead we strip the expensive
- * frosted-glass backdrop-filters that would otherwise be composited over an
- * actively animating video every frame (the real thermal cost on iPhone). Card
- * surfaces fall back to their (semi-opaque) background colour.
+ * Converting GIFs → <video> keeps animation safely on mobile, so we do NOT freeze
+ * the video. The actual heat source on iPhone is the expensive GPU compositing
+ * layered OVER an actively animating video EVERY FRAME:
+ *   - backdrop-filter (frosted glass) on cards / nav / the V5 glass surfaces, and
+ *   - a heavy full-screen blur on the ambient poster.
+ * Performance mode strips those. Card surfaces fall back to their (semi-opaque)
+ * background colour, which stays perfectly readable.
+ *
+ * `.profile-perf-mode` is added by the page (JS) on the outer container when an
+ * animated background is shown on a mobile viewport; the `@media` block below is
+ * the CSS-only safety net so the protection applies even before hydration and
+ * regardless of the JS class. Selectors are scoped (never a bare global `*`).
  */
+.profile-perf-mode .profile-center-bar-container,
+.profile-perf-mode .profile-center-bar-container * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.profile-perf-mode .blurred-img-bg.profile-ambient-poster {
+    /* Lighter blur, no upscale — a fraction of the full-screen GPU cost. */
+    filter: blur(14px) saturate(1.05);
+    transform: none;
+}
+
 @media (max-width: 768px) {
+    /* Scoped to the animated-background column + its descendants (NOT a bare
+       global `*`, which would cause unrelated visual regressions). */
+    .profile-center-bar-container.profile-has-animated-bg,
     .profile-center-bar-container.profile-has-animated-bg * {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
     }
 
-    /* The ambient blur is a static poster, but a 40px blur on a full-screen layer
-       is still costly on mobile — lighten it when it's backing an animation. */
-    .blurred-img-bg.profile-ambient-poster {
-        filter: blur(24px) saturate(1.1);
-        transform: scale(1.2);
+    /* The ambient blur is a static poster, but a large blur on a full-screen layer
+       is still costly on mobile — lighten it (and drop the 1.2 upscale) when it's
+       backing an animation. */
+    .profile-parent-container .blurred-img-bg.profile-ambient-poster {
+        filter: blur(16px) saturate(1.05);
+        transform: scale(1.06);
     }
 }
 
@@ -103,4 +126,30 @@
     .profile-animated-bg-gif {
         animation: none;
     }
+}
+
+/* While the builder is open on mobile, the live profile is fully covered by the
+   builder's opaque scrim — hide it so its ENTIRE compositing stack (ambient
+   full-screen blur, badge-ring glow, any remaining surfaces) stops painting. This
+   is the single biggest builder thermal win: the GPU stops drawing the profile
+   behind while you edit. Desktop keeps the blurred profile-behind aesthetic. */
+@media (max-width: 768px) {
+    .profile-parent-container.profile-under-builder {
+        visibility: hidden;
+    }
+}
+
+/* The badge-ring glow is an INFINITE multi-layer box-shadow animation — one of the
+   most expensive things on mobile Safari (forces a per-frame repaint of whatever
+   blur sits behind it). Freeze it for reduced-motion users and whenever perf-mode
+   is active (mobile + animated background). The static rings still render. */
+@media (prefers-reduced-motion: reduce) {
+    .profile-avatar-ring.badge-ring-legend,
+    .profile-avatar-ring.badge-ring-og {
+        animation: none !important;
+    }
+}
+.profile-perf-mode .profile-avatar-ring.badge-ring-legend,
+.profile-perf-mode .profile-avatar-ring.badge-ring-og {
+    animation: none !important;
 }

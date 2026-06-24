@@ -13,14 +13,38 @@
     -webkit-backdrop-filter: blur(8px);
 }
 
-/* On mobile, drop the full-screen backdrop-filter and use an opaque scrim
-   instead — a live blur over the whole profile (animated or not) is one of the
-   most expensive things mobile Safari can do while the builder is interactive. */
+/* ── Mobile thermal hardening (iPhone Safari) ───────────────────────────────
+   The builder renders OUTSIDE .profile-parent-container, so the page's
+   `.profile-perf-mode` blur-killer never reaches it. Without this, opening the
+   builder on a phone composites a SECOND full profile (the live preview) whose
+   stacked backdrop-filter cards (blur 25px) + .pl-block--glass (blur 20px) are
+   re-rasterized every frame by the preview's continuous animations (badge-ring
+   glow, skeleton shimmer) — the dominant GPU-melt source. Strip every blur and
+   freeze every infinite animation INSIDE the builder on mobile. */
 @media (max-width: 768px) {
     .pt-builder-overlay {
-        background: rgba(12, 12, 18, 0.86);
+        /* Opaque scrim — the live profile behind is hidden on mobile while the
+           builder is open (.profile-under-builder), so nothing shows through. */
+        background: rgb(15, 15, 21);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
+    }
+    /* Kill blur on EVERY builder descendant (preview cards, glass layout blocks,
+       panels). Scoped to the overlay — never a bare global `*`. */
+    .pt-builder-overlay,
+    .pt-builder-overlay * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    /* Freeze continuous animations inside the preview — an infinite box-shadow /
+       background-position animation forces Safari to re-rasterize the surfaces
+       under it every frame, which is what turns the blur cost into heat. */
+    .pt-builder-overlay .profile-avatar-ring.badge-ring-legend,
+    .pt-builder-overlay .profile-avatar-ring.badge-ring-og,
+    .pt-builder-overlay .pl-skeleton-row,
+    .pt-builder-overlay .pl-skeleton-tile,
+    .pt-builder-overlay .pl-skeleton-cover {
+        animation: none !important;
     }
 }
 
@@ -208,40 +232,98 @@
     min-height: 0;
 }
 
+/* Desktop tool rail — an icon toolbar (tools, not words) with hover tooltips. */
 .pt-builder-tabs {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    padding: 0.8rem;
+    gap: 0.35rem;
+    padding: 0.7rem 0.8rem;
     border-bottom: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
 }
 
 .pt-builder-tab {
-    flex: 1 1 auto;
-    padding: 0.45rem 0.6rem;
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
     border-radius: 10px;
     border: 1px solid transparent;
     background: transparent;
-    color: inherit;
-    font-size: 0.82rem;
-    font-weight: 500;
+    color: #6b6660;
     cursor: pointer;
-    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.12s ease;
 }
 
 .pt-builder-tab:hover {
     background: var(--bg-glass, rgba(0, 0, 0, 0.04));
+    color: #2b2208;
 }
 
 .pt-builder-tab:active {
-    transform: scale(0.96);
+    transform: scale(0.94);
 }
 
 .pt-builder-tab.is-active {
     background: rgba(212, 168, 83, 0.16);
     border-color: rgba(212, 168, 83, 0.5);
     color: #8a6d3b;
+}
+
+/* Active-tab context header above the panel (icon + name). */
+.pt-tool-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem 0;
+    font-family: "Playfair Display", serif;
+    font-size: 1.02rem;
     font-weight: 600;
+    color: var(--text-primary, #1f1b16);
+}
+
+.pt-tool-panel-head-icon {
+    display: inline-flex;
+    color: var(--pt-accent, #d4a853);
+}
+
+/* ── Shared hover/focus tooltip (professional, snappy — replaces native title) ── */
+.pt-tip {
+    position: relative;
+}
+
+.pt-tip::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 6px);
+    transform: translateX(-50%) translateY(3px);
+    white-space: nowrap;
+    padding: 0.28rem 0.5rem;
+    border-radius: 7px;
+    background: #1f1b16;
+    color: #fff;
+    font-family: "Outfit", sans-serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 40;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+    transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.pt-tip:hover::after,
+.pt-tip:focus-visible::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pt-tip::after {
+        transition: opacity 0.14s ease;
+        transform: translateX(-50%);
+    }
 }
 
 .pt-builder-panel-scroll {
@@ -1005,6 +1087,180 @@
     font-weight: 600;
 }
 
+/* ── V5 icon tool tray (icon-only Content / Design controls) ────────────────── */
+/* A compact row of tool icons; tapping one reveals its options below. The active
+   tool's name shows above its options (and as each icon's tooltip / aria-label). */
+.pt-tooltray {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+}
+
+.pt-tooltray-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--border-light, rgba(0, 0, 0, 0.1));
+}
+
+.pt-tool-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.14));
+    background: var(--bg-elevated, rgba(255, 255, 255, 0.9));
+    color: #555;
+    cursor: pointer;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+.pt-tool-icon:hover {
+    border-color: rgba(212, 168, 83, 0.6);
+    color: #2b2208;
+}
+
+.pt-tool-icon:active {
+    transform: scale(0.94);
+}
+
+.pt-tool-icon.is-active {
+    background: rgba(212, 168, 83, 0.16);
+    border-color: var(--pt-accent, #d4a853);
+    color: #2b2208;
+}
+
+/* Color tools preview the chosen color as a dot on their icon. */
+.pt-tool-dot {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+.pt-tooltray-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.pt-tooltray-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+
+/* Tool-icon name: hidden on desktop (icon + hover tooltip); shown on mobile. */
+.pt-tool-icon-label {
+    display: none;
+}
+
+/* ── Sliders + sub-control stacks (richer Design Studio tools) ──────────────── */
+.pt-slider-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+.pt-slider-val {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    opacity: 0.7;
+}
+.pt-slider-reset {
+    border: none;
+    background: rgba(127, 127, 127, 0.16);
+    color: inherit;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.pt-slider-input {
+    width: 100%;
+    accent-color: var(--pt-accent, #d4a853);
+    cursor: pointer;
+}
+.pt-substack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+/* ── Skins gallery (1-tap design bundles) ──────────────────────────────────── */
+.pt-skins-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 0.5rem;
+}
+.pt-skin {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.12));
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.14s ease, transform 0.12s ease;
+}
+.pt-skin:hover {
+    border-color: var(--pt-accent, #d4a853);
+}
+.pt-skin:active {
+    transform: scale(0.95);
+}
+.pt-skin-swatch {
+    height: 38px;
+    width: 100%;
+}
+.pt-skin-label {
+    padding: 0.25rem 0.2rem 0.35rem;
+    font-size: 0.66rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-primary, #1f1b16);
+}
+
+/* ── Mobile: tools become icon + name and wrap cleanly to fit the screen ────── */
+@media (max-width: 768px) {
+    .pt-tool-icon {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+        height: 38px;
+        gap: 0.35rem;
+        padding: 0 0.55rem;
+        justify-content: flex-start;
+    }
+    .pt-tool-icon-label {
+        display: inline;
+        font-size: 0.72rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .pt-tooltray-icons {
+        gap: 0.4rem;
+    }
+}
+
 .pt-content-toggles {
     display: flex;
     flex-wrap: wrap;
@@ -1352,6 +1608,172 @@
     background: var(--pt-accent, #d4a853);
     border-color: var(--pt-accent, #d4a853);
     color: #2b2208;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * V5 mobile room-builder — inline, in-container editors (no tool sheet).
+ * Each editor below ONLY renders on mobile, so these rules are mobile-only in
+ * practice. They give the reused panel controls a solid, readable surface even
+ * when the container they sit inside is themed / glass / dark.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* The selected container's FULL editor (width/style/variant/title/content/design). */
+.pt-pblock__edit--studio {
+    gap: 0.5rem;
+    padding: 0.6rem;
+    border-radius: 12px;
+    background: var(--bg-elevated, #fff);
+    color: var(--text-primary, #1f1b16);
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.1));
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+}
+.pt-pblock__edit--studio .pt-layout-control-label,
+.pt-pblock__edit--studio .pt-content-toggle-btn,
+.pt-pblock__edit--studio .pt-content-toggle-label,
+.pt-pblock__edit--studio .pt-content-summary,
+.pt-pblock__edit--studio select,
+.pt-pblock__edit--studio input[type="text"] {
+    color: var(--text-primary, #1f1b16);
+}
+
+/* ── Mobile responsiveness for the inline container studio ───────────────────
+   The studio lives INSIDE the tapped container, so it can only be as wide as
+   that container. These rules (1) let the studio + its controls shrink/wrap to
+   any width with no horizontal overflow, and (2) on mobile give the container
+   being edited the full canvas row so the editor actually has room to breathe. */
+.pt-pblock__edit,
+.pt-pblock__edit--studio {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+.pt-pblock__edit--studio .pt-layout-control {
+    min-width: 0; /* grid items default to min-width:auto → lets selects overflow */
+}
+.pt-pblock__edit--studio select,
+.pt-pblock__edit--studio input[type="text"] {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    /* The container being edited spans the full row — a half/compact container is
+       too narrow to edit inside. It returns to its set width once deselected. */
+    .pt-preview-layout--edit .pt-pblock.is-selected {
+        grid-column: 1 / -1;
+    }
+    /* Width / Style / Variant wrap to fit instead of forcing 3 cramped columns. */
+    .pt-pblock__edit--studio .pt-layout-controls {
+        grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    }
+}
+
+/* The "Page" container — the mobile entry to global theme tools. */
+.pt-page-container {
+    margin-bottom: 0.9rem;
+    border-radius: 14px;
+    border: 1px dashed var(--pt-accent, #d4a853);
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+.pt-page-container.is-selected {
+    background: var(--bg-elevated, #fff);
+    border-style: solid;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.pt-page-container-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+}
+.pt-page-container.is-selected .pt-page-container-head {
+    color: var(--text-primary, #1f1b16);
+}
+.pt-page-container-icon {
+    display: inline-flex;
+    color: var(--pt-accent, #d4a853);
+}
+.pt-page-container-label {
+    flex: 1;
+    font-size: 0.86rem;
+}
+.pt-page-container-hint {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    font-weight: 500;
+}
+.pt-page-container-body {
+    padding: 0.2rem 0.6rem 0.7rem;
+    background: var(--bg-elevated, #fff);
+    color: var(--text-primary, #1f1b16);
+}
+
+/* Page studio accordion (presets / colors / type / cards / sections). */
+.pt-page-section {
+    border-top: 1px solid var(--border-light, rgba(0, 0, 0, 0.08));
+}
+.pt-page-section:first-child {
+    border-top: none;
+}
+.pt-page-section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.6rem 0.2rem;
+    background: transparent;
+    border: none;
+    color: var(--text-primary, #1f1b16);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-align: left;
+}
+.pt-page-section-body {
+    padding-bottom: 0.5rem;
+}
+
+/* Hero element inline editor (tap a hero element → edit it in place). */
+.pt-hero-inline-editor {
+    position: relative;
+    z-index: 2;
+    margin-top: 0.6rem;
+    border-radius: 12px;
+    background: var(--bg-elevated, #fff);
+    color: var(--text-primary, #1f1b16);
+    border: 1px solid var(--border-light, rgba(0, 0, 0, 0.1));
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+}
+.pt-inline-editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    background: rgba(212, 168, 83, 0.12);
+    font-size: 0.82rem;
+    color: var(--text-primary, #1f1b16);
+}
+.pt-inline-editor-head button {
+    border: none;
+    background: var(--pt-accent, #d4a853);
+    color: #2b2208;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 8px;
+    cursor: pointer;
 }
 
 /* Right-edge resize handle. */
@@ -1783,14 +2205,15 @@
         overflow: hidden;
     }
 
-    /* Canvas fills the stage and scrolls beneath the sheet. The bottom padding
-       keeps the last blocks clear of the collapsed sheet. */
+    /* V5 room-builder: there is NO tool sheet on mobile — the canvas IS the editor.
+       It fills the whole stage and scrolls; tools open inline inside the container
+       you tap. The bottom padding just keeps the last container clear of the footer. */
     .pt-builder-preview {
         position: absolute;
         inset: 0;
         flex: none;
         padding: 1rem;
-        padding-bottom: calc(var(--pt-mobile-sheet-collapsed) + 1.5rem);
+        padding-bottom: 2rem;
         overflow-y: auto;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;

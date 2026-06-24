@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import useStreakData from "../../Streak/useStreakData";
 import ShareMenu from "../../ShareMenu/ShareMenu";
 import { getProfileShareUrl } from "../../../utils/getShareUrl";
-import StickerLayer from "../builder/StickerLayer";
 import FreeHero from "../layout/FreeHero";
 import { isSectionVisible } from "../builder/profileThemeUtils";
 
@@ -21,10 +20,6 @@ const ProfileHeroSection = ({
     const { data: streakData } = useStreakData(userData?.id);
     const showStats = isSectionVisible(profileTheme, "stats");
     const showBio = isSectionVisible(profileTheme, "bio");
-
-    const stickerLayer = profileTheme?.stickers?.length > 0 && (
-        <StickerLayer stickers={profileTheme.stickers} accentColor={profileTheme?.colors?.accent} />
-    );
 
     const actionsRow = (
         <div className="profile-actions-row">
@@ -65,7 +60,6 @@ const ProfileHeroSection = ({
     return (
         <div className="hero-section hero-section--stack">
             <div className="pt-freehero-mount">
-                {stickerLayer}
                 <FreeHero
                     hero={profileTheme?.hero}
                     name={userData?.name}

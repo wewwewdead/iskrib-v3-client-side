@@ -1,7 +1,13 @@
 import { useState } from "react";
 import ProfileGuestbook from "../guestbook/ProfileGuestbook";
-import { blockWidthClass, blockStyleClass } from "./profileLayoutUtils";
-import { getBlockContent, getBlockCardCssVars } from "../builder/profileThemeUtils";
+import { blockWidthClass } from "./profileLayoutUtils";
+import {
+    getBlockContent,
+    getBlockCardCssVars,
+    getBlockDesign,
+    getBlockDesignDataAttrs,
+    getBlockDesignStyle,
+} from "../builder/profileThemeUtils";
 import BlockContentModal from "./BlockContentModal";
 import WritingsPreview from "./previewCards/WritingsPreview";
 import MediaPreview from "./previewCards/MediaPreview";
@@ -33,17 +39,29 @@ const ProfileLayoutBlock = ({
     const [showModal, setShowModal] = useState(false);
     const widthCls = blockWidthClass(block.width);
     const content = getBlockContent(block);
-    // A per-block card override sets its own --pt-card-* vars and renders as the
-    // inherit surface (so it reads them); otherwise the block uses its own style
-    // preset and the page-wide vars from the profile scope.
+    // V5 container design — whitelisted enums → data-* attributes the CSS targets,
+    // plus optional inline overrides (custom text color / fill / font).
+    const design = getBlockDesign(block);
+    const designAttrs = getBlockDesignDataAttrs(design);
+    const designStyle = getBlockDesignStyle(design);
+    // A per-block card override (legacy) keeps the inherit surface (its own
+    // --pt-card-* vars). Otherwise the V5 design's [data-surface] owns the chrome.
     const cardVars = getBlockCardCssVars(theme, block);
-    const styleCls = cardVars ? "pl-block--inherit" : blockStyleClass(block.style);
+    const styleCls = cardVars ? "pl-block--inherit" : "pl-block--design";
+    const blockStyle = { ...(cardVars || {}), ...designStyle };
+    const styleProp = Object.keys(blockStyle).length ? blockStyle : undefined;
 
     if (block.type === "guestbook") {
         // variant "wall" = fuller list; "compact" = condensed near-hero view.
-        // content.count controls how many notes show before "view all".
+        // content.count controls how many notes show before "view all". The
+        // wrapper carries the container design (surface/fill/skin/tilt/font); the
+        // guestbook inside defers its own chrome to it (see profileGuestbook.css).
         return (
-            <div className={`pl-block pl-block--guestbook ${widthCls}`} style={cardVars || undefined}>
+            <div
+                className={`pl-block pl-block--guestbook ${widthCls} ${styleCls}`}
+                style={styleProp}
+                {...designAttrs}
+            >
                 <ProfileGuestbook
                     username={username}
                     profileUserId={profileUserId}
@@ -172,7 +190,8 @@ const ProfileLayoutBlock = ({
             <section
                 className={`pl-block pl-block--content ${widthCls} ${styleCls}`}
                 aria-label={block.title}
-                style={cardVars || undefined}
+                style={styleProp}
+                {...designAttrs}
                 onClick={hasContent ? openModal : undefined}
                 role={hasContent ? "button" : undefined}
                 tabIndex={hasContent ? 0 : undefined}

@@ -8,6 +8,9 @@ import {
     getOrderedLayoutBlocks,
     getBlockContent,
     getBlockCardCssVars,
+    getBlockDesign,
+    getBlockDesignDataAttrs,
+    getBlockDesignStyle,
     composeProfileBackgroundStyle,
     resolveLegacyBackgroundForMotion,
 } from "./profileThemeUtils";
@@ -18,8 +21,11 @@ import {
     LAYOUT_WIDTH_LABELS,
     LAYOUT_STYLE_LABELS,
     ALLOWED_LAYOUT_STYLES,
+    HERO_ELEMENT_LABELS,
 } from "./profileThemeConstants";
-import { RENDERABLE_LAYOUT_BLOCK_TYPES, blockWidthClass, blockStyleClass } from "../layout/profileLayoutUtils";
+import { RENDERABLE_LAYOUT_BLOCK_TYPES, blockWidthClass } from "../layout/profileLayoutUtils";
+import { BlockStudioControls } from "./panels/blockStudioControls";
+import HeroElementEditor from "./panels/HeroElementEditor";
 import { resolveBlockItems, EMPTY_STATE_COPY } from "../layout/previewCards/previewUtils";
 import WritingsPreview from "../layout/previewCards/WritingsPreview";
 import MediaPreview from "../layout/previewCards/MediaPreview";
@@ -27,8 +33,7 @@ import OpinionsPreview from "../layout/previewCards/OpinionsPreview";
 import StoriesPreview from "../layout/previewCards/StoriesPreview";
 import PreviewSkeleton from "../layout/previewCards/PreviewSkeleton";
 import PreviewEmptyState from "../layout/previewCards/PreviewEmptyState";
-import { getProfilePreview } from "../../../../API/Api";
-import StickerLayer from "./StickerLayer";
+import { getProfilePreview, getProfileGuestbook } from "../../../../API/Api";
 import FreeHero from "../layout/FreeHero";
 import formatCounts from "../../../../helpers/fomatCounts";
 
@@ -45,21 +50,42 @@ const previewWidthClass = (width) =>
  * visual: it's wrapped in a `pointer-events: none` layer so every gesture (tap to
  * select, drag to reorder, edge-drag to resize) lands on the block shell, never
  * on a card inside it. Falls back to a skeleton while loading and a calm empty
- * state when the user has no content of that kind yet. Guestbook keeps a light
- * placeholder (its real component is a separate, interactive fetch).
+ * state when the user has no content of that kind yet. Guestbook renders REAL
+ * notes read-only (fetched from the public guestbook endpoint) so its design
+ * controls preview accurately, without pulling in the interactive component.
  */
-const PreviewBlockBody = ({ type, content, variant, preview, isPreviewLoading, isOwn }) => {
+const PreviewBlockBody = ({ type, content, variant, preview, isPreviewLoading, isOwn, guestbook, isGuestbookLoading }) => {
     if (type === "guestbook") {
+        const notes = (guestbook || []).slice(0, Math.min(content.count || 3, 5));
         return (
             <div className="pt-pblock__realbody" aria-hidden="true">
-                <div className="pt-preview-mini pt-preview-mini--rows pl-density-comfortable">
-                    {Array.from({ length: Math.min(content.count || 3, 4) }).map((_, i) => (
-                        <span key={i} className="pt-preview-row">
-                            <span className="pt-preview-block-bar" />
-                            <span className="pt-preview-block-bar pt-preview-block-bar--short" />
-                        </span>
-                    ))}
-                </div>
+                {isGuestbookLoading ? (
+                    <PreviewSkeleton type="writings" />
+                ) : notes.length === 0 ? (
+                    <PreviewEmptyState
+                        message="No notes yet."
+                        hint={isOwn ? "Visitors can leave you a note here." : undefined}
+                    />
+                ) : (
+                    <div className="pl-gb-mini">
+                        {notes.map((n) => (
+                            <div key={n.id} className="pl-gb-mininote">
+                                <img
+                                    className="pl-gb-miniavatar"
+                                    src={n.author?.image_url || "/assets/profile.jpg"}
+                                    alt=""
+                                    loading="lazy"
+                                />
+                                <div className="pl-gb-minibody">
+                                    <span className="pl-gb-miniauthor">
+                                        {n.author?.name || n.author?.username || "Someone"}
+                                    </span>
+                                    <span className="pl-gb-minimsg">{n.message}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         );
     }
@@ -130,7 +156,13 @@ const PreviewLayoutBlock = ({
     onToggleBlock,
     preview,
     isPreviewLoading,
+    guestbook,
+    isGuestbookLoading,
     isOwn,
+    isMobile = false,
+    onPatchBlockContent,
+    onPatchBlockDesign,
+    onResetBlock,
 }) => {
     const dragControls = useDragControls();
     const [isDragging, setIsDragging] = useState(false);
@@ -140,7 +172,14 @@ const PreviewLayoutBlock = ({
     const label = LAYOUT_BLOCK_LABELS[block.type] || block.type;
     const content = getBlockContent(block);
     const cardVars = getBlockCardCssVars(theme, block);
-    const styleCls = cardVars ? "pl-block--inherit" : blockStyleClass(block.style);
+    const design = getBlockDesign(block);
+    const designAttrs = getBlockDesignDataAttrs(design);
+    const blockStyle = { ...(cardVars || {}), ...getBlockDesignStyle(design) };
+    const styleProp = Object.keys(blockStyle).length ? blockStyle : undefined;
+    const styleCls = cardVars ? "pl-block--inherit" : "pl-block--design";
+    // Mobile shows the container's FULL editor inline (no tool sheet); desktop
+    // keeps quick width/style chips here and the full controls in the Layout tab.
+    const useStudio = isMobile && onPatchBlockContent && onPatchBlockDesign && onResetBlock;
 
     // Map the pointer's x within the block's row to the nearest discrete width.
     // Left edge is fixed (blocks are left-aligned), so dragging the right edge
@@ -194,7 +233,8 @@ const PreviewLayoutBlock = ({
             dragControls={dragControls}
             onDragStart={() => setIsDragging(true)}
             onDragEnd={() => setIsDragging(false)}
-            style={cardVars || undefined}
+            style={styleProp}
+            {...designAttrs}
             className={`pt-pblock ${previewWidthClass(block.width)} ${styleCls}${
                 selected ? " is-selected" : ""
             }${isDragging ? " is-dragging" : ""}${isResizing ? " is-resizing" : ""}`}
@@ -299,50 +339,71 @@ const PreviewLayoutBlock = ({
                 variant={block.variant}
                 preview={preview}
                 isPreviewLoading={isPreviewLoading}
+                guestbook={guestbook}
+                isGuestbookLoading={isGuestbookLoading}
                 isOwn={isOwn}
             />
 
             {selected && (
-                <div className="pt-pblock__edit">
+                <div
+                    className={`pt-pblock__edit${useStudio ? " pt-pblock__edit--studio" : ""}`}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {/* Per-container controls — these write to THIS block only
                         (onPatchBlock(block.type, …)), so editing one container's
-                        width/style never touches the others. The Cards tab still
-                        sets the global default for blocks left on "Theme". */}
-                    <span className="pt-pblock__edit-label">Width</span>
-                    <div className="pt-pblock__chips" role="group" aria-label={`${label} width`}>
-                        {PREVIEW_WIDTHS.map((w) => (
-                            <button
-                                key={w}
-                                type="button"
-                                className={`pt-pblock__chip${block.width === w ? " is-active" : ""}`}
-                                aria-pressed={block.width === w}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onPatchBlock(block.type, { width: w });
-                                }}
-                            >
-                                {LAYOUT_WIDTH_LABELS[w] || w}
-                            </button>
-                        ))}
-                    </div>
+                        look never touches the others. On MOBILE (the V5 room-builder
+                        with no tool sheet) the container's FULL editor lives right
+                        here inside it: width/style/variant/title + Content + Design.
+                        On desktop the canvas keeps quick width/style chips and the
+                        Layout tab in the sheet carries the full controls. */}
+                    {useStudio ? (
+                        <BlockStudioControls
+                            block={block}
+                            label={label}
+                            onPatchBlock={onPatchBlock}
+                            onPatchBlockContent={onPatchBlockContent}
+                            onPatchBlockDesign={onPatchBlockDesign}
+                            onResetBlock={onResetBlock}
+                        />
+                    ) : (
+                        <>
+                            <span className="pt-pblock__edit-label">Width</span>
+                            <div className="pt-pblock__chips" role="group" aria-label={`${label} width`}>
+                                {PREVIEW_WIDTHS.map((w) => (
+                                    <button
+                                        key={w}
+                                        type="button"
+                                        className={`pt-pblock__chip${block.width === w ? " is-active" : ""}`}
+                                        aria-pressed={block.width === w}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onPatchBlock(block.type, { width: w });
+                                        }}
+                                    >
+                                        {LAYOUT_WIDTH_LABELS[w] || w}
+                                    </button>
+                                ))}
+                            </div>
 
-                    <span className="pt-pblock__edit-label">Style</span>
-                    <div className="pt-pblock__chips" role="group" aria-label={`${label} style`}>
-                        {ALLOWED_LAYOUT_STYLES.map((s) => (
-                            <button
-                                key={s}
-                                type="button"
-                                className={`pt-pblock__chip${block.style === s ? " is-active" : ""}`}
-                                aria-pressed={block.style === s}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onPatchBlock(block.type, { style: s });
-                                }}
-                            >
-                                {LAYOUT_STYLE_LABELS[s] || s}
-                            </button>
-                        ))}
-                    </div>
+                            <span className="pt-pblock__edit-label">Style</span>
+                            <div className="pt-pblock__chips" role="group" aria-label={`${label} style`}>
+                                {ALLOWED_LAYOUT_STYLES.map((s) => (
+                                    <button
+                                        key={s}
+                                        type="button"
+                                        className={`pt-pblock__chip${block.style === s ? " is-active" : ""}`}
+                                        aria-pressed={block.style === s}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onPatchBlock(block.type, { style: s });
+                                        }}
+                                    >
+                                        {LAYOUT_STYLE_LABELS[s] || s}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -368,14 +429,12 @@ const PreviewLayoutBlock = ({
  * When the layout edit handlers are supplied the content blocks become a fully
  * interactive canvas: drag a block by its header to reorder, drag its right edge
  * (or use the width chips) to resize, and use the per-block toolbar to move/hide.
- * Stickers remain editable here too (drag to move, remove).
  */
 const BuilderPreview = ({
     theme,
     userData,
     followerCount,
     followingCount,
-    onStickersChange,
     onReorderBlocks,
     onPatchBlock,
     onMoveBlock,
@@ -383,11 +442,19 @@ const BuilderPreview = ({
     selectedType: selectedTypeProp,
     onSelectType,
     onEditBlock,
-    selectedStickerIndex = -1,
-    onSelectSticker,
     onHeroChange,
     selectedHeroEl,
     onSelectHeroEl,
+    // Mobile (V5 room-builder, no tool sheet): full per-container editing happens
+    // inline in the canvas. These are only used when isMobile is true.
+    isMobile = false,
+    onPatchBlockContent,
+    onPatchBlockDesign,
+    onResetBlock,
+    onHeroPatchElement,
+    renderPageStudio,
+    pageSelected = false,
+    onSelectPage,
 }) => {
     // Both are pure derivations of (theme, userData) — memoized so selection-only
     // re-renders (clicking a block/sticker) don't re-run the full theme normalize.
@@ -427,6 +494,23 @@ const BuilderPreview = ({
     });
     const isPreviewLoading = previewLoading && themeHasContentBlocks;
 
+    // Guestbook notes preview (public endpoint, read-only) so the guestbook block
+    // shows real content while its design is being tuned. Shares the same query
+    // key as the live ProfileGuestbook, so it's a cache hit when already loaded.
+    const themeHasGuestbook = useMemo(
+        () => getVisibleOrderedLayoutBlocks(theme).some((b) => b.type === "guestbook"),
+        [theme]
+    );
+    const { data: guestbookData, isLoading: guestbookLoading } = useQuery({
+        queryKey: ["guestbook", previewUsername],
+        queryFn: () => getProfileGuestbook(previewUsername),
+        enabled: !!previewUsername && themeHasGuestbook,
+        staleTime: 1000 * 60 * 2,
+        refetchOnWindowFocus: false,
+    });
+    const guestbookEntries = guestbookData?.entries || [];
+    const isGuestbookLoading = guestbookLoading && themeHasGuestbook;
+
     // Selection is controlled when the parent supplies onSelectType (so the
     // Cards tab can edit the selected container); otherwise it's self-managed.
     const [internalSelected, setInternalSelected] = useState(null);
@@ -459,31 +543,45 @@ const BuilderPreview = ({
         onReorderBlocks(merged);
     };
 
-    // Clicking anywhere on the canvas that ISN'T a sticker deselects it.
-    // Stickers stopPropagation on pointer-down, so this only fires off-sticker.
-    const handleCanvasPointerDown = () => {
-        if (onSelectSticker && selectedStickerIndex >= 0) onSelectSticker(-1);
-    };
+    // Mobile container-first editing: the whole page is itself a tappable "Page"
+    // container at the top of the canvas. Tapping it opens the global theme tools
+    // (presets / colors / type / cards / sections) inline — exactly like tapping
+    // any other container opens its own editor. Desktop keeps the tool sheet.
+    const showPageContainer = isMobile && typeof renderPageStudio === "function";
+    const showHeroInlineEditor = isMobile && selectedHeroEl && typeof onHeroPatchElement === "function";
 
     return (
         <div className="pt-preview-wrap pt-scope" style={cssVars}>
-            <div
-                className="pt-preview-surface"
-                style={background || undefined}
-                onPointerDown={onSelectSticker ? handleCanvasPointerDown : undefined}
-            >
-                {/* Stickers live INSIDE the hero so their %-coordinates map to the
-                    exact same box the live profile hero uses — drag here, save,
-                    and they land in the same place on the page. */}
+            <div className="pt-preview-surface" style={background || undefined}>
+                {showPageContainer && (
+                    <div className={`pt-page-container${pageSelected ? " is-selected" : ""}`}>
+                        <button
+                            type="button"
+                            className="pt-page-container-head"
+                            aria-expanded={pageSelected}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectPage?.();
+                            }}
+                        >
+                            <span className="pt-page-container-icon" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="3" />
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                </svg>
+                            </span>
+                            <span className="pt-page-container-label">Page · theme, colors &amp; type</span>
+                            <span className="pt-page-container-hint">{pageSelected ? "Close" : "Tap to edit"}</span>
+                        </button>
+                        {pageSelected && (
+                            <div className="pt-page-container-body" onClick={(e) => e.stopPropagation()}>
+                                {renderPageStudio()}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="pt-preview-hero" style={{ position: "relative" }}>
-                    <StickerLayer
-                        stickers={theme.stickers}
-                        editable
-                        onChange={onStickersChange}
-                        accentColor={theme.colors.accent}
-                        selectedIndex={selectedStickerIndex}
-                        onSelectSticker={onSelectSticker}
-                    />
                     <FreeHero
                         editable
                         hero={theme.hero}
@@ -500,6 +598,23 @@ const BuilderPreview = ({
                         selectedEl={selectedHeroEl}
                         onSelectEl={onSelectHeroEl}
                     />
+                    {showHeroInlineEditor && (
+                        <div className="pt-hero-inline-editor" onClick={(e) => e.stopPropagation()}>
+                            <div className="pt-inline-editor-head">
+                                <span>
+                                    Editing <strong>{HERO_ELEMENT_LABELS[selectedHeroEl] || selectedHeroEl}</strong>
+                                </span>
+                                <button type="button" onClick={() => onSelectHeroEl(null)}>
+                                    Done
+                                </button>
+                            </div>
+                            <HeroElementEditor
+                                elementKey={selectedHeroEl}
+                                data={theme.hero?.layout?.[selectedHeroEl]}
+                                onPatch={onHeroPatchElement}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Layout preview — mirrors the configured block order / width /
@@ -534,7 +649,13 @@ const BuilderPreview = ({
                                     onToggleBlock={onToggleBlock}
                                     preview={livePreview}
                                     isPreviewLoading={isPreviewLoading}
+                                    guestbook={guestbookEntries}
+                                    isGuestbookLoading={isGuestbookLoading}
                                     isOwn
+                                    isMobile={isMobile}
+                                    onPatchBlockContent={onPatchBlockContent}
+                                    onPatchBlockDesign={onPatchBlockDesign}
+                                    onResetBlock={onResetBlock}
                                 />
                             ))}
                         </Reorder.Group>
@@ -546,12 +667,16 @@ const BuilderPreview = ({
                     <div className="pt-preview-layout">
                         {layoutBlocks.map((block) => {
                             const cardVars = getBlockCardCssVars(theme, block);
-                            const styleCls = cardVars ? "pl-block--inherit" : blockStyleClass(block.style);
+                            const styleCls = cardVars ? "pl-block--inherit" : "pl-block--design";
+                            const design = getBlockDesign(block);
+                            const designAttrs = getBlockDesignDataAttrs(design);
+                            const roStyle = { ...(cardVars || {}), ...getBlockDesignStyle(design) };
                             return (
                             <div
                                 key={block.type}
                                 className={`pt-preview-block ${blockWidthClass(block.width)} ${styleCls}`}
-                                style={cardVars || undefined}
+                                style={Object.keys(roStyle).length ? roStyle : undefined}
+                                {...designAttrs}
                             >
                                 <span className="pt-preview-block-title">
                                     {block.title || LAYOUT_BLOCK_LABELS[block.type] || block.type}
@@ -562,6 +687,8 @@ const BuilderPreview = ({
                                     variant={block.variant}
                                     preview={livePreview}
                                     isPreviewLoading={isPreviewLoading}
+                                    guestbook={guestbookEntries}
+                                    isGuestbookLoading={isGuestbookLoading}
                                     isOwn
                                 />
                             </div>

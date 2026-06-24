@@ -6,8 +6,8 @@ import {
     HERO_ELEMENT_ALIGN_LABELS,
     HERO_ELEMENT_STYLES,
     HERO_ELEMENT_STYLE_LABELS,
+    SWATCH_COLORS,
 } from "../profileThemeConstants";
-import { STICKER_COLORS } from "../stickerRegistry";
 import { isSectionVisible, isHexColor } from "../profileThemeUtils";
 
 // V3A: the Sections tab now controls only the hero sub-blocks (stats / bio /
@@ -71,7 +71,7 @@ const SectionsPanel = ({
                 <div className="pt-field">
                     <span className="pt-field-label">Text color</span>
                     <div className="pt-sticker-color-row" role="group" aria-label="Element text color">
-                        {STICKER_COLORS.map((c) => {
+                        {SWATCH_COLORS.map((c) => {
                             const active = (selectedHeroElData.color || null) === c.value;
                             return (
                                 <button

@@ -30,13 +30,16 @@ const ProfileBackgroundLayer = ({ background, profileTheme, builderOpen = false,
     const animated = isAnimatedBackground(background);
 
     if (mode === "ambient") {
-        // Static images blur as-is; animated backgrounds blur their static poster.
+        // Static images blur as-is; animated backgrounds blur their static POSTER —
+        // the ambient layer NEVER mounts a <video>/GIF, so a profile visit only ever
+        // has the one animating layer (the main mode below).
         const style = getStaticBackgroundStyle(background, { posterForAnimated: true });
         if (!style) return null;
         return (
             <div
                 className={`blurred-img-bg${animated ? " profile-ambient-poster" : ""}`}
                 style={style}
+                data-testid="profile-bg-ambient"
                 aria-hidden="true"
             />
         );
@@ -55,7 +58,8 @@ const ProfileBackgroundLayer = ({ background, profileTheme, builderOpen = false,
 
     let media = null;
     if (budget.shouldUsePosterOnly) {
-        // Reduced motion or builder open → poster only, no animation work at all.
+        // Reduced motion OR builder open → poster only. No <video> is mounted at
+        // all (so nothing decodes behind the builder); a still <img> is rendered.
         media = poster ? (
             <img className="profile-animated-bg-poster" src={poster} alt="" aria-hidden="true" />
         ) : null;
@@ -88,7 +92,7 @@ const ProfileBackgroundLayer = ({ background, profileTheme, builderOpen = false,
     if (!media && !gradientStyle) return null;
 
     return (
-        <div className="profile-bg-media-layer" aria-hidden="true">
+        <div className="profile-bg-media-layer" data-testid="profile-bg-media-layer" aria-hidden="true">
             {media}
             {gradientStyle && <div className="profile-bg-gradient-overlay" style={gradientStyle} />}
         </div>

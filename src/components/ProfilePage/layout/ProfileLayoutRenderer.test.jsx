@@ -81,6 +81,33 @@ describe("ProfileLayoutRenderer (V3B real previews)", () => {
         expect(await screen.findByText("On Quiet Mornings")).toBeInTheDocument();
     });
 
+    it("renders each block with V5 design data-attributes (no sticker UI)", async () => {
+        getProfilePreview.mockResolvedValue(emptyPreview());
+        const theme = normalizeProfileTheme(
+            {
+                layout: {
+                    blocks: [
+                        { type: "writings", order: 0, design: { surface: "paper", tone: "forest", radius: "sharp", titleAlign: "center", accent: "rose" } },
+                    ],
+                },
+            },
+            userData
+        );
+        const { container } = renderWithProviders(
+            <ProfileLayoutRenderer theme={theme} username="alice" profileUserId="u1" navigate={vi.fn()} />
+        );
+        await screen.findByText("Writings");
+        const block = container.querySelector(".pl-block--content.pl-block--design");
+        expect(block).toBeTruthy();
+        expect(block.getAttribute("data-surface")).toBe("paper");
+        expect(block.getAttribute("data-tone")).toBe("forest");
+        expect(block.getAttribute("data-radius")).toBe("sharp");
+        expect(block.getAttribute("data-title-align")).toBe("center");
+        expect(block.getAttribute("data-accent")).toBe("rose");
+        // No sticker UI anywhere in the rendered profile.
+        expect(container.querySelector(".pt-sticker, .pt-sticker-layer")).toBeNull();
+    });
+
     it("opens the block content modal when a writing preview is clicked", async () => {
         getProfilePreview.mockResolvedValue(
             emptyPreview({

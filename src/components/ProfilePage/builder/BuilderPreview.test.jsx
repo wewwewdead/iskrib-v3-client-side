@@ -8,6 +8,11 @@ vi.mock("../../../../API/Api", () => ({
     getProfilePreview: vi.fn(() =>
         Promise.resolve({ writings: [], media: [], opinions: [], stories: [], pinnedWritings: [] })
     ),
+    getProfileGuestbook: vi.fn(() =>
+        Promise.resolve({
+            entries: [{ id: "g1", message: "Lovely room!", author: { name: "Bob", username: "bob", image_url: null } }],
+        })
+    ),
 }));
 
 import BuilderPreview from "./BuilderPreview";
@@ -32,7 +37,6 @@ const editHandlers = () => ({
     onPatchBlock: vi.fn(),
     onMoveBlock: vi.fn(),
     onToggleBlock: vi.fn(),
-    onStickersChange: vi.fn(),
 });
 
 const setup = (props = {}) => {
@@ -51,9 +55,8 @@ const setup = (props = {}) => {
     return { ...utils, handlers, theme };
 };
 
-describe("BuilderPreview — sticker selection", () => {
-    it("clicking off a sticker on the canvas deselects it", () => {
-        const onSelectSticker = vi.fn();
+describe("BuilderPreview — no sticker surface (V5 deprecation)", () => {
+    it("renders no sticker layer even when a legacy theme carries stickers", () => {
         const theme = getDefaultProfileTheme(userData);
         theme.stickers = [{ id: "star-01", x: 50, y: 30, rotation: 0, scale: 1 }];
         const { container } = renderWithClient(
@@ -63,31 +66,19 @@ describe("BuilderPreview — sticker selection", () => {
                 followerCount={1}
                 followingCount={1}
                 {...editHandlers()}
-                selectedStickerIndex={0}
-                onSelectSticker={onSelectSticker}
             />
         );
-        fireEvent.pointerDown(container.querySelector(".pt-preview-surface"));
-        expect(onSelectSticker).toHaveBeenCalledWith(-1);
+        expect(container.querySelector(".pt-sticker")).toBeNull();
+        expect(container.querySelector(".pt-sticker-layer")).toBeNull();
     });
+});
 
-    it("does not deselect when nothing is selected", () => {
-        const onSelectSticker = vi.fn();
-        const theme = getDefaultProfileTheme(userData);
-        theme.stickers = [{ id: "star-01", x: 50, y: 30, rotation: 0, scale: 1 }];
-        const { container } = renderWithClient(
-            <BuilderPreview
-                theme={theme}
-                userData={userData}
-                followerCount={1}
-                followingCount={1}
-                {...editHandlers()}
-                selectedStickerIndex={-1}
-                onSelectSticker={onSelectSticker}
-            />
-        );
-        fireEvent.pointerDown(container.querySelector(".pt-preview-surface"));
-        expect(onSelectSticker).not.toHaveBeenCalled();
+describe("BuilderPreview — guestbook shows real notes (WYSIWYG)", () => {
+    it("renders real guestbook notes in the preview, not a placeholder", async () => {
+        setup();
+        // The guestbook block previews the actual note (from the public endpoint).
+        expect(await screen.findByText("Lovely room!")).toBeInTheDocument();
+        expect(screen.getByText("Bob")).toBeInTheDocument();
     });
 });
 

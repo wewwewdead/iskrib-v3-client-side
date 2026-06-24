@@ -10,16 +10,34 @@
 // themes are still read: a default layout is derived from their `sections`.
 export const PROFILE_THEME_VERSION = 2;
 
-export const MAX_STICKERS = 20;
+// Shared color-swatch palette for the builder's quick-pick color pickers (hero
+// element text/background colors, etc.). `value: null` = follow the theme accent.
+// (Formerly STICKER_COLORS — relocated here when stickers were deprecated in V5.)
+export const SWATCH_COLORS = [
+    { value: null, label: "Theme accent" },
+    { value: "#ffffff", label: "White" },
+    { value: "#1a1a1a", label: "Black" },
+    { value: "#d4a853", label: "Gold" },
+    { value: "#e0556e", label: "Rose" },
+    { value: "#5a8dee", label: "Blue" },
+    { value: "#3fb27f", label: "Green" },
+    { value: "#a06cd5", label: "Purple" },
+];
 
 // ── Fonts ──────────────────────────────────────────────────────────────────
 // All families are already loaded globally via client/src/index.css.
 export const PROFILE_FONTS = [
     { key: "outfit", label: "Outfit", stack: "'Outfit', sans-serif" },
-    { key: "lora", label: "Lora", stack: "'Lora', serif" },
-    { key: "playfair", label: "Playfair", stack: "'Playfair Display', serif" },
-    { key: "comfortaa", label: "Comfortaa", stack: "'Comfortaa', cursive" },
     { key: "lexend", label: "Lexend", stack: "'Lexend Deca', sans-serif" },
+    { key: "spaceGrotesk", label: "Space Grotesk", stack: "'Space Grotesk', sans-serif" },
+    { key: "lora", label: "Lora", stack: "'Lora', serif" },
+    { key: "spectral", label: "Spectral", stack: "'Spectral', serif" },
+    { key: "garamond", label: "EB Garamond", stack: "'EB Garamond', serif" },
+    { key: "playfair", label: "Playfair", stack: "'Playfair Display', serif" },
+    { key: "dmSerif", label: "DM Serif", stack: "'DM Serif Display', serif" },
+    { key: "fraunces", label: "Fraunces", stack: "'Fraunces', serif" },
+    { key: "comfortaa", label: "Comfortaa", stack: "'Comfortaa', cursive" },
+    { key: "caveat", label: "Caveat", stack: "'Caveat', cursive" },
     { key: "patrick", label: "Patrick Hand", stack: "'Patrick Hand', cursive" },
 ];
 
@@ -363,3 +381,112 @@ export const CONTENT_SOURCE_LABELS = {
 export const CONTENT_DENSITY_LABELS = { comfortable: "Comfortable", compact: "Compact" };
 export const CONTENT_IMAGE_SHAPE_LABELS = { rounded: "Rounded", square: "Square", soft: "Soft" };
 export const CONTENT_BOOLEAN_LABELS = { showMeta: "Show meta", showExcerpt: "Show excerpt" };
+
+// ── Container design controls (Profile Builder V5 — Container Design Studio) ──
+// Mirrors the server whitelist in server/utils/profileThemeValidation.js. These
+// control a container's CHROME only (surface / tone / radius / shadow / border /
+// padding / header / title align / accent). Every value is a hardcoded enum that
+// maps to a fixed CSS class / data-attribute — no raw CSS, no custom colors.
+export const ALLOWED_DESIGN_SURFACES = ["paper", "glass", "solid", "minimal", "framed"];
+export const ALLOWED_DESIGN_TONES = ["default", "warm", "cool", "ink", "rose", "forest", "ocean"];
+export const ALLOWED_DESIGN_RADII = ["soft", "round", "sharp"];
+export const ALLOWED_DESIGN_SHADOWS = ["none", "soft", "lifted"];
+export const ALLOWED_DESIGN_BORDERS = ["none", "hairline", "accent"];
+export const ALLOWED_DESIGN_PADDINGS = ["compact", "comfortable", "spacious"];
+export const ALLOWED_DESIGN_HEADERS = ["plain", "label", "banner", "tab"];
+export const ALLOWED_DESIGN_TITLE_ALIGNS = ["left", "center"];
+export const ALLOWED_DESIGN_ACCENTS = ["theme", "amber", "blue", "green", "rose"];
+
+// Safe defaults — reproduce the pre-V5 default container look.
+export const DEFAULT_BLOCK_DESIGN = {
+    surface: "glass",
+    tone: "default",
+    radius: "round",
+    shadow: "soft",
+    border: "hairline",
+    padding: "comfortable",
+    header: "label",
+    titleAlign: "left",
+    accent: "theme",
+};
+
+export const DESIGN_SURFACE_LABELS = { paper: "Paper", glass: "Glass", solid: "Solid", minimal: "Minimal", framed: "Framed" };
+export const DESIGN_TONE_LABELS = { default: "Default", warm: "Warm", cool: "Cool", ink: "Ink", rose: "Rose", forest: "Forest", ocean: "Ocean" };
+export const DESIGN_RADIUS_LABELS = { soft: "Soft", round: "Round", sharp: "Sharp" };
+export const DESIGN_SHADOW_LABELS = { none: "None", soft: "Soft", lifted: "Lifted" };
+export const DESIGN_BORDER_LABELS = { none: "None", hairline: "Hairline", accent: "Accent" };
+export const DESIGN_PADDING_LABELS = { compact: "Compact", comfortable: "Comfortable", spacious: "Spacious" };
+export const DESIGN_HEADER_LABELS = { plain: "Plain", label: "Label", banner: "Banner", tab: "Tab" };
+export const DESIGN_TITLE_ALIGN_LABELS = { left: "Left", center: "Center" };
+export const DESIGN_ACCENT_LABELS = { theme: "Theme", amber: "Amber", blue: "Blue", green: "Green", rose: "Rose" };
+
+// Ordered descriptor the Design disclosure renders its segmented controls from.
+export const DESIGN_CONTROLS = [
+    { key: "surface", label: "Surface", options: ALLOWED_DESIGN_SURFACES, labels: DESIGN_SURFACE_LABELS },
+    { key: "tone", label: "Tone", options: ALLOWED_DESIGN_TONES, labels: DESIGN_TONE_LABELS },
+    { key: "radius", label: "Corners", options: ALLOWED_DESIGN_RADII, labels: DESIGN_RADIUS_LABELS },
+    { key: "shadow", label: "Shadow", options: ALLOWED_DESIGN_SHADOWS, labels: DESIGN_SHADOW_LABELS },
+    { key: "border", label: "Border", options: ALLOWED_DESIGN_BORDERS, labels: DESIGN_BORDER_LABELS },
+    { key: "padding", label: "Padding", options: ALLOWED_DESIGN_PADDINGS, labels: DESIGN_PADDING_LABELS },
+    { key: "header", label: "Header", options: ALLOWED_DESIGN_HEADERS, labels: DESIGN_HEADER_LABELS },
+    { key: "titleAlign", label: "Title align", options: ALLOWED_DESIGN_TITLE_ALIGNS, labels: DESIGN_TITLE_ALIGN_LABELS },
+    { key: "accent", label: "Accent", options: ALLOWED_DESIGN_ACCENTS, labels: DESIGN_ACCENT_LABELS },
+];
+
+// ════════════════════════════════════════════════════════════════════════════
+// V5.1 Design Studio — deeper per-container creative controls.
+// Everything stays whitelisted/validated/clamped (no raw CSS). Mirrors the server
+// whitelist in server/utils/profileThemeValidation.js. All these design fields are
+// OPTIONAL — stored only when the user sets them, so a default block stays minimal.
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── Fill (Canva-style fill panel) ──
+export const ALLOWED_FILL_TYPES = ["surface", "solid", "gradient", "pattern"];
+// "surface" = no fill override (use the Surface tool's card style). Labelled "None"
+// so it isn't confused with the dedicated Surface tool (paper / glass / …).
+export const FILL_TYPE_LABELS = { surface: "None", solid: "Solid", gradient: "Gradient", pattern: "Pattern" };
+
+export const ALLOWED_PATTERNS = ["dots", "grid", "lines", "diagonal", "crosshatch", "paper"];
+export const PATTERN_LABELS = { dots: "Dots", grid: "Grid", lines: "Lines", diagonal: "Diagonal", crosshatch: "Cross-hatch", paper: "Paper" };
+
+export const ALLOWED_PATTERN_SCALES = ["s", "m", "l"];
+export const PATTERN_SCALE_LABELS = { s: "Small", m: "Medium", l: "Large" };
+export const PATTERN_SCALE_PX = { s: 10, m: 18, l: 28 };
+
+// ── Border / frame ──
+export const ALLOWED_BORDER_STYLES = ["solid", "dashed", "dotted", "double"];
+export const BORDER_STYLE_LABELS = { solid: "Solid", dashed: "Dashed", dotted: "Dotted", double: "Double" };
+
+// ── Title typography ──
+export const ALLOWED_TITLE_SIZES = ["sm", "md", "lg", "xl"];
+export const TITLE_SIZE_LABELS = { sm: "S", md: "M", lg: "L", xl: "XL" };
+export const TITLE_SIZE_MULT = { sm: 0.9, md: 1.1, lg: 1.4, xl: 1.75 };
+
+export const ALLOWED_TITLE_WEIGHTS = ["normal", "medium", "bold", "black"];
+export const TITLE_WEIGHT_LABELS = { normal: "Regular", medium: "Medium", bold: "Bold", black: "Black" };
+export const TITLE_WEIGHT_VAL = { normal: "400", medium: "500", bold: "700", black: "900" };
+
+export const ALLOWED_TITLE_SPACINGS = ["tight", "normal", "wide"];
+export const TITLE_SPACING_LABELS = { tight: "Tight", normal: "Normal", wide: "Wide" };
+export const TITLE_SPACING_EM = { tight: "-0.01em", normal: "0", wide: "0.14em" };
+
+export const ALLOWED_TITLE_CASES = ["none", "upper"];
+export const TITLE_CASE_LABELS = { none: "Aa", upper: "AB" };
+
+// ── Effects ──
+export const ALLOWED_HOVER_FX = ["none", "lift", "glow"];
+export const HOVER_FX_LABELS = { none: "None", lift: "Lift", glow: "Glow" };
+
+// Numeric ranges {min,max,def,step} — drive the sliders AND the clamp on save.
+export const DESIGN_RANGES = {
+    gradAngle: { min: 0, max: 360, def: 135, step: 5 },
+    fillOpacity: { min: 0.1, max: 1, def: 1, step: 0.05 },
+    blur: { min: 0, max: 30, def: 18, step: 1 },
+    patternOpacity: { min: 0.05, max: 1, def: 0.4, step: 0.05 },
+    radiusPx: { min: 0, max: 40, def: 18, step: 1 },
+    borderWidth: { min: 0, max: 8, def: 1, step: 1 },
+    paddingPx: { min: 4, max: 48, def: 18, step: 1 },
+    shadowStrength: { min: 0, max: 1, def: 0.4, step: 0.05 },
+    tilt: { min: -6, max: 6, def: 0, step: 1 },
+    opacity: { min: 0.3, max: 1, def: 1, step: 0.05 },
+};

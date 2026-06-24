@@ -7,7 +7,7 @@ import "../layout/profileLayout.css";
 import { updateProfileTheme } from "../../../../API/Api";
 import { normalizeProfileTheme, getDefaultProfileTheme } from "./profileThemeUtils";
 import { applyPresetToTheme } from "./profileThemePresets";
-import { MAX_STICKERS, HERO_ELEMENT_LABELS } from "./profileThemeConstants";
+import { HERO_ELEMENT_LABELS, LAYOUT_BLOCK_LABELS } from "./profileThemeConstants";
 import BuilderPreview from "./BuilderPreview";
 import PresetsPanel from "./panels/PresetsPanel";
 import ColorsPanel from "./panels/ColorsPanel";
@@ -15,8 +15,10 @@ import TypographyPanel from "./panels/TypographyPanel";
 import CardsPanel from "./panels/CardsPanel";
 import LayoutPanel from "./panels/LayoutPanel";
 import SectionsPanel from "./panels/SectionsPanel";
-import StickersPanel from "./panels/StickersPanel";
 import HeroElementEditor from "./panels/HeroElementEditor";
+import { BlockStudioControls } from "./panels/blockStudioControls";
+import PageStudioPanel from "./panels/PageStudioPanel";
+import { TOOL_ICONS } from "./panels/toolIcons";
 import useThemeHistory from "./useThemeHistory";
 
 const TABS = [
@@ -26,7 +28,6 @@ const TABS = [
     { key: "cards", label: "Cards" },
     { key: "layout", label: "Layout" },
     { key: "sections", label: "Sections" },
-    { key: "stickers", label: "Stickers" },
 ];
 
 // Pure draft helpers — module-scope so they're stable references (no per-render
@@ -34,15 +35,6 @@ const TABS = [
 const markCustom = (next) => ({ ...next, presetId: "custom" });
 const reindexBlocks = (blocks) => blocks.map((b, i) => ({ ...b, order: i }));
 
-// Mobile bottom-sheet states, cycled by the sheet grabber. "collapsed" keeps the
-// canvas in focus (Preview mode); "half"/"expanded" surface the tool panel.
-const SHEET_NEXT = { collapsed: "half", half: "expanded", expanded: "collapsed" };
-// Ordered snap points for the swipe gesture (drag up = open more, down = close).
-const SHEET_ORDER = ["collapsed", "half", "expanded"];
-const SHEET_SWIPE_THRESHOLD = 26; // px of travel before a drag counts as a swipe
-// Tabs that already act on the selected container — tapping a block keeps you
-// here instead of yanking you over to Layout.
-const CONTAINER_AWARE_TABS = new Set(["layout", "cards"]);
 
 const ProfileBuilder = ({
     open,
@@ -54,10 +46,11 @@ const ProfileBuilder = ({
     followerCount,
     followingCount,
 }) => {
-    // Mobile gets a dedicated app-shell: a canvas-first preview with a bottom
-    // sheet for tools. Desktop ignores all of this (the sheet state is harmless).
+    // Mobile is a canvas-only room-builder: there is NO tool sheet — every editor
+    // (page / container / hero element) opens inline inside the tapped container.
+    // Desktop keeps the tabbed tool sheet beside the canvas. `activeTab` is only
+    // read by the desktop sheet.
     const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
-    const [mobileSheetState, setMobileSheetState] = useState("collapsed");
     const [activeTab, setActiveTab] = useState("presets");
     // Draft theme with full undo/redo history. `set` is aliased to `setDraft` so
     // every existing mutation handler works unchanged; rapid drags coalesce into
@@ -74,10 +67,12 @@ const ProfileBuilder = ({
     // The container selected in the live preview. When set, the Cards tab edits
     // THAT container's card style instead of the page-wide default.
     const [selectedBlockType, setSelectedBlockType] = useState(null);
-    // The sticker selected on the canvas (-1 = none) — drives the Stickers editor.
-    const [selectedStickerIndex, setSelectedStickerIndex] = useState(-1);
     // The free-hero element selected on the canvas — drives its per-element editor.
     const [selectedHeroEl, setSelectedHeroEl] = useState(null);
+    // Mobile (V5 room-builder): the "Page" container at the top of the canvas is
+    // selected → its inline editor shows the global theme tools. Mutually exclusive
+    // with a selected block / hero element so only one inline editor is ever open.
+    const [pageSelected, setPageSelected] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const [confirmingDiscard, setConfirmingDiscard] = useState(false);
@@ -100,11 +95,8 @@ const ProfileBuilder = ({
             setJustSaved(false);
             setConfirmingDiscard(false);
             setSelectedBlockType(null);
-            setSelectedStickerIndex(-1);
             setSelectedHeroEl(null);
-            // Mobile opens canvas-first — the sheet is tucked away until a tool
-            // is picked, so the preview is fully visible the moment it opens.
-            setMobileSheetState("collapsed");
+            setPageSelected(false);
         }
     }, [open, initialTheme, userData, resetHistory]);
 
@@ -119,60 +111,11 @@ const ProfileBuilder = ({
         };
     }, [open]);
 
-    // Step the mobile bottom sheet through collapsed → half → expanded → collapsed.
-    const cycleSheet = useCallback(() => {
-        setMobileSheetState((s) => SHEET_NEXT[s] || "half");
+    // Picking a tool switches the desktop tool tab (mobile has no tab rail — its
+    // tools live inline in the tapped container, V5 room-builder).
+    const handleSelectTab = useCallback((key) => {
+        setActiveTab(key);
     }, []);
-
-    // Swipe the sheet up/down between snap points; a near-stationary press is a
-    // tap and just cycles. Pointer-captured so the gesture keeps tracking after
-    // the finger leaves the grabber (mirrors the StickerLayer drag pattern).
-    const sheetDragRef = useRef(null);
-    const onSheetPointerDown = useCallback((e) => {
-        e.currentTarget.setPointerCapture?.(e.pointerId);
-        sheetDragRef.current = { y: e.clientY, id: e.pointerId };
-    }, []);
-    const onSheetPointerUp = useCallback(
-        (e) => {
-            const st = sheetDragRef.current;
-            if (!st) return;
-            sheetDragRef.current = null;
-            e.currentTarget.releasePointerCapture?.(st.id);
-            const dy = e.clientY - st.y;
-            if (dy <= -SHEET_SWIPE_THRESHOLD) {
-                setMobileSheetState(
-                    (s) => SHEET_ORDER[Math.min(SHEET_ORDER.indexOf(s) + 1, SHEET_ORDER.length - 1)]
-                );
-            } else if (dy >= SHEET_SWIPE_THRESHOLD) {
-                setMobileSheetState((s) => SHEET_ORDER[Math.max(SHEET_ORDER.indexOf(s) - 1, 0)]);
-            } else {
-                cycleSheet();
-            }
-        },
-        [cycleSheet]
-    );
-
-    // Tap a container in the preview → surface its controls on mobile (the core
-    // "edit this container" gesture). Only fires from a real tap (onClick), never
-    // mid-drag, so reordering a block never shrinks the canvas out from under it.
-    const handleEditBlock = useCallback(
-        (type) => {
-            if (!isMobile || !type) return;
-            setMobileSheetState((s) => (s === "collapsed" ? "half" : s));
-            setActiveTab((t) => (CONTAINER_AWARE_TABS.has(t) ? t : "layout"));
-        },
-        [isMobile]
-    );
-
-    // Picking a tool surfaces the sheet (half) on mobile if it's tucked away, so
-    // the chosen panel is actually visible. Desktop just switches tabs.
-    const handleSelectTab = useCallback(
-        (key) => {
-            setActiveTab(key);
-            if (isMobile) setMobileSheetState((s) => (s === "collapsed" ? "half" : s));
-        },
-        [isMobile]
-    );
 
     // Has the draft diverged from the snapshot it opened with?
     const isDirty = useMemo(
@@ -304,7 +247,9 @@ const ProfileBuilder = ({
 
     // Patch a single block's width / style / variant / title. Choosing a fixed
     // style preset (anything but "inherit") clears a per-container card override,
-    // since the preset fully defines that container's look.
+    // since the preset fully defines that container's look. The "Style" picker is
+    // a quick surface shortcut, so it also keeps the V5 design.surface in sync
+    // (inherit → the default glass surface); the Design disclosure shows the same.
     const handlePatchLayoutBlock = useCallback((type, partial) => {
         setDraft((prev) =>
             markCustom({
@@ -314,8 +259,10 @@ const ProfileBuilder = ({
                     blocks: prev.layout.blocks.map((b) => {
                         if (b.type !== type) return b;
                         const next = { ...b, ...partial };
-                        if (partial.style && partial.style !== "inherit") {
-                            delete next.card;
+                        if (partial.style) {
+                            const surface = partial.style === "inherit" ? "glass" : partial.style;
+                            next.design = { ...(b.design || {}), surface };
+                            if (partial.style !== "inherit") delete next.card;
                         }
                         return next;
                     }),
@@ -388,6 +335,24 @@ const ProfileBuilder = ({
         );
     }, []);
 
+    // Patch a single block's design controls (surface / tone / radius / shadow /
+    // border / padding / header / titleAlign / accent) — V5 Container Design Studio.
+    const handlePatchLayoutBlockDesign = useCallback((type, partial) => {
+        setDraft((prev) =>
+            markCustom({
+                ...prev,
+                layout: {
+                    ...prev.layout,
+                    blocks: prev.layout.blocks.map((b) =>
+                        b.type === type
+                            ? { ...b, design: { ...(b.design || {}), ...partial } }
+                            : b
+                    ),
+                },
+            })
+        );
+    }, []);
+
     // Reset a single block to its default width / style / variant / title / content.
     const handleResetLayoutBlock = useCallback((type) => {
         setDraft((prev) => {
@@ -408,56 +373,13 @@ const ProfileBuilder = ({
                             variant: fresh.variant,
                             title: fresh.title,
                             ...(fresh.content ? { content: { ...fresh.content } } : {}),
+                            ...(fresh.design ? { design: { ...fresh.design } } : {}),
                         };
                     }),
                 },
             });
         });
     }, [userData]);
-
-    const handleAddSticker = useCallback((stickerId) => {
-        setDraft((prev) => {
-            if (prev.stickers.length >= MAX_STICKERS) return prev;
-            // Stagger new stickers slightly so they don't stack perfectly.
-            const offset = (prev.stickers.length % 5) * 6;
-            // Select the freshly-added sticker so its controls show immediately.
-            setSelectedStickerIndex(prev.stickers.length);
-            return {
-                ...prev,
-                stickers: [
-                    ...prev.stickers,
-                    { id: stickerId, x: 40 + offset, y: 30 + offset, rotation: -6, scale: 1 },
-                ],
-            };
-        });
-    }, []);
-
-    const handleStickersChange = useCallback((nextStickers) => {
-        setDraft((prev) => ({ ...prev, stickers: nextStickers }));
-    }, []);
-
-    // Select a sticker (clicking it on the canvas) and surface its editor.
-    const handleSelectSticker = useCallback((index) => {
-        setSelectedStickerIndex(index);
-        if (index >= 0) {
-            setActiveTab("stickers");
-            // Bring the sheet up on mobile so the sticker's controls are reachable.
-            if (isMobile) setMobileSheetState((s) => (s === "collapsed" ? "half" : s));
-        }
-    }, [isMobile]);
-
-    // Patch one sticker's color / scale / rotation.
-    const handleUpdateSticker = useCallback((index, partial) => {
-        setDraft((prev) => ({
-            ...prev,
-            stickers: prev.stickers.map((s, i) => (i === index ? { ...s, ...partial } : s)),
-        }));
-    }, []);
-
-    const handleRemoveSticker = useCallback((index) => {
-        setDraft((prev) => ({ ...prev, stickers: prev.stickers.filter((_, i) => i !== index) }));
-        setSelectedStickerIndex(-1);
-    }, []);
 
     // ── Hero (fixed reorderable stack) ──
     // Reorder (drag a hero element up/down in the preview) → persist the new order.
@@ -468,11 +390,48 @@ const ProfileBuilder = ({
     // Select a hero element (clicking it on the preview) → surface its editor.
     // Both the Sections and Colors tabs are element-aware, so if the user is
     // already on Colors we keep them there; otherwise we jump to Sections.
+    // Selecting one thing clears the others so only one inline editor is open
+    // (matters on mobile, where editors render inline in the canvas).
     const handleSelectHeroEl = useCallback((key) => {
         setSelectedHeroEl(key);
-        // Surface the hero element's editor in the bottom sheet on mobile.
-        if (key && isMobile) setMobileSheetState((s) => (s === "collapsed" ? "half" : s));
-    }, [isMobile]);
+        if (key) {
+            setSelectedBlockType(null);
+            setPageSelected(false);
+        }
+    }, []);
+
+    // Select a layout container (mutually exclusive with hero / page selection).
+    const handleSelectBlockType = useCallback((type) => {
+        setSelectedBlockType(type);
+        if (type) {
+            setSelectedHeroEl(null);
+            setPageSelected(false);
+        }
+    }, []);
+
+    // Tap the mobile "Page" container → toggle the global theme tools open/closed.
+    const handleSelectPage = useCallback(() => {
+        setPageSelected((v) => !v);
+        setSelectedBlockType(null);
+        setSelectedHeroEl(null);
+    }, []);
+
+    // The Page container's inline editor (mobile): the global theme tools, reusing
+    // the existing panels. Built here because all the global handlers live here.
+    const renderPageStudio = useCallback(
+        () => (
+            <PageStudioPanel
+                theme={draft}
+                onApplyPreset={handleApplyPreset}
+                onPatchColors={handlePatchColors}
+                onPatchBackground={handlePatchBackground}
+                onPatchTypography={handlePatchTypography}
+                onPatchCards={handlePatchCards}
+                onToggleSection={handleToggleSection}
+            />
+        ),
+        [draft, handleApplyPreset, handlePatchColors, handlePatchBackground, handlePatchTypography, handlePatchCards, handleToggleSection]
+    );
 
     // Patch ONE hero element's align / style (isolated to that container).
     const handleHeroPatchElement = useCallback((key, partial) => {
@@ -555,6 +514,7 @@ const ProfileBuilder = ({
                         onToggleBlock={handleToggleLayoutBlock}
                         onPatchBlock={handlePatchLayoutBlock}
                         onPatchBlockContent={handlePatchLayoutBlockContent}
+                        onPatchBlockDesign={handlePatchLayoutBlockDesign}
                         onResetBlock={handleResetLayoutBlock}
                     />
                 );
@@ -569,20 +529,6 @@ const ProfileBuilder = ({
                         }
                         onHeroPatchElement={handleHeroPatchElement}
                         onClearHeroSelection={() => setSelectedHeroEl(null)}
-                    />
-                );
-            case "stickers":
-                return (
-                    <StickersPanel
-                        theme={draft}
-                        onAddSticker={handleAddSticker}
-                        selectedIndex={selectedStickerIndex}
-                        selectedSticker={
-                            selectedStickerIndex >= 0 ? draft.stickers[selectedStickerIndex] || null : null
-                        }
-                        onUpdateSticker={handleUpdateSticker}
-                        onRemoveSticker={handleRemoveSticker}
-                        onDeselect={() => setSelectedStickerIndex(-1)}
                     />
                 );
             default:
@@ -601,25 +547,15 @@ const ProfileBuilder = ({
         handleToggleLayoutBlock,
         handlePatchLayoutBlock,
         handlePatchLayoutBlockContent,
+        handlePatchLayoutBlockDesign,
         handleResetLayoutBlock,
         handlePatchBlockCard,
         handleResetBlockCard,
         selectedBlockType,
         handleToggleSection,
-        handleAddSticker,
-        selectedStickerIndex,
-        handleUpdateSticker,
-        handleRemoveSticker,
         selectedHeroEl,
         handleHeroPatchElement,
     ]);
-
-    // Label shown in the mobile sheet header so it's always clear what the sheet
-    // is editing — the active tool, or the hero element being tuned.
-    const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label || "Tools";
-    const sheetTitle = selectedHeroEl
-        ? `Editing ${HERO_ELEMENT_LABELS[selectedHeroEl] || selectedHeroEl}`
-        : activeTabLabel;
 
     return (
         <AnimatePresence>
@@ -635,7 +571,7 @@ const ProfileBuilder = ({
                     transition={{ duration: 0.2 }}
                 >
                     <Motion.div
-                        className={`pt-builder${isMobile ? ` is-mobile sheet-${mobileSheetState}` : ""}`}
+                        className={`pt-builder${isMobile ? " is-mobile" : ""}`}
                         initial={{ scale: 0.96, y: 16, opacity: 0 }}
                         animate={{ scale: 1, y: 0, opacity: 1 }}
                         exit={{ scale: 0.97, y: 8, opacity: 0 }}
@@ -707,54 +643,28 @@ const ProfileBuilder = ({
                                     userData={userData}
                                     followerCount={followerCount}
                                     followingCount={followingCount}
-                                    onStickersChange={handleStickersChange}
-                                    selectedStickerIndex={selectedStickerIndex}
-                                    onSelectSticker={handleSelectSticker}
                                     onReorderBlocks={handleReorderLayout}
                                     onPatchBlock={handlePatchLayoutBlock}
                                     onMoveBlock={handleMoveBlock}
                                     onToggleBlock={handleToggleLayoutBlock}
                                     selectedType={selectedBlockType}
-                                    onSelectType={setSelectedBlockType}
-                                    onEditBlock={handleEditBlock}
+                                    onSelectType={handleSelectBlockType}
                                     onHeroChange={handleHeroChange}
                                     selectedHeroEl={selectedHeroEl}
                                     onSelectHeroEl={handleSelectHeroEl}
+                                    isMobile={isMobile}
+                                    onPatchBlockContent={handlePatchLayoutBlockContent}
+                                    onPatchBlockDesign={handlePatchLayoutBlockDesign}
+                                    onResetBlock={handleResetLayoutBlock}
+                                    onHeroPatchElement={handleHeroPatchElement}
+                                    renderPageStudio={renderPageStudio}
+                                    pageSelected={pageSelected}
+                                    onSelectPage={handleSelectPage}
                                 />
                             </section>
 
+                            {!isMobile && (
                             <section className="pt-builder-tools">
-                                {isMobile && (
-                                    <button
-                                        type="button"
-                                        className="pt-sheet-header"
-                                        onPointerDown={onSheetPointerDown}
-                                        onPointerUp={onSheetPointerUp}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter" || e.key === " ") {
-                                                e.preventDefault();
-                                                cycleSheet();
-                                            }
-                                        }}
-                                        aria-expanded={mobileSheetState !== "collapsed"}
-                                        aria-label={`Tools — ${sheetTitle}. Swipe up or down, or tap to ${
-                                            mobileSheetState === "expanded" ? "collapse" : "expand"
-                                        }`}
-                                    >
-                                        <span className="pt-sheet-grabber-pill" aria-hidden="true" />
-                                        <span className="pt-sheet-header-row">
-                                            <span className="pt-sheet-title">{sheetTitle}</span>
-                                            <span
-                                                className={`pt-sheet-chevron sheet-${mobileSheetState}`}
-                                                aria-hidden="true"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                                                    <path d="m6 15 6-6 6 6" />
-                                                </svg>
-                                            </span>
-                                        </span>
-                                    </button>
-                                )}
                                 {selectedHeroEl ? (
                                     <>
                                         <div className="pt-hero-edit-banner">
@@ -774,21 +684,56 @@ const ProfileBuilder = ({
                                             />
                                         </div>
                                     </>
+                                ) : selectedBlockType && draft.layout?.blocks?.some((b) => b.type === selectedBlockType) ? (
+                                    // A layout container is selected → focus the panel on
+                                    // ONLY that container's layout + design editor (no tabs).
+                                    // "Done" (or deselecting on the canvas) returns to normal.
+                                    <>
+                                        <div className="pt-hero-edit-banner">
+                                            <span>
+                                                Editing <strong>{LAYOUT_BLOCK_LABELS[selectedBlockType] || selectedBlockType}</strong>
+                                                {" "}— only this container is affected
+                                            </span>
+                                            <button type="button" onClick={() => setSelectedBlockType(null)}>
+                                                Done
+                                            </button>
+                                        </div>
+                                        <div className="pt-builder-panel-scroll">
+                                            <BlockStudioControls
+                                                block={draft.layout.blocks.find((b) => b.type === selectedBlockType)}
+                                                label={LAYOUT_BLOCK_LABELS[selectedBlockType] || selectedBlockType}
+                                                onPatchBlock={handlePatchLayoutBlock}
+                                                onPatchBlockContent={handlePatchLayoutBlockContent}
+                                                onPatchBlockDesign={handlePatchLayoutBlockDesign}
+                                                onResetBlock={handleResetLayoutBlock}
+                                                defaultOpen
+                                            />
+                                        </div>
+                                    </>
                                 ) : (
                                     <>
-                                        <nav className="pt-builder-tabs" aria-label="Customization tools">
+                                        <nav className="pt-builder-tabs" role="tablist" aria-label="Customization tools">
                                             {TABS.map((tab) => (
                                                 <button
                                                     key={tab.key}
                                                     type="button"
-                                                    className={`pt-builder-tab${activeTab === tab.key ? " is-active" : ""}`}
-                                                    aria-pressed={activeTab === tab.key}
+                                                    className={`pt-builder-tab pt-tip${activeTab === tab.key ? " is-active" : ""}`}
+                                                    role="tab"
+                                                    aria-selected={activeTab === tab.key}
+                                                    aria-label={tab.label}
+                                                    data-tip={tab.label}
                                                     onClick={() => handleSelectTab(tab.key)}
                                                 >
-                                                    {tab.label}
+                                                    {TOOL_ICONS[tab.key]}
                                                 </button>
                                             ))}
                                         </nav>
+                                        <div className="pt-tool-panel-head">
+                                            <span className="pt-tool-panel-head-icon" aria-hidden="true">
+                                                {TOOL_ICONS[activeTab]}
+                                            </span>
+                                            {TABS.find((t) => t.key === activeTab)?.label}
+                                        </div>
                                         <div className="pt-builder-panel-scroll">
                                             <AnimatePresence mode="wait" initial={false}>
                                                 <Motion.div
@@ -805,6 +750,7 @@ const ProfileBuilder = ({
                                     </>
                                 )}
                             </section>
+                            )}
                         </div>
 
                         <footer className="pt-builder-footer">

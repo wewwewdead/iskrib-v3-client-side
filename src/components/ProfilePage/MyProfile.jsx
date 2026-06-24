@@ -535,7 +535,7 @@ const MyProfile = () => {
 
                 <div
                     key={"profile-page-layout"}
-                    className="profile-parent-container"
+                    className={`profile-parent-container${animatedBg && isMobile ? " profile-perf-mode" : ""}${showBuilder ? " profile-under-builder" : ""}`}
                     style={croppedImage ? { background: `linear-gradient(135deg, ${dominantColors}0%, ${secondaryColors} 100%)` } : gradientPicked}
                 >
                     {gradientPicked && <div className="blurred-gradient-bg" style={gradientPicked} />}

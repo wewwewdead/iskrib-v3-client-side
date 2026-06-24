@@ -24,7 +24,6 @@ import ShareMenu from '../ShareMenu/ShareMenu';
 import { getProfileShareUrl } from '../../utils/getShareUrl';
 import StreakBadge from '../Streak/StreakBadge';
 import useStreakData from '../Streak/useStreakData';
-import StickerLayer from '../ProfilePage/builder/StickerLayer';
 import { profileThemeToCssVars, isSectionVisible, composeProfileBackgroundStyle, resolveLegacyBackgroundForMotion } from '../ProfilePage/builder/profileThemeUtils';
 import { getDefaultProfileTheme } from '../ProfilePage/builder/profileThemeDefaults';
 import ProfileBackgroundLayer from '../ProfilePage/background/ProfileBackgroundLayer';
@@ -248,7 +247,7 @@ const Visitprofile = () =>{
             <Editor onClose={handleCloseRichtextEditor}/>
         )}
         
-        <div className='profile-parent-container'>
+        <div className={`profile-parent-container${animatedBg && isMobile ? ' profile-perf-mode' : ''}`}>
             {/* Ambient blur — never animates (animated backgrounds blur a poster). */}
             <ProfileBackgroundLayer mode="ambient" background={userData?.background} profileTheme={profileTheme} />
 
@@ -279,9 +278,6 @@ const Visitprofile = () =>{
                     <div className="visit-profile-hero-section visit-profile-hero-section--stack">
 
                         <div className="pt-freehero-mount">
-                            {profileTheme?.stickers?.length > 0 && (
-                                <StickerLayer stickers={profileTheme.stickers} accentColor={profileTheme?.colors?.accent} />
-                            )}
                             <FreeHero
                                 hero={profileTheme?.hero}
                                 name={userData?.name}

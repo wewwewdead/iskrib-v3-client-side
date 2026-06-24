@@ -1,6 +1,5 @@
 import {
     PROFILE_THEME_VERSION,
-    MAX_STICKERS,
     FONT_STACK_BY_KEY,
     SCALE_MULTIPLIER_BY_KEY,
     RADIUS_VALUE_BY_KEY,
@@ -22,6 +21,30 @@ import {
     DEFAULT_LAYOUT_WIDTH_BY_TYPE,
     ALLOWED_BLOCK_CONTENT_BY_TYPE,
     DEFAULT_BLOCK_CONTENT,
+    ALLOWED_DESIGN_SURFACES,
+    ALLOWED_DESIGN_TONES,
+    ALLOWED_DESIGN_RADII,
+    ALLOWED_DESIGN_SHADOWS,
+    ALLOWED_DESIGN_BORDERS,
+    ALLOWED_DESIGN_PADDINGS,
+    ALLOWED_DESIGN_HEADERS,
+    ALLOWED_DESIGN_TITLE_ALIGNS,
+    ALLOWED_DESIGN_ACCENTS,
+    DEFAULT_BLOCK_DESIGN,
+    ALLOWED_FILL_TYPES,
+    ALLOWED_PATTERNS,
+    ALLOWED_PATTERN_SCALES,
+    ALLOWED_BORDER_STYLES,
+    ALLOWED_TITLE_SIZES,
+    ALLOWED_TITLE_WEIGHTS,
+    ALLOWED_TITLE_SPACINGS,
+    ALLOWED_TITLE_CASES,
+    ALLOWED_HOVER_FX,
+    DESIGN_RANGES,
+    PATTERN_SCALE_PX,
+    TITLE_SIZE_MULT,
+    TITLE_WEIGHT_VAL,
+    TITLE_SPACING_EM,
     HERO_ELEMENT_KEYS,
     HERO_ELEMENT_ALIGNS,
     HERO_ELEMENT_STYLES,
@@ -33,7 +56,6 @@ import {
     ALLOWED_BACKGROUND_TYPES,
     DEFAULT_BACKGROUND,
 } from "./profileThemeConstants";
-import { ALLOWED_STICKER_IDS } from "./stickerRegistry";
 import { getDefaultProfileTheme } from "./profileThemeDefaults";
 import { getStaticBackgroundStyle } from "../background/backgroundUtils";
 
@@ -114,6 +136,250 @@ const withBlockContent = (block, rawContent) => {
     return content ? { ...block, content } : block;
 };
 
+// Client mirror of the server legacy→design derivation (keeps old themes looking
+// the same when they gain a design object). Mirrors deriveDesignFromLegacy.
+const LEGACY_SHADOW_TO_DESIGN = { none: "none", soft: "soft", strong: "lifted" };
+const LEGACY_BORDER_TO_DESIGN = { none: "none", soft: "hairline", bold: "accent" };
+
+const deriveDesignFromLegacy = (block) => {
+    const card = block && typeof block.card === "object" ? block.card : null;
+    const style = block && block.style;
+    let surface = DEFAULT_BLOCK_DESIGN.surface;
+    if (card && ALLOWED_DESIGN_SURFACES.includes(card.style)) surface = card.style;
+    else if (typeof style === "string" && style !== "inherit" && ALLOWED_DESIGN_SURFACES.includes(style)) {
+        surface = style;
+    }
+    return {
+        surface,
+        radius: card && ALLOWED_DESIGN_RADII.includes(card.radius) ? card.radius : DEFAULT_BLOCK_DESIGN.radius,
+        shadow: (card && LEGACY_SHADOW_TO_DESIGN[card.shadow]) || DEFAULT_BLOCK_DESIGN.shadow,
+        border: (card && LEGACY_BORDER_TO_DESIGN[card.border]) || DEFAULT_BLOCK_DESIGN.border,
+    };
+};
+
+/**
+ * Client mirror of the server `sanitizeBlockDesign` (Profile Builder V5). Rebuilds
+ * the design object from scratch: every field is a whitelisted enum, unknown keys
+ * are dropped. Missing surface/radius/shadow/border derive from the legacy
+ * style/card so old themes keep their look; the rest fall back to safe defaults.
+ * Never throws — always returns a complete design object.
+ */
+// Optional-field helpers (mirror server) — return undefined → key omitted.
+const enumOpt = (raw, allowed) => (typeof raw === "string" && allowed.includes(raw) ? raw : undefined);
+const colorOpt = (raw) => (isValidColor(raw) ? raw.trim() : undefined);
+const numOpt = (raw, range) => {
+    if (raw === undefined || raw === null || raw === "") return undefined;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return undefined;
+    return Math.min(range.max, Math.max(range.min, n));
+};
+
+// Client mirror of the server `sanitizeDesignExtras` (V5.1 Design Studio).
+const normalizeDesignExtras = (src) => {
+    if (!src) return {};
+    const out = {};
+    const setNum = (k) => {
+        const v = numOpt(src[k], DESIGN_RANGES[k]);
+        if (v !== undefined) out[k] = v;
+    };
+    const setEnum = (k, allowed) => {
+        const v = enumOpt(src[k], allowed);
+        if (v !== undefined) out[k] = v;
+    };
+    const setColor = (k) => {
+        const v = colorOpt(src[k]);
+        if (v !== undefined) out[k] = v;
+    };
+
+    const fillType = enumOpt(src.fillType, ALLOWED_FILL_TYPES);
+    if (fillType && fillType !== "surface") out.fillType = fillType;
+    setColor("gradFrom");
+    setColor("gradTo");
+    setNum("gradAngle");
+    setEnum("pattern", ALLOWED_PATTERNS);
+    setColor("patternColor");
+    setEnum("patternScale", ALLOWED_PATTERN_SCALES);
+    setNum("patternOpacity");
+    setNum("fillOpacity");
+    setNum("blur");
+
+    setNum("radiusPx");
+    setNum("borderWidth");
+    setEnum("borderStyle", ALLOWED_BORDER_STYLES);
+    setColor("borderColor");
+    setNum("shadowStrength");
+    setColor("glow");
+    setNum("paddingPx");
+
+    setEnum("titleSize", ALLOWED_TITLE_SIZES);
+    setEnum("titleWeight", ALLOWED_TITLE_WEIGHTS);
+    setEnum("titleSpacing", ALLOWED_TITLE_SPACINGS);
+    setEnum("titleCase", ALLOWED_TITLE_CASES);
+
+    setNum("tilt");
+    setEnum("hover", ALLOWED_HOVER_FX);
+    setNum("opacity");
+
+    return out;
+};
+
+export const normalizeBlockDesign = (raw, block) => {
+    const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : null;
+    const legacy = deriveDesignFromLegacy(block || {});
+    return {
+        surface: pickEnum(src && src.surface, ALLOWED_DESIGN_SURFACES, legacy.surface),
+        tone: pickEnum(src && src.tone, ALLOWED_DESIGN_TONES, DEFAULT_BLOCK_DESIGN.tone),
+        radius: pickEnum(src && src.radius, ALLOWED_DESIGN_RADII, legacy.radius),
+        shadow: pickEnum(src && src.shadow, ALLOWED_DESIGN_SHADOWS, legacy.shadow),
+        border: pickEnum(src && src.border, ALLOWED_DESIGN_BORDERS, legacy.border),
+        padding: pickEnum(src && src.padding, ALLOWED_DESIGN_PADDINGS, DEFAULT_BLOCK_DESIGN.padding),
+        header: pickEnum(src && src.header, ALLOWED_DESIGN_HEADERS, DEFAULT_BLOCK_DESIGN.header),
+        titleAlign: pickEnum(src && src.titleAlign, ALLOWED_DESIGN_TITLE_ALIGNS, DEFAULT_BLOCK_DESIGN.titleAlign),
+        accent: pickEnum(src && src.accent, ALLOWED_DESIGN_ACCENTS, DEFAULT_BLOCK_DESIGN.accent),
+        // Optional per-container overrides (only stored when set) — mirrors server.
+        ...(src && isValidColor(src.textColor) ? { textColor: src.textColor.trim() } : {}),
+        ...(src && isValidColor(src.bgColor) ? { bgColor: src.bgColor.trim() } : {}),
+        ...(src && typeof src.font === "string" && Object.keys(FONT_STACK_BY_KEY).includes(src.font)
+            ? { font: src.font }
+            : {}),
+        ...normalizeDesignExtras(src),
+    };
+};
+
+// Build a CSS `background-image` for a whitelisted pattern from a (pre-alpha'd)
+// color + a clamped tile size. Pure CSS gradients — no images, no user strings.
+const patternBackgroundImage = (pattern, c, px) => {
+    switch (pattern) {
+        case "dots":
+            return { backgroundImage: `radial-gradient(${c} 1.4px, transparent 1.5px)`, backgroundSize: `${px}px ${px}px` };
+        case "grid":
+            return {
+                backgroundImage: `linear-gradient(${c} 1px, transparent 1px), linear-gradient(90deg, ${c} 1px, transparent 1px)`,
+                backgroundSize: `${px}px ${px}px`,
+            };
+        case "lines":
+            return { backgroundImage: `repeating-linear-gradient(0deg, ${c} 0, ${c} 1px, transparent 1px, transparent ${px}px)` };
+        case "diagonal":
+            return { backgroundImage: `repeating-linear-gradient(45deg, ${c} 0, ${c} 1px, transparent 1px, transparent ${px}px)` };
+        case "crosshatch":
+            return {
+                backgroundImage: `repeating-linear-gradient(45deg, ${c} 0, ${c} 1px, transparent 1px, transparent ${px}px), repeating-linear-gradient(-45deg, ${c} 0, ${c} 1px, transparent 1px, transparent ${px}px)`,
+            };
+        case "paper":
+            return {
+                backgroundImage: `radial-gradient(${c} 0.6px, transparent 0.7px), radial-gradient(${c} 0.6px, transparent 0.7px)`,
+                backgroundSize: `${px}px ${px}px`,
+                backgroundPosition: `0 0, ${px / 2}px ${px / 2}px`,
+            };
+        default:
+            return {};
+    }
+};
+
+/**
+ * Inline style for a block's optional per-container design overrides (V5.1 Design
+ * Studio): text color + font, fill (solid / gradient / pattern + opacity + blur),
+ * frame (radius / border / shadow + glow / padding), title typography vars, tilt
+ * and container opacity. Returns ONLY the keys that are set, so it composes with
+ * the surface CSS + card vars (an unset field falls through to the page/surface).
+ * Every value is derived from validated colors + clamped numbers — no raw CSS.
+ */
+export const getBlockDesignStyle = (design) => {
+    const d = design && typeof design === "object" ? design : {};
+    const style = {};
+
+    // Text color + font.
+    if (isValidColor(d.textColor)) style.color = d.textColor.trim();
+    const stack = typeof d.font === "string" ? FONT_STACK_BY_KEY[d.font] : null;
+    if (stack) style["--pl-font"] = stack;
+
+    // ── Fill ── (only fades the color to rgba when opacity is actually < 1)
+    const fillOpacity = typeof d.fillOpacity === "number" ? d.fillOpacity : 1;
+    const fc = (color) => (fillOpacity < 1 ? colorWithAlpha(color, fillOpacity) : color.trim());
+    if (d.fillType === "gradient" && isValidColor(d.gradFrom) && isValidColor(d.gradTo)) {
+        const angle = typeof d.gradAngle === "number" ? d.gradAngle : 135;
+        style.backgroundImage = `linear-gradient(${angle}deg, ${fc(d.gradFrom)} 0%, ${fc(d.gradTo)} 100%)`;
+        style.backgroundColor = "transparent";
+    } else if (d.fillType === "pattern" && d.pattern) {
+        const px = PATTERN_SCALE_PX[d.patternScale] || PATTERN_SCALE_PX.m;
+        const pOpacity = typeof d.patternOpacity === "number" ? d.patternOpacity : 0.4;
+        const pColor = colorWithAlpha(isValidColor(d.patternColor) ? d.patternColor : "rgba(0,0,0,1)", pOpacity);
+        Object.assign(style, patternBackgroundImage(d.pattern, pColor, px));
+        if (isValidColor(d.bgColor)) style.backgroundColor = fc(d.bgColor);
+    } else if (isValidColor(d.bgColor)) {
+        style.backgroundColor = fc(d.bgColor);
+    }
+
+    // Glass blur intensity.
+    if (typeof d.blur === "number") {
+        style.backdropFilter = `blur(${d.blur}px)`;
+        style.WebkitBackdropFilter = `blur(${d.blur}px)`;
+    }
+
+    // ── Frame ──
+    if (typeof d.radiusPx === "number") style.borderRadius = `${d.radiusPx}px`;
+    if (typeof d.borderWidth === "number" || typeof d.borderStyle === "string" || isValidColor(d.borderColor)) {
+        const w = typeof d.borderWidth === "number" ? d.borderWidth : 1;
+        const bStyle = typeof d.borderStyle === "string" ? d.borderStyle : "solid";
+        const bColor = isValidColor(d.borderColor) ? d.borderColor.trim() : "var(--pl-accent, var(--pt-accent, #d4a853))";
+        style.border = w > 0 ? `${w}px ${bStyle} ${bColor}` : "none";
+    }
+    if (typeof d.shadowStrength === "number" || isValidColor(d.glow)) {
+        const s = typeof d.shadowStrength === "number" ? d.shadowStrength : 0.4;
+        if (isValidColor(d.glow)) {
+            style.boxShadow = `0 0 ${Math.round(12 + s * 34)}px ${colorWithAlpha(d.glow, Math.min(1, 0.35 + s))}`;
+        } else {
+            style.boxShadow = `0 ${Math.round(2 + s * 16)}px ${Math.round(8 + s * 40)}px rgba(0,0,0,${(0.06 + s * 0.22).toFixed(3)}), 0 ${Math.round(1 + s * 4)}px ${Math.round(4 + s * 12)}px rgba(0,0,0,${(0.04 + s * 0.12).toFixed(3)})`;
+        }
+    }
+    if (typeof d.paddingPx === "number") style.padding = `${d.paddingPx}px`;
+
+    // ── Title typography (consumed by .pl-block-title via CSS vars) ──
+    if (d.titleSize && TITLE_SIZE_MULT[d.titleSize]) style["--pl-title-size"] = String(TITLE_SIZE_MULT[d.titleSize]);
+    if (d.titleWeight && TITLE_WEIGHT_VAL[d.titleWeight]) style["--pl-title-weight"] = TITLE_WEIGHT_VAL[d.titleWeight];
+    if (d.titleSpacing && TITLE_SPACING_EM[d.titleSpacing]) style["--pl-title-spacing"] = TITLE_SPACING_EM[d.titleSpacing];
+
+    // ── Effects (tilt via a var so :hover transforms compose; opacity inline) ──
+    if (typeof d.tilt === "number" && d.tilt !== 0) style["--pl-tilt"] = `${d.tilt}deg`;
+    if (typeof d.opacity === "number" && d.opacity < 1) style.opacity = d.opacity;
+
+    return style;
+};
+
+// Attach a sanitized `design` object to every block (always present in V5).
+const withBlockDesign = (block, rawDesign) => ({ ...block, design: normalizeBlockDesign(rawDesign, block) });
+
+/**
+ * Resolve a block's design config for rendering: a complete design object with
+ * all fields filled (safe on old v2/v3 blocks that predate V5's `design` key).
+ */
+export const getBlockDesign = (block) => normalizeBlockDesign(block && block.design, block);
+
+/**
+ * Map a (normalized) design object to the `data-*` attributes the renderer puts
+ * on a block element. Only whitelisted enum values reach the DOM — no raw CSS or
+ * class names. The CSS in profileLayout.css targets these attributes.
+ */
+export const getBlockDesignDataAttrs = (design) => {
+    const d = design && typeof design === "object" ? design : DEFAULT_BLOCK_DESIGN;
+    return {
+        "data-surface": pickEnum(d.surface, ALLOWED_DESIGN_SURFACES, DEFAULT_BLOCK_DESIGN.surface),
+        "data-tone": pickEnum(d.tone, ALLOWED_DESIGN_TONES, DEFAULT_BLOCK_DESIGN.tone),
+        "data-radius": pickEnum(d.radius, ALLOWED_DESIGN_RADII, DEFAULT_BLOCK_DESIGN.radius),
+        "data-shadow": pickEnum(d.shadow, ALLOWED_DESIGN_SHADOWS, DEFAULT_BLOCK_DESIGN.shadow),
+        "data-border": pickEnum(d.border, ALLOWED_DESIGN_BORDERS, DEFAULT_BLOCK_DESIGN.border),
+        "data-padding": pickEnum(d.padding, ALLOWED_DESIGN_PADDINGS, DEFAULT_BLOCK_DESIGN.padding),
+        "data-header": pickEnum(d.header, ALLOWED_DESIGN_HEADERS, DEFAULT_BLOCK_DESIGN.header),
+        "data-title-align": pickEnum(d.titleAlign, ALLOWED_DESIGN_TITLE_ALIGNS, DEFAULT_BLOCK_DESIGN.titleAlign),
+        "data-accent": pickEnum(d.accent, ALLOWED_DESIGN_ACCENTS, DEFAULT_BLOCK_DESIGN.accent),
+        // V5.1 optional attrs — only emitted when set (drive text-transform / hover
+        // / the tilt transform in CSS).
+        ...(d.titleCase === "upper" ? { "data-title-case": "upper" } : {}),
+        ...(d.hover && d.hover !== "none" ? { "data-hover": d.hover } : {}),
+        ...(typeof d.tilt === "number" && d.tilt !== 0 ? { "data-tilt": String(d.tilt) } : {}),
+    };
+};
+
 /**
  * Resolve a block's content config for rendering: returns a complete content
  * object (defaults filled) for content blocks, or {} for blocks without content
@@ -122,17 +388,20 @@ const withBlockContent = (block, rawContent) => {
 export const getBlockContent = (block) => normalizeBlockContent(block?.type, block?.content) || {};
 
 const buildDefaultLayoutBlock = (type, order, sections) =>
-    withBlockContent(
-        {
-            id: type,
-            type,
-            visible: sectionVisibleInList(sections, type),
-            order,
-            width: DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full",
-            style: "inherit",
-            variant: ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type][0],
-            title: DEFAULT_LAYOUT_TITLE_BY_TYPE[type],
-        },
+    withBlockDesign(
+        withBlockContent(
+            {
+                id: type,
+                type,
+                visible: sectionVisibleInList(sections, type),
+                order,
+                width: DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full",
+                style: "inherit",
+                variant: ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type][0],
+                title: DEFAULT_LAYOUT_TITLE_BY_TYPE[type],
+            },
+            undefined
+        ),
         undefined
     );
 
@@ -154,19 +423,22 @@ const normalizeLayout = (rawLayout, sections) => {
             const card = normalizeBlockCard(block.card);
             byType.set(
                 type,
-                withBlockContent(
-                    {
-                        id: type,
-                        type,
-                        visible: block.visible !== false,
-                        order: clamp(block.order, 0, MAX_LAYOUT_BLOCKS * 4, index),
-                        width: pickEnum(block.width, ALLOWED_LAYOUT_WIDTHS, DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full"),
-                        style: pickEnum(block.style, ALLOWED_LAYOUT_STYLES, "inherit"),
-                        variant: pickEnum(block.variant, variants, variants[0]),
-                        title: sanitizeBlockTitle(block.title, DEFAULT_LAYOUT_TITLE_BY_TYPE[type]),
-                        ...(card ? { card } : {}),
-                    },
-                    block.content
+                withBlockDesign(
+                    withBlockContent(
+                        {
+                            id: type,
+                            type,
+                            visible: block.visible !== false,
+                            order: clamp(block.order, 0, MAX_LAYOUT_BLOCKS * 4, index),
+                            width: pickEnum(block.width, ALLOWED_LAYOUT_WIDTHS, DEFAULT_LAYOUT_WIDTH_BY_TYPE[type] || "full"),
+                            style: pickEnum(block.style, ALLOWED_LAYOUT_STYLES, "inherit"),
+                            variant: pickEnum(block.variant, variants, variants[0]),
+                            title: sanitizeBlockTitle(block.title, DEFAULT_LAYOUT_TITLE_BY_TYPE[type]),
+                            ...(card ? { card } : {}),
+                        },
+                        block.content
+                    ),
+                    block.design
                 )
             );
         });
@@ -248,24 +520,6 @@ export const normalizeProfileTheme = (rawTheme, userData) => {
     });
     const sections = Array.from(sectionById.values()).sort((a, b) => a.order - b.order);
 
-    // Stickers: keep known ids, clamp positions, cap count.
-    const stickers = [];
-    if (Array.isArray(rawTheme.stickers)) {
-        for (const sticker of rawTheme.stickers) {
-            if (stickers.length >= MAX_STICKERS) break;
-            if (!sticker || typeof sticker !== "object") continue;
-            if (!ALLOWED_STICKER_IDS.includes(sticker.id)) continue;
-            stickers.push({
-                id: sticker.id,
-                x: clamp(sticker.x, 0, 100, 50),
-                y: clamp(sticker.y, 0, 100, 50),
-                rotation: clamp(sticker.rotation, -180, 180, 0),
-                scale: clamp(sticker.scale, 0.3, 3, 1),
-                ...(isValidColor(sticker.color) ? { color: sticker.color.trim() } : {}),
-            });
-        }
-    }
-
     return {
         version: PROFILE_THEME_VERSION,
         presetId: typeof rawTheme.presetId === "string" ? rawTheme.presetId : "custom",
@@ -282,7 +536,10 @@ export const normalizeProfileTheme = (rawTheme, userData) => {
         },
         background: normalizeBackground(rawTheme.background),
         sections,
-        stickers,
+        // Stickers were deprecated in Profile Builder V5. The key is kept (always
+        // empty) so the theme shape stays stable; any old stored stickers are
+        // dropped here so they never render and never get re-saved.
+        stickers: [],
         layout: normalizeLayout(rawTheme.layout, sections),
         hero: normalizeHero(rawTheme.hero),
     };
@@ -337,9 +594,80 @@ export const normalizeHero = (rawHero) => {
             ...(Number.isFinite(Number(el.scale)) && Number(el.scale) >= 0.5 && Number(el.scale) <= 2.5
                 ? { scale: Number(el.scale) }
                 : {}),
+            // V5.2 — a hero element can carry the SAME container design object (so
+            // the hero is edited with the container tools). Only present when set.
+            // Legacy align/width/divider/scale stay separate.
+            ...(el.design && typeof el.design === "object"
+                ? { design: normalizeHeroElementDesign(el.design) }
+                : {}),
         };
     }
     return { mode: "stack", order, layout };
+};
+
+// Hero elements default to NO card chrome (minimal surface, no shadow/border) so a
+// bare avatar/name/bio stays clean — unlike a container, which is a card by default.
+const HERO_DEFAULT_DESIGN = {
+    surface: "minimal",
+    tone: "default",
+    radius: "soft",
+    shadow: "none",
+    border: "none",
+    padding: "comfortable",
+    header: "label",
+    titleAlign: "left",
+    accent: "theme",
+};
+
+/**
+ * Normalize a hero element's `design` object: the SAME shape + tools as a container
+ * design, but with hero defaults (no card unless chosen). Mirrors the server
+ * `sanitizeHeroElementDesign`. Reuses the shared extras normalizer.
+ */
+export const normalizeHeroElementDesign = (raw) => {
+    const src = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : null;
+    return {
+        surface: pickEnum(src && src.surface, ALLOWED_DESIGN_SURFACES, HERO_DEFAULT_DESIGN.surface),
+        tone: pickEnum(src && src.tone, ALLOWED_DESIGN_TONES, HERO_DEFAULT_DESIGN.tone),
+        radius: pickEnum(src && src.radius, ALLOWED_DESIGN_RADII, HERO_DEFAULT_DESIGN.radius),
+        shadow: pickEnum(src && src.shadow, ALLOWED_DESIGN_SHADOWS, HERO_DEFAULT_DESIGN.shadow),
+        border: pickEnum(src && src.border, ALLOWED_DESIGN_BORDERS, HERO_DEFAULT_DESIGN.border),
+        padding: pickEnum(src && src.padding, ALLOWED_DESIGN_PADDINGS, HERO_DEFAULT_DESIGN.padding),
+        header: pickEnum(src && src.header, ALLOWED_DESIGN_HEADERS, HERO_DEFAULT_DESIGN.header),
+        titleAlign: pickEnum(src && src.titleAlign, ALLOWED_DESIGN_TITLE_ALIGNS, HERO_DEFAULT_DESIGN.titleAlign),
+        accent: pickEnum(src && src.accent, ALLOWED_DESIGN_ACCENTS, HERO_DEFAULT_DESIGN.accent),
+        ...(src && isValidColor(src.textColor) ? { textColor: src.textColor.trim() } : {}),
+        ...(src && isValidColor(src.bgColor) ? { bgColor: src.bgColor.trim() } : {}),
+        ...(src && typeof src.font === "string" && Object.keys(FONT_STACK_BY_KEY).includes(src.font)
+            ? { font: src.font }
+            : {}),
+        ...normalizeDesignExtras(src),
+    };
+};
+
+/**
+ * Resolve a hero element's design for rendering/editing: a complete design object
+ * (hero defaults). Used by FreeHero + the hero editor so the container design tools
+ * work on hero elements exactly as on containers.
+ */
+export const getHeroElementDesign = (el) => normalizeHeroElementDesign(el && el.design);
+
+/**
+ * Seed a design object from a hero element's LEGACY style fields, so opening the
+ * design tools on an already-styled element shows its current look (and the first
+ * edit migrates it). Maps style→surface, color→textColor, bgColor, font, radius,
+ * border (hairline stays; thicker/dashed → accent).
+ */
+export const heroLegacyToDesign = (el) => {
+    const e = el && typeof el === "object" ? el : {};
+    return {
+        ...(e.style && e.style !== "none" ? { surface: e.style } : {}),
+        ...(isValidColor(e.color) ? { textColor: e.color } : {}),
+        ...(isValidColor(e.bgColor) ? { bgColor: e.bgColor } : {}),
+        ...(typeof e.font === "string" ? { font: e.font } : {}),
+        ...(typeof e.radius === "string" ? { radius: e.radius } : {}),
+        ...(e.border && e.border !== "none" ? { border: e.border === "hairline" ? "hairline" : "accent" } : {}),
+    };
 };
 
 /**
@@ -354,7 +682,15 @@ const cardSurfaceFor = (style, colors) => {
         case "solid":
             return { background: cardBg, border: cardBorder, blur: "blur(0px)" };
         case "paper":
-            return { background: cardBg, border: cardBorder, blur: "blur(0px)" };
+            // A warm cream paper surface with its own dark ink text — distinct from
+            // "solid" (which uses the theme card colour). Mirrors the Design tray's
+            // [data-surface="paper"] look so the two paths agree.
+            return {
+                background: "rgba(253, 248, 238, 0.96)",
+                border: "rgba(120, 95, 55, 0.22)",
+                blur: "blur(0px)",
+                text: "#3b2f1c",
+            };
         case "minimal":
             return { background: "transparent", border: cardBorder, blur: "blur(0px)" };
         case "glass":
@@ -378,6 +714,8 @@ const cardCssVars = (card, colors) => {
         "--pt-card-blur": surface.blur,
         "--pt-card-radius": RADIUS_VALUE_BY_KEY[card.radius],
         "--pt-card-shadow": SHADOW_VALUE_BY_KEY[card.shadow],
+        // Some surfaces (paper) carry their own legible text colour.
+        ...(surface.text ? { "--pt-card-text": surface.text } : {}),
     };
 };
 
@@ -436,6 +774,7 @@ export const profileThemeToCssVars = (theme, userData) => {
         "--pt-card-shadow": SHADOW_VALUE_BY_KEY[safe.cards.shadow],
         "--pt-font": FONT_STACK_BY_KEY[safe.typography.font],
         "--pt-scale": String(SCALE_MULTIPLIER_BY_KEY[safe.typography.scale]),
+        ...(surface.text ? { "--pt-card-text": surface.text } : {}),
     };
 };
 

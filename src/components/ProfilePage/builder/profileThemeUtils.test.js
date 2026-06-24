@@ -9,6 +9,10 @@ import {
     normalizeBlockContent,
     normalizeBlockCard,
     getBlockCardCssVars,
+    normalizeBlockDesign,
+    getBlockDesign,
+    getBlockDesignDataAttrs,
+    getBlockDesignStyle,
     normalizeHero,
     profileBackgroundToStyle,
     composeProfileBackgroundStyle,
@@ -19,6 +23,7 @@ import {
     DEFAULT_LAYOUT_BLOCK_TYPES,
     ALLOWED_LAYOUT_BLOCK_TYPES,
     DEFAULT_BLOCK_CONTENT,
+    DEFAULT_BLOCK_DESIGN,
 } from "./profileThemeConstants";
 
 const userData = { profile_font_color: "#ffffff", created_at: "2020-01-01" };
@@ -220,7 +225,6 @@ describe("normalizeProfileTheme — stability / idempotency", () => {
                 typography: { font: "lora", scale: "spacious" },
                 cards: { style: "paper", radius: "sharp", border: "bold", shadow: "strong" },
                 background: { type: "gradient", angle: 90, from: "#112233", to: "#445566", opacity: 0.5 },
-                stickers: [{ id: "star-01", x: 10, y: 20, rotation: 15, scale: 1.5, color: "#ff0000" }],
                 layout: {
                     mode: "stack",
                     blocks: [
@@ -249,6 +253,138 @@ describe("normalizeProfileTheme — stability / idempotency", () => {
     });
 });
 
+describe("container design (V5) — client normalization mirrors the server", () => {
+    it("attaches a complete default design to every block of a legacy theme", () => {
+        const theme = normalizeProfileTheme({ version: 1 }, userData);
+        theme.layout.blocks.forEach((b) => {
+            expect(b.design).toBeDefined();
+            expect(Object.keys(b.design).sort()).toEqual(Object.keys(DEFAULT_BLOCK_DESIGN).sort());
+        });
+        const writings = theme.layout.blocks.find((b) => b.type === "writings");
+        expect(writings.design).toEqual(DEFAULT_BLOCK_DESIGN);
+    });
+
+    it("the default theme carries the default design on each block", () => {
+        const theme = getDefaultProfileTheme(userData);
+        theme.layout.blocks.forEach((b) => expect(b.design).toEqual(DEFAULT_BLOCK_DESIGN));
+    });
+
+    it("normalizeBlockDesign rebuilds from scratch (strips unknown keys, clamps enums)", () => {
+        const out = normalizeBlockDesign(
+            { surface: "hologram", tone: "neon", header: "marquee", evil: "<x>", radius: "sharp" },
+            { type: "writings", style: "inherit" }
+        );
+        expect(out.surface).toBe(DEFAULT_BLOCK_DESIGN.surface); // bad → default
+        expect(out.tone).toBe(DEFAULT_BLOCK_DESIGN.tone);
+        expect(out.header).toBe(DEFAULT_BLOCK_DESIGN.header);
+        expect(out.radius).toBe("sharp"); // valid kept
+        expect(out.evil).toBeUndefined();
+        expect(Object.keys(out).sort()).toEqual(Object.keys(DEFAULT_BLOCK_DESIGN).sort());
+    });
+
+    it("derives surface/radius/shadow/border from a legacy card (mirrors server)", () => {
+        const out = normalizeBlockDesign(undefined, {
+            type: "writings",
+            style: "inherit",
+            card: { style: "paper", radius: "sharp", border: "bold", shadow: "strong" },
+        });
+        expect(out.surface).toBe("paper");
+        expect(out.radius).toBe("sharp");
+        expect(out.shadow).toBe("lifted"); // strong → lifted
+        expect(out.border).toBe("accent"); // bold → accent
+    });
+
+    it("getBlockDesign fills a missing design (safe on old blocks)", () => {
+        expect(getBlockDesign({ type: "media" })).toEqual(DEFAULT_BLOCK_DESIGN);
+        const custom = getBlockDesign({ type: "media", design: { surface: "solid" } });
+        expect(custom.surface).toBe("solid");
+    });
+
+    it("getBlockDesignDataAttrs maps a design to whitelisted data-* attributes", () => {
+        const attrs = getBlockDesignDataAttrs({ surface: "paper", tone: "warm", titleAlign: "center" });
+        expect(attrs["data-surface"]).toBe("paper");
+        expect(attrs["data-tone"]).toBe("warm");
+        expect(attrs["data-title-align"]).toBe("center");
+        // unfilled fields fall back to defaults, never undefined
+        expect(attrs["data-header"]).toBe(DEFAULT_BLOCK_DESIGN.header);
+    });
+
+    it("keeps a valid per-container text/background color + font (mirrors server)", () => {
+        const out = normalizeBlockDesign(
+            { textColor: "#ff0000", bgColor: "rgba(0,0,0,0.4)", font: "spaceGrotesk" },
+            { type: "writings", style: "inherit" }
+        );
+        expect(out.textColor).toBe("#ff0000");
+        expect(out.bgColor).toBe("rgba(0,0,0,0.4)");
+        expect(out.font).toBe("spaceGrotesk");
+    });
+
+    it("drops invalid color/font and omits the optional keys", () => {
+        const out = normalizeBlockDesign(
+            { textColor: "red", bgColor: "url(x)", font: "evil-font" },
+            { type: "media", style: "inherit" }
+        );
+        expect(out.textColor).toBeUndefined();
+        expect(out.bgColor).toBeUndefined();
+        expect(out.font).toBeUndefined();
+        expect(Object.keys(out).sort()).toEqual(Object.keys(DEFAULT_BLOCK_DESIGN).sort());
+    });
+
+    it("getBlockDesignStyle returns inline color/background + a --pl-font var", () => {
+        const style = getBlockDesignStyle({ textColor: "#ff0000", bgColor: "#112233", font: "lora" });
+        expect(style.color).toBe("#ff0000");
+        expect(style.backgroundColor).toBe("#112233");
+        expect(style["--pl-font"]).toMatch(/Lora/);
+        // nothing set → empty style (composes cleanly with card vars)
+        expect(getBlockDesignStyle({ surface: "glass" })).toEqual({});
+    });
+
+    it("getBlockDesignStyle builds gradient / pattern / frame / effects from validated parts", () => {
+        const grad = getBlockDesignStyle({ fillType: "gradient", gradFrom: "#000000", gradTo: "#ffffff", gradAngle: 90 });
+        expect(grad.backgroundImage).toMatch(/linear-gradient\(90deg/);
+
+        const pat = getBlockDesignStyle({ fillType: "pattern", pattern: "dots", patternColor: "#000000", patternScale: "m", patternOpacity: 0.5 });
+        expect(pat.backgroundImage).toMatch(/radial-gradient/);
+
+        const frame = getBlockDesignStyle({ radiusPx: 30, borderWidth: 2, borderStyle: "dashed", borderColor: "#ff0000", paddingPx: 20 });
+        expect(frame.borderRadius).toBe("30px");
+        expect(frame.border).toBe("2px dashed #ff0000");
+        expect(frame.padding).toBe("20px");
+
+        const fx = getBlockDesignStyle({ tilt: -3, opacity: 0.8, titleSize: "xl", titleWeight: "black" });
+        expect(fx["--pl-tilt"]).toBe("-3deg");
+        expect(fx.opacity).toBe(0.8);
+        expect(fx["--pl-title-size"]).toBeDefined();
+        expect(fx["--pl-title-weight"]).toBe("900");
+
+        // fill opacity < 1 fades a solid color to rgba; = 1 keeps the raw hex
+        expect(getBlockDesignStyle({ bgColor: "#112233", fillOpacity: 0.5 }).backgroundColor).toMatch(/rgba\(17,\s*34,\s*51/);
+    });
+
+    it("getBlockDesignDataAttrs emits optional title-case / hover / tilt attrs only when set", () => {
+        const attrs = getBlockDesignDataAttrs({ surface: "glass", titleCase: "upper", hover: "lift", tilt: -3 });
+        expect(attrs["data-title-case"]).toBe("upper");
+        expect(attrs["data-hover"]).toBe("lift");
+        expect(attrs["data-tilt"]).toBe("-3");
+        const plain = getBlockDesignDataAttrs({ surface: "glass" });
+        expect(plain["data-hover"]).toBeUndefined();
+        expect(plain["data-tilt"]).toBeUndefined();
+    });
+
+    it("normalizeBlockDesign keeps valid extras and clamps/drops bad ones (mirrors server)", () => {
+        const out = normalizeBlockDesign(
+            { fillType: "gradient", gradFrom: "#000000", gradTo: "#ffffff", gradAngle: 9999, tilt: -50, hover: "lift", pattern: "spiral", titleSize: "xl" },
+            { type: "writings", style: "inherit" }
+        );
+        expect(out.fillType).toBe("gradient");
+        expect(out.gradAngle).toBe(360); // clamped
+        expect(out.tilt).toBe(-6); // clamped
+        expect(out.hover).toBe("lift");
+        expect(out.titleSize).toBe("xl");
+        expect(out.pattern).toBeUndefined(); // invalid enum dropped
+    });
+});
+
 describe("hero (reorderable stack) normalization", () => {
     it("defaults to stack mode with the default order + per-element styles", () => {
         const hero = normalizeHero(undefined);
@@ -256,6 +392,28 @@ describe("hero (reorderable stack) normalization", () => {
         expect(hero.order).toEqual(["avatar", "name", "stats", "bio"]);
         expect(hero.layout.avatar).toEqual({ align: "left", style: "none" });
         ["avatar", "name", "stats", "bio"].forEach((k) => expect(hero.layout[k]).toBeDefined());
+    });
+
+    it("keeps a hero element `design` with HERO defaults (no card chrome) — V5.2", () => {
+        const hero = normalizeHero({
+            order: ["avatar", "name", "stats", "bio"],
+            layout: {
+                name: { design: { surface: "paper", tilt: -3, textColor: "#ff0000", shadow: "lifted" } },
+                avatar: {},
+            },
+        });
+        const d = hero.layout.name.design;
+        expect(d.surface).toBe("paper");
+        expect(d.tilt).toBe(-3);
+        expect(d.textColor).toBe("#ff0000");
+        expect(d.shadow).toBe("lifted"); // explicit value kept
+        // an element with no design carries none (stays on the legacy path)
+        expect(hero.layout.avatar.design).toBeUndefined();
+        // hero defaults: a bare design has minimal surface + no shadow/border
+        const bare = normalizeHero({ layout: { bio: { design: {} } } }).layout.bio.design;
+        expect(bare.surface).toBe("minimal");
+        expect(bare.shadow).toBe("none");
+        expect(bare.border).toBe("none");
     });
 
     it("is always stack and drops legacy free-canvas x/y/w + height", () => {
@@ -358,7 +516,7 @@ describe("per-block card override", () => {
         expect(media.card).toBeUndefined();
     });
 
-    it("keeps a valid sticker color and drops invalid/absent ones", () => {
+    it("deprecates stickers — drops any legacy sticker data to an empty array", () => {
         const theme = normalizeProfileTheme(
             {
                 stickers: [
@@ -369,10 +527,20 @@ describe("per-block card override", () => {
             },
             userData
         );
-        const byId = Object.fromEntries(theme.stickers.map((s) => [s.id, s]));
-        expect(byId["star-01"].color).toBe("#ff0000");
-        expect(byId["heart-01"].color).toBeUndefined();
-        expect(byId["moon-01"].color).toBeUndefined();
+        // The key is preserved (stable shape) but is always empty — old stickers
+        // never render and never get re-saved.
+        expect(theme.stickers).toEqual([]);
+    });
+
+    it("renders a per-block 'paper' card as a distinct warm surface with its own ink (not 'solid')", () => {
+        const theme = normalizeProfileTheme({}, userData);
+        const card = (style) => getBlockCardCssVars(theme, { type: "writings", card: { style, radius: "soft", border: "soft", shadow: "soft" } });
+        const paper = card("paper");
+        const solid = card("solid");
+        // Paper is no longer identical to Solid: different background + its own ink.
+        expect(paper["--pt-card-bg"]).not.toBe(solid["--pt-card-bg"]);
+        expect(paper["--pt-card-text"]).toBeDefined();
+        expect(solid["--pt-card-text"]).toBeUndefined();
     });
 
     it("getBlockCardCssVars returns per-block --pt-card vars, or null without an override", () => {

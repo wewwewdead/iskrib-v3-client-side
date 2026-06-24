@@ -6,6 +6,7 @@ import {
     DEFAULT_LAYOUT_WIDTH_BY_TYPE,
     ALLOWED_LAYOUT_VARIANTS_BY_TYPE,
     DEFAULT_BLOCK_CONTENT,
+    DEFAULT_BLOCK_DESIGN,
     DEFAULT_HERO_ORDER,
     DEFAULT_HERO_LAYOUT,
     DEFAULT_BACKGROUND,
@@ -33,6 +34,7 @@ export const getDefaultLayout = () => ({
         variant: ALLOWED_LAYOUT_VARIANTS_BY_TYPE[type][0],
         title: DEFAULT_LAYOUT_TITLE_BY_TYPE[type],
         ...(DEFAULT_BLOCK_CONTENT[type] ? { content: { ...DEFAULT_BLOCK_CONTENT[type] } } : {}),
+        design: { ...DEFAULT_BLOCK_DESIGN },
     })),
 });
 
