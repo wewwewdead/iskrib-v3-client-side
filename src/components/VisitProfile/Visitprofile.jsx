@@ -207,18 +207,36 @@ const Visitprofile = () =>{
 
     // "Use this theme" eligibility: logged in, not the owner, source has a theme.
     const currentUserId = user?.userData?.[0]?.id;
-    const isOwnProfile = !!currentUserId && currentUserId === visitedUserId;
+    const loggedInUsername = user?.userData?.[0]?.username;
+    const viewingUsername = urlUsername || resolvedUsername;
+    // This IS the logged-in user's own profile when the ids match, or — for an
+    // instant check before the async id resolves — when the canonical usernames
+    // match (usernames are unique + case-insensitive). A user must never "visit"
+    // their own profile (no Follow button); they belong on /profile.
+    const isOwnProfile =
+        (!!currentUserId && currentUserId === visitedUserId) ||
+        (!!loggedInUsername &&
+            !!viewingUsername &&
+            loggedInUsername.toLowerCase() === String(viewingUsername).toLowerCase());
     const canUseTheme = !!session && !isOwnProfile && hasTheme;
     const guestbookUsername = profileUsername || userData?.username;
 
+    // Landed on a public profile link that turns out to be ME → go to /profile.
+    // `replace` so Back doesn't bounce between the two views.
+    useEffect(() => {
+        if (isOwnProfile) navigate('/profile', { replace: true });
+    }, [isOwnProfile, navigate]);
+
     // Record a (throttled) profile visit once per loaded profile. Works logged-out.
+    // Never record a visit to my own profile.
     const visitRecordedRef = useRef(null);
     useEffect(() => {
+        if (isOwnProfile) return;
         if (!guestbookUsername) return;
         if (visitRecordedRef.current === guestbookUsername) return;
         visitRecordedRef.current = guestbookUsername;
         recordProfileVisit(session?.access_token, guestbookUsername).catch(() => {});
-    }, [guestbookUsername, session?.access_token]);
+    }, [isOwnProfile, guestbookUsername, session?.access_token]);
 
     const{data: followsData, isLoading: isLoadingFollowsData} = useQuery({
         queryKey: ['followsData', user?.userData?.[0].id, visitedUserId],
@@ -236,6 +254,14 @@ const Visitprofile = () =>{
 
     // Public profiles are viewable without logging in. Anonymous visitors can
     // browse freely; actions like Follow/Write open the auth modal on demand.
+
+    // My own profile reached via a public link (explore / feed / mention) → show a
+    // loader, not the visit view, while the redirect to /profile takes effect.
+    if(isOwnProfile){
+        return(
+            <Loader/>
+        )
+    }
 
     if(isLoading || isLoadingByUsername){
         return(
